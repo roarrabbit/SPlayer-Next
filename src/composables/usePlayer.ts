@@ -3,10 +3,9 @@ import { onMounted, onUnmounted } from "vue";
 import { usePlayerStore } from "@/stores/player";
 
 /**
- * Composable for audio player interaction.
- * Automatically initializes event listener on mount and cleans up on unmount.
+ * 播放器 composable
  */
-export function usePlayer() {
+export const usePlayer = () => {
   const store = usePlayerStore();
 
   const {
@@ -32,7 +31,7 @@ export function usePlayer() {
   });
 
   return {
-    // Reactive state
+    // 响应式状态
     state,
     position,
     duration,
@@ -44,12 +43,18 @@ export function usePlayer() {
     isPlaying,
     isPaused,
     progress,
-    // Actions
+    // 操作
+    /** 加载音频源（本地路径或网络地址） */
     load: store.load,
+    /** 恢复播放 */
     play: store.play,
+    /** 暂停播放 */
     pause: store.pause,
+    /** 停止播放 */
     stop: store.stop,
+    /** 跳转到指定位置（秒） */
     seek: store.seek,
+    /** 设置音量（0.0 ~ 1.0） */
     setVolume: store.setVolume,
   };
-}
+};

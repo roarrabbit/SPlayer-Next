@@ -5,20 +5,33 @@ import path from "path";
 const requireNative = createRequire(import.meta.url);
 
 /**
- * 加载原生 .node 模块
- *
- * - 开发环境：直接加载 native/<devDirName>/index.node
- * - 打包环境：加载 resources/native/<fileName>
+ * 加载一个原生插件
+ * @param fileName 编译后的文件名 (例如: "audio-engine.node")
+ * @param devDirName 开发环境下的目录名 (例如: "audio-engine")，必须位于项目根目录的 native/ 下
  */
-export const loadNativeModule = <T = unknown>(fileName: string, devDirName: string): T | null => {
-  const nativeModulePath = app.isPackaged
-    ? path.join(process.resourcesPath, "native", fileName)
-    : path.join(process.cwd(), "native", devDirName, "index.node");
+export function loadNativeModule<T = unknown>(
+  fileName: string,
+  devDirName: string,
+): T | null {
+  let nativeModulePath: string;
+
+  if (app.isPackaged) {
+    // 打包后: resources/native/audio-engine.node
+    nativeModulePath = path.join(process.resourcesPath, "native", fileName);
+  } else {
+    // 开发时: native/audio-engine/audio-engine.node
+    nativeModulePath = path.join(
+      process.cwd(),
+      "native",
+      devDirName,
+      fileName,
+    );
+  }
 
   try {
     return requireNative(nativeModulePath) as T;
   } catch (error) {
-    console.error(`[NativeLoader] 加载 ${devDirName} 失败 (${nativeModulePath}):`, error);
+    console.error(`[NativeLoader] 加载 ${fileName} 失败:`, error);
     return null;
   }
-};
+}

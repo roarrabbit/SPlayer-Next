@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
@@ -109,6 +110,8 @@ pub struct InnerPlayer {
     stream_handle: OutputStreamHandle,
     sink: Option<Sink>,
     shared: Option<Arc<Shared>>,
+    /// 解码线程句柄，stop 时 join 确保线程清理
+    decoder_thread: Option<JoinHandle<()>>,
     fft: Arc<FftAnalyzer>,
     metadata: Option<AudioMetadata>,
     state: PlayerState,
@@ -134,6 +137,7 @@ impl InnerPlayer {
             stream_handle,
             sink: None,
             shared: None,
+            decoder_thread: None,
             fft: Arc::new(FftAnalyzer::new(decoder::FFT_SAMPLE_RATE)),
             metadata: None,
             state: PlayerState::Idle,
@@ -151,7 +155,7 @@ impl InnerPlayer {
         self.fft.reset();
 
         let shared = Shared::new();
-        let metadata = decoder::start_decode(source, Arc::clone(&shared))?;
+        let (metadata, handle) = decoder::start_decode(source, Arc::clone(&shared))?;
 
         let sink = Sink::try_new(&self.stream_handle).context("Failed to create audio sink")?;
 
@@ -167,6 +171,7 @@ impl InnerPlayer {
 
         self.sink = Some(sink);
         self.shared = Some(shared);
+        self.decoder_thread = Some(handle);
         self.metadata = Some(metadata.clone());
         self.state = PlayerState::Playing;
         self.position_base = 0.0;
@@ -176,10 +181,16 @@ impl InnerPlayer {
         Ok(metadata)
     }
 
-    /// 恢复播放。如果已停止或播放结束，自动从头重新加载。
+    /// 恢复播放。如果已停止、播放结束或空闲，自动从头重新加载。
     pub fn play(&mut self) -> Result<()> {
+        // 如果当前在"播放"状态但实际已结束，先标记为停止
+        if self.state == PlayerState::Playing && self.is_finished() {
+            self.stop_internal();
+            self.state = PlayerState::Stopped;
+        }
+
         match self.state {
-            // 已经在播放，忽略
+            // 已经在播放且未结束，忽略
             PlayerState::Playing => {}
             // 暂停状态：渐入恢复
             PlayerState::Paused => {
@@ -228,9 +239,13 @@ impl InnerPlayer {
         if let Some(ref shared) = self.shared {
             shared.stop();
         }
-        // 再释放 Sink（会 drop DecoderSource，解除迭代器阻塞）
+        // 释放 Sink（会 drop DecoderSource，解除迭代器阻塞）
         if let Some(sink) = self.sink.take() {
             sink.stop();
+        }
+        // 等待解码线程退出，避免线程泄漏
+        if let Some(handle) = self.decoder_thread.take() {
+            let _ = handle.join();
         }
         self.shared = None;
         self.play_start = None;
@@ -241,23 +256,26 @@ impl InnerPlayer {
     pub fn seek(&mut self, position_secs: f64) -> Result<()> {
         let source = self.current_source.clone().context("No source loaded")?;
 
-        // 停止当前播放
+        // 停止当前播放和解码线程
         if let Some(ref shared) = self.shared {
             shared.stop();
         }
         if let Some(sink) = self.sink.take() {
             sink.stop();
         }
+        if let Some(handle) = self.decoder_thread.take() {
+            let _ = handle.join();
+        }
 
         self.fft.reset();
 
         // 创建新的共享状态用于 seek 后的解码
         let shared = Shared::new();
-        let shared_clone = Arc::clone(&shared);
+        let shared_for_thread = Arc::clone(&shared);
 
         let source_clone = source;
-        std::thread::spawn(move || {
-            let _ = decoder::seek_decode(&source_clone, position_secs, &shared_clone);
+        let handle = std::thread::spawn(move || {
+            let _ = decoder::seek_decode(&source_clone, position_secs, &shared_for_thread);
         });
 
         let sink = Sink::try_new(&self.stream_handle).context("Failed to create audio sink")?;
@@ -275,6 +293,7 @@ impl InnerPlayer {
 
         self.sink = Some(sink);
         self.shared = Some(shared);
+        self.decoder_thread = Some(handle);
         self.position_base = position_secs;
         self.play_start = Some(Instant::now());
         self.state = PlayerState::Playing;

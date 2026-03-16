@@ -1,13 +1,14 @@
 {
-  "name": "@splayer/audio-engine",
+  "name": "audio-engine",
   "version": "0.1.0",
-  "main": "index.node",
+  "main": "audio-engine.node",
   "types": "index.d.ts",
-  "scripts": {
-    "build": "napi build --release",
-    "build:debug": "napi build"
+  "napi": {
+    "binaryName": "audio-engine",
+    "triples": {}
   },
-  "devDependencies": {
-    "@napi-rs/cli": "^2.18.0"
+  "scripts": {
+    "build": "napi build --release --no-const-enum",
+    "build:debug": "napi build --no-const-enum"
   }
 }

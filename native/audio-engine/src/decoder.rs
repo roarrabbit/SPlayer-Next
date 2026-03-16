@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 use anyhow::{Context, Result};
 use ffmpeg_next as ffmpeg;
@@ -117,8 +117,8 @@ struct DecoderData {
     fft_resampler: Option<ffmpeg::software::resampling::Context>,
 }
 
-/// 启动解码线程，返回音频元数据
-pub fn start_decode(source: &str, shared: Arc<Shared>) -> Result<AudioMetadata> {
+/// 启动解码线程，返回音频元数据和线程句柄
+pub fn start_decode(source: &str, shared: Arc<Shared>) -> Result<(AudioMetadata, JoinHandle<()>)> {
     let input_ctx = open_input(source)?;
 
     let stream = input_ctx
@@ -189,12 +189,12 @@ pub fn start_decode(source: &str, shared: Arc<Shared>) -> Result<AudioMetadata> 
         fft_resampler,
     };
 
-    thread::spawn(move || {
+    let handle = thread::spawn(move || {
         run_decoding_loop(&mut data, &shared);
         shared.mark_eof();
     });
 
-    Ok(metadata)
+    Ok((metadata, handle))
 }
 
 /// 从指定位置开始解码（seek 后重新解码）

@@ -11,21 +11,19 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "build:native": "tsx scripts/build-native.ts",
     "start": "electron-vite preview",
-    "dev": "electron-vite dev",
-    "build": "pnpm typecheck && electron-vite build",
+    "dev": "pnpm build:native -- --dev && tsx scripts/dev.ts",
+    "build": "pnpm build:native && pnpm typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm build && electron-builder --dir",
     "build:win": "pnpm build && electron-builder --win",
     "build:mac": "pnpm build && electron-builder --mac",
-    "build:linux": "pnpm build && electron-builder --linux",
-    "build:native": "cd native/audio-engine && napi build --release",
-    "build:native:debug": "cd native/audio-engine && napi build"
+    "build:linux": "pnpm build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@splayer/audio-engine": "workspace:*",
     "electron-updater": "^6.3.9",
     "pinia": "^3.0.2"
   },
@@ -45,7 +43,9 @@
     "vite": "^7.2.6",
     "vue": "^3.5.25",
     "vue-eslint-parser": "^10.2.0",
-    "vue-tsc": "^3.1.6"
+    "vue-tsc": "^3.1.6",
+    "tsx": "^4.21.0",
+    "@napi-rs/cli": "^3.5.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

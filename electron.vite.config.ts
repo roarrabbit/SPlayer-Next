@@ -9,7 +9,14 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, "electron/main/index.ts"),
         },
-        external: ["@splayer/audio-engine"],
+      },
+    },
+    resolve: {
+      alias: {
+        "@splayer/audio-engine": resolve(
+          __dirname,
+          "native/audio-engine",
+        ),
       },
     },
   },

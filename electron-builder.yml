@@ -11,7 +11,11 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
   - resources/**
-  - node_modules/@splayer/audio-engine/**
+extraResources:
+  - from: "native/audio-engine"
+    to: "native"
+    filter:
+      - "*.node"
 win:
   executableName: splayer-next
 nsis:
@@ -38,7 +42,7 @@ linux:
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
-npmRebuild: true
+npmRebuild: false
 publish:
   provider: generic
   url: https://example.com/auto-updates

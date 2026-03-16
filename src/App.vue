@@ -1,66 +1,73 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { usePlayerStore } from './stores/player'
+import { ref } from "vue";
+import { usePlayer } from "./composables/usePlayer";
 
-const player = usePlayerStore()
+const {
+  state,
+  position,
+  duration,
+  volume,
+  metadata,
+  error,
+  isPlaying,
+  progress,
+  load,
+  play,
+  pause,
+  stop,
+  seek,
+  setVolume,
+} = usePlayer();
 
 /** 网络地址输入 */
-const urlInput = ref('')
+const urlInput = ref("");
 /** 当前加载的文件名 */
-const fileName = ref('')
+const fileName = ref("");
 
 /** 从网络地址加载 */
 const loadFromUrl = async (): Promise<void> => {
-  const url = urlInput.value.trim()
-  if (!url) return
-  fileName.value = url.split('/').pop() ?? url
-  await player.load(url)
-}
+  const url = urlInput.value.trim();
+  if (!url) return;
+  fileName.value = url.split("/").pop() ?? url;
+  await load(url);
+};
 
 /** 打开本地文件对话框并加载 */
 const loadFromFile = async (): Promise<void> => {
-  const result = await window.api.player.openFile()
-  if (!result.success || !result.data) return
-  const filePath = result.data
-  fileName.value = filePath.split(/[/\\]/).pop() ?? filePath
-  await player.load(filePath)
-}
+  const result = await window.api.player.openFile();
+  if (!result.success || !result.data) return;
+  const filePath = result.data;
+  fileName.value = filePath.split(/[/\\]/).pop() ?? filePath;
+  await load(filePath);
+};
 
 /** 切换播放/暂停 */
 const togglePlay = (): void => {
-  if (player.isPlaying) {
-    player.pause()
+  if (isPlaying.value) {
+    pause();
   } else {
-    player.play()
+    play();
   }
-}
+};
 
 /** 格式化秒数为 mm:ss */
 const formatTime = (seconds: number): string => {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
 
 /** 进度条拖动 */
 const onSeek = (e: Event): void => {
-  const value = Number((e.target as HTMLInputElement).value)
-  player.seek(value)
-}
+  const value = Number((e.target as HTMLInputElement).value);
+  seek(value);
+};
 
 /** 音量条拖动 */
 const onVolumeChange = (e: Event): void => {
-  const value = Number((e.target as HTMLInputElement).value)
-  player.setVolume(value)
-}
-
-onMounted(() => {
-  player.init()
-})
-
-onBeforeUnmount(() => {
-  player.dispose()
-})
+  const value = Number((e.target as HTMLInputElement).value);
+  setVolume(value);
+};
 </script>
 
 <template>
@@ -84,38 +91,38 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- 错误信息 -->
-    <div v-if="player.error" class="error">{{ player.error }}</div>
+    <div v-if="error" class="error">{{ error }}</div>
 
     <!-- 当前播放信息 -->
-    <div v-if="player.metadata" class="metadata">
+    <div v-if="metadata" class="metadata">
       <div class="now-playing">{{ fileName }}</div>
-      <div v-if="player.metadata.title" class="meta-item">
-        {{ player.metadata.title }}
-        <span v-if="player.metadata.artist"> - {{ player.metadata.artist }}</span>
+      <div v-if="metadata.title" class="meta-item">
+        {{ metadata.title }}
+        <span v-if="metadata.artist"> - {{ metadata.artist }}</span>
       </div>
-      <div v-if="player.metadata.album" class="meta-item album">{{ player.metadata.album }}</div>
+      <div v-if="metadata.album" class="meta-item album">{{ metadata.album }}</div>
     </div>
 
     <!-- 播放控制 -->
     <div class="controls">
-      <button @click="player.stop()">Stop</button>
+      <button @click="stop()">Stop</button>
       <button class="play-btn" @click="togglePlay">
-        {{ player.isPlaying ? 'Pause' : 'Play' }}
+        {{ isPlaying ? "Pause" : "Play" }}
       </button>
     </div>
 
     <!-- 进度条 -->
     <div class="progress-bar">
-      <span class="time">{{ formatTime(player.position) }}</span>
+      <span class="time">{{ formatTime(position) }}</span>
       <input
         type="range"
         min="0"
-        :max="player.duration"
+        :max="duration"
         step="0.1"
-        :value="player.position"
+        :value="position"
         @input="onSeek"
       />
-      <span class="time">{{ formatTime(player.duration) }}</span>
+      <span class="time">{{ formatTime(duration) }}</span>
     </div>
 
     <!-- 音量控制 -->
@@ -126,15 +133,15 @@ onBeforeUnmount(() => {
         min="0"
         max="1"
         step="0.01"
-        :value="player.volume"
+        :value="volume"
         @input="onVolumeChange"
       />
-      <span class="value">{{ Math.round(player.volume * 100) }}%</span>
+      <span class="value">{{ Math.round(volume * 100) }}%</span>
     </div>
 
     <!-- 状态信息 -->
     <div class="status">
-      状态: {{ player.state }} | 进度: {{ Math.round(player.progress * 100) }}%
+      状态: {{ state }} | 进度: {{ Math.round(progress * 100) }}%
     </div>
   </div>
 </template>

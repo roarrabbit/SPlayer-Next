@@ -10,9 +10,12 @@ let positionTimer: ReturnType<typeof setInterval> | null = null;
 /** 获取原生音频引擎模块（懒加载） */
 const getEngine = (): AudioEngineModule => {
   if (!audioEngine) {
-    audioEngine = loadNativeModule<AudioEngineModule>("audio-engine.node", "audio-engine");
+    audioEngine = loadNativeModule<AudioEngineModule>(
+      "audio-engine.node",
+      "audio-engine",
+    );
     if (!audioEngine) {
-      throw new Error("[Player] audio-engine 原生模块加载失败");
+      throw new Error("[Player] Failed to load audio-engine.node");
     }
   }
   return audioEngine;
@@ -109,6 +112,7 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:seek", (_event, position: number) => {
     try {
       getPlayer().seek(position);
+      startPositionPush();
       return { success: true };
     } catch (error) {
       return { success: false, error: String(error) };

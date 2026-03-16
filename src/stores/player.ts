@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import type { AudioMetadata, PlayerStatus, PlayerEvent, IpcResponse } from "@/types/player";
 
 export const usePlayerStore = defineStore("player", () => {
-  // --- State ---
+  
   const state = ref<PlayerStatus["state"]>("idle");
   const position = ref(0);
   const duration = ref(0);
@@ -13,9 +13,11 @@ export const usePlayerStore = defineStore("player", () => {
   const error = ref<string | null>(null);
   const currentSource = ref<string | null>(null);
 
-  // --- Computed ---
+  /** 是否正在播放 */
   const isPlaying = computed(() => state.value === "playing");
+  /** 是否已暂停 */
   const isPaused = computed(() => state.value === "paused");
+  /** 播放进度（0 ~ 1） */
   const progress = computed(() => (duration.value > 0 ? position.value / duration.value : 0));
 
   /** 处理 IPC 返回结果，失败时设置 error */
@@ -27,8 +29,8 @@ export const usePlayerStore = defineStore("player", () => {
     return true;
   };
 
-  // --- Actions ---
-  async function load(source: string): Promise<void> {
+  /** 加载音频源 */
+  const load = async (source: string): Promise<void> => {
     error.value = null;
     const result = await window.api.player.load(source);
     if (result.success && result.data) {
@@ -40,46 +42,51 @@ export const usePlayerStore = defineStore("player", () => {
     } else {
       error.value = result.error ?? "Failed to load";
     }
-  }
+  };
 
-  async function play(): Promise<void> {
+  /** 恢复播放 */
+  const play = async (): Promise<void> => {
     const result = await window.api.player.play();
     if (handleResult(result)) {
       state.value = "playing";
     }
-  }
+  };
 
-  async function pause(): Promise<void> {
+  /** 暂停播放 */
+  const pause = async (): Promise<void> => {
     const result = await window.api.player.pause();
     if (handleResult(result)) {
       state.value = "paused";
     }
-  }
+  };
 
-  async function stop(): Promise<void> {
+  /** 停止播放 */
+  const stop = async (): Promise<void> => {
     const result = await window.api.player.stop();
     if (handleResult(result)) {
       state.value = "stopped";
       position.value = 0;
     }
-  }
+  };
 
-  async function seek(pos: number): Promise<void> {
+  /** 跳转到指定位置（秒） */
+  const seek = async (pos: number): Promise<void> => {
     const result = await window.api.player.seek(pos);
     if (handleResult(result)) {
       position.value = pos;
     }
-  }
+  };
 
-  async function setVolume(vol: number): Promise<void> {
+  /** 设置音量（0.0 ~ 1.0） */
+  const setVolume = async (vol: number): Promise<void> => {
     const result = await window.api.player.setVolume(vol);
     if (handleResult(result)) {
       volume.value = vol;
     }
-  }
+  };
 
   /** 处理主进程推送的播放事件 */
-  function handleEvent(event: PlayerEvent): void {
+  const handleEvent = (event: PlayerEvent): void => {
     switch (event.type) {
       case "status":
         state.value = event.data.state;
@@ -95,24 +102,27 @@ export const usePlayerStore = defineStore("player", () => {
         error.value = event.error;
         break;
     }
-  }
+  };
 
-  // --- 订阅主进程事件 ---
+  // 事件订阅
   let unsubscribe: (() => void) | null = null;
 
-  function init(): void {
+  /** 初始化事件监听 */
+  const init = (): void => {
     if (unsubscribe) return;
     unsubscribe = window.api.player.onEvent(handleEvent);
-  }
+  };
 
-  function dispose(): void {
+  /** 清理事件监听 */
+  const dispose = (): void => {
     if (unsubscribe) {
       unsubscribe();
       unsubscribe = null;
     }
-  }
+  };
 
   return {
+    // 状态
     state,
     position,
     duration,
@@ -121,9 +131,11 @@ export const usePlayerStore = defineStore("player", () => {
     fftData,
     error,
     currentSource,
+    // 计算属性
     isPlaying,
     isPaused,
     progress,
+    // 操作
     load,
     play,
     pause,
