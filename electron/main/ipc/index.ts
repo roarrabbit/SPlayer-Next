@@ -1,5 +1,6 @@
 import { registerSystemIpc } from "./system";
 import { registerPlayerIpc } from "./player";
+import { mediaService } from "../services/media";
 
 /**
  * 注册所有 IPC 事件处理
@@ -8,7 +9,5 @@ import { registerPlayerIpc } from "./player";
 export const registerIpcHandlers = (): void => {
   registerSystemIpc();
   registerPlayerIpc();
-  // 按需添加更多模块:
-  // registerPlaylistIpc()
-  // registerLyricIpc()
+  mediaService.init();
 };

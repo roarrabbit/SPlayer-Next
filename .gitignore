@@ -6,6 +6,6 @@ out
 *.log*
 
 # Rust build artifacts
-native/audio-engine/target/
-native/audio-engine/*.node
-native/audio-engine/index.d.ts
+native/*/target/
+native/*/*.node
+native/*/index.d.ts

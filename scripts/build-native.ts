@@ -35,6 +35,9 @@ const modules: NativeModule[] = [
   {
     name: "audio-engine",
   },
+  {
+    name: "media-ctrl",
+  },
 ];
 
 try {
