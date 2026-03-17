@@ -40,6 +40,20 @@ export interface AudioQuality {
   codec: string;
 }
 
+/** 在线匹配信息 */
+export interface OnlineMatch {
+  /** 在线歌曲 ID */
+  id: string;
+  /** 匹配到的歌手列表 */
+  artists?: Artist[];
+  /** 匹配到的专辑 */
+  album?: Album;
+  /** 在线封面缩略图 URL */
+  cover?: string;
+  /** 在线封面原图 URL */
+  coverOriginal?: string;
+}
+
 /**
  * 歌曲
  * 轻量结构，放在播放列表中
@@ -59,10 +73,12 @@ export interface Track {
   album?: Album;
   /** 时长（毫秒） */
   duration: number;
-  /** 封面缩略图 URL（cover:// 或 http，用于列表/迷你播放器） */
+  /** 封面缩略图 URL */
   cover?: string;
   /** 封面原图 URL */
   coverOriginal?: string;
+  /** 在线匹配结果 */
+  matched?: OnlineMatch;
 }
 
 /**
