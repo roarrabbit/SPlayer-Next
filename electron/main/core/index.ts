@@ -1,7 +1,11 @@
 import { app, BrowserWindow, net, protocol } from "electron";
+import path from "node:path";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { createMainWindow } from "../window";
 import { registerIpcHandlers } from "../ipc";
+
+/** 封面缓存目录（供 cover:// 协议解析使用） */
+export const coverCacheDir = path.join(app.getPath("userData"), "cover-cache");
 
 /**
  * 初始化应用
@@ -10,7 +14,7 @@ export const initApp = (): void => {
   // 注册自定义协议（必须在 app ready 之前调用 registerSchemesAsPrivileged）
   protocol.registerSchemesAsPrivileged([
     {
-      scheme: "splayer-file",
+      scheme: "cover",
       privileges: {
         secure: true,
         supportFetchAPI: true,
@@ -23,15 +27,11 @@ export const initApp = (): void => {
   app.whenReady().then(() => {
     electronApp.setAppUserModelId("com.electron");
 
-    // 注册 splayer-file:// 协议，用于 renderer 安全访问本地文件（如封面缓存）
-    protocol.handle("splayer-file", (request) => {
-      const url = new URL(request.url);
-      let filePath = decodeURIComponent(url.pathname);
-      // Windows 路径：pathname 以 / 开头如 /C:/path，需去除前导 /
-      if (process.platform === "win32" && filePath.startsWith("/")) {
-        filePath = filePath.slice(1);
-      }
-      return net.fetch(`file://${filePath}`);
+    // 注册 cover:// 协议，前端通过 cover://{filename} 访问封面缩略图
+    protocol.handle("cover", (request) => {
+      const filename = decodeURIComponent(request.url.slice("cover://".length));
+      const filePath = path.join(coverCacheDir, filename);
+      return net.fetch(`file://${filePath.replace(/\\/g, "/")}`);
     });
 
     app.on("browser-window-created", (_, window) => {

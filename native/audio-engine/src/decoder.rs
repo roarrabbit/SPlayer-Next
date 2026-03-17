@@ -101,8 +101,8 @@ pub struct AudioMetadata {
     pub embedded_lyric: Option<String>,
     /// 同目录所有歌词文件
     pub external_lyrics: Vec<ExternalLyric>,
-    /// 封面缓存文件路径
-    pub cover_path: Option<String>,
+    /// 封面缩略图缓存路径（用于前端日常显示）
+    pub cover: Option<String>,
 }
 
 /// 播放输出目标格式
@@ -158,8 +158,8 @@ pub fn start_decode(
     let album = metadata_dict.get("album").map(|s| s.to_string());
 
     // 在同一个 input_ctx 上提取封面和内嵌歌词（不需要重新打开文件）
-    let cover_path = cover_cache_dir
-        .and_then(|dir| metadata::extract_cover(&input_ctx, source, dir));
+    let cover = cover_cache_dir
+        .and_then(|dir| metadata::extract_cover_thumbnail(&input_ctx, source, dir));
     let embedded_lyric = metadata::extract_embedded_lyric(&input_ctx);
     let external_lyrics = metadata::find_all_external_lyrics(source);
 
@@ -201,7 +201,7 @@ pub fn start_decode(
         channels: TARGET_CHANNELS,
         embedded_lyric,
         external_lyrics,
-        cover_path,
+        cover,
     };
 
     let mut data = DecoderData {

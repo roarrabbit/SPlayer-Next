@@ -33,8 +33,8 @@ pub struct JsMusicMetadata {
     pub embedded_lyric: Option<String>,
     /// 同目录下找到的所有歌词文件
     pub external_lyrics: Vec<JsExternalLyric>,
-    /// 封面图片缓存文件路径（不走 IPC 传输字节，前端直接加载文件）
-    pub cover_path: Option<String>,
+    /// 封面缩略图路径（300x300，用于前端日常显示）
+    pub cover: Option<String>,
 }
 
 /// 播放器状态快照，返回给 JS 侧
@@ -99,7 +99,7 @@ impl AudioPlayer {
                     content: l.content,
                 })
                 .collect(),
-            cover_path: meta.cover_path,
+            cover: meta.cover,
         })
     }
 
@@ -196,5 +196,14 @@ impl AudioPlayer {
             .into_iter()
             .map(|v| v as f64)
             .collect()
+    }
+
+    /// 按需从音频文件提取原始高清封面（用于 SMTC / 全屏播放器）。
+    /// 不缓存到磁盘，返回原始图片字节。
+    #[napi]
+    pub fn get_cover_raw(&self) -> Option<napi::bindgen_prelude::Buffer> {
+        let source = self.inner.lock().current_source()?.to_string();
+        let data = metadata::extract_cover_raw(&source)?;
+        Some(data.into())
     }
 }

@@ -13,6 +13,7 @@ ffmpeg-next = { version = "8", default-features = false, features = ["codec", "f
 rodio = { version = "0.20", default-features = false }
 parking_lot = "0.12"
 anyhow = "1"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "bmp", "webp"] }
 rustfft = "6"
 
 [build-dependencies]

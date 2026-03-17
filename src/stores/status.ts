@@ -1,22 +1,19 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import type { MusicMetadata, PlayerStatus, PlayerEvent, IpcResponse } from "@/types/player";
+import { ref, computed, shallowRef } from "vue";
+import type { PlayerStatus, PlayerEvent, IpcResponse } from "@/types/player";
+import { useMediaStore, toMediaInfo } from "./media";
 
-export const usePlayerStore = defineStore("player", () => {
+export const useStatusStore = defineStore("status", () => {
   const state = ref<PlayerStatus["state"]>("idle");
   const position = ref(0);
   const duration = ref(0);
   const volume = ref(1);
-  const metadata = ref<MusicMetadata | null>(null);
-  const fftData = ref<number[]>([]);
+  const fftData = shallowRef<number[]>([]);
   const error = ref<string | null>(null);
   const currentSource = ref<string | null>(null);
 
-  /** 是否正在播放 */
   const isPlaying = computed(() => state.value === "playing");
-  /** 是否已暂停 */
   const isPaused = computed(() => state.value === "paused");
-  /** 播放进度（0 ~ 1） */
   const progress = computed(() => (duration.value > 0 ? position.value / duration.value : 0));
 
   /** 处理 IPC 返回结果，失败时设置 error */
@@ -28,12 +25,13 @@ export const usePlayerStore = defineStore("player", () => {
     return true;
   };
 
-  /** 加载音频源（一次调用获取全部元信息：封面 + 歌词 + 基本信息） */
+  /** 加载音频源，写入 media store（静态信息）+ status store（播放状态） */
   const load = async (source: string): Promise<void> => {
     error.value = null;
     const result = await window.api.player.load(source);
     if (result.success && result.data) {
-      metadata.value = result.data;
+      const media = useMediaStore();
+      media.setMedia(toMediaInfo(result.data));
       duration.value = result.data.duration;
       position.value = 0;
       state.value = "playing";
@@ -43,7 +41,6 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  /** 恢复播放 */
   const play = async (): Promise<void> => {
     const result = await window.api.player.play();
     if (handleResult(result)) {
@@ -51,7 +48,6 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  /** 暂停播放 */
   const pause = async (): Promise<void> => {
     const result = await window.api.player.pause();
     if (handleResult(result)) {
@@ -59,7 +55,6 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  /** 停止播放 */
   const stop = async (): Promise<void> => {
     const result = await window.api.player.stop();
     if (handleResult(result)) {
@@ -68,7 +63,6 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  /** 跳转到指定位置（秒） */
   const seek = async (pos: number): Promise<void> => {
     const result = await window.api.player.seek(pos);
     if (handleResult(result)) {
@@ -76,7 +70,6 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  /** 设置音量（0.0 ~ 1.0） */
   const setVolume = async (vol: number): Promise<void> => {
     const result = await window.api.player.setVolume(vol);
     if (handleResult(result)) {
@@ -103,10 +96,9 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
-  // 事件订阅
   let unsubscribe: (() => void) | null = null;
 
-  /** 初始化事件监听 */
+  /** 初始化事件监听（main.ts 中调用一次） */
   const init = (): void => {
     if (unsubscribe) return;
     unsubscribe = window.api.player.onEvent(handleEvent);
@@ -126,7 +118,6 @@ export const usePlayerStore = defineStore("player", () => {
     position,
     duration,
     volume,
-    metadata,
     fftData,
     error,
     currentSource,

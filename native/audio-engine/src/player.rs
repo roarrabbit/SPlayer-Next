@@ -364,6 +364,11 @@ impl InnerPlayer {
         self.fft.analyze()
     }
 
+    /// 获取当前音频源路径
+    pub fn current_source(&self) -> Option<&str> {
+        self.current_source.as_deref()
+    }
+
     /// 检查播放是否已结束
     pub fn is_finished(&self) -> bool {
         match (&self.shared, &self.sink) {

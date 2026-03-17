@@ -27,8 +27,8 @@ export interface MusicMetadata {
   embeddedLyric?: string;
   /** 同目录下找到的所有外部歌词文件 */
   externalLyrics: ExternalLyric[];
-  /** 封面图片 URL（splayer-file:// 协议，可直接用作 img src） */
-  coverPath?: string;
+  /** 封面缩略图 URL（300x300，用于日常显示） */
+  cover?: string;
 }
 
 /** 播放器状态快照 */

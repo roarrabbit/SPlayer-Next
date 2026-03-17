@@ -1,41 +1,31 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { usePlayer } from "./composables/usePlayer";
+import { storeToRefs } from "pinia";
+import { useStatusStore } from "./stores/status";
+import { useMediaStore } from "./stores/media";
 
-const {
-  state,
-  position,
-  duration,
-  volume,
-  metadata,
-  error,
-  isPlaying,
-  progress,
-  load,
-  play,
-  pause,
-  stop,
-  seek,
-  setVolume,
-} = usePlayer();
+const status = useStatusStore();
+const media = useMediaStore();
+
+const { state, position, duration, volume, error, isPlaying, progress } = storeToRefs(status);
 
 /** 网络地址输入 */
 const urlInput = ref("");
 /** 当前加载的文件名 */
 const fileName = ref("");
 
-/** 封面 URL（来自 splayer-file:// 协议） */
-const coverUrl = computed(() => metadata.value?.coverPath ?? null);
+/** 封面缩略图 URL（300x300，日常显示用） */
+const coverUrl = computed(() => media.info?.cover ?? null);
 
 /** 当前使用的歌词（优先外部歌词第一项，其次内嵌歌词） */
 const currentLyric = computed(() => {
-  const meta = metadata.value;
-  if (!meta) return null;
-  if (meta.externalLyrics.length > 0) {
-    return { format: meta.externalLyrics[0].format, content: meta.externalLyrics[0].content };
+  const info = media.info;
+  if (!info) return null;
+  if (info.externalLyrics.length > 0) {
+    return { format: info.externalLyrics[0].format, content: info.externalLyrics[0].content };
   }
-  if (meta.embeddedLyric) {
-    return { format: "embedded", content: meta.embeddedLyric };
+  if (info.embeddedLyric) {
+    return { format: "embedded", content: info.embeddedLyric };
   }
   return null;
 });
@@ -45,7 +35,7 @@ const loadFromUrl = async (): Promise<void> => {
   const url = urlInput.value.trim();
   if (!url) return;
   fileName.value = url.split("/").pop() ?? url;
-  await load(url);
+  await status.load(url);
 };
 
 /** 打开本地文件对话框并加载 */
@@ -54,15 +44,15 @@ const loadFromFile = async (): Promise<void> => {
   if (!result.success || !result.data) return;
   const filePath = result.data;
   fileName.value = filePath.split(/[/\\]/).pop() ?? filePath;
-  await load(filePath);
+  await status.load(filePath);
 };
 
 /** 切换播放/暂停 */
 const togglePlay = (): void => {
   if (isPlaying.value) {
-    pause();
+    status.pause();
   } else {
-    play();
+    status.play();
   }
 };
 
@@ -76,13 +66,13 @@ const formatTime = (seconds: number): string => {
 /** 进度条拖动 */
 const onSeek = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  seek(value);
+  status.seek(value);
 };
 
 /** 音量条拖动 */
 const onVolumeChange = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  setVolume(value);
+  status.setVolume(value);
 };
 </script>
 
@@ -110,23 +100,23 @@ const onVolumeChange = (e: Event): void => {
     <div v-if="error" class="error">{{ error }}</div>
 
     <!-- 封面 + 元信息 -->
-    <div v-if="metadata" class="song-info">
+    <div v-if="media.info" class="song-info">
       <div v-if="coverUrl" class="cover-wrap">
         <img :src="coverUrl" alt="cover" class="cover-img" />
       </div>
       <div class="metadata">
         <div class="now-playing">{{ fileName }}</div>
-        <div v-if="metadata.title" class="meta-item">
-          {{ metadata.title }}
-          <span v-if="metadata.artist"> - {{ metadata.artist }}</span>
+        <div v-if="media.info.title" class="meta-item">
+          {{ media.info.title }}
+          <span v-if="media.info.artist"> - {{ media.info.artist }}</span>
         </div>
-        <div v-if="metadata.album" class="meta-item album">{{ metadata.album }}</div>
+        <div v-if="media.info.album" class="meta-item album">{{ media.info.album }}</div>
       </div>
     </div>
 
     <!-- 播放控制 -->
     <div class="controls">
-      <button @click="stop()">Stop</button>
+      <button @click="status.stop()">Stop</button>
       <button class="play-btn" @click="togglePlay">
         {{ isPlaying ? "Pause" : "Play" }}
       </button>
@@ -166,8 +156,8 @@ const onVolumeChange = (e: Event): void => {
         歌词
         <span class="lyric-format">[{{ currentLyric.format }}]</span>
         <!-- 显示所有可用的歌词源 -->
-        <span v-if="metadata && metadata.externalLyrics.length > 1" class="lyric-sources">
-          ({{ metadata.externalLyrics.map((l) => l.format).join(", ") }})
+        <span v-if="media.info && media.info.externalLyrics.length > 1" class="lyric-sources">
+          ({{ media.info.externalLyrics.map((l) => l.format).join(", ") }})
         </span>
       </div>
       <pre class="lyric-content">{{ currentLyric.content }}</pre>
