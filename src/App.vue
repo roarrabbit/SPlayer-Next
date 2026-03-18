@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { useStatusStore } from "./stores/status";
 import { useMediaStore } from "./stores/media";
+import { useThemeStore } from "./stores/theme";
+import { DEFAULT_PRIMARY } from "./utils/color";
 
 const status = useStatusStore();
 const media = useMediaStore();
+const theme = useThemeStore();
 
 const { state, position, duration, volume, error, isPlaying, isLoading, progress } =
   storeToRefs(status);
@@ -55,6 +58,25 @@ const togglePlay = (): void => {
   }
 };
 
+/** 切换明暗模式 */
+const toggleTheme = (): void => {
+  theme.setMode(theme.isDark ? "light" : "dark");
+};
+
+/** v-model 绑定的颜色字符串，ColorSlider 自动同步 HEX */
+const colorHex = ref(theme.customColor);
+
+/** 监听颜色变化，同步到主题 */
+watch(colorHex, (hex) => {
+  theme.setCustomColor(hex);
+});
+
+/** 恢复默认主题 */
+const resetTheme = (): void => {
+  theme.setSource("default");
+  colorHex.value = DEFAULT_PRIMARY;
+};
+
 /** 格式化毫秒为 mm:ss */
 const formatTime = (ms: number): string => {
   const totalSecs = Math.floor(ms / 1000);
@@ -77,255 +99,156 @@ const onVolumeChange = (e: Event): void => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-4  mx-auto">
-    <h2>SPlayer Audio Test</h2>
+  <div class="min-h-screen bg-surface text-on-surface flex flex-col items-center gap-4 p-8 max-w-xl mx-auto">
+    <div class="flex items-center gap-3 w-full">
+      <h2 class="text-lg font-semibold flex-1">SPlayer Audio Test</h2>
+      <!-- 恢复默认 -->
+      <button
+        v-if="theme.source !== 'default'"
+        class="px-2 py-1.5 rounded-lg text-on-surface-variant text-xs border border-outline-variant"
+        @click="resetTheme"
+      >
+        Reset
+      </button>
+      <!-- 主色预览 -->
+      <span
+        class="block w-6 h-6 rounded-full border-2 border-outline-variant shrink-0"
+        :style="{ backgroundColor: theme.activeColor }"
+      />
+      <!-- 明暗切换 -->
+      <button
+        class="px-3 py-1.5 rounded-lg bg-surface-alt text-on-surface-variant text-sm border border-outline-variant"
+        @click="toggleTheme"
+      >
+        {{ theme.isDark ? "Light" : "Dark" }}
+      </button>
+    </div>
 
     <!-- 网络地址输入 -->
-    <div class="input-group">
+    <div class="flex gap-2 w-full">
       <input
         v-model="urlInput"
         type="text"
         placeholder="输入网络音频地址..."
+        class="flex-1 px-3 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm outline-none focus:border-primary"
         @keydown.enter="loadFromUrl"
       />
-      <button @click="loadFromUrl">加载网络音频</button>
+      <button
+        class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm whitespace-nowrap hover:bg-secondary-container"
+        @click="loadFromUrl"
+      >
+        加载网络音频
+      </button>
     </div>
 
     <!-- 本地文件选择 -->
-    <div class="input-group">
-      <button @click="loadFromFile">选择本地文件</button>
+    <div class="flex gap-2 w-full">
+      <button
+        class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm hover:bg-secondary-container"
+        @click="loadFromFile"
+      >
+        选择本地文件
+      </button>
     </div>
 
     <!-- 错误信息 -->
-    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="error" class="text-error text-sm text-center">{{ error }}</div>
 
     <!-- 封面 + 元信息 -->
-    <div v-if="media.track" class="song-info">
-      <div v-if="coverUrl" class="cover-wrap">
-        <img :src="coverUrl" alt="cover" class="cover-img" />
+    <div v-if="media.track" class="flex items-center gap-4 w-full">
+      <div v-if="coverUrl" class="shrink-0">
+        <img :src="coverUrl" alt="cover" class="w-20 h-20 rounded-lg object-cover bg-surface-alt" />
       </div>
-      <div class="metadata">
-        <div class="now-playing">{{ media.track.title }}</div>
-        <div v-if="artistName" class="meta-item">{{ artistName }}</div>
-        <div v-if="media.track.album" class="meta-item album">{{ media.track.album.name }}</div>
+      <div class="flex-1 min-w-0 text-sm">
+        <div class="font-semibold text-on-surface truncate">{{ media.track.title }}</div>
+        <div v-if="artistName" class="text-on-surface-variant truncate">{{ artistName }}</div>
+        <div v-if="media.track.album" class="text-on-surface-variant truncate italic">
+          {{ media.track.album.name }}
+        </div>
       </div>
     </div>
 
     <!-- 播放控制 -->
-    <div class="controls">
-      <button @click="status.stop()">Stop</button>
-      <button class="play-btn" :disabled="isLoading" @click="togglePlay">
+    <div class="flex gap-3">
+      <button
+        class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm hover:bg-secondary-container"
+        @click="status.stop()"
+      >
+        Stop
+      </button>
+      <button
+        class="px-6 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold min-w-20 hover:opacity-90 disabled:opacity-50"
+        :disabled="isLoading"
+        @click="togglePlay"
+      >
         {{ isLoading ? "Loading..." : isPlaying ? "Pause" : "Play" }}
       </button>
     </div>
 
     <!-- 进度条 -->
-    <div class="progress-bar">
-      <span class="time">{{ formatTime(position) }}</span>
-      <input type="range" min="0" :max="duration" step="100" :value="position" @input="onSeek" />
-      <span class="time">{{ formatTime(duration) }}</span>
+    <div class="flex items-center gap-2 w-full">
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{ formatTime(position) }}</span>
+      <input
+        type="range"
+        min="0"
+        :max="duration"
+        step="100"
+        :value="position"
+        class="flex-1 accent-primary"
+        @input="onSeek"
+      />
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{ formatTime(duration) }}</span>
     </div>
 
     <!-- 音量控制 -->
-    <div class="volume-bar">
-      <span class="label">VOL</span>
-      <input type="range" min="0" max="1" step="0.01" :value="volume" @input="onVolumeChange" />
-      <span class="value">{{ Math.round(volume * 100) }}%</span>
+    <div class="flex items-center gap-2 w-full">
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">VOL</span>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        :value="volume"
+        class="flex-1 accent-primary"
+        @input="onVolumeChange"
+      />
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">
+        {{ Math.round(volume * 100) }}%
+      </span>
     </div>
 
     <!-- 歌词区域 -->
-    <div v-if="currentLyric" class="lyric-section">
-      <div class="lyric-header">
+    <div v-if="currentLyric" class="w-full mt-2">
+      <div class="text-sm text-on-surface-variant mb-2">
         歌词
-        <span class="lyric-format">[{{ currentLyric.format }}]</span>
-        <!-- 显示所有可用的歌词源 -->
-        <span v-if="media.detail && media.detail.externalLyrics.length > 1" class="lyric-sources">
+        <span class="text-primary text-xs ml-1">[{{ currentLyric.format }}]</span>
+        <span
+          v-if="media.detail && media.detail.externalLyrics.length > 1"
+          class="text-outline text-xs ml-1"
+        >
           ({{ media.detail.externalLyrics.map((l) => l.format).join(", ") }})
         </span>
       </div>
-      <pre class="lyric-content">{{ currentLyric.content }}</pre>
+      <pre class="max-h-50 overflow-y-auto p-3 bg-surface-alt rounded-lg text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap break-words m-0">{{ currentLyric.content }}</pre>
     </div>
 
     <!-- 状态信息 -->
-    <div class="status">状态: {{ state }} | 进度: {{ Math.round(progress * 100) }}%</div>
+    <div class="text-xs text-outline">
+      状态: {{ state }} | 进度: {{ Math.round(progress * 100) }}%
+    </div>
+
+    <!-- 颜色选择器 -->
+    <div class="w-full mt-4 flex items-center gap-3">
+      <span class="text-xs text-on-surface-variant shrink-0">主题色</span>
+      <ColorSliderRoot
+        v-model="colorHex"
+        channel="hue"
+        class="relative flex items-center flex-1 h-5 select-none touch-none"
+      >
+        <ColorSliderTrack class="relative flex-1 rounded-full h-3" />
+        <ColorSliderThumb class="block w-5 h-5 rounded-full bg-white border-2 border-outline-variant shadow cursor-pointer" />
+      </ColorSliderRoot>
+      <span class="text-xs text-on-surface-variant font-mono shrink-0">{{ theme.activeColor }}</span>
+    </div>
   </div>
 </template>
-
-<style scoped>
-
-h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #fff;
-}
-
-.input-group {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.input-group input {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #2a2a2e;
-  color: #e0e0e0;
-  font-size: 13px;
-  outline: none;
-}
-
-.input-group input:focus {
-  border-color: #5b7ee5;
-}
-
-button {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #555;
-  background: #3a3a3e;
-  color: #e0e0e0;
-  cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-
-button:hover {
-  background: #4a4a4e;
-}
-
-.play-btn {
-  min-width: 80px;
-  background: #5b7ee5;
-  border-color: #5b7ee5;
-  color: #fff;
-  font-weight: 600;
-}
-
-.play-btn:hover {
-  background: #4a6ed4;
-}
-
-.error {
-  color: #ef4444;
-  font-size: 13px;
-  text-align: center;
-}
-
-.song-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-}
-
-.cover-wrap {
-  flex-shrink: 0;
-}
-
-.cover-img {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  object-fit: cover;
-  background: #2a2a2e;
-}
-
-.metadata {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-}
-
-.now-playing {
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.meta-item {
-  color: #aaa;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.album {
-  font-style: italic;
-}
-
-.controls {
-  display: flex;
-  gap: 12px;
-}
-
-.progress-bar,
-.volume-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.progress-bar input,
-.volume-bar input {
-  flex: 1;
-  accent-color: #5b7ee5;
-}
-
-.time,
-.label,
-.value {
-  font-size: 12px;
-  color: #888;
-  min-width: 36px;
-  text-align: center;
-}
-
-.lyric-section {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.lyric-header {
-  font-size: 13px;
-  color: #aaa;
-  margin-bottom: 8px;
-}
-
-.lyric-format {
-  color: #5b7ee5;
-  font-size: 12px;
-  margin-left: 4px;
-}
-
-.lyric-sources {
-  color: #666;
-  font-size: 11px;
-  margin-left: 4px;
-}
-
-.lyric-content {
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 12px;
-  background: #1e1e22;
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1.8;
-  color: #ccc;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-}
-
-.status {
-  font-size: 12px;
-  color: #666;
-}
-</style>

@@ -11,6 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ColorSliderRoot: typeof import('reka-ui')['ColorSliderRoot']
+    ColorSliderThumb: typeof import('reka-ui')['ColorSliderThumb']
+    ColorSliderTrack: typeof import('reka-ui')['ColorSliderTrack']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Versions: typeof import('./src/components/Versions.vue')['default']
