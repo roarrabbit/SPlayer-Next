@@ -2,7 +2,7 @@
 export type ThemeMode = "light" | "dark" | "system";
 
 /** 主题颜色来源 */
-export type ThemeSource = "default" | "custom" | "cover";
+export type ThemeSource = "default" | "custom" | "cover" | "solid";
 
 /** 主题色板（值为 "R G B" 格式，用于 CSS rgb() / <alpha-value>） */
 export interface ThemePalette {

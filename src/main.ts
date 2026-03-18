@@ -14,10 +14,9 @@ pinia.use(piniaPersistedstate);
 const app = createApp(App);
 app.use(pinia);
 
-// 初始化主题（必须在挂载前，避免闪烁）
+// 初始化主题
 useThemeStore().init();
-
-// 初始化播放器事件监听
+// 初始化播放器
 useStatusStore().init();
 
 app.mount("#app");

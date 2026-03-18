@@ -58,9 +58,12 @@ const togglePlay = (): void => {
   }
 };
 
-/** 切换明暗模式 */
+/** 主题模式显示 */
+const modeLabel: Record<string, string> = { light: "浅色", dark: "深色", system: "系统" };
+
+/** 循环切换主题模式 */
 const toggleTheme = (): void => {
-  theme.setMode(theme.isDark ? "light" : "dark");
+  theme.cycleMode();
 };
 
 /** v-model 绑定的颜色字符串，ColorSlider 自动同步 HEX */
@@ -102,9 +105,17 @@ const onVolumeChange = (e: Event): void => {
   <div class="min-h-screen bg-surface text-on-surface flex flex-col items-center gap-4 p-8 max-w-xl mx-auto">
     <div class="flex items-center gap-3 w-full">
       <h2 class="text-lg font-semibold flex-1">SPlayer Audio Test</h2>
+      <!-- 纯色模式 -->
+      <button
+        class="px-2 py-1.5 rounded-lg text-xs border border-outline-variant"
+        :class="theme.source === 'solid' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'"
+        @click="theme.setSource(theme.source === 'solid' ? 'default' : 'solid')"
+      >
+        纯色
+      </button>
       <!-- 恢复默认 -->
       <button
-        v-if="theme.source !== 'default'"
+        v-if="theme.source !== 'default' && theme.source !== 'solid'"
         class="px-2 py-1.5 rounded-lg text-on-surface-variant text-xs border border-outline-variant"
         @click="resetTheme"
       >
@@ -120,7 +131,7 @@ const onVolumeChange = (e: Event): void => {
         class="px-3 py-1.5 rounded-lg bg-surface-alt text-on-surface-variant text-sm border border-outline-variant"
         @click="toggleTheme"
       >
-        {{ theme.isDark ? "Light" : "Dark" }}
+        {{ modeLabel[theme.mode] }}
       </button>
     </div>
 

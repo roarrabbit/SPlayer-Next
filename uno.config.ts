@@ -19,7 +19,7 @@ export default defineConfig({
       error: "rgb(var(--s-error) / <alpha-value>)",
     },
   },
-  // 主题切换时临时添加 .theme-transition class 实现平滑过渡
+  // 主题切换过渡动画
   preflights: [
     {
       getCSS: () => `

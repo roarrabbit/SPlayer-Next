@@ -40,6 +40,40 @@ export const generatePalette = (hex: string, isDark: boolean): ThemePalette => {
   };
 };
 
+/** 纯色色板 — 浅色 */
+export const SOLID_PALETTE_LIGHT: ThemePalette = {
+  primary: "38 38 38",
+  primaryContainer: "230 230 230",
+  onPrimary: "255 255 255",
+  onPrimaryContainer: "30 30 30",
+  secondary: "82 82 82",
+  secondaryContainer: "240 240 240",
+  surface: "255 255 255",
+  surfaceAlt: "245 245 245",
+  onSurface: "23 23 23",
+  onSurfaceVariant: "100 100 100",
+  outline: "200 200 200",
+  outlineVariant: "230 230 230",
+  error: "200 50 50",
+};
+
+/** 纯色色板 — 深色 */
+export const SOLID_PALETTE_DARK: ThemePalette = {
+  primary: "230 230 230",
+  primaryContainer: "50 50 50",
+  onPrimary: "20 20 20",
+  onPrimaryContainer: "230 230 230",
+  secondary: "160 160 160",
+  secondaryContainer: "45 45 45",
+  surface: "18 18 18",
+  surfaceAlt: "28 28 28",
+  onSurface: "230 230 230",
+  onSurfaceVariant: "160 160 160",
+  outline: "60 60 60",
+  outlineVariant: "40 40 40",
+  error: "240 80 80",
+};
+
 /** 将色板写入 CSS 自定义属性 */
 export const applyPalette = (palette: ThemePalette): void => {
   const root = document.documentElement;
