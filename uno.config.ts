@@ -1,7 +1,7 @@
-import { defineConfig, presetUno, presetIcons } from "unocss";
+import { defineConfig, presetWind3, presetIcons } from "unocss";
 
 export default defineConfig({
-  presets: [presetUno(), presetIcons()],
+  presets: [presetWind3(), presetIcons()],
   theme: {
     colors: {
       primary: "rgb(var(--s-primary) / <alpha-value>)",

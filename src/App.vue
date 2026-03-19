@@ -21,11 +21,14 @@ const coverImg = ref<HTMLImageElement>();
 const activeLyricLine = ref<HTMLElement>();
 
 /** 歌词行变化时自动滚动到可视区域 */
-watch(() => media.lyricIndex, () => {
-  nextTick(() => {
-    activeLyricLine.value?.scrollIntoView({ block: "center", behavior: "smooth" });
-  });
-});
+watch(
+  () => media.lyricIndex,
+  () => {
+    nextTick(() => {
+      activeLyricLine.value?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  },
+);
 
 /** 封面缩略图 URL */
 const coverUrl = computed(() => media.track?.cover ?? null);
@@ -97,7 +100,9 @@ const onVolumeChange = (e: Event): void => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-surface text-on-surface flex flex-col items-center gap-4 p-8 max-w-xl mx-auto">
+  <div
+    class="min-h-screen bg-surface text-on-surface flex flex-col items-center gap-4 p-8 max-w-xl mx-auto"
+  >
     <div class="flex items-center gap-3 w-full">
       <h2 class="text-lg font-semibold flex-1">SPlayer Audio Test</h2>
       <!-- 主题类型 -->
@@ -190,10 +195,28 @@ const onVolumeChange = (e: Event): void => {
         {{ isLoading ? "Loading..." : isPlaying ? "Pause" : "Play" }}
       </button>
     </div>
+    <!-- 默认按钮 -->
+    <SButton>茫然无措</SButton>
+    <SButton disabled>取消</SButton>
+    <SButton dashed>虚线</SButton>
+    <!-- 实底彩色 -->
+    <SButton type="primary">确认</SButton>
+    <SButton type="success">保存</SButton>
+    <SButton type="error" secondary round>删除</SButton>
+    <!-- 次要/三级 -->
+    <SButton type="primary" secondary>次要</SButton>
+    <SButton type="info" secondary>次要</SButton>
+    <SButton type="info" tertiary>三级</SButton>
 
+    <!-- 幽灵 -->
+    <SButton type="warning" ghost>幽灵</SButton>
+    <SButton type="error" ghost dashed>幽灵虚线</SButton>
+    <SButton type="error" text>纯文字</SButton>
     <!-- 进度条 -->
     <div class="flex items-center gap-2 w-full">
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{ formatTime(position) }}</span>
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{
+        formatTime(position)
+      }}</span>
       <input
         type="range"
         min="0"
@@ -203,7 +226,9 @@ const onVolumeChange = (e: Event): void => {
         class="flex-1 accent-primary"
         @input="onSeek"
       />
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{ formatTime(duration) }}</span>
+      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{
+        formatTime(duration)
+      }}</span>
     </div>
 
     <!-- 音量控制 -->
@@ -230,18 +255,33 @@ const onVolumeChange = (e: Event): void => {
         <span class="text-primary text-xs ml-1">[{{ media.lyricFormat }}]</span>
         <span class="text-outline text-xs ml-1">{{ media.parsedLyric.length }} 行</span>
       </div>
-      <div ref="lyricScroller" class="max-h-60 overflow-y-auto p-3 bg-surface-alt rounded-lg space-y-1 scroll-smooth">
+      <div
+        ref="lyricScroller"
+        class="max-h-60 overflow-y-auto p-3 bg-surface-alt rounded-lg space-y-1 scroll-smooth"
+      >
         <div
           v-for="(line, i) in media.parsedLyric"
           :key="i"
-          :ref="(el) => { if (i === media.lyricIndex) activeLyricLine = el as HTMLElement }"
+          :ref="
+            (el) => {
+              if (i === media.lyricIndex) activeLyricLine = el as HTMLElement;
+            }
+          "
           class="text-sm leading-relaxed py-0.5 transition-colors duration-200"
-          :class="i === media.lyricIndex ? 'text-primary font-semibold' : 'text-on-surface-variant opacity-60'"
+          :class="
+            i === media.lyricIndex
+              ? 'text-primary font-semibold'
+              : 'text-on-surface-variant opacity-60'
+          "
         >
           <span class="text-outline text-xs font-mono mr-2">{{ formatTime(line.startTime) }}</span>
           <span>{{ line.words.map((w) => w.word).join("") }}</span>
-          <span v-if="line.translatedLyric" class="text-xs ml-2 opacity-80">{{ line.translatedLyric }}</span>
-          <span v-if="line.romanLyric" class="text-xs ml-2 italic opacity-60">{{ line.romanLyric }}</span>
+          <span v-if="line.translatedLyric" class="text-xs ml-2 opacity-80">{{
+            line.translatedLyric
+          }}</span>
+          <span v-if="line.romanLyric" class="text-xs ml-2 italic opacity-60">{{
+            line.romanLyric
+          }}</span>
           <span v-if="line.isBG" class="text-xs ml-1">[BG]</span>
           <span v-if="line.isDuet" class="text-secondary text-xs ml-1">[Duet]</span>
         </div>
@@ -262,9 +302,13 @@ const onVolumeChange = (e: Event): void => {
         class="relative flex items-center flex-1 h-5 select-none touch-none"
       >
         <ColorSliderTrack class="relative flex-1 rounded-full h-3" />
-        <ColorSliderThumb class="block w-5 h-5 rounded-full bg-white border-2 border-outline-variant shadow cursor-pointer" />
+        <ColorSliderThumb
+          class="block w-5 h-5 rounded-full bg-white border-2 border-outline-variant shadow cursor-pointer"
+        />
       </ColorSliderRoot>
-      <span class="text-xs text-on-surface-variant font-mono shrink-0">{{ theme.activeColor }}</span>
+      <span class="text-xs text-on-surface-variant font-mono shrink-0">{{
+        theme.activeColor
+      }}</span>
     </div>
   </div>
 </template>

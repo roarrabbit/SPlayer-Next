@@ -16,6 +16,7 @@ declare module 'vue' {
     ColorSliderTrack: typeof import('reka-ui')['ColorSliderTrack']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SButton: typeof import('./src/components/ui/SButton.vue')['default']
     Versions: typeof import('./src/components/Versions.vue')['default']
   }
 }
