@@ -13,13 +13,13 @@ use napi_derive::napi;
 use parking_lot::Mutex;
 use player::{InnerPlayer, PlayerEvent, PlayerState};
 
-/// 一条外部歌词，返回给 JS 侧
+/// 一条外部歌词，返回给 JS 侧（仅格式和路径，内容按需加载）
 #[napi(object)]
 pub struct JsExternalLyric {
     /// 格式（如 "lrc", "ttml", "yrc", "qrc"）
     pub format: String,
-    /// 歌词内容
-    pub content: String,
+    /// 文件路径
+    pub path: String,
 }
 
 /// 歌曲完整元信息，返回给 JS 侧（load 时一次性返回）
@@ -171,7 +171,7 @@ impl AudioPlayer {
                 .into_iter()
                 .map(|l| JsExternalLyric {
                     format: l.format,
-                    content: l.content,
+                    path: l.path,
                 })
                 .collect(),
             cover: meta.cover,

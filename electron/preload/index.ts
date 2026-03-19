@@ -30,6 +30,8 @@ const api = {
     setFftEnabled: (enabled: boolean) => ipcRenderer.invoke("player:setFftEnabled", enabled),
     // 重建音频输出设备
     reinit: () => ipcRenderer.invoke("player:reinit"),
+    // 按需读取外部歌词文件内容
+    readLyricFile: (filePath: string) => ipcRenderer.invoke("player:readLyricFile", filePath),
     // 打开文件选择对话框
     openFile: () => ipcRenderer.invoke("player:openFile"),
     // 订阅主进程推送的播放事件，返回取消订阅函数

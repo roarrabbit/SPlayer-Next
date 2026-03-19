@@ -1,6 +1,6 @@
 import type { Track, TrackDetail } from "./song";
 
-/** 播放器加载后返回的完整数据（IPC 层组装） */
+/** 播放器加载后返回的完整数据 */
 export interface LoadResult {
   /** 歌曲轻量信息 */
   track: Track;
@@ -66,6 +66,8 @@ export interface PlayerApi {
   setFadeDuration: (ms: number) => Promise<IpcResponse>;
   /** 获取当前渐变时长（毫秒） */
   getFadeDuration: () => Promise<IpcResponse<number>>;
+  /** 按需读取外部歌词文件内容 */
+  readLyricFile: (filePath: string) => Promise<IpcResponse<string>>;
   /** 打开文件选择对话框，返回选中的音频文件路径 */
   openFile: () => Promise<IpcResponse<string>>;
   /** 订阅主进程推送的播放事件，返回取消订阅函数 */

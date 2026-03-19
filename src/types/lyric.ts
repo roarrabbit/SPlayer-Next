@@ -1,3 +1,20 @@
+/** 歌词格式 */
+export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "lrc" | "srt" | "ass";
+
+/** 外部歌词文件（仅格式和路径，内容按需加载） */
+export interface ExternalLyric {
+  /** 歌词格式 */
+  format: LyricFormat;
+  /** 文件路径 */
+  path: string;
+}
+
+/** 歌词来源标识 */
+export type LyricSource =
+  | { type: "external"; format: LyricFormat }
+  | { type: "embedded"; format: LyricFormat }
+  | null;
+
 /** 歌词时间片段 */
 export interface LyricSpan {
   /** 起始时间（毫秒） */

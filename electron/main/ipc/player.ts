@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { ipcMain, dialog, powerMonitor } from "electron";
 import { loadNativeModule } from "../utils/nativeLoader";
 import { coverCacheDir } from "../core/index";
@@ -279,6 +280,16 @@ export const registerPlayerIpc = (): void => {
   // 获取 FFT 频谱数据（128 个频段，值域 0.0 ~ 1.0）
   ipcMain.handle("player:getFftData", () => {
     return { success: true, data: player().getFftData() };
+  });
+
+  // 按需读取外部歌词文件内容
+  ipcMain.handle("player:readLyricFile", async (_event, filePath: string) => {
+    try {
+      const content = await readFile(filePath, "utf-8");
+      return { success: true, data: content };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
   });
 
   // 打开文件选择对话框，返回用户选中的音频文件路径

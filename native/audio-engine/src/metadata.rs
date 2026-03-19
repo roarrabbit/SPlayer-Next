@@ -4,20 +4,20 @@ use std::path::Path;
 
 use ffmpeg_next as ffmpeg;
 
-/// 一条外部歌词
+/// 一条外部歌词（仅格式和路径，内容按需加载）
 #[derive(Clone)]
 pub struct ExternalLyric {
     /// 格式（如 "lrc", "ttml", "yrc"）
     pub format: String,
-    /// 歌词内容
-    pub content: String,
+    /// 文件路径
+    pub path: String,
 }
 
 /// 缩略图最大边长（px）
 const THUMB_SIZE: u32 = 300;
 
 /// 支持的歌词文件扩展名
-const LYRIC_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "eslrc", "lrc"];
+const LYRIC_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "lrc", "ass", "srt"];
 
 /// 从已打开的 input_ctx 中提取封面缩略图，写入缓存目录，返回缩略图路径。
 ///
@@ -108,14 +108,10 @@ pub fn find_all_external_lyrics(source: &str) -> Vec<ExternalLyric> {
     for ext in LYRIC_EXTENSIONS {
         let lyric_path = source_path.with_extension(ext);
         if lyric_path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&lyric_path) {
-                if !content.is_empty() {
-                    lyrics.push(ExternalLyric {
-                        format: (*ext).to_string(),
-                        content,
-                    });
-                }
-            }
+            lyrics.push(ExternalLyric {
+                format: (*ext).to_string(),
+                path: lyric_path.to_string_lossy().into_owned(),
+            });
         }
     }
 

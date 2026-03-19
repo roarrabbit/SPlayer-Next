@@ -17,26 +17,21 @@ const urlInput = ref("");
 /** 封面图片元素 */
 const coverImg = ref<HTMLImageElement>();
 
+/** 当前高亮歌词行元素 */
+const activeLyricLine = ref<HTMLElement>();
+
+/** 歌词行变化时自动滚动到可视区域 */
+watch(() => media.lyricIndex, () => {
+  nextTick(() => {
+    activeLyricLine.value?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+});
+
 /** 封面缩略图 URL */
 const coverUrl = computed(() => media.track?.cover ?? null);
 
 /** 歌手名拼接 */
 const artistName = computed(() => media.track?.artists.map((a) => a.name).join(" / ") ?? "");
-
-/** 当前使用的歌词 */
-const currentLyric = computed(() => {
-  const det = media.detail;
-  const active = media.activeLyric;
-  if (!det || !active) return null;
-  if (active.type === "external") {
-    const lyric = det.externalLyrics.find((l) => l.format === active.format);
-    return lyric ? { format: lyric.format, content: lyric.content } : null;
-  }
-  if (active.type === "embedded" && det.embeddedLyric) {
-    return { format: "embedded" as const, content: det.embeddedLyric };
-  }
-  return null;
-});
 
 /** 从网络地址加载 */
 const loadFromUrl = async (): Promise<void> => {
@@ -229,18 +224,28 @@ const onVolumeChange = (e: Event): void => {
     </div>
 
     <!-- 歌词区域 -->
-    <div v-if="currentLyric" class="w-full mt-2">
+    <div v-if="media.parsedLyric.length > 0" class="w-full mt-2">
       <div class="text-sm text-on-surface-variant mb-2">
         歌词
-        <span class="text-primary text-xs ml-1">[{{ currentLyric.format }}]</span>
-        <span
-          v-if="media.detail && media.detail.externalLyrics.length > 1"
-          class="text-outline text-xs ml-1"
-        >
-          ({{ media.detail.externalLyrics.map((l) => l.format).join(", ") }})
-        </span>
+        <span class="text-primary text-xs ml-1">[{{ media.lyricFormat }}]</span>
+        <span class="text-outline text-xs ml-1">{{ media.parsedLyric.length }} 行</span>
       </div>
-      <pre class="max-h-50 overflow-y-auto p-3 bg-surface-alt rounded-lg text-xs leading-relaxed text-on-surface-variant whitespace-pre-wrap break-words m-0">{{ currentLyric.content }}</pre>
+      <div ref="lyricScroller" class="max-h-60 overflow-y-auto p-3 bg-surface-alt rounded-lg space-y-1 scroll-smooth">
+        <div
+          v-for="(line, i) in media.parsedLyric"
+          :key="i"
+          :ref="(el) => { if (i === media.lyricIndex) activeLyricLine = el as HTMLElement }"
+          class="text-sm leading-relaxed py-0.5 transition-colors duration-200"
+          :class="i === media.lyricIndex ? 'text-primary font-semibold' : 'text-on-surface-variant opacity-60'"
+        >
+          <span class="text-outline text-xs font-mono mr-2">{{ formatTime(line.startTime) }}</span>
+          <span>{{ line.words.map((w) => w.word).join("") }}</span>
+          <span v-if="line.translatedLyric" class="text-xs ml-2 opacity-80">{{ line.translatedLyric }}</span>
+          <span v-if="line.romanLyric" class="text-xs ml-2 italic opacity-60">{{ line.romanLyric }}</span>
+          <span v-if="line.isBG" class="text-xs ml-1">[BG]</span>
+          <span v-if="line.isDuet" class="text-secondary text-xs ml-1">[Duet]</span>
+        </div>
+      </div>
     </div>
 
     <!-- 状态信息 -->

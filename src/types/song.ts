@@ -1,3 +1,5 @@
+import { ExternalLyric } from "./lyric";
+
 /** 歌手 */
 export interface Artist {
   /** 平台 ID */
@@ -14,16 +16,7 @@ export interface Album {
   name: string;
 }
 
-/** 歌词格式 */
-export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "eslrc" | "lrc";
-
-/** 外部歌词文件 */
-export interface ExternalLyric {
-  /** 歌词格式 */
-  format: LyricFormat;
-  /** 歌词内容 */
-  content: string;
-}
+export type { LyricFormat, ExternalLyric } from "./lyric";
 
 /** 歌曲来源 */
 export type TrackSource = "local" | "online";
@@ -90,6 +83,6 @@ export interface TrackDetail {
   quality: AudioQuality;
   /** 内嵌歌词 */
   embeddedLyric?: string;
-  /** 同目录下找到的所有外部歌词文件 */
+  /** 外部歌词 */
   externalLyrics: ExternalLyric[];
 }

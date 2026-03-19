@@ -53,7 +53,7 @@ export const useStatusStore = defineStore("status", () => {
     const result = await window.api.player.load(source);
     if (result.success && result.data) {
       const media = useMediaStore();
-      media.setFromLoadResult(result.data);
+      await media.setTrack(result.data.track, result.data.detail);
 
       const dur = result.data.track.duration;
       duration.value = dur;
@@ -128,14 +128,18 @@ export const useStatusStore = defineStore("status", () => {
         playback.setDuration(event.data.duration);
         syncPlayback(event.data.state);
         break;
-      case "position":
+      case "position": {
         position.value = event.data.position;
         playback.setCurrentTime(event.data.position);
         if (event.data.duration > 0) {
           duration.value = event.data.duration;
           playback.setDuration(event.data.duration);
         }
+        // 更新歌词行索引
+        const media = useMediaStore();
+        media.updateLyricIndex(event.data.position);
         break;
+      }
       case "ended":
         state.value = "stopped";
         position.value = duration.value;
