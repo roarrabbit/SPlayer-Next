@@ -275,6 +275,31 @@ const onVolumeChange = (e: Event): void => {
       </span>
     </div>
 
+    <!-- 音频输出设备 -->
+    <div class="flex items-center gap-2 w-full">
+      <span class="text-xs text-on-surface-variant shrink-0">输出设备</span>
+      <select
+        class="flex-1 px-2 py-1.5 rounded-lg text-sm border border-outline-variant bg-surface-alt text-on-surface outline-none"
+        :value="status.selectedDeviceName ?? ''"
+        @change="status.switchDevice(($event.target as HTMLSelectElement).value || null)"
+      >
+        <option value="">系统默认</option>
+        <option
+          v-for="device in status.outputDevices"
+          :key="device.name"
+          :value="device.name"
+        >
+          {{ device.name }}{{ device.isDefault ? " (默认)" : "" }}
+        </option>
+      </select>
+      <button
+        class="px-2 py-1.5 rounded-lg text-xs border border-outline-variant bg-surface-alt text-on-surface-variant hover:bg-secondary-container"
+        @click="status.refreshDevices()"
+      >
+        刷新
+      </button>
+    </div>
+
     <!-- 歌词区域 -->
     <div v-if="media.parsedLyric.length > 0" class="w-full mt-2">
       <div class="text-sm text-on-surface-variant mb-2">

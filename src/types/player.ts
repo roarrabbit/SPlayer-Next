@@ -25,12 +25,21 @@ export interface PlayerStatus {
   isFinished: boolean;
 }
 
+/** 音频输出设备 */
+export interface AudioDevice {
+  /** 设备名称 */
+  name: string;
+  /** 是否为系统默认设备 */
+  isDefault: boolean;
+}
+
 /** 主进程推送给渲染进程的播放事件 */
 export type PlayerEvent =
   | { type: "status"; data: PlayerStatus }
   | { type: "position"; data: { position: number; duration: number } }
   | { type: "ended" }
-  | { type: "error"; error: string };
+  | { type: "error"; error: string }
+  | { type: "deviceChanged"; data: { defaultDevice: string | null } };
 
 /** IPC 响应包装 */
 export interface IpcResponse<T = void> {
@@ -70,6 +79,18 @@ export interface PlayerApi {
   readLyricFile: (filePath: string) => Promise<IpcResponse<string>>;
   /** 打开文件选择对话框，返回选中的音频文件路径 */
   openFile: () => Promise<IpcResponse<string>>;
+  /** 重建音频输出设备 */
+  reinit: () => Promise<IpcResponse>;
+  /** 启用/禁用 FFT 频谱推送 */
+  setFftEnabled: (enabled: boolean) => Promise<IpcResponse>;
+  /** 获取所有音频输出设备 */
+  getOutputDevices: () => Promise<IpcResponse<AudioDevice[]>>;
+  /** 获取系统默认输出设备名称 */
+  getDefaultDeviceName: () => Promise<IpcResponse<string | null>>;
+  /** 切换输出设备（传 null 使用系统默认） */
+  setOutputDevice: (deviceName: string | null) => Promise<IpcResponse>;
+  /** 获取当前选择的输出设备名称 */
+  getSelectedDeviceName: () => Promise<IpcResponse<string | null>>;
   /** 订阅主进程推送的播放事件，返回取消订阅函数 */
   onEvent: (callback: (event: PlayerEvent) => void) => () => void;
 }

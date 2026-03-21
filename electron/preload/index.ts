@@ -30,6 +30,14 @@ const api = {
     setFftEnabled: (enabled: boolean) => ipcRenderer.invoke("player:setFftEnabled", enabled),
     // 重建音频输出设备
     reinit: () => ipcRenderer.invoke("player:reinit"),
+    // 获取所有音频输出设备
+    getOutputDevices: () => ipcRenderer.invoke("player:getOutputDevices"),
+    // 获取系统默认输出设备名称
+    getDefaultDeviceName: () => ipcRenderer.invoke("player:getDefaultDeviceName"),
+    // 切换输出设备（传 null 使用系统默认）
+    setOutputDevice: (deviceName: string | null) => ipcRenderer.invoke("player:setOutputDevice", deviceName),
+    // 获取当前选择的输出设备名称
+    getSelectedDeviceName: () => ipcRenderer.invoke("player:getSelectedDeviceName"),
     // 按需读取外部歌词文件内容
     readLyricFile: (filePath: string) => ipcRenderer.invoke("player:readLyricFile", filePath),
     // 打开文件选择对话框

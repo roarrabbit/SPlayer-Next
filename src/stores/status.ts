@@ -1,4 +1,4 @@
-import type { PlayerState, PlayerEvent, IpcResponse } from "@/types/player";
+import type { PlayerState, PlayerEvent, IpcResponse, AudioDevice } from "@/types/player";
 import { useMediaStore } from "./media";
 import * as playback from "@/services/playback";
 
@@ -17,6 +17,10 @@ export const useStatusStore = defineStore("status", () => {
   const error = ref<string | null>(null);
   /** 当前加载的音频源路径 */
   const currentSource = ref<string | null>(null);
+  /** 音频输出设备列表 */
+  const outputDevices = ref<AudioDevice[]>([]);
+  /** 用户选择的输出设备名称（null = 跟随系统默认） */
+  const selectedDeviceName = ref<string | null>(null);
 
   /** 是否正在播放 */
   const isPlaying = computed(() => state.value === "playing");
@@ -115,6 +119,22 @@ export const useStatusStore = defineStore("status", () => {
     }
   };
 
+  /** 刷新输出设备列表 */
+  const refreshDevices = async (): Promise<void> => {
+    const result = await window.api.player.getOutputDevices();
+    if (result.success && result.data) {
+      outputDevices.value = result.data;
+    }
+  };
+
+  /** 切换输出设备（传 null 跟随系统默认） */
+  const switchDevice = async (deviceName: string | null): Promise<void> => {
+    const result = await window.api.player.setOutputDevice(deviceName);
+    if (handleResult(result)) {
+      selectedDeviceName.value = deviceName;
+    }
+  };
+
   /** 处理主进程推送的播放事件 */
   const handleEvent = (event: PlayerEvent): void => {
     switch (event.type) {
@@ -148,6 +168,9 @@ export const useStatusStore = defineStore("status", () => {
       case "error":
         error.value = event.error;
         break;
+      case "deviceChanged":
+        refreshDevices();
+        break;
     }
   };
 
@@ -157,6 +180,7 @@ export const useStatusStore = defineStore("status", () => {
   const init = (): void => {
     if (unsubscribe) unsubscribe();
     unsubscribe = window.api.player.onEvent(handleEvent);
+    refreshDevices();
   };
 
   /** 清理事件监听 */
@@ -179,12 +203,16 @@ export const useStatusStore = defineStore("status", () => {
     isPaused,
     isLoading,
     progress,
+    outputDevices,
+    selectedDeviceName,
     load,
     play,
     pause,
     stop,
     seek,
     setVolume,
+    refreshDevices,
+    switchDevice,
     init,
     dispose,
   };

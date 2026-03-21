@@ -11,6 +11,7 @@ napi = { version = "3.8", features = ["napi9", "serde-json"] }
 napi-derive = "3.5"
 ffmpeg-next = { version = "8", default-features = false, features = ["codec", "format", "software-resampling", "static"] }
 rodio = { version = "0.20", default-features = false }
+cpal = "0.15"
 parking_lot = "0.12"
 anyhow = "1"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "bmp", "webp"] }

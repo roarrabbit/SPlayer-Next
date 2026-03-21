@@ -4,6 +4,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
+use cpal::traits::{DeviceTrait, HostTrait};
 use rodio::{OutputStream, OutputStreamHandle, Sink};
 
 use crate::decoder;
@@ -88,12 +89,32 @@ pub struct InnerPlayer {
     fft_enabled: Arc<AtomicBool>,
     /// FFT 推送定时器的停止信号
     fft_timer_stop: Option<Arc<AtomicBool>>,
+    /// 用户选择的输出设备名称（None = 系统默认）
+    selected_device_name: Option<String>,
 }
 
 impl InnerPlayer {
+    /// 根据选择的设备名称构建音频输出流
+    fn build_output_stream(
+        device_name: &Option<String>,
+    ) -> Result<(OutputStream, OutputStreamHandle)> {
+        match device_name {
+            Some(name) => {
+                let host = cpal::default_host();
+                let device = host
+                    .output_devices()
+                    .context("Failed to enumerate output devices")?
+                    .find(|d| d.name().map(|n| n == *name).unwrap_or(false))
+                    .with_context(|| format!("Output device '{}' not found", name))?;
+                OutputStream::try_from_device(&device)
+                    .context("Failed to open named output device")
+            }
+            None => OutputStream::try_default().context("Failed to open default output device"),
+        }
+    }
+
     pub fn new() -> Result<Self> {
-        let (stream, stream_handle) =
-            OutputStream::try_default().context("Failed to open audio output device")?;
+        let (stream, stream_handle) = Self::build_output_stream(&None)?;
 
         Ok(Self {
             _stream: stream,
@@ -114,7 +135,46 @@ impl InnerPlayer {
             fade_cancel: None,
             fft_enabled: Arc::new(AtomicBool::new(false)),
             fft_timer_stop: None,
+            selected_device_name: None,
         })
+    }
+
+    /// 获取所有输出设备列表
+    pub fn get_output_devices() -> Vec<(String, bool)> {
+        let host = cpal::default_host();
+        let default_name = host
+            .default_output_device()
+            .and_then(|d| d.name().ok());
+
+        host.output_devices()
+            .map(|devices| {
+                devices
+                    .filter_map(|d| {
+                        let name = d.name().ok()?;
+                        let is_default = default_name.as_ref() == Some(&name);
+                        Some((name, is_default))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// 获取系统默认输出设备名称
+    pub fn get_default_device_name() -> Option<String> {
+        cpal::default_host()
+            .default_output_device()
+            .and_then(|d| d.name().ok())
+    }
+
+    /// 切换输出设备（None = 系统默认）
+    pub fn set_output_device(&mut self, device_name: Option<String>) -> Result<()> {
+        self.selected_device_name = device_name;
+        self.reinit_output()
+    }
+
+    /// 获取当前选择的输出设备名称（None = 系统默认）
+    pub fn selected_device_name(&self) -> Option<&str> {
+        self.selected_device_name.as_deref()
     }
 
     /// 注册事件回调（支持热替换：先停止旧的定时器/渐变，确保旧回调的 Arc 引用尽快释放）
@@ -261,9 +321,8 @@ impl InnerPlayer {
         // 停止当前播放（释放旧的 Sink / 解码线程）
         self.stop_internal();
 
-        // 重建音频输出
-        let (stream, stream_handle) =
-            OutputStream::try_default().context("Failed to reopen audio output device")?;
+        // 重建音频输出（使用用户选择的设备或系统默认）
+        let (stream, stream_handle) = Self::build_output_stream(&self.selected_device_name)?;
         self._stream = stream;
         self.stream_handle = stream_handle;
 

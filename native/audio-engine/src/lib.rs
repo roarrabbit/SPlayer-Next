@@ -46,6 +46,15 @@ pub struct JsMusicMetadata {
     pub cover: Option<String>,
 }
 
+/// 音频输出设备信息
+#[napi(object)]
+pub struct JsAudioDevice {
+    /// 设备名称
+    pub name: String,
+    /// 是否为系统默认设备
+    pub is_default: bool,
+}
+
 /// 播放器事件，推送给 JS 侧
 #[napi(object)]
 #[derive(Default)]
@@ -292,5 +301,35 @@ impl AudioPlayer {
         let source = self.inner.lock().current_source()?.to_string();
         let data = metadata::extract_cover_raw(&source)?;
         Some(data.into())
+    }
+
+    /// 获取所有音频输出设备列表
+    #[napi]
+    pub fn get_output_devices(&self) -> Vec<JsAudioDevice> {
+        player::InnerPlayer::get_output_devices()
+            .into_iter()
+            .map(|(name, is_default)| JsAudioDevice { name, is_default })
+            .collect()
+    }
+
+    /// 获取系统默认输出设备名称
+    #[napi]
+    pub fn get_default_device_name(&self) -> Option<String> {
+        player::InnerPlayer::get_default_device_name()
+    }
+
+    /// 切换输出设备（传 None/undefined 使用系统默认）
+    #[napi]
+    pub fn set_output_device(&self, device_name: Option<String>) -> Result<()> {
+        self.inner
+            .lock()
+            .set_output_device(device_name)
+            .map_err(|e| Error::from_reason(e.to_string()))
+    }
+
+    /// 获取当前选择的输出设备名称（None = 系统默认）
+    #[napi]
+    pub fn get_selected_device_name(&self) -> Option<String> {
+        self.inner.lock().selected_device_name().map(String::from)
     }
 }

@@ -17,9 +17,6 @@ let playerInstance: InstanceType<AudioEngineModule["AudioPlayer"]> | null = null
 /** 上一次推送给系统媒体控件的状态，用于避免重复发送 */
 let lastMediaState: string | null = null;
 
-/** 是否已注册原生事件回调 */
-let nativeEventRegistered = false;
-
 /**
  * 检测错误是否为音频设备丢失
  * 设备丢失后 Rust 实例已损坏，必须销毁重建
@@ -33,7 +30,6 @@ const isDeviceError = (error: unknown): boolean => {
 const resetPlayer = (): void => {
   console.warn("[Player] 销毁播放器实例，将在下次操作时重建");
   playerInstance = null;
-  nativeEventRegistered = false;
   lastMediaState = null;
 };
 
@@ -48,76 +44,73 @@ const engine = (): AudioEngineModule => {
   return audioEngine;
 };
 
+/** 为播放器实例注册原生事件回调 */
+const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"]>): void => {
+  inst.onEvent((event: { type: string; state?: string; position?: number; duration?: number; fftData?: number[] }) => {
+    switch (event.type) {
+      case "stateChanged": {
+        const state = event.state ?? "idle";
+        if (state !== lastMediaState) {
+          lastMediaState = state;
+          if (state === "playing") {
+            mediaService.setPlayState({ status: "Playing" });
+          } else if (state === "paused") {
+            mediaService.setPlayState({ status: "Paused" });
+          } else if (state === "stopped") {
+            mediaService.setPlayState({ status: "Paused" });
+          }
+        }
+        broadcast("player:event", {
+          type: "status",
+          data: {
+            state,
+            position: toMs(inst.getPosition()),
+            duration: toMs(inst.getDuration()),
+            volume: inst.getVolume(),
+            isFinished: false,
+          },
+        });
+        break;
+      }
+      case "ended": {
+        lastMediaState = "stopped";
+        broadcast("player:event", { type: "ended" });
+        mediaService.setPlayState({ status: "Paused" });
+        break;
+      }
+      case "position": {
+        const posMs = toMs(event.position ?? 0);
+        const durMs = toMs(event.duration ?? 0);
+        broadcast("player:event", {
+          type: "position",
+          data: { position: posMs, duration: durMs },
+        });
+        mediaService.setTimeline({ currentMs: posMs, totalMs: durMs });
+        break;
+      }
+      case "fftData": {
+        broadcast("player:event", {
+          type: "fftData",
+          data: event.fftData ?? [],
+        });
+        break;
+      }
+    }
+  });
+};
+
 /**
  * 获取播放器实例
- * 仅在首次创建时设置封面缓存目录并注册原生事件回调
+ * 首次创建时设置封面缓存目录并注册原生事件回调
+ * resetPlayer() 后会重建实例并重新注册，不会重复注册
  */
 const player = (): InstanceType<AudioEngineModule["AudioPlayer"]> => {
   if (!playerInstance) {
     const mod = engine();
     playerInstance = new mod.AudioPlayer();
     playerInstance.setCoverCacheDir(coverCacheDir);
+    registerNativeEvents(playerInstance);
   }
-
-  // 注册原生事件回调（仅一次）
-  if (!nativeEventRegistered) {
-    nativeEventRegistered = true;
-    playerInstance.onEvent((event: { type: string; state?: string; position?: number; duration?: number; fftData?: number[] }) => {
-      switch (event.type) {
-        case "stateChanged": {
-          const state = event.state ?? "idle";
-          // 同步到系统媒体控件
-          if (state !== lastMediaState) {
-            lastMediaState = state;
-            if (state === "playing") {
-              mediaService.setPlayState({ status: "Playing" });
-            } else if (state === "paused") {
-              mediaService.setPlayState({ status: "Paused" });
-            } else if (state === "stopped") {
-              mediaService.setPlayState({ status: "Paused" });
-            }
-          }
-          broadcast("player:event", {
-            type: "status",
-            data: {
-              state,
-              position: toMs(playerInstance!.getPosition()),
-              duration: toMs(playerInstance!.getDuration()),
-              volume: playerInstance!.getVolume(),
-              isFinished: false,
-            },
-          });
-          break;
-        }
-        case "ended": {
-          lastMediaState = "stopped";
-          broadcast("player:event", { type: "ended" });
-          mediaService.setPlayState({ status: "Paused" });
-          break;
-        }
-        case "position": {
-          const posMs = toMs(event.position ?? 0);
-          const durMs = toMs(event.duration ?? 0);
-          // 只推送位置，不碰状态，避免竞态覆盖
-          broadcast("player:event", {
-            type: "position",
-            data: { position: posMs, duration: durMs },
-          });
-          // 同步进度到系统媒体控件
-          mediaService.setTimeline({ currentMs: posMs, totalMs: durMs });
-          break;
-        }
-        case "fftData": {
-          broadcast("player:event", {
-            type: "fftData",
-            data: event.fftData ?? [],
-          });
-          break;
-        }
-      }
-    });
-  }
-
   return playerInstance;
 };
 
@@ -332,6 +325,71 @@ export const registerPlayerIpc = (): void => {
     return { success: true, data: result.filePaths[0] };
   });
 
+  // 获取所有音频输出设备
+  ipcMain.handle("player:getOutputDevices", () => {
+    try {
+      return { success: true, data: player().getOutputDevices() };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // 获取系统默认输出设备名称
+  ipcMain.handle("player:getDefaultDeviceName", () => {
+    try {
+      return { success: true, data: player().getDefaultDeviceName() ?? null };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // 切换输出设备（传 null 使用系统默认）
+  ipcMain.handle("player:setOutputDevice", (_event, deviceName: string | null) => {
+    try {
+      player().setOutputDevice(deviceName ?? undefined);
+      return { success: true };
+    } catch (error) {
+      if (isDeviceError(error)) resetPlayer();
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // 获取当前选择的输出设备名称
+  ipcMain.handle("player:getSelectedDeviceName", () => {
+    try {
+      return { success: true, data: player().getSelectedDeviceName() ?? null };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
+  // 轮询检测默认音频设备变化（每 3 秒），自动切换 + 通知前端刷新
+  let lastDefaultDevice: string | null = null;
+  setInterval(() => {
+    if (!playerInstance) return;
+    try {
+      const current = playerInstance.getDefaultDeviceName() ?? null;
+      if (lastDefaultDevice !== null && current !== lastDefaultDevice) {
+        console.log(`[Player] 检测到默认音频设备变化: ${lastDefaultDevice} → ${current}`);
+        const selected = playerInstance.getSelectedDeviceName() ?? null;
+        if (selected === null) {
+          try {
+            playerInstance.reinitOutput();
+            console.log("[Player] 已自动切换到新的默认设备");
+          } catch (error) {
+            console.warn("[Player] 自动切换设备失败:", error);
+          }
+        }
+        // 通知前端刷新设备列表
+        broadcast("player:event", {
+          type: "deviceChanged",
+          data: { defaultDevice: current },
+        });
+      }
+      lastDefaultDevice = current;
+    } catch {}
+  }, 1000);
+
   // 注册系统媒体事件处理（系统按键 → 控制播放器）
   mediaService.onEvent((event: MediaEvent) => {
     try {
@@ -366,9 +424,8 @@ export const registerPlayerIpc = (): void => {
     } catch {}
   });
 
-  // 系统休眠唤醒后重建音频输出设备（OutputStream 句柄在休眠后会失效）
-  // Rust 侧 reinitOutput 会自动保存并恢复播放状态（位置、暂停/播放），对用户无感
-  powerMonitor.on("resume", async () => {
+  // 系统休眠唤醒后重建音频输出设备
+  const resumeHandler = async (): Promise<void> => {
     if (!playerInstance) return;
 
     // 延迟重试：系统唤醒后音频子系统可能需要时间恢复
@@ -389,13 +446,12 @@ export const registerPlayerIpc = (): void => {
     // 全部重试失败：销毁损坏的实例，下次操作时会自动重建
     console.error("[Player] 重建音频输出全部失败，销毁播放器实例");
     playerInstance = null;
-    nativeEventRegistered = false;
     lastMediaState = null;
 
     broadcast("player:event", {
       type: "status",
       data: { state: "stopped", position: 0, duration: 0, volume: 0, isFinished: false },
     });
-  });
-
+  };
+  powerMonitor.on("resume", resumeHandler);
 };
