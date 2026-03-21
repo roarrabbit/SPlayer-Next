@@ -23,4 +23,13 @@ useThemeStore().init();
 // 初始化播放器
 useStatusStore().init();
 
-app.mount("#app");
+// 等路由就绪后再挂载
+router.isReady().then(() => {
+  app.mount("#app");
+  // 淡出加载动画
+  const loading = document.getElementById("app-loading");
+  if (loading) {
+    loading.classList.add("hidden");
+    loading.addEventListener("transitionend", () => loading.remove());
+  }
+});

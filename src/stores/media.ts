@@ -23,7 +23,11 @@ export const useMediaStore = defineStore("media", () => {
     const content = lyricContent.value;
     const format = lyricFormat.value;
     if (!content || !format) return [];
-    return parseLyric(content, format);
+    try {
+      return parseLyric(content, format);
+    } catch {
+      return [];
+    }
   });
 
   /** 当前歌词行索引，-1 表示无匹配 */

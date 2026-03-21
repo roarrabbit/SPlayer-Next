@@ -2,6 +2,7 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useThemeStore } from "@/stores/theme";
+import { toast } from "@/composables/useToast";
 import type { ThemeSource } from "@/types/theme";
 
 const status = useStatusStore();
@@ -103,6 +104,15 @@ const onSeek = (e: Event): void => {
 const onVolumeChange = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
   status.setVolume(value);
+};
+
+/** 测试 loading → success 的 toast 流程 */
+const testLoadingToast = (): void => {
+  const t = toast.loading("加载中...");
+  setTimeout(() => {
+    t.close();
+    toast.success("加载完成");
+  }, 2000);
 };
 </script>
 
@@ -298,6 +308,20 @@ const onVolumeChange = (e: Event): void => {
       >
         刷新
       </button>
+    </div>
+
+    <!-- Toast 测试 -->
+    <div class="flex gap-2 w-full flex-wrap">
+      <SButton size="small" @click="toast.show('这是一条普通消息')">Default</SButton>
+      <SButton type="info" size="small" @click="toast.info('这是一条信息')">Info</SButton>
+      <SButton type="success" size="small" @click="toast.success('操作成功')">Success</SButton>
+      <SButton type="warning" size="small" @click="toast.warning('请注意')">Warning</SButton>
+      <SButton type="error" size="small" @click="toast.error('出错了')">Error</SButton>
+      <SButton size="small" @click="toast.loading('加载中...')">Loading</SButton>
+      <SButton size="small" @click="testLoadingToast">Loading→Success</SButton>
+      <SButton size="small" @click="toast.info('5秒后关闭', { duration: 5000 })">5s</SButton>
+      <SButton size="small" @click="toast.success('可关闭', { closable: true })">可关闭</SButton>
+      <SButton size="small" @click="toast.show('无图标', { icon: false })">无图标</SButton>
     </div>
 
     <!-- 歌词区域 -->

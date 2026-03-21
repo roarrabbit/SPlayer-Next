@@ -8,11 +8,11 @@ const showPlayerBar = computed(() => status.state !== "idle");
 </script>
 
 <template>
-  <div class="h-screen flex bg-surface text-on-surface">
+  <div class="h-screen flex bg-on-surface/4 text-on-surface">
     <!-- 侧边栏 -->
     <aside
-      class="w-60 shrink-0 border-r-1 border-r-solid border-r-primary/10 bg-on-surface/4 overflow-y-auto scroll-trim"
-      :class="showPlayerBar ? 'pb-18' : ''"
+      class="w-60 shrink-0 border-r-1 border-r-solid border-r-primary/10 bg-surface/85 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[margin] duration-300"
+      :class="showPlayerBar ? 'mb-18' : ''"
     >
       <SideBar />
     </aside>
@@ -42,10 +42,13 @@ const showPlayerBar = computed(() => status.state !== "idle");
     >
       <footer
         v-if="showPlayerBar"
-        class="fixed bottom-0 left-0 right-0 h-18 border-t-1 border-t-solid border-t-primary/10 bg-surface/80 backdrop-blur-lg z-50"
+        class="fixed bottom-0 left-0 right-0 h-18 border-t-1 border-t-solid border-t-primary/10 bg-surface/85 backdrop-blur-lg z-50"
       >
         <PlayerBar />
       </footer>
     </Transition>
+
+    <!-- 全局 Toast -->
+    <SToast :max="5" />
   </div>
 </template>

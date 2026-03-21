@@ -1,4 +1,4 @@
-import { BrowserWindow, BrowserWindowConstructorOptions } from "electron";
+import { BrowserWindow, BrowserWindowConstructorOptions, nativeTheme } from "electron";
 import { join } from "path";
 import icon from "../../../resources/icon.png?asset";
 
@@ -10,6 +10,7 @@ const getDefaultOptions = (): BrowserWindowConstructorOptions => ({
   height: 670,
   show: false,
   autoHideMenuBar: true,
+  backgroundColor: nativeTheme.shouldUseDarkColors ? "#121212" : "#f5f5f5",
   ...(process.platform === "linux" ? { icon } : {}),
   webPreferences: {
     preload: join(__dirname, "../preload/index.js"),
