@@ -5,10 +5,15 @@ const status = useStatusStore();
 
 /** 非 idle 状态时显示播放栏 */
 const showPlayerBar = computed(() => status.state !== "idle");
+const { isExpanded } = storeToRefs(status);
 </script>
 
 <template>
-  <div class="h-screen flex bg-on-surface/4 text-on-surface">
+  <!-- 主界面：展开时缩小淡出 -->
+  <div
+    class="h-screen flex bg-on-surface/4 text-on-surface transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] origin-center"
+    :class="isExpanded ? 'scale-90 opacity-0 pointer-events-none' : ''"
+  >
     <!-- 侧边栏 -->
     <aside
       class="w-60 shrink-0 border-r-1 border-r-solid border-r-primary/10 bg-surface/85 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[margin] duration-300"
@@ -33,7 +38,7 @@ const showPlayerBar = computed(() => status.state !== "idle");
       </main>
     </div>
 
-    <!-- 底部播放栏 — 固定定位，transform 动画 -->
+    <!-- 底部播放栏 -->
     <Transition
       enter-active-class="transition-transform duration-300 ease-out"
       leave-active-class="transition-transform duration-300 ease-in"
@@ -51,4 +56,7 @@ const showPlayerBar = computed(() => status.state !== "idle");
     <!-- 全局 Toast -->
     <SToast :max="5" />
   </div>
+
+  <!-- 全屏播放器：Teleport 到 body，独立层级 -->
+  <FullscreenPlayer />
 </template>

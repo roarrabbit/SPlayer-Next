@@ -14,6 +14,8 @@ declare module 'vue' {
     ColorSliderRoot: typeof import('reka-ui')['ColorSliderRoot']
     ColorSliderThumb: typeof import('reka-ui')['ColorSliderThumb']
     ColorSliderTrack: typeof import('reka-ui')['ColorSliderTrack']
+    FullscreenPlayer: typeof import('./src/layouts/components/FullscreenPlayer.vue')['default']
+    IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     IconLucideCircleCheck: typeof import('~icons/lucide/circle-check')['default']
     IconLucideCircleX: typeof import('~icons/lucide/circle-x')['default']
     IconLucideInfo: typeof import('~icons/lucide/info')['default']

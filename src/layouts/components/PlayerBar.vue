@@ -4,7 +4,7 @@ import { useMediaStore } from "@/stores/media";
 
 const status = useStatusStore();
 const media = useMediaStore();
-const { isPlaying, isLoading, position, duration } = storeToRefs(status);
+const { isPlaying, isLoading, position, duration, isExpanded } = storeToRefs(status);
 
 /** 是否有可播放的曲目 */
 const hasTrack = computed(() => !!media.track);
@@ -38,7 +38,8 @@ const onSeek = (e: Event): void => {
       <img
         v-if="media.track?.cover"
         :src="media.track.cover"
-        class="size-12 rounded-lg object-cover bg-surface-alt"
+        class="size-12 rounded-lg object-cover bg-surface-alt cursor-pointer hover:opacity-80 transition-opacity"
+        @click="isExpanded = true"
       />
       <div v-if="media.track" class="min-w-0 text-sm">
         <div class="truncate font-medium">{{ media.track.title }}</div>

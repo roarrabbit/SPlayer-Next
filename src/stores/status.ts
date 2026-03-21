@@ -21,6 +21,8 @@ export const useStatusStore = defineStore("status", () => {
   const outputDevices = ref<AudioDevice[]>([]);
   /** 用户选择的输出设备名称（null = 跟随系统默认） */
   const selectedDeviceName = ref<string | null>(null);
+  /** 全屏播放器是否展开 */
+  const isExpanded = ref(false);
 
   /** 是否正在播放 */
   const isPlaying = computed(() => state.value === "playing");
@@ -203,6 +205,7 @@ export const useStatusStore = defineStore("status", () => {
     isPaused,
     isLoading,
     progress,
+    isExpanded,
     outputDevices,
     selectedDeviceName,
     load,
