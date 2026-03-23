@@ -26,8 +26,6 @@ useStatusStore().init();
 // 等路由就绪后再挂载
 router.isReady().then(() => {
   app.mount("#app");
-  // 通知主进程渲染器已就绪，触发延迟初始化
-  window.api.ready();
   // 淡出加载动画
   const loading = document.getElementById("app-loading");
   if (loading) {

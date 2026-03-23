@@ -62,6 +62,9 @@ export const initApp = (): void => {
     // 注册 IPC
     registerIpcHandlers();
 
+    // 初始化系统媒体控件
+    mediaService.init();
+
     // 创建主窗口
     createMainWindow();
 

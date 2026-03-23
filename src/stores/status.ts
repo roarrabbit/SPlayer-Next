@@ -251,7 +251,6 @@ export const useStatusStore = defineStore("status", () => {
     if (unsubscribePlayback) unsubscribePlayback();
     unsubscribe = window.api.player.onEvent(handleEvent);
     unsubscribePlayback = window.api.playback.onEvent(handlePlaybackEvent);
-    refreshDevices();
   };
 
   /** 清理事件监听 */
