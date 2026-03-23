@@ -185,7 +185,11 @@ export const useStatusStore = defineStore("status", () => {
   let unsubscribe: (() => void) | null = null;
 
   /** 初始化事件监听 */
+  let initialized = false;
   const init = (): void => {
+    if (initialized) return;
+    initialized = true;
+    console.log("[status] init");
     if (unsubscribe) unsubscribe();
     unsubscribe = window.api.player.onEvent(handleEvent);
     refreshDevices();

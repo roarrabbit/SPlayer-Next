@@ -42,6 +42,9 @@ export const useThemeStore = defineStore(
       return DEFAULT_PRIMARY;
     });
 
+    /** 移除 theme-transition 的定时器 */
+    let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+
     /** 应用主题到 DOM */
     const apply = (withTransition = true): void => {
       const root = document.documentElement;
@@ -53,7 +56,13 @@ export const useThemeStore = defineStore(
           : SOLID_PALETTE_LIGHT
         : generatePalette(activeColor.value, isDark.value, globalTint.value);
       applyThemeToDOM(palette, coverColor.value, isDark.value);
-      if (withTransition) setTimeout(() => root.classList.remove("theme-transition"), 300);
+      if (withTransition) {
+        if (transitionTimer) clearTimeout(transitionTimer);
+        transitionTimer = setTimeout(() => {
+          root.classList.remove("theme-transition");
+          transitionTimer = null;
+        }, 300);
+      }
     };
 
     /** 设置主题模式 */
@@ -84,12 +93,18 @@ export const useThemeStore = defineStore(
     };
 
     /** 初始化 */
+    let initialized = false;
     const init = (): void => {
+      if (initialized) return;
+      initialized = true;
+      console.log("[theme] init");
       if (typeof customColor.value !== "string" || !customColor.value.startsWith("#")) {
         customColor.value = DEFAULT_PRIMARY;
       }
       apply(false);
-      watch([isDark, activeColor, source, coverColor, globalTint], () => apply());
+      watchThrottled([isDark, activeColor, source, coverColor, globalTint], () => apply(), {
+        throttle: 100,
+      });
     };
 
     return {

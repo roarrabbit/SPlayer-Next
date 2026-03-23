@@ -60,7 +60,7 @@ export const generatePalette = (hex: string, isDark: boolean, globalTint = false
   // 非全局着色
   const base = isDark ? SOLID_PALETTE_DARK : SOLID_PALETTE_LIGHT;
   return { ...base, ...primaryColors };
-};;
+};
 
 /** 纯色色板 — 浅色（基于 Zinc 色系，带微弱冷色调） */
 export const SOLID_PALETTE_LIGHT: ThemePalette = {
