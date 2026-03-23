@@ -2,11 +2,13 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { ipcMain, dialog, powerMonitor } from "electron";
 import { loadNativeModule } from "../utils/nativeLoader";
-import { coverCacheDir } from "../core/index";
+import { coverCacheDir } from "../utils/config";
 import { broadcast } from "../utils/broadcast";
 import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
 import { mediaService } from "../services/media";
+import { playbackService } from "../services/playback";
+import { getThumbar } from "../thumbar";
 import type { MediaEvent } from "../services/media";
 
 type AudioEngineModule = typeof import("@splayer/audio-engine");
@@ -50,6 +52,8 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
     switch (event.type) {
       case "stateChanged": {
         const state = event.state ?? "idle";
+        // 更新缩略图工具栏按钮
+        getThumbar()?.updateThumbar(state === "playing");
         if (state !== lastMediaState) {
           lastMediaState = state;
           if (state === "playing") {
@@ -419,7 +423,12 @@ export const registerPlayerIpc = (): void => {
             inst.setVolume(event.volume);
           }
           break;
-        // NextTrack / PrevTrack 等需要播放列表支持，后续实现
+        case "NextTrack":
+          playbackService.next();
+          break;
+        case "PrevTrack":
+          playbackService.prev();
+          break;
       }
     } catch {}
   });
@@ -454,4 +463,20 @@ export const registerPlayerIpc = (): void => {
     });
   };
   powerMonitor.on("resume", resumeHandler);
+};
+
+/** 供主进程内部调用的播放控制 */
+export const playerControl = {
+  play: (): void => {
+    try {
+      player().play();
+    } catch (error) {
+      if (isDeviceError(error)) resetPlayer();
+    }
+  },
+  pause: (): void => {
+    try {
+      player().pause();
+    } catch {}
+  },
 };

@@ -55,6 +55,45 @@ const api = {
       };
     },
   },
+  playback: {
+    // 设置队列并从指定位置播放
+    playFrom: (items: unknown[], startIndex?: number) =>
+      ipcRenderer.invoke("playback:playFrom", items, startIndex),
+    // 下一首
+    next: () => ipcRenderer.invoke("playback:next"),
+    // 上一首
+    prev: () => ipcRenderer.invoke("playback:prev"),
+    // 设置循环模式
+    setRepeatMode: (mode: string) => ipcRenderer.invoke("playback:setRepeatMode", mode),
+    // 设置随机模式
+    setShuffleMode: (mode: string) => ipcRenderer.invoke("playback:setShuffleMode", mode),
+    // 分页获取队列
+    getQueuePage: (offset: number, limit: number) =>
+      ipcRenderer.invoke("playback:getQueuePage", offset, limit),
+    // 获取队列长度
+    getQueueLength: () => ipcRenderer.invoke("playback:getQueueLength"),
+    // 插入到队列
+    insert: (item: unknown, afterIndex?: number) =>
+      ipcRenderer.invoke("playback:insert", item, afterIndex),
+    // 从队列移除
+    remove: (index: number) => ipcRenderer.invoke("playback:remove", index),
+    // 移动队列项
+    move: (fromIndex: number, toIndex: number) =>
+      ipcRenderer.invoke("playback:move", fromIndex, toIndex),
+    // 清空队列
+    clear: () => ipcRenderer.invoke("playback:clear"),
+    // 订阅播放控制事件，返回取消订阅函数
+    onEvent: (callback: (event: unknown) => void) => {
+      ipcRenderer.removeAllListeners("playback:event");
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => {
+        callback(data);
+      };
+      ipcRenderer.on("playback:event", handler);
+      return () => {
+        ipcRenderer.removeListener("playback:event", handler);
+      };
+    },
+  },
 };
 
 if (process.contextIsolated) {

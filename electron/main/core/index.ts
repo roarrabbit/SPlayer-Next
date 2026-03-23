@@ -3,10 +3,11 @@ import path from "node:path";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { createMainWindow } from "../window";
 import { registerIpcHandlers } from "../ipc";
+import { playerControl } from "../ipc/player";
 import { mediaService } from "../services/media";
-
-/** 封面缓存目录（供 cover:// 协议解析使用） */
-export const coverCacheDir = path.join(app.getPath("userData"), "cover-cache");
+import { playbackService } from "../services/playback";
+import { initThumbar } from "../thumbar";
+import { coverCacheDir } from "../utils/config";
 
 /**
  * 配置 Chromium 启动参数以优化内存占用
@@ -65,7 +66,18 @@ export const initApp = (): void => {
     registerIpcHandlers();
 
     // 创建主窗口
-    createMainWindow();
+    const mainWin = createMainWindow();
+
+    // 初始化缩略图工具栏（仅 Windows）
+    mainWin.on("ready-to-show", () => {
+      initThumbar(
+        mainWin,
+        () => playerControl.play(),
+        () => playerControl.pause(),
+        () => playbackService.prev(),
+        () => playbackService.next(),
+      );
+    });
 
     // 加载 native 模块
     setImmediate(() => {
