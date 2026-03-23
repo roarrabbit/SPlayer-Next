@@ -8,9 +8,8 @@ import icon from "../../../resources/icon.png?asset";
 const getDefaultOptions = (): BrowserWindowConstructorOptions => ({
   width: 900,
   height: 670,
-  show: false,
   autoHideMenuBar: true,
-  backgroundColor: nativeTheme.shouldUseDarkColors ? "#121212" : "#f5f5f5",
+  backgroundColor: nativeTheme.shouldUseDarkColors ? "#101014" : "#f6f6f6",
   ...(process.platform === "linux" ? { icon } : {}),
   webPreferences: {
     preload: join(__dirname, "../preload/index.js"),

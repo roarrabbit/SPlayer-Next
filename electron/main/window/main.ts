@@ -15,8 +15,8 @@ export const createMainWindow = (): BrowserWindow => {
     height: 670,
   });
 
-  mainWindow.on("ready-to-show", () => {
-    mainWindow!.show();
+  // thumbar
+  mainWindow.once("ready-to-show", () => {
     initThumbar(mainWindow!);
   });
 
