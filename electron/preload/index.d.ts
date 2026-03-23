@@ -6,6 +6,7 @@ declare global {
   interface Window {
     electron: ElectronAPI;
     api: {
+      ready: () => void;
       player: PlayerApi;
       playback: PlaybackApi;
     };

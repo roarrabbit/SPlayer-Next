@@ -21,12 +21,31 @@ class PlaybackService {
   private shuffleMode: ShuffleMode = "off";
   /** 加载歌曲回调 */
   private loadTrack: ((path: string) => Promise<void>) | null = null;
+  /** 播放/暂停回调 */
+  private playHandler: (() => void) | null = null;
+  private pauseHandler: (() => void) | null = null;
   /** 防止 onTrackEnded 重入 */
   private isTransitioning = false;
 
   /** 注册加载回调 */
   onLoadTrack(handler: (path: string) => Promise<void>): void {
     this.loadTrack = handler;
+  }
+
+  /** 注册播放/暂停回调 */
+  onPlayPause(play: () => void, pause: () => void): void {
+    this.playHandler = play;
+    this.pauseHandler = pause;
+  }
+
+  /** 播放 */
+  play(): void {
+    this.playHandler?.();
+  }
+
+  /** 暂停 */
+  pause(): void {
+    this.pauseHandler?.();
   }
 
   /** 设置队列并从指定位置播放 */

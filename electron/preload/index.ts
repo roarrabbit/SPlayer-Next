@@ -3,6 +3,8 @@ import { electronAPI } from "@electron-toolkit/preload";
 
 // 暴露给渲染进程的自定义 API
 const api = {
+  // 通知主进程渲染器已就绪
+  ready: () => ipcRenderer.send("app:ready"),
   player: {
     // 加载音频（本地路径或网络地址）
     load: (source: string) => ipcRenderer.invoke("player:load", source),

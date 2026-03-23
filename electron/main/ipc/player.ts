@@ -8,7 +8,7 @@ import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
 import { mediaService } from "../services/media";
 import { playbackService } from "../services/playback";
-import { getThumbar } from "../thumbar";
+import { getThumbar } from "../services/thumbar";
 import type { MediaEvent } from "../services/media";
 
 type AudioEngineModule = typeof import("@splayer/audio-engine");
@@ -44,6 +44,37 @@ const engine = (): AudioEngineModule => {
     }
   }
   return audioEngine;
+};
+
+/** 轮询检测默认音频设备变化，首次创建播放器时启动 */
+let devicePollingStarted = false;
+const startDevicePolling = (): void => {
+  if (devicePollingStarted) return;
+  devicePollingStarted = true;
+  let lastDefaultDevice: string | null = null;
+  setInterval(() => {
+    if (!playerInstance) return;
+    try {
+      const current = playerInstance.getDefaultDeviceName() ?? null;
+      if (lastDefaultDevice !== null && current !== lastDefaultDevice) {
+        console.log(`[Player] 检测到默认音频设备变化: ${lastDefaultDevice} → ${current}`);
+        const selected = playerInstance.getSelectedDeviceName() ?? null;
+        if (selected === null) {
+          try {
+            playerInstance.reinitOutput();
+            console.log("[Player] 已自动切换到新的默认设备");
+          } catch (error) {
+            console.warn("[Player] 自动切换设备失败:", error);
+          }
+        }
+        broadcast("player:event", {
+          type: "deviceChanged",
+          data: { defaultDevice: current },
+        });
+      }
+      lastDefaultDevice = current;
+    } catch {}
+  }, 3000);
 };
 
 /** 为播放器实例注册原生事件回调 */
@@ -114,6 +145,7 @@ const player = (): InstanceType<AudioEngineModule["AudioPlayer"]> => {
     playerInstance = new mod.AudioPlayer();
     playerInstance.setCoverCacheDir(coverCacheDir);
     registerNativeEvents(playerInstance);
+    startDevicePolling();
   }
   return playerInstance;
 };
@@ -367,32 +399,7 @@ export const registerPlayerIpc = (): void => {
     }
   });
 
-  // 轮询检测默认音频设备变化（每 3 秒），自动切换 + 通知前端刷新
-  let lastDefaultDevice: string | null = null;
-  setInterval(() => {
-    if (!playerInstance) return;
-    try {
-      const current = playerInstance.getDefaultDeviceName() ?? null;
-      if (lastDefaultDevice !== null && current !== lastDefaultDevice) {
-        console.log(`[Player] 检测到默认音频设备变化: ${lastDefaultDevice} → ${current}`);
-        const selected = playerInstance.getSelectedDeviceName() ?? null;
-        if (selected === null) {
-          try {
-            playerInstance.reinitOutput();
-            console.log("[Player] 已自动切换到新的默认设备");
-          } catch (error) {
-            console.warn("[Player] 自动切换设备失败:", error);
-          }
-        }
-        // 通知前端刷新设备列表
-        broadcast("player:event", {
-          type: "deviceChanged",
-          data: { defaultDevice: current },
-        });
-      }
-      lastDefaultDevice = current;
-    } catch {}
-  }, 1000);
+  // 设备变化轮询在首次创建播放器实例时启动（见 player() 函数）
 
   // 注册系统媒体事件处理（系统按键 → 控制播放器）
   mediaService.onEvent((event: MediaEvent) => {
@@ -463,20 +470,20 @@ export const registerPlayerIpc = (): void => {
     });
   };
   powerMonitor.on("resume", resumeHandler);
-};
 
-/** 供主进程内部调用的播放控制 */
-export const playerControl = {
-  play: (): void => {
-    try {
-      player().play();
-    } catch (error) {
-      if (isDeviceError(error)) resetPlayer();
-    }
-  },
-  pause: (): void => {
-    try {
-      player().pause();
-    } catch {}
-  },
+  // 注册播放/暂停回调到 playbackService
+  playbackService.onPlayPause(
+    () => {
+      try {
+        player().play();
+      } catch (error) {
+        if (isDeviceError(error)) resetPlayer();
+      }
+    },
+    () => {
+      try {
+        player().pause();
+      } catch {}
+    },
+  );
 };
