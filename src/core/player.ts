@@ -185,8 +185,8 @@ export const nextTrack = async (): Promise<void> => {
   if (queue.queueLength.value === 0) return;
   // 到末尾了
   if (status.playIndex >= queue.queueLength.value - 1) {
-    // 列表循环：随机模式下重新洗牌，回到首位
-    if (status.repeatMode === "list") {
+    // 列表循环 / 单曲循环：回到首位继续播放
+    if (status.repeatMode === "list" || status.repeatMode === "one") {
       if (status.shuffleMode === "on") {
         queue.shuffleQueue(status.playIndex);
       }
