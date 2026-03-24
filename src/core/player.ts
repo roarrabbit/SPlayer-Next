@@ -221,12 +221,33 @@ const onQueueEnded = async (): Promise<void> => {
   status.position = status.duration;
 };
 
+/** 同步播放模式到主进程 */
+const syncPlayMode = (): void => {
+  const status = useStatusStore();
+  window.api.player.syncPlayMode(status.repeatMode, status.shuffleMode);
+};
+
 /**
  * 设置循环模式
  * @param mode - off（不循环）、list（列表循环）、one（单曲循环）
  */
 export const setRepeatMode = (mode: RepeatMode): void => {
   useStatusStore().repeatMode = mode;
+  syncPlayMode();
+};
+
+/** 循环切换循环模式：list → one → off → list */
+export const cycleRepeatMode = (): void => {
+  const status = useStatusStore();
+  const cycle: RepeatMode[] = ["list", "one", "off"];
+  const nextIndex = (cycle.indexOf(status.repeatMode) + 1) % cycle.length;
+  setRepeatMode(cycle[nextIndex]);
+};
+
+/** 切换随机模式 */
+export const toggleShuffleMode = (): void => {
+  const status = useStatusStore();
+  setShuffleMode(status.shuffleMode === "on" ? "off" : "on");
 };
 
 /**
@@ -250,6 +271,7 @@ export const setShuffleMode = (mode: ShuffleMode): void => {
       queue.unshuffleQueue("");
     }
   }
+  syncPlayMode();
 };
 
 /**
@@ -354,11 +376,23 @@ const handleEvent = async (event: PlayerEvent): Promise<void> => {
       }
       break;
     }
+    case "play":
+      await play();
+      break;
+    case "pause":
+      await pause();
+      break;
     case "next":
       await nextTrack();
       break;
     case "prev":
       await prevTrack();
+      break;
+    case "setShuffle":
+      setShuffleMode(event.data.mode);
+      break;
+    case "setRepeat":
+      setRepeatMode(event.data.mode);
       break;
     case "error":
       status.error = event.error;
@@ -379,8 +413,9 @@ export const initPlayer = async (): Promise<void> => {
   console.log("[player] init");
   await queue.restoreQueue();
   const status = useStatusStore();
-  // 恢复上次的音量到主进程
+  // 恢复上次的音量和播放模式到主进程
   await window.api.player.setVolume(status.volume);
+  syncPlayMode();
   // 恢复上次的歌曲：load 获取元数据和歌词，不自动播放
   const lastTrack = status.currentTrack;
   if (lastTrack?.path) {

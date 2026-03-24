@@ -1,6 +1,12 @@
 /** 播放器状态 */
 export type PlayerState = "idle" | "loading" | "playing" | "paused" | "stopped";
 
+/** 循环模式 */
+export type RepeatMode = "off" | "list" | "one";
+
+/** 随机模式 */
+export type ShuffleMode = "off" | "on";
+
 /** 歌曲来源 */
 export type TrackSource = "local" | "online";
 
@@ -89,8 +95,12 @@ export type PlayerEvent =
   | { type: "status"; data: PlayerStatus }
   | { type: "position"; data: { position: number; duration: number } }
   | { type: "ended" }
+  | { type: "play" }
+  | { type: "pause" }
   | { type: "next" }
   | { type: "prev" }
+  | { type: "setShuffle"; data: { mode: ShuffleMode } }
+  | { type: "setRepeat"; data: { mode: RepeatMode } }
   | { type: "error"; error: string }
   | { type: "deviceChanged"; data: { defaultDevice: string | null } };
 
@@ -123,5 +133,6 @@ export interface PlayerApi {
   getDefaultDeviceName: () => Promise<IpcResponse<string | null>>;
   setOutputDevice: (deviceName: string | null) => Promise<IpcResponse>;
   getSelectedDeviceName: () => Promise<IpcResponse<string | null>>;
+  syncPlayMode: (repeatMode: string, shuffleMode: string) => void;
   onEvent: (callback: (event: PlayerEvent) => void) => () => void;
 }

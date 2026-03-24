@@ -1,11 +1,6 @@
-import type { PlayerState, AudioDevice } from "@shared/types/player";
+import type { PlayerState, AudioDevice, RepeatMode, ShuffleMode } from "@shared/types/player";
+export type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import * as queue from "./queue";
-
-/** 循环模式 */
-export type RepeatMode = "off" | "list" | "one";
-
-/** 随机模式 */
-export type ShuffleMode = "off" | "on";
 
 export const useStatusStore = defineStore(
   "status",

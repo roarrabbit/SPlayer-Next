@@ -1,23 +1,15 @@
-import { BrowserWindow, nativeImage, nativeTheme, ThumbarButton } from "electron";
-import { join } from "path";
-import { playerPlay, playerPause } from "../ipc/player";
+import { BrowserWindow, nativeTheme, ThumbarButton } from "electron";
 import { broadcast } from "../utils/broadcast";
+import { loadThemedIcon } from "../utils/icon";
 
 export interface Thumbar {
   clearThumbar(): void;
   updateThumbar(playing: boolean): void;
 }
 
-// 缩略图单例
 let thumbar: Thumbar | null = null;
 
-// 工具栏图标
-const thumbarIcon = (filename: string) => {
-  const isDark = nativeTheme.shouldUseDarkColors;
-  return nativeImage.createFromPath(
-    join(__dirname, `../../public/icons/thumbar/${filename}-${isDark ? "dark" : "light"}.png`),
-  );
-};
+const thumbarIcon = (name: string) => loadThemedIcon("thumbar", name);
 
 // 创建缩略图工具栏
 class ThumbarImpl implements Thumbar {
@@ -32,8 +24,8 @@ class ThumbarImpl implements Thumbar {
     this.win = win;
     this.prev = { tooltip: "上一曲", icon: thumbarIcon("prev"), click: () => broadcast("player:event", { type: "prev" }) };
     this.next = { tooltip: "下一曲", icon: thumbarIcon("next"), click: () => broadcast("player:event", { type: "next" }) };
-    this.play = { tooltip: "播放", icon: thumbarIcon("play"), click: () => playerPlay() };
-    this.pause = { tooltip: "暂停", icon: thumbarIcon("pause"), click: () => playerPause() };
+    this.play = { tooltip: "播放", icon: thumbarIcon("play"), click: () => broadcast("player:event", { type: "play" }) };
+    this.pause = { tooltip: "暂停", icon: thumbarIcon("pause"), click: () => broadcast("player:event", { type: "pause" }) };
     // 初始化工具栏
     this.updateThumbar(false);
     // 监听主题变化，仅更新图标

@@ -3,6 +3,7 @@ import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { createWindow } from "./create";
 import { initThumbar } from "../services/thumbar";
+import { initTray } from "../services/tray";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -15,9 +16,9 @@ export const createMainWindow = (): BrowserWindow => {
     height: 670,
   });
 
-  // thumbar
   mainWindow.once("ready-to-show", () => {
     initThumbar(mainWindow!);
+    initTray(mainWindow!);
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -44,6 +44,9 @@ const api = {
     readLyricFile: (filePath: string) => ipcRenderer.invoke("player:readLyricFile", filePath),
     // 打开文件选择对话框
     openFile: () => ipcRenderer.invoke("player:openFile"),
+    // 同步播放模式到主进程（供托盘菜单显示）
+    syncPlayMode: (repeatMode: string, shuffleMode: string) =>
+      ipcRenderer.send("player:syncPlayMode", repeatMode, shuffleMode),
     // 订阅主进程推送的播放事件（状态、进度、ended、next/prev 等），返回取消订阅函数
     onEvent: (callback: (event: unknown) => void) => {
       ipcRenderer.removeAllListeners("player:event");

@@ -8,9 +8,11 @@ import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
 import { mediaService } from "../services/media";
 import { getThumbar } from "../services/thumbar";
+import { setTraySongName, setTrayPlayState, setTrayPlayMode } from "../services/tray";
 import { getMainWindow } from "../window";
 import { appName } from "../utils/config";
 import { parseArtists, parseAlbum, formatArtists } from "../utils/metadata";
+import type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import type { MediaEvent } from "../services/media";
 
 type AudioEngineModule = typeof import("@splayer/audio-engine");
@@ -92,8 +94,9 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
       switch (event.type) {
         case "stateChanged": {
           const state = event.state ?? "idle";
-          // 更新缩略图工具栏按钮
+          // 更新缩略图工具栏和托盘菜单
           getThumbar()?.updateThumbar(state === "playing");
+          setTrayPlayState(state === "playing" ? "playing" : "paused");
           if (state !== lastMediaState) {
             lastMediaState = state;
             if (state === "playing") {
@@ -160,22 +163,6 @@ const player = (): InstanceType<AudioEngineModule["AudioPlayer"]> => {
   return playerInstance;
 };
 
-/** 播放（供 thumbar、外部模块调用） */
-export const playerPlay = (): void => {
-  try {
-    player().play();
-  } catch (error) {
-    if (isDeviceError(error)) resetPlayer();
-  }
-};
-
-/** 暂停（供 thumbar、外部模块调用） */
-export const playerPause = (): void => {
-  try {
-    player().pause();
-  } catch {}
-};
-
 /** 注册播放器相关的所有 IPC 事件 */
 export const registerPlayerIpc = (): void => {
   // 只读取轻量元数据
@@ -232,9 +219,11 @@ export const registerPlayerIpc = (): void => {
       const playState = autoPlay ? "Playing" : "Paused";
       lastMediaState = autoPlay ? "playing" : "paused";
       mediaService.setPlayState({ status: playState });
-      // 更新窗口标题
+      // 更新窗口标题和托盘
       const displayTitle = artistStr ? `${trackTitle} - ${artistStr}` : trackTitle || appName;
       getMainWindow()?.setTitle(displayTitle);
+      setTraySongName(displayTitle);
+      setTrayPlayState(autoPlay ? "playing" : "paused");
       const data = {
         track: {
           id: trackId,
@@ -451,7 +440,11 @@ export const registerPlayerIpc = (): void => {
     }
   });
 
-  // 设备变化轮询在首次创建播放器实例时启动（见 player() 函数）
+  
+  // 渲染进程同步播放模式到托盘
+  ipcMain.on("player:syncPlayMode", (_event, repeat: RepeatMode, shuffle: ShuffleMode) => {
+    setTrayPlayMode(repeat, shuffle);
+  });
 
   // 注册系统媒体事件处理（系统按键 → 控制播放器）
   mediaService.onEvent((event: MediaEvent) => {
@@ -459,10 +452,10 @@ export const registerPlayerIpc = (): void => {
       const inst = player();
       switch (event.type) {
         case "Play":
-          inst.play();
+          broadcast("player:event", { type: "play" });
           break;
         case "Pause":
-          inst.pause();
+          broadcast("player:event", { type: "pause" });
           break;
         case "Stop":
           inst.stop();
@@ -522,4 +515,5 @@ export const registerPlayerIpc = (): void => {
     });
   };
   powerMonitor.on("resume", resumeHandler);
+
 };

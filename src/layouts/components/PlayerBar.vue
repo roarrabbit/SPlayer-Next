@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
-import type { RepeatMode } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import * as player from "@/core/player";
 
@@ -19,16 +18,6 @@ const togglePlay = (): void => {
   }
 };
 
-/** 循环模式切换顺序 */
-const repeatCycle: RepeatMode[] = ["list", "one", "off"];
-const cycleRepeat = (): void => {
-  const idx = repeatCycle.indexOf(repeatMode.value);
-  player.setRepeatMode(repeatCycle[(idx + 1) % repeatCycle.length]);
-};
-
-const toggleShuffle = (): void => {
-  player.setShuffleMode(shuffleMode.value === "on" ? "off" : "on");
-};
 
 const formatTime = (ms: number): string => {
   const totalSecs = Math.floor(ms / 1000);
@@ -70,7 +59,7 @@ const onSeek = (e: Event): void => {
           circle
           size="small"
           :class="shuffleMode === 'on' ? 'text-primary' : 'text-on-surface-variant'"
-          @click="toggleShuffle"
+          @click="player.toggleShuffleMode()"
         >
           <template #icon><IconLucideShuffle /></template>
         </SButton>
@@ -95,7 +84,7 @@ const onSeek = (e: Event): void => {
           circle
           size="small"
           :class="repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
-          @click="cycleRepeat"
+          @click="player.cycleRepeatMode()"
         >
           <template #icon>
             <IconLucideRepeat1 v-if="repeatMode === 'one'" />
