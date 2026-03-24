@@ -1,6 +1,5 @@
 import { registerSystemIpc } from "./system";
 import { registerPlayerIpc } from "./player";
-import { registerPlaybackIpc } from "./playback";
 
 /**
  * 注册所有 IPC 事件处理
@@ -8,5 +7,4 @@ import { registerPlaybackIpc } from "./playback";
 export const registerIpcHandlers = (): void => {
   registerSystemIpc();
   registerPlayerIpc();
-  registerPlaybackIpc();
 };

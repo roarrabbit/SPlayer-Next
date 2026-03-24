@@ -6,8 +6,8 @@ import { createPinia } from "pinia";
 import piniaPersistedstate from "pinia-plugin-persistedstate";
 import App from "./App.vue";
 import router from "./router";
-import { useStatusStore } from "./stores/status";
 import { useThemeStore } from "./stores/theme";
+import { initPlayer } from "./core/player";
 import { vRipple } from "./directives/ripple";
 
 const pinia = createPinia();
@@ -21,7 +21,7 @@ app.use(router);
 // 初始化主题
 useThemeStore().init();
 // 初始化播放器
-useStatusStore().init();
+initPlayer();
 
 // 等路由就绪后再挂载
 router.isReady().then(() => {

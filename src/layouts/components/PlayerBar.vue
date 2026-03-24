@@ -1,21 +1,33 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
+import type { RepeatMode } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
+import * as player from "@/core/player";
 
 const status = useStatusStore();
 const media = useMediaStore();
-const { isPlaying, isLoading, position, duration, isExpanded } = storeToRefs(status);
+const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode } = storeToRefs(status);
 
-/** 是否有可播放的曲目 */
 const hasTrack = computed(() => !!media.track);
 
 const togglePlay = (): void => {
   if (!hasTrack.value) return;
   if (isPlaying.value) {
-    status.pause();
+    player.pause();
   } else {
-    status.play();
+    player.play();
   }
+};
+
+/** 循环模式切换顺序 */
+const repeatCycle: RepeatMode[] = ["list", "one", "off"];
+const cycleRepeat = (): void => {
+  const idx = repeatCycle.indexOf(repeatMode.value);
+  player.setRepeatMode(repeatCycle[(idx + 1) % repeatCycle.length]);
+};
+
+const toggleShuffle = (): void => {
+  player.setShuffleMode(shuffleMode.value === "on" ? "off" : "on");
 };
 
 const formatTime = (ms: number): string => {
@@ -27,7 +39,7 @@ const formatTime = (ms: number): string => {
 
 const onSeek = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  status.seek(value);
+  player.seek(value);
 };
 </script>
 
@@ -52,13 +64,42 @@ const onSeek = (e: Event): void => {
     <!-- 播放控制 + 进度 -->
     <div class="flex-1 flex flex-col items-center gap-1">
       <div class="flex items-center gap-3">
-        <SButton variant="ghost" circle size="small" :disabled="!hasTrack" @click="status.stop()">
-          <template #icon><IconLucideSquare /></template>
+        <!-- 随机模式 -->
+        <SButton
+          variant="ghost"
+          circle
+          size="small"
+          :class="shuffleMode === 'on' ? 'text-primary' : 'text-on-surface-variant'"
+          @click="toggleShuffle"
+        >
+          <template #icon><IconLucideShuffle /></template>
         </SButton>
+        <!-- 上一曲 -->
+        <SButton variant="ghost" circle size="small" :disabled="!hasTrack" @click="player.prevTrack()">
+          <template #icon><IconLucideSkipBack /></template>
+        </SButton>
+        <!-- 播放/暂停 -->
         <SButton type="primary" variant="secondary" circle :loading="isLoading" :disabled="!hasTrack && !isLoading" @click="togglePlay">
           <template #icon>
             <IconLucidePause v-if="isPlaying" />
             <IconLucidePlay v-else />
+          </template>
+        </SButton>
+        <!-- 下一曲 -->
+        <SButton variant="ghost" circle size="small" :disabled="!hasTrack" @click="player.nextTrack()">
+          <template #icon><IconLucideSkipForward /></template>
+        </SButton>
+        <!-- 循环模式 -->
+        <SButton
+          variant="ghost"
+          circle
+          size="small"
+          :class="repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
+          @click="cycleRepeat"
+        >
+          <template #icon>
+            <IconLucideRepeat1 v-if="repeatMode === 'one'" />
+            <IconLucideRepeat v-else />
           </template>
         </SButton>
       </div>
@@ -91,7 +132,7 @@ const onSeek = (e: Event): void => {
         step="0.01"
         :value="status.volume"
         class="flex-1 accent-primary"
-        @input="status.setVolume(Number(($event.target as HTMLInputElement).value))"
+        @input="player.setVolume(Number(($event.target as HTMLInputElement).value))"
       />
     </div>
   </div>

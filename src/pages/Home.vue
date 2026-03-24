@@ -2,6 +2,7 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useThemeStore } from "@/stores/theme";
+import * as player from "@/core/player";
 import { toast } from "@/composables/useToast";
 import type { ThemeSource } from "@/types/theme";
 
@@ -40,18 +41,18 @@ const coverUrl = computed(() => media.track?.cover ?? null);
 /** 歌手名拼接 */
 const artistName = computed(() => media.track?.artists.map((a) => a.name).join(" / ") ?? "");
 
-/** 从网络地址加载 */
+/** 从网络地址加载并添加到队列 */
 const loadFromUrl = async (): Promise<void> => {
   const url = urlInput.value.trim();
   if (!url) return;
-  await status.load(url);
+  await player.addAndPlay(url);
 };
 
-/** 打开本地文件对话框并加载 */
+/** 打开本地文件对话框并添加到队列 */
 const loadFromFile = async (): Promise<void> => {
   const result = await window.api.player.openFile();
   if (!result.success || !result.data) return;
-  await status.load(result.data);
+  await player.addAndPlay(result.data);
 };
 
 /** 是否有可播放的曲目 */
@@ -61,9 +62,9 @@ const hasTrack = computed(() => !!media.track);
 const togglePlay = (): void => {
   if (!hasTrack.value) return;
   if (isPlaying.value) {
-    status.pause();
+    player.pause();
   } else {
-    status.play();
+    player.play();
   }
 };
 
@@ -97,13 +98,13 @@ const formatTime = (ms: number): string => {
 /** 进度条拖动 */
 const onSeek = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  status.seek(value);
+  player.seek(value);
 };
 
 /** 音量条拖动 */
 const onVolumeChange = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  status.setVolume(value);
+  player.setVolume(value);
 };
 
 /** 测试 loading → success 的 toast 流程 */
@@ -204,7 +205,7 @@ const testLoadingToast = (): void => {
 
     <!-- 播放控制 -->
     <div class="flex gap-3">
-      <SButton type="primary" size="large" :disabled="!hasTrack" @click="status.stop()"> Stop </SButton>
+      <SButton type="primary" size="large" :disabled="!hasTrack" @click="player.stop()"> Stop </SButton>
       <SButton
         type="primary"
         variant="secondary"
@@ -299,7 +300,7 @@ const testLoadingToast = (): void => {
       <select
         class="flex-1 px-2 py-1.5 rounded-lg text-sm border border-outline-variant bg-surface-alt text-on-surface outline-none"
         :value="status.selectedDeviceName ?? ''"
-        @change="status.switchDevice(($event.target as HTMLSelectElement).value || null)"
+        @change="player.switchDevice(($event.target as HTMLSelectElement).value || null)"
       >
         <option value="">系统默认</option>
         <option
@@ -312,7 +313,7 @@ const testLoadingToast = (): void => {
       </select>
       <button
         class="px-2 py-1.5 rounded-lg text-xs border border-outline-variant bg-surface-alt text-on-surface-variant hover:bg-secondary-container"
-        @click="status.refreshDevices()"
+        @click="player.refreshDevices()"
       >
         刷新
       </button>

@@ -7,7 +7,6 @@ import { broadcast } from "../utils/broadcast";
 import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
 import { mediaService } from "../services/media";
-import { playbackService } from "../services/playback";
 import { getThumbar } from "../services/thumbar";
 import type { MediaEvent } from "../services/media";
 
@@ -148,6 +147,22 @@ const player = (): InstanceType<AudioEngineModule["AudioPlayer"]> => {
     startDevicePolling();
   }
   return playerInstance;
+};
+
+/** 播放（供 thumbar、外部模块调用） */
+export const playerPlay = (): void => {
+  try {
+    player().play();
+  } catch (error) {
+    if (isDeviceError(error)) resetPlayer();
+  }
+};
+
+/** 暂停（供 thumbar、外部模块调用） */
+export const playerPause = (): void => {
+  try {
+    player().pause();
+  } catch {}
 };
 
 /** 注册播放器相关的所有 IPC 事件 */
@@ -431,10 +446,10 @@ export const registerPlayerIpc = (): void => {
           }
           break;
         case "NextTrack":
-          playbackService.next();
+          broadcast("player:event", { type: "next" });
           break;
         case "PrevTrack":
-          playbackService.prev();
+          broadcast("player:event", { type: "prev" });
           break;
       }
     } catch {}
@@ -470,20 +485,4 @@ export const registerPlayerIpc = (): void => {
     });
   };
   powerMonitor.on("resume", resumeHandler);
-
-  // 注册播放/暂停回调到 playbackService
-  playbackService.onPlayPause(
-    () => {
-      try {
-        player().play();
-      } catch (error) {
-        if (isDeviceError(error)) resetPlayer();
-      }
-    },
-    () => {
-      try {
-        player().pause();
-      } catch {}
-    },
-  );
 };

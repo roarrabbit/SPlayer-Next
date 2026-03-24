@@ -2,6 +2,7 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
+import * as player from "@/core/player";
 
 const status = useStatusStore();
 const media = useMediaStore();
@@ -39,9 +40,9 @@ const hasTrack = computed(() => !!media.track);
 const togglePlay = (): void => {
   if (!hasTrack.value) return;
   if (isPlaying.value) {
-    status.pause();
+    player.pause();
   } else {
-    status.play();
+    player.play();
   }
 };
 
@@ -59,7 +60,7 @@ const formatTime = (ms: number): string => {
 
 const onSeek = (e: Event): void => {
   const value = Number((e.target as HTMLInputElement).value);
-  status.seek(value);
+  player.seek(value);
 };
 </script>
 
@@ -127,7 +128,7 @@ const onSeek = (e: Event): void => {
 
         <!-- 播放控制 -->
         <div class="flex items-center gap-6">
-          <SButton variant="ghost" circle size="large" :disabled="!hasTrack" @click="status.stop()">
+          <SButton variant="ghost" circle size="large" :disabled="!hasTrack" @click="player.stop()">
             <template #icon><IconLucideSquare /></template>
           </SButton>
           <SButton

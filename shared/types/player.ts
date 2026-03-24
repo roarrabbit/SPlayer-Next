@@ -89,6 +89,8 @@ export type PlayerEvent =
   | { type: "status"; data: PlayerStatus }
   | { type: "position"; data: { position: number; duration: number } }
   | { type: "ended" }
+  | { type: "next" }
+  | { type: "prev" }
   | { type: "error"; error: string }
   | { type: "deviceChanged"; data: { defaultDevice: string | null } };
 

@@ -38,6 +38,9 @@ export default defineConfig({
     root: ".",
     server: {
       port: 14558,
+      watch: {
+        ignored: ["**/native/**/target/**"],
+      },
     },
     publicDir: resolve(__dirname, "public"),
     build: {
