@@ -14,12 +14,8 @@ static LOG_GUARD: OnceLock<WorkerGuard> = OnceLock::new();
 
 /// 初始化 tracing 日志系统
 ///
-/// - `log_dir`: 日志输出目录（由 JS 侧传入，如 `{userData}/logs/native`）
-/// - `is_dev`: 开发模式时 stdout 级别为 debug，生产模式为 warn
-///
 /// audio-engine 和 media-ctrl 在同一进程中共享全局 tracing subscriber。
 /// 先被调用的模块完成初始化，后被调用的模块 `try_init` 会无害失败。
-/// 两个模块的日志通过 target 字段自动区分。
 pub fn init_logger(log_dir: &str, is_dev: bool) {
     let log_path = PathBuf::from(log_dir);
 
@@ -41,16 +37,15 @@ pub fn init_logger(log_dir: &str, is_dev: bool) {
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     if LOG_GUARD.set(guard).is_err() {
-        // Guard 已初始化，不重复调用
         return;
     }
 
-    let time_format = time::macros::format_description!("[hour]:[minute]:[second]");
+    let time_format = time::macros::format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
     let local_timer = LocalTime::new(time_format);
 
     let crate_name = env!("CARGO_PKG_NAME").replace('-', "_");
 
-    // 文件层：记录 TRACE 及以上
+    // 文件层：TRACE，带完整信息
     let file_filter = Targets::new().with_target(&crate_name, LevelFilter::TRACE);
     let file_layer = fmt::layer()
         .with_writer(non_blocking)
@@ -59,13 +54,16 @@ pub fn init_logger(log_dir: &str, is_dev: bool) {
         .with_timer(local_timer.clone())
         .with_filter(file_filter);
 
-    // 控制台层：开发模式 DEBUG，生产模式 WARN
+    // 控制台层：紧凑单行，不带文件路径，贴近 electron-log 风格
     let stdout_level = if is_dev { LevelFilter::DEBUG } else { LevelFilter::WARN };
     let stdout_filter = Targets::new().with_target(&crate_name, stdout_level);
     let stdout_layer = fmt::layer()
         .with_writer(std::io::stdout)
         .with_ansi(true)
-        .pretty()
+        .compact()
+        .with_target(true)
+        .with_file(true)
+        .with_line_number(true)
         .with_timer(local_timer)
         .with_filter(stdout_filter);
 

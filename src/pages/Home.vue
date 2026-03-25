@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
-import { useThemeStore } from "@/stores/theme";
+import { useSettingsStore } from "@/stores/settings";
 import * as player from "@/core/player";
 import { toast } from "@/composables/useToast";
 import type { ThemeSource } from "@/types/theme";
 
 const status = useStatusStore();
 const media = useMediaStore();
-const theme = useThemeStore();
+const settings = useSettingsStore();
 
 const { state, position, duration, volume, error, isPlaying, isLoading, progress } =
   storeToRefs(status);
@@ -80,11 +80,11 @@ const sourceOptions: { value: ThemeSource; label: string }[] = [
 ];
 
 /** v-model 绑定的颜色字符串 */
-const colorHex = ref(theme.customColor);
+const colorHex = ref(settings.appearance.customColor);
 
 /** 监听颜色变化，同步到主题 */
 watch(colorHex, (hex) => {
-  theme.setCustomColor(hex);
+  settings.setCustomColor(hex);
 });
 
 /** 格式化毫秒为 mm:ss */
@@ -124,8 +124,8 @@ const testLoadingToast = (): void => {
       <!-- 主题类型 -->
       <select
         class="px-2 py-1.5 rounded-lg text-sm border border-outline-variant bg-surface-alt text-on-surface outline-none"
-        :value="theme.source"
-        @change="theme.setSource(($event.target as HTMLSelectElement).value as ThemeSource)"
+        :value="settings.appearance.themeSource"
+        @change="settings.appearance.themeSource = ($event.target as HTMLSelectElement).value as ThemeSource"
       >
         <option v-for="opt in sourceOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
@@ -134,22 +134,22 @@ const testLoadingToast = (): void => {
       <!-- 主色预览 -->
       <span
         class="block w-6 h-6 rounded-full border-2 border-outline-variant shrink-0"
-        :style="{ backgroundColor: theme.activeColor }"
+        :style="{ backgroundColor: settings.activeColor }"
       />
       <!-- 全局着色 -->
       <button
         class="px-3 py-1.5 rounded-lg text-sm border border-outline-variant"
-        :class="theme.globalTint ? 'bg-primary text-on-primary' : 'bg-surface-alt text-on-surface-variant'"
-        @click="theme.globalTint = !theme.globalTint"
+        :class="settings.appearance.globalTint ? 'bg-primary text-on-primary' : 'bg-surface-alt text-on-surface-variant'"
+        @click="settings.appearance.globalTint = !settings.appearance.globalTint"
       >
         着色
       </button>
       <!-- 明暗切换 -->
       <button
         class="px-3 py-1.5 rounded-lg bg-surface-alt text-on-surface-variant text-sm border border-outline-variant"
-        @click="theme.cycleMode()"
+        @click="settings.cycleMode()"
       >
-        {{ modeLabel[theme.mode] }}
+        {{ modeLabel[settings.appearance.themeMode] }}
       </button>
     </div>
 
@@ -191,7 +191,7 @@ const testLoadingToast = (): void => {
           :src="coverUrl"
           alt="cover"
           class="w-20 h-20 rounded-lg object-cover bg-surface-alt"
-          @load="theme.updateCoverColor(coverImg ?? null)"
+          @load="settings.updateCoverColor(coverImg ?? null)"
         />
       </div>
       <div class="flex-1 min-w-0 text-sm">
@@ -407,7 +407,7 @@ const testLoadingToast = (): void => {
     </div>
 
     <!-- 颜色选择器（仅自定义时显示） -->
-    <div v-if="theme.source === 'custom'" class="w-full mt-4 flex items-center gap-3">
+    <div v-if="settings.appearance.themeSource === 'custom'" class="w-full mt-4 flex items-center gap-3">
       <span class="text-xs text-on-surface-variant shrink-0">主题色</span>
       <ColorSliderRoot
         v-model="colorHex"
@@ -420,7 +420,7 @@ const testLoadingToast = (): void => {
         />
       </ColorSliderRoot>
       <span class="text-xs text-on-surface-variant font-mono shrink-0">{{
-        theme.activeColor
+        settings.activeColor
       }}</span>
     </div>
   </div>

@@ -27,6 +27,12 @@ napi-build = "2.3"
 [patch.crates-io]
 ffmpeg-sys-next = { git = "https://github.com/apoint123/rust-ffmpeg-sys" }
 
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+redundant_clone = "deny"
+needless_collect = "warn"
+large_enum_variant = "warn"
+
 [profile.release]
 lto = true
 strip = "symbols"

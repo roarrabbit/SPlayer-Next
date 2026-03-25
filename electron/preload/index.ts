@@ -3,6 +3,12 @@ import { electronAPI } from "@electron-toolkit/preload";
 
 // 暴露给渲染进程的自定义 API
 const api = {
+  config: {
+    get: (keyPath: string) => ipcRenderer.invoke("config:get", keyPath),
+    set: (keyPath: string, value: unknown) => ipcRenderer.invoke("config:set", keyPath, value),
+    getAll: () => ipcRenderer.invoke("config:getAll"),
+    reset: () => ipcRenderer.invoke("config:reset"),
+  },
   player: {
     // 只读取元数据（不播放），用于批量扫描和启动恢复
     probe: (source: string) => ipcRenderer.invoke("player:probe", source),

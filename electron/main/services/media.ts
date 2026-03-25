@@ -2,11 +2,20 @@ import { loadNativeModule } from "../utils/nativeLoader";
 import { broadcast } from "../utils/broadcast";
 import { mediaLog, nativeLogsDir } from "../utils/logger";
 import { isDev } from "../utils/config";
+import { store } from "../store";
 import type { MediaEvent, MetadataParam, PlayStateParam, TimelineParam } from "@splayer/media-ctrl";
+import type { DiscordDisplayMode, DiscordSettings } from "@shared/types/settings";
 
 export type { MediaEvent, MetadataParam, PlayStateParam, TimelineParam };
 
 type MediaCtrlModule = typeof import("@splayer/media-ctrl");
+
+/** DiscordDisplayMode 映射到 media-ctrl 的枚举值 */
+const DISCORD_MODE_MAP: Record<DiscordDisplayMode, "Name" | "State" | "Details"> = {
+  name: "Name",
+  state: "State",
+  details: "Details",
+};
 
 /**
  * 系统媒体控件服务
@@ -34,11 +43,31 @@ class MediaService {
         this.eventHandler?.(event);
         broadcast("media:event", event);
       });
-      this.mc.enable();
+      // 配置读取
+      const mediaConfig = store.get("media");
+      if (mediaConfig.systemMediaControls) {
+        this.mc.enable();
+      }
+      this.applyDiscordConfig(mediaConfig.discord);
       mediaLog.info("系统媒体控件已初始化");
     } catch (error) {
       mediaLog.error("初始化失败:", error);
     }
+  }
+
+  /** 应用 Discord RPC 配置 */
+  private applyDiscordConfig(discord?: DiscordSettings): void {
+    if (!this.mc) return;
+    discord ??= store.get("media").discord;
+    if (discord.enabled) {
+      this.mc.enableDiscord();
+    } else {
+      this.mc.disableDiscord();
+    }
+    this.mc.setDiscordConfig({
+      showWhenPaused: discord.showWhenPaused,
+      displayMode: DISCORD_MODE_MAP[discord.displayMode],
+    });
   }
 
   /** 关闭并清理资源 */

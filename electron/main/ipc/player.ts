@@ -194,7 +194,7 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:load", (_event, source: string, autoPlay = true) => {
     broadcast("player:event", {
       type: "status",
-      data: { state: "loading", position: 0, duration: 0, volume: 0, isFinished: false },
+      data: { state: "loading", position: 0, duration: 0, volume: player().getVolume(), isFinished: false },
     });
     try {
       const inst = player();
@@ -515,7 +515,7 @@ export const registerPlayerIpc = (): void => {
 
     broadcast("player:event", {
       type: "status",
-      data: { state: "stopped", position: 0, duration: 0, volume: 0, isFinished: false },
+      data: { state: "stopped", position: 0, duration: 0, volume: 1, isFinished: false },
     });
   };
   powerMonitor.on("resume", resumeHandler);

@@ -12,7 +12,7 @@ const getDefaultOptions = (): BrowserWindowConstructorOptions => ({
   backgroundColor: nativeTheme.shouldUseDarkColors ? "#101014" : "#f6f6f6",
   ...(process.platform === "linux" ? { icon } : {}),
   webPreferences: {
-    preload: join(__dirname, "../preload/index.js"),
+    preload: join(__dirname, "../preload/index.mjs"),
     sandbox: false,
     // 关闭拼写检查
     spellcheck: false,

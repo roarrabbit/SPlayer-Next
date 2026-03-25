@@ -101,6 +101,7 @@ export type PlayerEvent =
   | { type: "prev" }
   | { type: "setShuffle"; data: { mode: ShuffleMode } }
   | { type: "setRepeat"; data: { mode: RepeatMode } }
+  | { type: "fftData"; data: number[] }
   | { type: "error"; error: string }
   | { type: "deviceChanged"; data: { defaultDevice: string | null } };
 

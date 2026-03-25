@@ -68,7 +68,12 @@ pub struct InnerPlayer {
     /// 解码线程句柄，join 后可回收 DecoderData 复用于 seek
     decoder_thread: Option<JoinHandle<decoder::DecoderData>>,
     fft: Arc<FftAnalyzer>,
-    metadata: Option<AudioMetadata>,
+    /// 当前音频的采样率（seek 重建 DecoderSource 时需要）
+    audio_sample_rate: u32,
+    /// 当前音频的声道数
+    audio_channels: u16,
+    /// 当前音频的时长（秒）
+    audio_duration: f64,
     /// 原始封面数据缓存（load 时提取，getCoverRaw 时返回，避免重复打开文件）
     cover_raw: Option<Vec<u8>>,
     state: PlayerState,
@@ -138,7 +143,9 @@ impl InnerPlayer {
             shared: None,
             decoder_thread: None,
             fft: Arc::new(FftAnalyzer::new(decoder::FFT_SAMPLE_RATE)),
-            metadata: None,
+            audio_sample_rate: 0,
+            audio_channels: 0,
+            audio_duration: 0.0,
             cover_raw: None,
             state: PlayerState::Idle,
             seek_base: 0.0,
@@ -426,11 +433,11 @@ impl InnerPlayer {
         self.seek_base = 0.0;
         self.current_source = Some(source.to_string());
 
-        // 将 cover_raw 从 metadata 中取出缓存，避免 clone 时复制大量封面数据
+        // 缓存 seek 需要的 Copy 字段，cover_raw 单独取出
+        self.audio_sample_rate = metadata.sample_rate;
+        self.audio_channels = metadata.channels;
+        self.audio_duration = metadata.duration_secs;
         self.cover_raw = metadata.cover_raw.take();
-        // 构建返回值后再将 metadata 移入 self，避免 clone
-        let result = metadata.clone();
-        self.metadata = Some(metadata);
 
         if auto_play {
             self.state = PlayerState::Playing;
@@ -442,7 +449,7 @@ impl InnerPlayer {
             self.emit(PlayerEvent::StateChanged { state: PlayerState::Paused });
         }
 
-        Ok(result)
+        Ok(metadata)
     }
 
     /// 恢复播放。如果已停止、播放结束或空闲，自动从头重新加载。
@@ -539,7 +546,6 @@ impl InnerPlayer {
         }
         self.shared = None;
         self.cover_raw = None;
-        self.metadata = None;
         self.seek_base = 0.0;
     }
 
@@ -593,12 +599,11 @@ impl InnerPlayer {
         let sink =
             Arc::new(Sink::try_new(&self.stream_handle).context("Failed to create audio sink")?);
 
-        let metadata = self.metadata.as_ref().context("No metadata available")?;
         let decoder_source = DecoderSource::new(
             Arc::clone(&shared),
             Arc::clone(&self.fft),
-            metadata.sample_rate,
-            metadata.channels,
+            self.audio_sample_rate,
+            self.audio_channels,
         );
 
         // 保持 seek 前的播放/暂停状态
@@ -660,7 +665,7 @@ impl InnerPlayer {
 
     /// 获取总时长（秒）
     pub fn duration(&self) -> f64 {
-        self.metadata.as_ref().map_or(0.0, |m| m.duration_secs)
+        self.audio_duration
     }
 
     /// 获取当前播放状态

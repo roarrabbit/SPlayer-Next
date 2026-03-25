@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { app } from "electron";
-import log from "electron-log/main";
+import log from "electron-log";
 import { isDev } from "./config";
 
 /** 日志根目录：开发模式放 dev 子目录，生产模式直接放 logs/ */

@@ -1,3 +1,6 @@
+//! 跨平台系统媒体控件（Windows SMTC / Linux MPRIS / macOS MPNowPlaying）+ Discord RPC。
+//! 通过 NAPI-RS 暴露给 Node.js，作为 Electron 主进程的原生模块。
+
 mod discord;
 mod logger;
 mod model;

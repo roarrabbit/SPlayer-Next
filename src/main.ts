@@ -6,7 +6,8 @@ import { createPinia } from "pinia";
 import piniaPersistedstate from "pinia-plugin-persistedstate";
 import App from "./App.vue";
 import router from "./router";
-import { useThemeStore } from "./stores/theme";
+
+import { useSettingsStore } from "./stores/settings";
 import { initPlayer } from "./core/player";
 import { vRipple } from "./directives/ripple";
 
@@ -19,9 +20,9 @@ app.use(pinia);
 app.use(router);
 
 // 初始化主题
-useThemeStore().init();
+useSettingsStore().initTheme();
 
-// 初始化播放器 + 等路由就绪，都完成后再挂载（播放器初始化失败不阻塞启动）
+// 初始化程序
 Promise.all([initPlayer().catch(console.error), router.isReady()]).then(() => {
   app.mount("#app");
   // 淡出加载动画
