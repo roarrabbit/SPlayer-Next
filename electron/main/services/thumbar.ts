@@ -20,6 +20,7 @@ class ThumbarImpl implements Thumbar {
   private play: ThumbarButton;
   private pause: ThumbarButton;
   private isPlaying: boolean = false;
+  private onThemeUpdated: () => void;
 
   constructor(win: BrowserWindow) {
     this.win = win;
@@ -46,23 +47,30 @@ class ThumbarImpl implements Thumbar {
     // 初始化工具栏
     this.updateThumbar(false);
     // 监听主题变化，仅更新图标
-    nativeTheme.on("updated", () => {
+    this.onThemeUpdated = () => {
       this.prev.icon = thumbarIcon("prev");
       this.next.icon = thumbarIcon("next");
       this.play.icon = thumbarIcon("play");
       this.pause.icon = thumbarIcon("pause");
       this.updateThumbar(this.isPlaying);
+    };
+    nativeTheme.on("updated", this.onThemeUpdated);
+    // 窗口销毁时移除监听
+    win.on("closed", () => {
+      nativeTheme.removeListener("updated", this.onThemeUpdated);
     });
   }
 
   // 更新工具栏
   updateThumbar(playing: boolean): void {
+    if (this.win.isDestroyed()) return;
     this.isPlaying = playing;
     this.win.setThumbarButtons([this.prev, playing ? this.pause : this.play, this.next]);
   }
 
   // 清除工具栏
   clearThumbar(): void {
+    if (this.win.isDestroyed()) return;
     this.win.setThumbarButtons([]);
   }
 }

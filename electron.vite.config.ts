@@ -5,6 +5,7 @@ import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Icons from "unplugin-icons/vite";
 import IconsResolver from "unplugin-icons/resolver";
+import { FileSystemIconLoader } from "unplugin-icons/loaders";
 import RekaResolver from "reka-ui/resolver";
 import Components from "unplugin-vue-components/vite";
 
@@ -66,10 +67,16 @@ export default defineConfig({
           filepath: "./auto-eslint.mjs",
         },
       }),
-      Icons({ compiler: "vue3" }),
+      Icons({
+        compiler: "vue3",
+        scale: 1,
+        customCollections: {
+          sp: FileSystemIconLoader("./src/assets/icons"),
+        },
+      }),
       Components({
         dirs: ["src/components", "src/layouts/components"],
-        resolvers: [RekaResolver(), IconsResolver({ prefix: "icon" })],
+        resolvers: [RekaResolver(), IconsResolver({ prefix: "icon", customCollections: ["sp"] })],
       }),
     ],
   },

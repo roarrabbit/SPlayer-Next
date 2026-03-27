@@ -15,14 +15,14 @@ const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffl
 /** 歌词组件引用 */
 const lyricRef = ref<InstanceType<typeof EffectsLyrics>>();
 
-/** 60fps 精确播放时间（毫秒），歌曲或歌词加载中暂停推送避免旧歌词跳动 */
+/** 精确播放时间（毫秒） */
 const { start: startTick, stop: stopTick } = usePlaybackTime((currentMs) => {
   if (!status.trackLoading && !media.lyricLoading) {
     lyricRef.value?.setCurrentTime(currentMs);
   }
 });
 
-/** 歌词是否激活（展开后挂载，收起动画结束后卸载） */
+/** 歌词是否激活 */
 const lyricActive = ref(false);
 
 /** 展开前：挂载歌词 + 恢复渲染 + 启动时钟 */
@@ -47,7 +47,7 @@ const onAfterLeave = () => {
 
 const hasTrack = computed(() => !!media.track);
 
-/** 无歌词时居中封面（歌词加载中不触发，避免切歌抖动） */
+/** 无歌词时居中封面 */
 const coverCentered = computed(
   () => settings.player.autoCenterCover && !media.lyricLoading && media.parsedLyric.length === 0,
 );
@@ -107,27 +107,20 @@ const onSeek = (e: Event): void => {
 
         <!-- 左侧：封面 + 歌曲信息 -->
         <div
-          class="absolute top-0 left-0 bottom-18 w-[45%] flex flex-col items-center justify-center gap-6 px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="absolute top-14 left-0 bottom-18 w-[45%] flex flex-col items-center justify-center gap-6 px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
           :style="coverCentered ? 'transform: translateX(calc(100% * 11 / 18))' : undefined"
         >
-          <!-- 封面 -->
-          <div class="w-[70%] max-w-[50vh]">
+          <div class="w-[clamp(200px,85%,50vh)] flex flex-col items-center gap-10">
+            <!-- 封面 -->
             <PlayerCover />
-          </div>
-          <!-- 歌曲信息 -->
-          <div v-if="media.track" class="w-[70%] max-w-[50vh] text-center">
-            <div class="text-xl font-semibold truncate">
-              {{ media.track.title }}
-            </div>
-            <div class="text-sm text-cover/60 mt-1.5 truncate">
-              {{ media.track.artists.map((a) => a.name).join(" / ") }}
-            </div>
+            <!-- 歌曲信息 -->
+            <PlayerData />
           </div>
         </div>
 
         <!-- 右侧：歌词区域 -->
         <div
-          class="absolute top-0 right-0 bottom-18 w-[55%] text-[clamp(1.5rem,3.5vw,3rem)] font-bold transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="lyric-area absolute top-14 right-0 bottom-18 pr-20 w-[55%] text-[clamp(1.5rem,3.5vw,3rem)] font-bold transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
           :class="coverCentered ? 'opacity-0 pointer-events-none' : 'opacity-100'"
         >
           <EffectsLyrics
@@ -253,4 +246,19 @@ const onSeek = (e: Event): void => {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.lyric-area {
+  filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.2));
+  mask: linear-gradient(
+    180deg,
+    hsla(0, 0%, 100%, 0) 0,
+    hsla(0, 0%, 100%, 0.6) 5%,
+    #fff 10%,
+    #fff 75%,
+    hsla(0, 0%, 100%, 0.6) 85%,
+    hsla(0, 0%, 100%, 0)
+  );
+}
+</style>
 

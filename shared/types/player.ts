@@ -35,6 +35,7 @@ export interface Album {
 export interface AudioQuality {
   sampleRate: number;
   channels: number;
+  bitsPerSample: number;
   bitRate: number;
   codec: string;
 }
@@ -54,6 +55,8 @@ export interface Track {
   source: TrackSource;
   path?: string;
   title: string;
+  /** 注释/副标题 */
+  comment?: string;
   artists: Artist[];
   album?: Album;
   duration: number;

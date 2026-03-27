@@ -139,9 +139,16 @@ pub struct AudioMetadata {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
+    /// 注释/副标题
+    pub comment: Option<String>,
     pub duration_secs: f64,
+    /// 播放采样率（重采样后，用于音频输出）
     pub sample_rate: u32,
     pub channels: u16,
+    /// 原始采样率（解码前，用于前端显示）
+    pub original_sample_rate: u32,
+    /// 位深（bits per sample）
+    pub bits_per_sample: u32,
     /// 比特率（bps）
     pub bit_rate: i64,
     /// 编码格式名称（如 "flac", "mp3", "aac"）

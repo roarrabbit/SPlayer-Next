@@ -18,6 +18,29 @@ pub const FFT_SAMPLE_RATE: u32 = 44100;
 
 /// 网络流读取失败最大重试次数
 const NETWORK_READ_RETRIES: u32 = 3;
+
+/// 从音频流参数中提取比特率、原始采样率和位深
+///
+/// # Safety
+/// `stream` 和 `input_ctx` 的底层指针必须有效（由调用方保证生命周期）
+unsafe fn extract_stream_info(
+    stream: &ffmpeg::Stream,
+    input_ctx: &ffmpeg::format::context::Input,
+) -> (i64, u32, u32) {
+    let p = stream.parameters().as_ptr();
+    let stream_bit_rate = (*p).bit_rate;
+    // FLAC 等无损格式的 stream bit_rate 通常为 0，fallback 到容器级别
+    let bit_rate = if stream_bit_rate > 0 {
+        stream_bit_rate
+    } else {
+        (*input_ctx.as_ptr()).bit_rate
+    };
+    let original_sample_rate = (*p).sample_rate as u32;
+    let bits_per_raw = (*p).bits_per_raw_sample as u32;
+    let bits_per_coded = (*p).bits_per_coded_sample as u32;
+    let bits_per_sample = if bits_per_raw > 0 { bits_per_raw } else { bits_per_coded };
+    (bit_rate, original_sample_rate, bits_per_sample)
+}
 /// 重试间隔（毫秒）
 const NETWORK_RETRY_DELAY_MS: u64 = 500;
 
@@ -84,19 +107,23 @@ pub fn probe_metadata(
     let cover = cover_cache_dir
         .and_then(|dir| metadata::extract_cover_thumbnail(&input_ctx, source, dir));
 
-    // SAFETY: stream.parameters().as_ptr() 返回有效的 AVCodecParameters 指针，
-    // 生命周期由 input_ctx 保证，在此作用域内有效
-    let bit_rate = unsafe { (*stream.parameters().as_ptr()).bit_rate };
+    // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
+    let (bit_rate, original_sample_rate, bits_per_sample) =
+        unsafe { extract_stream_info(&stream, &input_ctx) };
     let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
         .map(|c| c.name().to_string())
         .unwrap_or_default();
+    let comment = metadata_dict.get("comment").map(ToString::to_string);
     Ok(AudioMetadata {
         title,
         artist,
         album,
+        comment,
         duration_secs,
         sample_rate: TARGET_SAMPLE_RATE,
         channels: TARGET_CHANNELS,
+        original_sample_rate,
+        bits_per_sample,
         bit_rate,
         codec,
         embedded_lyric: None,
@@ -148,12 +175,13 @@ pub fn start_decode(
     let embedded_lyric = metadata::extract_embedded_lyric(&input_ctx);
     let external_lyrics = metadata::find_all_external_lyrics(source);
 
-    // SAFETY: stream.parameters().as_ptr() 返回有效的 AVCodecParameters 指针，
-    // 生命周期由 input_ctx 保证，在此作用域内有效
-    let bit_rate = unsafe { (*stream.parameters().as_ptr()).bit_rate };
+    // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
+    let (bit_rate, original_sample_rate, bits_per_sample) =
+        unsafe { extract_stream_info(&stream, &input_ctx) };
     let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
         .map(|c| c.name().to_string())
         .unwrap_or_default();
+    let comment = metadata_dict.get("comment").map(ToString::to_string);
 
     let decoder_ctx = ffmpeg::codec::context::Context::from_parameters(stream.parameters())?;
     let decoder = decoder_ctx.decoder().audio()?;
@@ -188,9 +216,12 @@ pub fn start_decode(
         title,
         artist,
         album,
+        comment,
         duration_secs,
         sample_rate: TARGET_SAMPLE_RATE,
         channels: TARGET_CHANNELS,
+        original_sample_rate,
+        bits_per_sample,
         bit_rate,
         codec,
         embedded_lyric,

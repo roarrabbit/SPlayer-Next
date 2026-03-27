@@ -231,6 +231,7 @@ export const registerPlayerIpc = (): void => {
           source: "local",
           path: source,
           title: trackTitle,
+          comment: meta.comment ?? undefined,
           artists,
           album: trackAlbum,
           duration: durationMs,
@@ -238,8 +239,9 @@ export const registerPlayerIpc = (): void => {
         },
         detail: {
           quality: {
-            sampleRate: meta.sampleRate,
+            sampleRate: meta.originalSampleRate,
             channels: meta.channels,
+            bitsPerSample: meta.bitsPerSample,
             bitRate: meta.bitRate,
             codec: meta.codec,
           },

@@ -36,8 +36,10 @@ const buildMenu = (): Menu => {
       icon: menuIcon("music"),
       enabled: !!songName,
       click: () => {
-        mainWin?.show();
-        mainWin?.focus();
+        if (mainWin && !mainWin.isDestroyed()) {
+          mainWin.show();
+          mainWin.focus();
+        }
       },
     },
     { type: "separator" },
@@ -143,8 +145,10 @@ export const initTray = (win: BrowserWindow): void => {
   tray.setContextMenu(buildMenu());
   // 单击托盘图标显示窗口
   tray.on("click", () => {
-    mainWin?.show();
-    mainWin?.focus();
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.show();
+      mainWin.focus();
+    }
   });
   // 系统主题变化时刷新菜单图标
   nativeTheme.on("updated", refresh);

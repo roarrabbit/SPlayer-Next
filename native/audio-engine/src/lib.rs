@@ -51,12 +51,18 @@ pub struct JsMusicMetadata {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
+    /// 注释/副标题
+    pub comment: Option<String>,
     /// 时长（秒）
     pub duration: f64,
-    /// 采样率
+    /// 播放采样率（重采样后）
     pub sample_rate: u32,
     /// 声道数
     pub channels: u32,
+    /// 原始采样率（解码前，用于音质显示）
+    pub original_sample_rate: u32,
+    /// 位深（bits per sample）
+    pub bits_per_sample: u32,
     /// 比特率（bps）
     pub bit_rate: i64,
     /// 编码格式（如 "flac", "mp3", "aac"）
@@ -214,9 +220,12 @@ impl AudioPlayer {
             title: meta.title,
             artist: meta.artist,
             album: meta.album,
+            comment: meta.comment,
             duration: meta.duration_secs,
             sample_rate: meta.sample_rate,
             channels: meta.channels as u32,
+            original_sample_rate: meta.original_sample_rate,
+            bits_per_sample: meta.bits_per_sample,
             bit_rate: meta.bit_rate,
             codec: meta.codec,
             embedded_lyric: meta.embedded_lyric,
