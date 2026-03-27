@@ -57,11 +57,13 @@
     font-size: var(--lp-bg-font-size, 0.75em);
     padding-left: calc(1em / 0.75);
     padding-right: calc(1em / 0.75);
+    transform-origin: left top;
     opacity: 0.0001;
-    transition: opacity 0.5s 0.25s;
+    transition: opacity 0.25s;
 
     &.active {
       opacity: var(--lp-bg-active-opacity, 0.4);
+      transition: opacity 0.5s 0.25s;
     }
   }
 }
@@ -88,6 +90,10 @@
       opacity 0.35s ease;
     pointer-events: none;
   }
+}
+
+.lp-line.duet.bg {
+  transform-origin: right top;
 }
 
 .lp-line.duet .lp-content {

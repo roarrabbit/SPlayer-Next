@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
+import { useSettingsStore } from "@/stores/settings";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
 import EffectsLyrics from "@/components/player/EffectsLyrics/index.vue";
 import * as player from "@/core/player";
 
 const status = useStatusStore();
 const media = useMediaStore();
+const settings = useSettingsStore();
 const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode } =
   storeToRefs(status);
 
@@ -42,6 +44,11 @@ const onAfterLeave = () => {
 };
 
 const hasTrack = computed(() => !!media.track);
+
+/** 无歌词时居中封面（歌词加载中不触发，避免切歌抖动） */
+const coverCentered = computed(
+  () => settings.player.autoCenterCover && !media.lyricLoading && media.parsedLyric.length === 0,
+);
 
 const togglePlay = (): void => {
   if (!hasTrack.value) return;
@@ -80,7 +87,7 @@ const onSeek = (e: Event): void => {
       @before-leave="onBeforeLeave"
       @after-leave="onAfterLeave"
     >
-      <div v-show="isExpanded" class="fixed inset-0 z-200 bg-surface overflow-hidden text-cover" style="--lp-color: rgb(var(--s-cover))">
+      <div v-show="isExpanded" class="fixed inset-0 z-200 bg-surface overflow-hidden text-cover after:content-[''] after:absolute after:left-1/2 after:top-0 after:bottom-0 after:w-px after:bg-[rgba(255,0,0,0.5)] after:z-999 after:pointer-events-none" style="--lp-color: rgb(var(--s-cover))">
         <!-- 背景 -->
         <PlayerBackground />
 
@@ -98,7 +105,8 @@ const onSeek = (e: Event): void => {
 
         <!-- 左侧：封面 + 歌曲信息 -->
         <div
-          class="absolute top-0 left-0 bottom-18 w-[45%] flex flex-col items-center justify-center gap-6 px-12"
+          class="absolute top-0 left-0 bottom-18 w-[45%] flex flex-col items-center justify-center gap-6 px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          :style="coverCentered ? 'transform: translateX(calc(100% * 11 / 18))' : undefined"
         >
           <!-- 封面 -->
           <div class="w-[70%] max-w-[50vh]">
@@ -116,17 +124,20 @@ const onSeek = (e: Event): void => {
         </div>
 
         <!-- 右侧：歌词区域 -->
-        <div class="absolute top-0 right-0 bottom-18 w-[55%] text-[clamp(1.5rem,3.5vw,3rem)] font-bold">
+        <div
+          class="absolute top-0 right-0 bottom-18 w-[55%] text-[clamp(1.5rem,3.5vw,3rem)] font-bold transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          :class="coverCentered ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+        >
           <EffectsLyrics
-            v-if="lyricActive && media.parsedLyric.length > 0"
+            v-if="lyricActive && (media.parsedLyric.length > 0 || media.lyricLoading)"
             ref="lyricRef"
             :lyric-lines="media.parsedLyric"
             :playing="isPlaying"
             @seek="player.seek($event)"
           />
           <div
-            v-else
-            class="w-full h-full flex items-center justify-center text-cover/30 text-sm"
+            v-else-if="!media.lyricLoading"
+            class="w-full h-full flex items-center justify-center text-cover/30"
           >
             暂无歌词
           </div>

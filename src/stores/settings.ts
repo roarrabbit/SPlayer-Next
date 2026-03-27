@@ -8,6 +8,7 @@ export const useSettingsStore = defineStore(
     /** 播放器设置（持久化） */
     const player = reactive<PlayerSettings>({
       playerBgType: "blur",
+      autoCenterCover: true,
     });
 
     /** 后端配置（不持久化，从主进程同步） */

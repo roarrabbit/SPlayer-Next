@@ -30,6 +30,9 @@ export const useMediaStore = defineStore("media", () => {
     }
   });
 
+  /** 歌词是否正在加载 */
+  const lyricLoading = ref(false);
+
   /** 当前歌词行索引，-1 表示无匹配 */
   const lyricIndex = ref(-1);
 
@@ -50,21 +53,27 @@ export const useMediaStore = defineStore("media", () => {
     const active = activeLyric.value;
     if (!det || !active) {
       lyricContent.value = null;
+      lyricLoading.value = false;
       return;
     }
-    if (active.type === "embedded") {
-      lyricContent.value = det.embeddedLyric ?? null;
-    } else {
-      const lyric = det.externalLyrics.find((l) => l.format === active.format);
-      if (!lyric) {
-        lyricContent.value = null;
-        return;
+    lyricLoading.value = true;
+    try {
+      if (active.type === "embedded") {
+        lyricContent.value = det.embeddedLyric ?? null;
+      } else {
+        const lyric = det.externalLyrics.find((l) => l.format === active.format);
+        if (!lyric) {
+          lyricContent.value = null;
+          return;
+        }
+        const result = await window.api.player.readLyricFile(lyric.path);
+        lyricContent.value = result.success ? (result.data ?? null) : null;
       }
-      const result = await window.api.player.readLyricFile(lyric.path);
-      lyricContent.value = result.success ? (result.data ?? null) : null;
+      // 重置索引
+      lyricIndex.value = -1;
+    } finally {
+      lyricLoading.value = false;
     }
-    // 重置索引
-    lyricIndex.value = -1;
   };
 
   /**
@@ -76,6 +85,7 @@ export const useMediaStore = defineStore("media", () => {
     track.value = newTrack;
     if (!newDetail) return;
     detail.value = newDetail;
+    lyricLoading.value = true;
 
     // 外置优先，按格式优先级选择
     const idx = bestExternalIndex(newDetail.externalLyrics);
@@ -118,6 +128,7 @@ export const useMediaStore = defineStore("media", () => {
     lyricFormat,
     lyricContent,
     parsedLyric,
+    lyricLoading,
     lyricIndex,
     updateLyricIndex,
     setTrack,

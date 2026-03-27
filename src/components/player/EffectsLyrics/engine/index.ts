@@ -279,7 +279,11 @@ export class LyricRenderer {
     for (let i = 0; i < lineCount; i++) {
       this.positionSprings[i] = new Spring(offScreen);
       const scaleSpring = new Spring(97);
-      scaleSpring.updateParams({ mass: 2, damping: 25, stiffness: 100 });
+      scaleSpring.updateParams(
+        lines[i].isBG
+          ? { mass: 1, damping: 20, stiffness: 50 }
+          : { mass: 2, damping: 25, stiffness: 100 },
+      );
       this.scaleSprings[i] = scaleSpring;
     }
     this.applySpringParams();
@@ -715,6 +719,8 @@ export class LyricRenderer {
       const targetScale =
         !isActive && this.isPlaying ? (line.isBG ? 75 : 97) : 100;
 
+      const collapsedBG = line.isBG && this.isPlaying && !isActive;
+
       if (syncImmediate) {
         posSpring.setPosition(position);
         scaleSpring.setPosition(targetScale);
@@ -724,7 +730,7 @@ export class LyricRenderer {
       }
 
       // 非激活 BG 行不占位
-      if (!(line.isBG && this.isPlaying && !isActive))
+      if (!collapsedBG)
         position += this.lineHeights[i] || 40;
 
       if (position >= 0 && !this.isUserScrolling) {
