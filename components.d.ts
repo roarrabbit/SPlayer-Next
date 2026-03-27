@@ -58,6 +58,7 @@ declare module 'vue' {
     SButton: typeof import('./src/components/ui/SButton.vue')['default']
     SideBar: typeof import('./src/layouts/components/SideBar.vue')['default']
     SImg: typeof import('./src/components/ui/SImg.vue')['default']
+    SimpleLyrics: typeof import('./src/components/player/SimpleLyrics/index.vue')['default']
     SLoading: typeof import('./src/components/ui/SLoading.vue')['default']
     SPopover: typeof import('./src/components/ui/SPopover.vue')['default']
     SToast: typeof import('./src/components/ui/SToast.vue')['default']

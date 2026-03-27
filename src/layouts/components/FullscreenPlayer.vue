@@ -4,6 +4,7 @@ import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
 import EffectsLyrics from "@/components/player/EffectsLyrics/index.vue";
+import SimpleLyrics from "@/components/player/SimpleLyrics/index.vue";
 import * as player from "@/core/player";
 
 const status = useStatusStore();
@@ -12,8 +13,11 @@ const settings = useSettingsStore();
 const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode } =
   storeToRefs(status);
 
-/** 歌词组件引用 */
-const lyricRef = ref<InstanceType<typeof EffectsLyrics>>();
+/** 歌词渲染模式 */
+const lyricMode = computed(() => settings.player.lyricMode);
+
+/** 歌词组件引用（两种模式共享同一接口） */
+const lyricRef = ref<InstanceType<typeof EffectsLyrics> | InstanceType<typeof SimpleLyrics>>();
 
 /** 精确播放时间（毫秒） */
 const { start: startTick, stop: stopTick } = usePlaybackTime((currentMs) => {
@@ -128,7 +132,14 @@ const onSeek = (e: Event): void => {
           :class="coverCentered ? 'opacity-0 pointer-events-none' : 'opacity-100'"
         >
           <EffectsLyrics
-            v-if="lyricActive && (media.parsedLyric.length > 0 || media.lyricLoading)"
+            v-if="lyricMode === 'effects' && lyricActive && (media.parsedLyric.length > 0 || media.lyricLoading)"
+            ref="lyricRef"
+            :lyric-lines="media.parsedLyric"
+            :playing="isPlaying"
+            @seek="player.seek($event)"
+          />
+          <SimpleLyrics
+            v-else-if="lyricMode === 'simple' && lyricActive && (media.parsedLyric.length > 0 || media.lyricLoading)"
             ref="lyricRef"
             :lyric-lines="media.parsedLyric"
             :playing="isPlaying"

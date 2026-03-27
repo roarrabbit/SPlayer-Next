@@ -9,6 +9,7 @@ export const useSettingsStore = defineStore(
     const player = reactive<PlayerSettings>({
       playerBgType: "blur",
       autoCenterCover: true,
+      lyricMode: "effects",
     });
 
     /** 后端配置（不持久化，从主进程同步） */

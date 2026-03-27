@@ -43,13 +43,42 @@ const albumText = computed(() => media.track?.album?.name ?? "");
       >
         {{ sourceLabel }}
       </span>
-      <span
-        v-if="qualityLabel"
-        class="inline-flex items-center gap-1 leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30"
-      >
-        <IconSpLossless v-if="showLosslessIcon" class="text-[1.6em] -my-[0.5em]" />
-        {{ qualityLabel }}
-      </span>
+      <SPopover side="top" :side-offset="8">
+        <template #trigger>
+          <span
+            v-if="qualityLabel"
+            class="inline-flex items-center gap-1 leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30 cursor-pointer transition-colors hover:border-cover/60"
+          >
+            <IconSpLossless v-if="showLosslessIcon" class="text-[1.6em] -my-[0.5em]" />
+            {{ qualityLabel }}
+          </span>
+        </template>
+        <div v-if="media.detail?.quality" class="min-w-48 text-xs">
+          <div class="font-medium text-sm mb-2">音质详情</div>
+          <div class="flex flex-col gap-1.5 text-on-surface/70">
+            <div class="flex justify-between">
+              <span class="text-on-surface/40">编码格式</span>
+              <span>{{ media.detail.quality.codec.toUpperCase() }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface/40">采样率</span>
+              <span>{{ (media.detail.quality.sampleRate / 1000).toFixed(1) }} kHz</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface/40">位深</span>
+              <span>{{ media.detail.quality.bitsPerSample }} bit</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface/40">比特率</span>
+              <span>{{ Math.round(media.detail.quality.bitRate / 1000) }} kbps</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-on-surface/40">声道</span>
+              <span>{{ media.detail.quality.channels === 2 ? "立体声" : media.detail.quality.channels === 1 ? "单声道" : `${media.detail.quality.channels} 声道` }}</span>
+            </div>
+          </div>
+        </div>
+      </SPopover>
       <span
         class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30"
       >

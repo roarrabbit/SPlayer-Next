@@ -104,7 +104,7 @@ onUnmounted(clearTimers);
         :align="align"
         :side-offset="sideOffset"
         :avoid-collisions="true"
-        class="z-100 rounded-xl bg-surface-bright border border-outline-variant/30 shadow-lg p-3 text-sm text-on-surface data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
+        class="z-300 rounded-xl bg-surface-bright border border-outline-variant/30 shadow-lg p-3 text-sm text-on-surface data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
         @pointerenter="handlePointerEnter"
         @pointerleave="handlePointerLeave"
         @escape-key-down="setOpen(false)"
