@@ -28,17 +28,25 @@
     "title": "Settings",
     "search": "Search settings...",
     "group": {
+      "general": "General",
       "player": "Player",
       "appearance": "Appearance",
       "system": "System"
     },
     "section": {
+      "language": "Language",
       "playback": "Playback",
       "lyrics": "Lyrics",
       "theme": "Theme",
       "layout": "Layout",
       "media": "Media Controls",
-      "discord": "Discord"
+      "discord": "Discord RPC"
+    },
+    "language": {
+      "label": "Language",
+      "description": "Switch the display language",
+      "zhCN": "简体中文",
+      "enUS": "English"
     },
     "fadeDuration": {
       "label": "Fade Duration",
@@ -97,6 +105,13 @@
     "discordShowWhenPaused": {
       "label": "Show When Paused",
       "description": "Keep Discord status visible when paused"
+    },
+    "discordDisplayMode": {
+      "label": "Brief Status Display",
+      "description": "Text shown below username when detailed panel is not open",
+      "name": "App Name",
+      "details": "Song Name",
+      "state": "Artist Name"
     }
   }
 }

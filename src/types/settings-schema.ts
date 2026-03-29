@@ -26,6 +26,8 @@ export interface SettingItem {
   step?: number;
   /** 默认值（显示恢复默认按钮） */
   defaultValue?: unknown;
+  /** 覆盖描述的 i18n key（不传则使用 settings.{key}.description） */
+  descriptionKey?: string;
   /** 条件禁用 */
   disabled?: () => boolean;
   /** button 类型的点击回调 */

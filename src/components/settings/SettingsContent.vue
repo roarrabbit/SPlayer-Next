@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { settingsSchema } from "@/settings/schema";
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
+import { useSettingsStore } from "@/stores/settings";
 
 const { initialCategory, initialHighlight } = useSettingsDialog();
+
+// 打开设置时从主进程同步后端配置
+useSettingsStore().syncSystem();
 const { t } = useI18n();
 
 const activeId = ref(initialCategory.value);
 const highlightKey = ref(initialHighlight.value);
 const scrollRef = ref<HTMLElement>();
+const isSearchActive = ref(false);
 
 const activeCategory = computed(() => settingsSchema.find((c) => c.id === activeId.value));
 
@@ -17,8 +22,7 @@ const sectionStartIndices = computed(() => {
   let idx = 0;
   for (const sec of activeCategory.value?.sections ?? []) {
     indices.push(idx);
-    const visibleCount = sec.items.length;
-    idx += 1 + visibleCount; // 1 for title + items
+    idx += 1 + sec.items.length;
   }
   return indices;
 });
@@ -59,13 +63,19 @@ onMounted(() => {
       <h2 class="text-lg font-bold mb-0.5 px-1">{{ t("settings.title") }}</h2>
       <p class="text-xs text-on-surface-variant/50 mb-5 px-1">SPlayer</p>
 
-      <SettingsSearch class="mb-4" @select="onSearchSelect" />
-      <SettingsMenu
-        :categories="settingsSchema"
-        :active-id="activeId"
-        class="flex-1"
-        @select="onCategorySelect"
-      />
+      <!-- 搜索 -->
+      <SettingsSearch class="mb-4" @select="onSearchSelect" @active-change="isSearchActive = $event" />
+
+      <!-- 菜单 -->
+      <Transition name="fade">
+        <div v-show="!isSearchActive" class="flex-1 min-h-0 overflow-y-auto">
+          <SettingsMenu
+            :categories="settingsSchema"
+            :active-id="activeId"
+            @select="onCategorySelect"
+          />
+        </div>
+      </Transition>
     </div>
 
     <!-- 右侧 -->

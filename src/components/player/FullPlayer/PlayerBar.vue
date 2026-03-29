@@ -101,6 +101,7 @@ const onSeekDragEnd = (value: number): void => {
         <SButton
           variant="ghost"
           circle
+          ripple
           :size="36"
           :class="shuffleMode === 'on' ? 'text-primary' : 'text-on-surface-variant'"
           @click="player.toggleShuffleMode()"
@@ -110,6 +111,7 @@ const onSeekDragEnd = (value: number): void => {
         <SButton
           variant="ghost"
           circle
+          ripple
           :size="38"
           :disabled="!hasTrack"
           @click="player.prevTrack()"
@@ -121,6 +123,7 @@ const onSeekDragEnd = (value: number): void => {
           variant="secondary"
           class="mx-1"
           circle
+          ripple
           :size="44"
           :loading="isLoading"
           :disabled="!hasTrack && !isLoading"
@@ -134,6 +137,7 @@ const onSeekDragEnd = (value: number): void => {
         <SButton
           variant="ghost"
           circle
+          ripple
           :size="38"
           :disabled="!hasTrack"
           @click="player.nextTrack()"
@@ -143,6 +147,7 @@ const onSeekDragEnd = (value: number): void => {
         <SButton
           variant="ghost"
           circle
+          ripple
           :size="36"
           :class="repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
           @click="player.cycleRepeatMode()"

@@ -3,11 +3,16 @@ import { settingsSchema } from "@/settings/schema";
 
 const emit = defineEmits<{
   select: [categoryId: string, itemKey: string];
+  "active-change": [active: boolean];
 }>();
 
 const { t } = useI18n();
 const query = ref("");
-const isActive = ref(false);
+const isFocused = ref(false);
+
+const isSearchActive = computed(() => isFocused.value && query.value.length > 0);
+
+watch(isSearchActive, (v) => emit("active-change", v));
 
 interface SearchResult {
   categoryId: string;
@@ -45,46 +50,54 @@ const results = computed<SearchResult[]>(() => {
 const handleSelect = (r: SearchResult) => {
   emit("select", r.categoryId, r.itemKey);
   query.value = "";
-  isActive.value = false;
 };
 
 const handleBlur = () => {
-  setTimeout(() => (isActive.value = false), 150);
+  setTimeout(() => (isFocused.value = false), 150);
 };
 </script>
 
 <template>
   <div class="relative">
-    <div class="flex items-center gap-2 h-8 px-3 rounded-lg bg-on-surface/5 transition-colors">
-      <IconLucideSearch class="size-3.5 text-on-surface-variant/50 shrink-0" />
-      <input
-        v-model="query"
-        :placeholder="t('settings.search')"
-        class="flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-variant/40"
-        @focus="isActive = true"
-        @blur="handleBlur"
-      />
-    </div>
+    <SInput
+      v-model="query"
+      :placeholder="t('settings.search')"
+      clearable
+      @focus="isFocused = true"
+      @blur="handleBlur"
+    >
+      <template #prefix>
+        <IconLucideSearch class="size-3.5 text-on-surface-variant/50" />
+      </template>
+    </SInput>
 
-    <Transition name="fade">
+    <!-- 搜索结果（绝对定位，在输入框下方展开） -->
+    <Transition
+      enter-active-class="transition-[opacity,transform] duration-200 ease-out"
+      leave-active-class="transition-[opacity,transform] duration-150 ease-in"
+      enter-from-class="opacity-0 -translate-y-1"
+      leave-to-class="opacity-0 -translate-y-1"
+    >
       <div
-        v-if="isActive && results.length > 0"
-        class="absolute top-full left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-xl bg-surface-panel shadow-lg z-10"
+        v-if="isSearchActive"
+        class="absolute left-0 right-0 top-full mt-2 max-h-[calc(75vh-220px)] overflow-y-auto rounded-lg border-1 border-solid border-outline-variant/80 z-10 p-1"
       >
-        <div class="p-1">
-          <button
+        <template v-if="results.length > 0">
+          <div
             v-for="r in results"
             :key="`${r.categoryId}-${r.itemKey}`"
-            class="w-full text-left px-3 py-2 rounded-lg hover:bg-on-surface/5 transition-colors"
+            class="flex flex-col px-3 py-2 rounded-lg cursor-pointer transition-[background-color] duration-200 hover:bg-on-surface/8"
             @mousedown.prevent="handleSelect(r)"
           >
-            <div class="text-sm">{{ r.label }}</div>
-            <div class="text-xs text-on-surface-variant/60 flex items-center gap-1">
-              <span>{{ r.categoryLabel }}</span>
-              <span class="opacity-40">·</span>
-              <span class="truncate">{{ r.description }}</span>
-            </div>
-          </button>
+            <span class="text-xs text-on-surface-variant/40">{{ r.categoryLabel }}</span>
+            <span class="text-sm font-medium">{{ r.label }}</span>
+            <span v-if="r.description" class="text-xs text-on-surface-variant/50 truncate">
+              {{ r.description }}
+            </span>
+          </div>
+        </template>
+        <div v-else class="px-3 py-4 text-sm text-on-surface-variant/50 text-center">
+          {{ t("common.noData") }}
         </div>
       </div>
     </Transition>

@@ -25,6 +25,8 @@ export default defineConfig({
           "{ from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-4px) } }",
         "slide-in-item":
           "{ from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }",
+        "highlight-pulse":
+          "{ 0%, 100% { box-shadow: 0 0 0 0 transparent } 25%, 75% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.3) } 50% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.15) } }",
       },
       durations: {
         "popover-in": "200ms",
@@ -38,6 +40,7 @@ export default defineConfig({
         "select-in": "150ms",
         "select-out": "100ms",
         "slide-in-item": "250ms",
+        "highlight-pulse": "2s",
       },
       timingFns: {
         "popover-in": "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -51,6 +54,7 @@ export default defineConfig({
         "select-in": "cubic-bezier(0.16, 1, 0.3, 1)",
         "select-out": "ease-in",
         "slide-in-item": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "highlight-pulse": "ease-in-out",
       },
     },
     colors: {

@@ -18,24 +18,28 @@ const selectOptions = computed(() =>
   })),
 );
 
-const isChildrenExpanded = computed(() => {
+const isChildrenActive = computed(() => {
   if (props.item.childrenCondition) return props.item.childrenCondition();
   return model.value === true;
 });
 
 const isDisabled = computed(() => props.item.disabled?.() ?? false);
+
+const descriptionText = computed(() =>
+  t(props.item.descriptionKey ?? `settings.${props.item.key}.description`),
+);
 </script>
 
 <template>
   <div :id="`setting-${item.key}`">
     <div
       class="flex items-center justify-between gap-4 rounded-xl bg-surface-panel border-1 border-solid border-outline-variant/15 px-4 py-3.5 transition-all duration-300"
-      :class="highlighted ? 'ring-2 ring-primary/30' : ''"
+      :class="highlighted ? 'animate-highlight-pulse' : ''"
     >
       <div class="min-w-0 flex-1">
         <div class="text-base">{{ t(`settings.${item.key}.label`) }}</div>
         <div class="text-sm text-on-surface-variant/70 mt-0.5">
-          {{ t(`settings.${item.key}.description`) }}
+          {{ descriptionText }}
         </div>
       </div>
 
@@ -84,22 +88,13 @@ const isDisabled = computed(() => props.item.disabled?.() ?? false);
       </div>
     </div>
 
-    <!-- 子项 -->
-    <Transition
-      enter-active-class="transition-all duration-200 ease-out overflow-hidden"
-      leave-active-class="transition-all duration-150 ease-in overflow-hidden"
-      enter-from-class="opacity-0 max-h-0"
-      enter-to-class="opacity-100 max-h-96"
-      leave-from-class="opacity-100 max-h-96"
-      leave-to-class="opacity-0 max-h-0"
-    >
-      <div v-if="item.children?.length && isChildrenExpanded" class="ml-6 mt-2.5 flex flex-col gap-2.5 border-l border-outline-variant/15 pl-2">
-        <SettingsItem
-          v-for="child in item.children"
-          :key="child.key"
-          :item="child"
-        />
-      </div>
-    </Transition>
+    <!-- 子项（父级关闭时禁用） -->
+    <div v-if="item.children?.length" class="mt-2.5 flex flex-col gap-2.5 transition-opacity duration-200" :class="isChildrenActive ? '' : 'opacity-50 pointer-events-none'">
+      <SettingsItem
+        v-for="child in item.children"
+        :key="child.key"
+        :item="child"
+      />
+    </div>
   </div>
 </template>

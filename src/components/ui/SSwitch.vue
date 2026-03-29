@@ -23,7 +23,7 @@ const emit = defineEmits<{
     :disabled="disabled"
     class="group relative inline-flex items-center w-10 h-5.5 shrink-0 border-none p-0 cursor-pointer outline-none transition-[background-color] duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
     :class="[
-      modelValue ? 'bg-primary hover:bg-primary/85' : 'bg-on-surface/20 hover:bg-on-surface/30',
+      modelValue ? 'bg-primary/80 hover:bg-primary/70' : 'bg-on-surface/20 hover:bg-on-surface/30',
       round ? 'rounded-full' : 'rounded-lg',
     ]"
     @update:model-value="emit('update:modelValue', $event)"

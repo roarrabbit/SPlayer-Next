@@ -1,9 +1,31 @@
 import type { SettingCategory } from "@/types/settings-schema";
+import IconLucideCog from "~icons/lucide/cog";
 import IconLucidePlay from "~icons/lucide/play";
 import IconLucidePalette from "~icons/lucide/palette";
 import IconLucideSettings from "~icons/lucide/settings";
 
 export const settingsSchema: SettingCategory[] = [
+  {
+    id: "general",
+    icon: IconLucideCog,
+    sections: [
+      {
+        id: "language",
+        items: [
+          {
+            key: "language",
+            type: "select",
+            binding: { store: "settings", path: "locale" },
+            options: [
+              { value: "zh-CN", labelKey: "settings.language.zhCN" },
+              { value: "en-US", labelKey: "settings.language.enUS" },
+            ],
+            defaultValue: "zh-CN",
+          },
+        ],
+      },
+    ],
+  },
   {
     id: "player",
     icon: IconLucidePlay,
@@ -119,6 +141,17 @@ export const settingsSchema: SettingCategory[] = [
                 type: "switch",
                 binding: { store: "settings", path: "system.media.discord.showWhenPaused" },
                 defaultValue: false,
+              },
+              {
+                key: "discordDisplayMode",
+                type: "select",
+                binding: { store: "settings", path: "system.media.discord.displayMode" },
+                options: [
+                  { value: "name", labelKey: "settings.discordDisplayMode.name" },
+                  { value: "details", labelKey: "settings.discordDisplayMode.details" },
+                  { value: "state", labelKey: "settings.discordDisplayMode.state" },
+                ],
+                defaultValue: "name",
               },
             ],
           },
