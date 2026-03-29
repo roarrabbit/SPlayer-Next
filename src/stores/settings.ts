@@ -10,6 +10,7 @@ export const useSettingsStore = defineStore(
       playerBgType: "blur",
       autoCenterCover: true,
       lyricMode: "effects",
+      layoutMode: "default",
     });
 
     /** 后端配置（不持久化，从主进程同步） */

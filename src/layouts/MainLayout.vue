@@ -1,12 +1,42 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
+import { useSettingsStore } from "@/stores/settings";
 
 const status = useStatusStore();
+const settings = useSettingsStore();
 
 /** 有歌曲信息时显示播放栏 */
 const showPlayerBar = computed(() => !!useMediaStore().track);
 const { isExpanded } = storeToRefs(status);
+const layoutMode = computed(() => settings.player.layoutMode);
+
+/** 侧边栏：仅 default 模式在有播放栏时加底部间距 */
+const sidebarClass = computed(() => {
+  if (showPlayerBar.value && layoutMode.value === "default") return "mb-20";
+  return "";
+});
+
+/** 主内容区底部间距 */
+const mainPaddingClass = computed(() => {
+  if (!showPlayerBar.value) return "";
+  if (layoutMode.value === "floating") return "pb-24";
+  return "pb-20";
+});
+
+/** 播放栏样式 */
+const playerBarClass = computed(() => {
+  const base =
+    "fixed bottom-0 h-20 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible";
+  switch (layoutMode.value) {
+    case "sidebar-full":
+      return `${base} left-60 right-0 border-t border-t-primary/10`;
+    case "floating":
+      return `${base} left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl rounded-2xl mb-2 shadow-lg border border-primary/10`;
+    default:
+      return `${base} left-0 right-0 border-t border-t-primary/10`;
+  }
+});
 </script>
 
 <template>
@@ -18,7 +48,7 @@ const { isExpanded } = storeToRefs(status);
     <!-- 侧边栏 -->
     <aside
       class="w-60 shrink-0 border-r-1 border-r-solid border-r-primary/10 bg-surface-panel/90 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[margin] duration-300"
-      :class="showPlayerBar ? 'mb-20' : ''"
+      :class="sidebarClass"
     >
       <SideBar />
     </aside>
@@ -31,7 +61,7 @@ const { isExpanded } = storeToRefs(status);
       </header>
 
       <!-- 主内容区 -->
-      <main class="flex-1 overflow-y-auto scroll-trim" :class="showPlayerBar ? 'pb-20' : ''">
+      <main class="flex-1 overflow-y-auto scroll-trim" :class="mainPaddingClass">
         <RouterView />
       </main>
     </div>
@@ -43,10 +73,7 @@ const { isExpanded } = storeToRefs(status);
       enter-from-class="translate-y-full"
       leave-to-class="translate-y-full"
     >
-      <footer
-        v-if="showPlayerBar"
-        class="fixed bottom-0 left-0 right-0 h-20 border-t-1 border-t-solid border-t-primary/10 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible"
-      >
+      <footer v-if="showPlayerBar" :class="playerBarClass">
         <PlayerBar />
       </footer>
     </Transition>
