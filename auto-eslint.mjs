@@ -204,6 +204,7 @@ export default {
     "useFullscreen": true,
     "useGamepad": true,
     "useGeolocation": true,
+    "useI18n": true,
     "useId": true,
     "useIdle": true,
     "useImage": true,

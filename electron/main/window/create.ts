@@ -6,8 +6,10 @@ import icon from "../../../resources/icon.png?asset";
  * 获取默认窗口配置
  */
 const getDefaultOptions = (): BrowserWindowConstructorOptions => ({
-  width: 900,
-  height: 670,
+  width: 1280,
+  height: 800,
+  minWidth: 800,
+  minHeight: 600,
   autoHideMenuBar: true,
   backgroundColor: nativeTheme.shouldUseDarkColors ? "#101014" : "#f6f6f6",
   ...(process.platform === "linux" ? { icon } : {}),

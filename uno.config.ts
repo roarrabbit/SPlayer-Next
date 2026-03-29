@@ -15,14 +15,29 @@ export default defineConfig({
           "{ from { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }",
         "dialog-out":
           "{ from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } }",
+        "panel-in":
+          "{ from { opacity: 0; transform: scale(0.97) } to { opacity: 1; transform: scale(1) } }",
+        "panel-out":
+          "{ from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(0.97) } }",
+        "select-in":
+          "{ from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: translateY(0) } }",
+        "select-out":
+          "{ from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-4px) } }",
+        "slide-in-item":
+          "{ from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }",
       },
       durations: {
-        "popover-in": "150ms",
-        "popover-out": "100ms",
+        "popover-in": "200ms",
+        "popover-out": "150ms",
         "overlay-in": "200ms",
         "overlay-out": "150ms",
         "dialog-in": "200ms",
         "dialog-out": "150ms",
+        "panel-in": "250ms",
+        "panel-out": "150ms",
+        "select-in": "150ms",
+        "select-out": "100ms",
+        "slide-in-item": "250ms",
       },
       timingFns: {
         "popover-in": "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -31,6 +46,11 @@ export default defineConfig({
         "overlay-out": "ease-in",
         "dialog-in": "cubic-bezier(0.16, 1, 0.3, 1)",
         "dialog-out": "ease-in",
+        "panel-in": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "panel-out": "ease-in",
+        "select-in": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "select-out": "ease-in",
+        "slide-in-item": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       },
     },
     colors: {

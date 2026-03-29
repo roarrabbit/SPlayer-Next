@@ -82,4 +82,6 @@ const playerBarClass = computed(() => {
   </div>
   <!-- 全屏播放器 -->
   <FullPlayer />
+  <!-- 设置弹窗 -->
+  <SettingsDialog />
 </template>

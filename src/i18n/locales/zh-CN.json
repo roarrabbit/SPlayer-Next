@@ -29,13 +29,13 @@
     "search": "搜索设置项...",
     "group": {
       "player": "播放器",
-      "appearance": "外观",
+      "appearance": "外观设置",
       "system": "系统"
     },
     "section": {
       "playback": "播放",
       "lyrics": "歌词",
-      "theme": "主题",
+      "theme": "主题与风格",
       "layout": "布局",
       "media": "媒体控制",
       "discord": "Discord"
@@ -63,8 +63,8 @@
     "themeMode": {
       "label": "主题模式",
       "description": "应用的颜色主题",
-      "light": "浅色",
-      "dark": "深色",
+      "light": "浅色模式",
+      "dark": "深色模式",
       "system": "跟随系统"
     },
     "themeSource": {
@@ -76,7 +76,7 @@
       "solid": "纯色"
     },
     "globalTint": {
-      "label": "全局色调",
+      "label": "全局着色",
       "description": "将主题色应用到全局界面"
     },
     "layoutMode": {

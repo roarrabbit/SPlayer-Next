@@ -17,8 +17,8 @@ export const defaultSystemConfig: SystemConfig = {
   },
   system: {
     window: {
-      width: 900,
-      height: 670,
+      width: 1280,
+      height: 800,
       x: null,
       y: null,
       maximized: false,

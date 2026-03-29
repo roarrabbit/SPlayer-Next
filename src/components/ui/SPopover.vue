@@ -18,6 +18,8 @@ export interface SPopoverProps {
   arrow?: boolean;
   /** 封面主题模式 */
   cover?: boolean;
+  /** 触发器是否撑满父容器宽度 */
+  block?: boolean;
 }
 
 const props = withDefaults(defineProps<SPopoverProps>(), {
@@ -29,6 +31,7 @@ const props = withDefaults(defineProps<SPopoverProps>(), {
   closeDelay: 150,
   arrow: false,
   cover: false,
+  block: false,
 });
 
 const emit = defineEmits<{
@@ -94,7 +97,7 @@ onUnmounted(clearTimers);
   <PopoverRoot :open="isOpen" @update:open="trigger === 'click' ? setOpen($event) : undefined">
     <PopoverTrigger as-child>
       <span
-        class="inline-flex"
+        :class="block ? 'flex w-full' : 'inline-flex'"
         @pointerenter="handlePointerEnter"
         @pointerleave="handlePointerLeave"
         @focusin="handleFocus"

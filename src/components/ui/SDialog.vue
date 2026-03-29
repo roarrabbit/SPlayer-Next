@@ -12,13 +12,25 @@ export interface SDialogProps {
   closable?: boolean;
   /** 封面主题模式（播放器内使用） */
   cover?: boolean;
+  /** 宽度，支持 CSS 值（默认 460px） */
+  width?: string;
+  /** 高度，支持 CSS 值（默认 auto，受 max-h 限制） */
+  height?: string;
 }
 
 const props = withDefaults(defineProps<SDialogProps>(), {
   modal: true,
   closable: true,
   cover: false,
+  width: "460px",
+  height: "auto",
 });
+
+const contentStyle = computed(() => ({
+  width: props.width,
+  height: props.height === "auto" ? undefined : props.height,
+  maxHeight: props.height === "auto" ? "85vh" : undefined,
+}));
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
@@ -57,11 +69,13 @@ const setOpen = (val: boolean): void => {
 
       <!-- 内容面板 -->
       <DialogContent
+        :style="contentStyle"
         :class="[
-          'fixed top-1/2 left-1/2 z-300 max-h-[85vh] w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2',
-          'rounded-xl shadow-xl px-5 py-4 overflow-y-auto',
+          'fixed top-1/2 left-1/2 z-300 -translate-x-1/2 -translate-y-1/2',
+          'rounded-xl shadow-xl overflow-hidden',
           'data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
           'focus:outline-none',
+          height === 'auto' ? 'overflow-y-auto px-5 py-4' : 'flex flex-col',
           cover
             ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border-1 border-solid border-white/10 text-cover'
             : 'bg-surface-bright border-1 border-solid border-outline-variant/30 text-on-surface',
@@ -81,6 +95,7 @@ const setOpen = (val: boolean): void => {
         >
           {{ description }}
         </DialogDescription>
+        <DialogDescription v-else class="sr-only" />
 
         <!-- 内容 -->
         <slot />
