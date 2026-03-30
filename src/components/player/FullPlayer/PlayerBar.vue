@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
-import { extractColorFromImage } from "@/utils/color";
 import * as player from "@/core/player";
 
 const status = useStatusStore();
@@ -43,7 +42,7 @@ const onSeekDragEnd = (value: number): void => {
 
 <template>
   <div class="relative h-full">
-    <!-- 进度条：绝对定位骑在播放栏上边缘 -->
+    <!-- 进度条 -->
     <div class="absolute left-0 right-0 top-0 -translate-y-1/2 z-10">
       <SSlider
         :model-value="position"
@@ -58,17 +57,16 @@ const onSeekDragEnd = (value: number): void => {
       </SSlider>
     </div>
 
-    <!-- 三栏 grid 布局：左右等宽 1fr，中间 auto，保证控制按钮绝对居中 -->
+    <!-- 主内容 -->
     <div class="grid grid-cols-[1fr_auto_1fr] items-center h-full px-3">
-      <!-- 左侧：封面 + 歌曲信息 -->
+      <!-- 左侧 -->
       <div class="flex items-center gap-3 min-w-0">
         <SImg
           :src="media.track?.cover"
           class="size-14 shrink-0 rounded-lg cursor-pointer"
-          @load="extractColorFromImage($event)"
           @click="isExpanded = true"
         />
-        <!-- 歌曲信息：切歌时从左侧滑入 -->
+        <!-- 歌曲信息 -->
         <Transition name="slide-left" mode="out-in">
           <div v-if="media.track" :key="media.track.id" class="min-w-0">
             <SMarquee class="font-bold text-base leading-snug">{{ media.track.title }}</SMarquee>
@@ -95,7 +93,7 @@ const onSeekDragEnd = (value: number): void => {
         </Transition>
       </div>
 
-      <!-- 中间：播放控制 -->
+      <!-- 播放控制 -->
       <div class="flex items-center gap-2 mx-15">
         <SButton
           variant="ghost"
@@ -158,7 +156,7 @@ const onSeekDragEnd = (value: number): void => {
         </SButton>
       </div>
 
-      <!-- 右侧：时间 + 音量 -->
+      <!-- 时间 + 音量 -->
       <div class="flex items-center justify-end gap-3 min-w-0">
         <span class="text-xs text-on-surface-variant tabular-nums shrink-0">
           {{ formatTime(position) }} / {{ formatTime(duration) }}
@@ -170,9 +168,9 @@ const onSeekDragEnd = (value: number): void => {
             :min="0"
             :max="1"
             :step="0.01"
-            always-show-thumb
             :thumb-size="12"
             :track-height="3"
+            always-show-thumb
             class="flex-1"
             @change="player.setVolume($event)"
           />

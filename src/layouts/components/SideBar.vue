@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { useSettingsDialog } from "@/settings/useSettingsDialog";
+import type { SMenuItem } from "@/components/ui/SMenu.vue";
+import IconLucideHome from "~icons/lucide/home";
 
 const { t } = useI18n();
-const { show: showSettings } = useSettingsDialog();
+const router = useRouter();
+const route = useRoute();
+
+const menuItems = computed<SMenuItem[]>(() => [
+  { key: "/", label: t("nav.home"), icon: markRaw(IconLucideHome) },
+]);
+
+const activeKey = computed(() => {
+  return menuItems.value.find((item) => route.path === item.key || route.path.startsWith(item.key + "/"))?.key ?? "/";
+});
+
+const onSelect = (key: string) => {
+  router.push(key);
+};
 </script>
 
 <template>
-  <nav class="flex flex-col h-full p-3">
-    <div class="text-lg font-bold px-2 py-3">SPlayer</div>
+  <div class="flex flex-col h-full">
+    <!-- Logo：高度与导航栏 h-14 对齐 -->
     <RouterLink
       to="/"
-      class="px-3 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-on-surface/8 transition-colors"
+      class="flex items-center justify-center gap-2 h-16 shrink-0 no-underline cursor-pointer transition-transform hover:scale-105 active:scale-100"
     >
-      {{ t("nav.home") }}
+      <SLogo :size="30" />
+      <span class="text-[22px] text-primary mt-0.5" style="font-family: 'logo'">SPlayer</span>
     </RouterLink>
-
-    <!-- 底部设置按钮 -->
-    <button
-      class="mt-auto flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-on-surface/8 transition-colors"
-      @click="showSettings()"
-    >
-      <IconLucideSettings class="size-4" />
-      <span>{{ t("nav.settings") }}</span>
-    </button>
-  </nav>
+    <div class="px-3 pb-3">
+      <SMenu :items="menuItems" :model-value="activeKey" @select="onSelect" />
+    </div>
+  </div>
 </template>

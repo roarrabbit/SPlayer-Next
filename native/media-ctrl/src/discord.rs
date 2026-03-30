@@ -21,7 +21,7 @@ use crate::model::{
 const APP_ID: &str = "1454403710162698293";
 const ICON_KEY: &str = "logo-icon";
 const TIMESTAMP_THRESHOLD_MS: i64 = 100;
-const RECONNECT_COOLDOWN: u8 = 5;
+const RECONNECT_COOLDOWN: Duration = Duration::from_secs(5);
 
 enum Msg {
     Metadata(MetadataPayload),
@@ -72,7 +72,7 @@ struct Worker {
     client: Option<DiscordIpcClient>,
     data: Option<ActivityData>,
     enabled: bool,
-    retry_cd: u8,
+    next_retry_at: Option<std::time::Instant>,
     last_end_ts: Option<i64>,
     show_paused: bool,
     display_mode: DiscordDisplayMode,
@@ -82,7 +82,7 @@ impl Default for Worker {
     fn default() -> Self {
         Self {
             client: None, data: None, enabled: false,
-            retry_cd: 0, last_end_ts: None,
+            next_retry_at: None, last_end_ts: None,
             show_paused: false, display_mode: DiscordDisplayMode::Name,
         }
     }
@@ -91,7 +91,7 @@ impl Default for Worker {
 impl Worker {
     fn handle(&mut self, msg: Msg) {
         match msg {
-            Msg::Enable => { self.enabled = true; self.retry_cd = 0; }
+            Msg::Enable => { self.enabled = true; self.next_retry_at = None; }
             Msg::Disable => { self.enabled = false; self.disconnect(); }
             Msg::Config(c) => {
                 self.show_paused = c.show_when_paused;
@@ -128,17 +128,20 @@ impl Worker {
     }
 
     fn connect(&mut self) {
-        if self.retry_cd > 0 { self.retry_cd -= 1; return; }
+        if let Some(t) = self.next_retry_at {
+            if std::time::Instant::now() < t { return; }
+        }
         let mut client = DiscordIpcClient::new(APP_ID);
         match client.connect() {
             Ok(()) => {
                 info!("Discord IPC 已连接");
                 self.client = Some(client);
                 self.last_end_ts = None;
+                self.next_retry_at = None;
             }
             Err(_) => {
-                debug!(cooldown = RECONNECT_COOLDOWN, "Discord IPC 连接失败，进入冷却");
-                self.retry_cd = RECONNECT_COOLDOWN;
+                debug!(cooldown_secs = RECONNECT_COOLDOWN.as_secs(), "Discord IPC 连接失败，进入冷却");
+                self.next_retry_at = Some(std::time::Instant::now() + RECONNECT_COOLDOWN);
             }
         }
     }

@@ -6,7 +6,7 @@ import { useStatusStore } from "@/stores/status";
 import * as queue from "@/stores/queue";
 import * as playback from "@/services/playback";
 import { loadAudio } from "@/services/audioLoader";
-import { extractColorFromImage } from "@/utils/color";
+import { extractColorFromUrl } from "@/utils/color";
 
 /**
  * 处理 IPC 返回结果，失败时写入 error
@@ -60,8 +60,8 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
       media.setTrack(data.track, data.detail);
       // 歌词后台加载，不阻塞播放
       media.loadLyric();
-      // 无封面时清空封面主色，避免残留上一首的颜色
-      if (!data.track.cover) extractColorFromImage(null);
+      // 提取封面主色（无封面时清空，避免残留上一首的颜色）
+      extractColorFromUrl(data.track.cover ?? null);
       // 更新播放状态和进度
       const dur = data.track.duration;
       status.duration = dur;

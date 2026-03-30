@@ -40,7 +40,7 @@ const playerBarClass = computed(() => {
 </script>
 
 <template>
-  <!-- 主界面：展开时缩小淡出 -->
+  <!-- 主界面 -->
   <div
     class="h-screen flex bg-surface text-on-surface transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.7,0,0.3,1)] origin-center"
     :class="isExpanded ? 'scale-95 opacity-0 pointer-events-none' : ''"
@@ -56,7 +56,7 @@ const playerBarClass = computed(() => {
     <!-- 右侧主区域 -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- 顶部导航 -->
-      <header class="h-14 shrink-0 flex items-center px-4 border-b border-primary/10">
+      <header class="h-16 shrink-0 flex items-center px-3 border-b border-primary/10">
         <NavHeader />
       </header>
 
@@ -82,6 +82,6 @@ const playerBarClass = computed(() => {
   </div>
   <!-- 全屏播放器 -->
   <FullPlayer />
-  <!-- 设置弹窗 -->
+  <!-- 全局设置 -->
   <SettingsDialog />
 </template>

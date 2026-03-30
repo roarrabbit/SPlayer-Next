@@ -583,9 +583,11 @@ impl InnerPlayer {
 
         if !seek_ok {
             // 回收失败（线程 panic 或 seek 出错），回退到从头 load，不再递归 seek
+            // 保持 seek 前的播放/暂停状态
+            let was_playing = self.state == PlayerState::Playing;
             drop(decoder_data);
             if let Some(source) = self.current_source.clone() {
-                self.load(&source, true)?;
+                self.load(&source, was_playing)?;
             }
             return Ok(());
         }

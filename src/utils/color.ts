@@ -102,7 +102,7 @@ export const SOLID_PALETTE_DARK: ThemePalette = {
 };
 
 /**
- * 从图片元素提取主色 HEX
+ * 从 HTMLImageElement 提取主色并应用
  * 缩放到 50×50 降低计算量，经 QuantizerCelebi 量化 + Score 评分
  * @param img 封面图片元素，无封面传 null
  */
@@ -112,14 +112,41 @@ export const extractColorFromImage = (img: HTMLImageElement | null): void => {
     themeStore.coverColor = null;
     return;
   }
+  themeStore.coverColor = extractColorFromImageElement(img);
+};
+
+/**
+ * 从图片 URL 提取主色并应用（不依赖 DOM 渲染）
+ * 适用于启动时组件还未挂载的场景
+ * @param url 封面图片 URL，传 null 清除颜色
+ */
+export const extractColorFromUrl = (url: string | null): void => {
+  const themeStore = useThemeStore();
+  if (!url || !useSettingsStore().player.followCoverColor) {
+    themeStore.coverColor = null;
+    return;
+  }
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    themeStore.coverColor = extractColorFromImageElement(img);
+  };
+  img.onerror = () => {
+    themeStore.coverColor = null;
+  };
+  img.src = url;
+};
+
+/**
+ * 从 HTMLImageElement 提取主色 HEX，纯计算，不操作 store
+ * @returns 主色 HEX 或 null（单调/低彩度时）
+ */
+const extractColorFromImageElement = (img: HTMLImageElement): string | null => {
   const canvas = document.createElement("canvas");
   canvas.width = 50;
   canvas.height = 50;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) {
-    themeStore.coverColor = null;
-    return;
-  }
+  if (!ctx) return null;
   ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 50, 50);
   const { data } = ctx.getImageData(0, 0, 50, 50);
   // RGBA → ARGB int
@@ -129,29 +156,23 @@ export const extractColorFromImage = (img: HTMLImageElement | null): void => {
   }
   const quantized = QuantizerCelebi.quantize(pixels, 128);
   const sorted = Array.from(quantized).sort((a, b) => b[1] - a[1]);
-  // 单调检测：前 5 色 RGB 分量差值均 < 5 → 灰度图
+  // 单调检测：前 5 色 RGB 分量差值均 < 8 → 灰度图
   const top5 = sorted
     .slice(0, 5)
     .map(([argb]) => [(argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff]);
-  if (top5.every((c) => Math.max(...c) - Math.min(...c) < 5)) {
-    themeStore.coverColor = null;
-    return;
-  }
+  if (top5.every((c) => Math.max(...c) - Math.min(...c) < 8)) return null;
   // Score 评分取最佳色
   const ranked = Score.score(new Map(sorted.slice(0, 50)));
   // 彩度检测：scored 色的 chroma 过低说明实际无有效彩色
   const scoredHct = Hct.fromInt(ranked[0]);
-  if (scoredHct.chroma < 10) {
-    themeStore.coverColor = null;
-    return;
-  }
+  if (scoredHct.chroma < 6) return null;
   // 经 Material 主题提取 secondary 色相后提亮至 tone 90
   const materialTheme: Theme = themeFromSourceColor(ranked[0]);
   const { hue, chroma } = materialTheme.palettes.secondary;
   // 释放 canvas GPU 资源
   canvas.width = 0;
   canvas.height = 0;
-  themeStore.coverColor = argbToHex(Hct.from(hue, chroma, 90).toInt());
+  return argbToHex(Hct.from(hue, chroma, 90).toInt());
 };
 
 /**
