@@ -401,8 +401,9 @@ const handleEvent = async (event: PlayerEvent): Promise<void> => {
       // 歌曲加载中或 loading 事件不更新 UI，保持当前封面/进度/播放状态平滑过渡
       if (event.data.state === "loading" || status.trackLoading) break;
       status.state = event.data.state;
-      // seek 后只接受到达目标附近的 position，丢弃旧位置
-      if (hasReachedSeekTarget(event.data.position)) {
+      // seek 期间不从 status 事件更新 position，避免回跳
+      // position 的更新统一由 position 事件负责
+      if (seekTarget === null) {
         status.position = event.data.position;
         playback.setCurrentTime(event.data.position);
       }

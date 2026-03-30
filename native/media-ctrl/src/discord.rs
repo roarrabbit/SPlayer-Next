@@ -89,7 +89,7 @@ impl Default for Worker {
             client: None,
             data: None,
             enabled: false,
-            retry_cd: 0,
+            next_retry_at: None,
             last_end_ts: None,
             show_paused: false,
             display_mode: DiscordDisplayMode::Name,
@@ -102,7 +102,7 @@ impl Worker {
         match msg {
             Msg::Enable => {
                 self.enabled = true;
-                self.retry_cd = 0;
+                self.next_retry_at = None;
             }
             Msg::Disable => {
                 self.enabled = false;
@@ -147,9 +147,8 @@ impl Worker {
     }
 
     fn connect(&mut self) {
-        if self.retry_cd > 0 {
-            self.retry_cd -= 1;
-            return;
+        if let Some(t) = self.next_retry_at {
+            if std::time::Instant::now() < t { return; }
         }
         let mut client = DiscordIpcClient::new(APP_ID);
         match client.connect() {
@@ -161,10 +160,10 @@ impl Worker {
             }
             Err(_) => {
                 debug!(
-                    cooldown = RECONNECT_COOLDOWN,
+                    cooldown_secs = RECONNECT_COOLDOWN.as_secs(),
                     "Discord IPC 连接失败，进入冷却"
                 );
-                self.retry_cd = RECONNECT_COOLDOWN;
+                self.next_retry_at = Some(std::time::Instant::now() + RECONNECT_COOLDOWN);
             }
         }
     }
