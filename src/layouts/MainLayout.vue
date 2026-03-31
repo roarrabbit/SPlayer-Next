@@ -84,14 +84,16 @@ const playerBarClass = computed(() => {
   <!-- 全屏播放器 -->
   <FullPlayer />
   <!-- 播放列表抽屉 -->
-  <SDrawer v-model:open="status.playlistOpen">
+  <SDrawer v-model:open="status.playlistOpen" :cover="status.isExpanded" width="380px">
     <template #header>
       <div class="flex flex-col">
         <span class="text-base font-semibold">{{ t("playlist.title") }}</span>
-        <span class="text-xs text-on-surface-variant">{{ t("playlist.totalSongs", { count: queueLength }) }}</span>
+        <span class="text-xs" :class="status.isExpanded ? 'text-cover/50' : 'text-on-surface-variant'">
+          {{ t("playlist.totalSongs", { count: queueLength }) }}
+        </span>
       </div>
     </template>
-    <PlaylistPanel />
+    <PlaylistPanel :cover="status.isExpanded" />
   </SDrawer>
   <!-- 全局设置 -->
   <SettingsDialog />

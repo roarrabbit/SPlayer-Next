@@ -119,19 +119,6 @@ const onSeekDragEnd = (value: number): void => {
       >
         <!-- 背景 -->
         <PlayerBackground />
-
-        <!-- 收起按钮 -->
-        <SButton
-          type="cover"
-          variant="ghost"
-          round
-          size="large"
-          class="absolute top-4 right-4 z-10"
-          @click="collapse"
-        >
-          <template #icon><IconLucideChevronDown /></template>
-        </SButton>
-
         <!-- 左侧：封面 + 歌曲信息 -->
         <div
           class="absolute top-14 left-0 bottom-20 w-[45%] flex items-center justify-center px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
@@ -203,96 +190,89 @@ const onSeekDragEnd = (value: number): void => {
           </div>
         </div>
 
-        <!-- 底部控制栏：与外部 PlayerBar 同高 h-20 -->
-        <div class="absolute bottom-0 left-0 right-0 h-20 flex flex-col justify-center px-4">
-          <!-- 控制按钮行 -->
-          <div class="flex items-center h-full">
-            <!-- 左侧留空（对齐外部歌曲信息区） -->
-            <div class="w-50 shrink-0" />
+        <!-- 底部控制栏：三分栏 -->
+        <div class="absolute bottom-0 left-0 right-0 h-20 grid grid-cols-3 items-center px-4">
+          <!-- 左侧：收起按钮 -->
+          <div class="flex items-center shrink-0">
+            <SButton type="cover" variant="ghost" circle @click="collapse">
+              <template #icon><IconLucideChevronDown /></template>
+            </SButton>
+          </div>
 
-            <!-- 中部：控制按钮 + 进度条 -->
-            <div class="flex-1 flex flex-col items-center gap-1">
-              <div class="flex items-center gap-3">
-                <!-- 随机模式 -->
-                <SButton
-                  type="cover"
-                  variant="ghost"
-                  circle
-                  :class="shuffleMode === 'on' ? 'opacity-100' : 'opacity-40'"
-                  @click="player.toggleShuffleMode()"
-                >
-                  <template #icon><IconLucideShuffle /></template>
-                </SButton>
-                <!-- 上一曲 -->
-                <SButton
-                  type="cover"
-                  variant="ghost"
-                  circle
-                  :disabled="!hasTrack"
-                  @click="player.prevTrack()"
-                >
-                  <template #icon><IconLucideSkipBack /></template>
-                </SButton>
-                <!-- 播放/暂停 -->
-                <SButton
-                  type="cover"
-                  variant="secondary"
-                  size="large"
-                  circle
-                  :loading="isLoading"
-                  :disabled="!hasTrack && !isLoading"
-                  @click="togglePlay"
-                >
-                  <template #icon>
-                    <IconLucidePause v-if="isPlaying" />
-                    <IconLucidePlay v-else />
-                  </template>
-                </SButton>
-                <!-- 下一曲 -->
-                <SButton
-                  type="cover"
-                  variant="ghost"
-                  circle
-                  :disabled="!hasTrack"
-                  @click="player.nextTrack()"
-                >
-                  <template #icon><IconLucideSkipForward /></template>
-                </SButton>
-                <!-- 循环模式 -->
-                <SButton
-                  type="cover"
-                  variant="ghost"
-                  circle
-                  :class="repeatMode === 'off' ? 'opacity-40' : 'opacity-100'"
-                  @click="player.cycleRepeatMode()"
-                >
-                  <template #icon>
-                    <IconLucideRepeat1 v-if="repeatMode === 'one'" />
-                    <IconLucideRepeat v-else />
-                  </template>
-                </SButton>
-              </div>
-              <!-- 进度条（按钮下方） -->
-              <div class="flex items-center gap-2 w-full max-w-lg">
-                <span class="text-xs text-cover/50 min-w-9 text-center">{{
-                  formatTime(position)
-                }}</span>
-                <SSlider
-                  :model-value="position"
-                  :min="0"
-                  :max="duration"
-                  :step="100"
-                  class="flex-1"
-                  @drag-end="onSeekDragEnd"
-                />
-                <span class="text-xs text-cover/50 min-w-9 text-center">{{
-                  formatTime(duration)
-                }}</span>
-              </div>
+          <!-- 中部：控制按钮 + 进度条 -->
+          <div class="flex flex-col items-center gap-1">
+            <div class="flex items-center gap-3">
+              <SButton
+                type="cover"
+                variant="ghost"
+                circle
+                :class="shuffleMode === 'on' ? 'opacity-100' : 'opacity-40'"
+                @click="player.toggleShuffleMode()"
+              >
+                <template #icon><IconLucideShuffle /></template>
+              </SButton>
+              <SButton
+                type="cover"
+                variant="ghost"
+                circle
+                :disabled="!hasTrack"
+                @click="player.prevTrack()"
+              >
+                <template #icon><IconLucideSkipBack /></template>
+              </SButton>
+              <SButton
+                type="cover"
+                variant="secondary"
+                size="large"
+                circle
+                :loading="isLoading"
+                :disabled="!hasTrack && !isLoading"
+                @click="togglePlay"
+              >
+                <template #icon>
+                  <IconLucidePause v-if="isPlaying" />
+                  <IconLucidePlay v-else />
+                </template>
+              </SButton>
+              <SButton
+                type="cover"
+                variant="ghost"
+                circle
+                :disabled="!hasTrack"
+                @click="player.nextTrack()"
+              >
+                <template #icon><IconLucideSkipForward /></template>
+              </SButton>
+              <SButton
+                type="cover"
+                variant="ghost"
+                circle
+                :class="repeatMode === 'off' ? 'opacity-40' : 'opacity-100'"
+                @click="player.cycleRepeatMode()"
+              >
+                <template #icon>
+                  <IconLucideRepeat1 v-if="repeatMode === 'one'" />
+                  <IconLucideRepeat v-else />
+                </template>
+              </SButton>
             </div>
+            <div class="flex items-center gap-2 w-full max-w-120">
+              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{ formatTime(position) }}</span>
+              <SSlider
+                :model-value="position"
+                :min="0"
+                :max="duration"
+                :step="100"
+                class="flex-1"
+                @drag-end="onSeekDragEnd"
+              />
+              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{ formatTime(duration) }}</span>
+            </div>
+          </div>
 
-            <!-- 右侧：音量 -->
-            <div class="flex items-center gap-2 w-36 shrink-0">
+          <!-- 右侧：音量 + 播放列表 -->
+          <div class="flex items-center justify-end gap-3">
+            <div class="flex items-center gap-2 w-28">
               <IconLucideVolume2 class="size-4 text-cover/50 shrink-0" />
               <SSlider
                 :model-value="status.volume"
@@ -306,6 +286,9 @@ const onSeekDragEnd = (value: number): void => {
                 @change="player.setVolume($event)"
               />
             </div>
+            <SButton type="cover" variant="ghost" circle @click="status.playlistOpen = true">
+              <template #icon><IconLucideListMusic /></template>
+            </SButton>
           </div>
         </div>
       </div>

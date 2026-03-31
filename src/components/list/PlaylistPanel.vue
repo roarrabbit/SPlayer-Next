@@ -6,6 +6,11 @@ import { queue, queueLength } from "@/stores/queue";
 import { useDragSort, type VirtualListExposed } from "@/composables/useDragSort";
 import * as player from "@/core/player";
 
+const props = defineProps<{
+  /** 封面主题模式 */
+  cover?: boolean;
+}>();
+
 const { t } = useI18n();
 const statusStore = useStatusStore();
 const mediaStore = useMediaStore();
@@ -18,6 +23,8 @@ const formatArtists = (artists: Track["artists"]): string => {
 
 /** 播放指定索引的歌曲 */
 const playAtIndex = async (index: number): Promise<void> => {
+  // 关闭播放列表
+  statusStore.playlistOpen = false;
   if (index === statusStore.playIndex) return;
   statusStore.playIndex = index;
   const track = statusStore.currentTrack;
@@ -58,6 +65,9 @@ const {
   onReorder: (from, to) => player.moveInQueue(from, to),
   triggerMode: "longpress",
 });
+
+/** 按钮类型 */
+const btnType = computed(() => (props.cover ? "cover" : "default"));
 </script>
 
 <template>
@@ -71,49 +81,58 @@ const {
       <SVirtualList
         ref="listRef"
         :items="queue"
-        :item-height="56"
+        :item-height="72"
         item-fixed
         height="100%"
         :default-scroll-index="Math.max(0, statusStore.playIndex)"
         :get-item-key="(item: Track) => item.id"
       >
         <template #default="{ item, index }: { item: Track; index: number }">
-          <div class="relative">
+          <div class="relative px-3 py-1.5">
             <!-- 放置指示线 -->
             <div
               v-if="isDragging && dropIndicator.index === index"
-              class="absolute left-3 right-3 h-0.5 bg-primary rounded-full z-10 pointer-events-none"
-              :class="dropIndicator.position === 'top' ? '-top-px' : '-bottom-px'"
+              :class="[
+                'absolute left-4 right-4 h-0.5 rounded-full z-10 pointer-events-none',
+                cover ? 'bg-white/60' : 'bg-primary',
+                dropIndicator.position === 'top' ? 'top-0' : 'bottom-0',
+              ]"
             />
             <div
-              class="group flex items-center gap-3 px-4 h-14 cursor-pointer transition-[background-color,opacity] duration-200"
+              class="group flex items-center gap-3 px-3 h-15 rounded-lg cursor-pointer border border-solid transition-[background-color,border-color,opacity,transform] duration-200"
               :class="[
                 index === statusStore.playIndex
-                  ? 'bg-primary/12 text-primary active:bg-primary/20'
-                  : 'hover:bg-primary/6 active:bg-primary/12',
-                isDragging && draggedIndex === index ? 'opacity-30' : 'opacity-100',
+                  ? cover
+                    ? 'bg-cover/25 text-cover border-cover/50 active:bg-cover/30'
+                    : 'bg-primary/20 text-primary border-primary/50 active:bg-primary/25'
+                  : cover
+                    ? 'border-transparent bg-cover/6 hover:bg-cover/12 hover:border-cover/30 active:bg-cover/16'
+                    : 'border-transparent bg-on-surface/5 hover:bg-on-surface/10 hover:border-primary/30 active:bg-on-surface/14',
+                isDragging && draggedIndex === index ? 'opacity-30 scale-95' : 'opacity-100',
               ]"
               @click="playAtIndex(index)"
               @mousedown="handlePointerDown($event, index, item.title)"
               @touchstart.passive="handlePointerDown($event, index, item.title)"
             >
               <!-- 封面 -->
-              <SImg v-if="item.cover" :src="item.cover" class="size-9 rounded-md shrink-0" />
-              <div
-                v-else
-                class="size-9 rounded-md shrink-0 bg-primary/8 flex items-center justify-center"
-              >
-                <IconLucideMusic class="size-4 text-on-surface-variant" />
-              </div>
+              <SImg :src="item.cover" class="size-10 rounded-md shrink-0" />
               <!-- 歌曲信息 -->
               <div class="flex-1 min-w-0">
                 <div class="text-sm truncate">{{ item.title }}</div>
-                <div class="text-xs text-on-surface-variant truncate">
+                <div
+                  class="text-xs truncate"
+                  :class="
+                    index === statusStore.playIndex
+                      ? cover ? 'text-cover/70' : 'text-primary/70'
+                      : cover ? 'text-cover/50' : 'text-on-surface-variant'
+                  "
+                >
                   {{ formatArtists(item.artists) }}
                 </div>
               </div>
               <!-- 移除按钮 -->
               <SButton
+                :type="btnType"
                 variant="ghost"
                 circle
                 size="tiny"
@@ -131,25 +150,31 @@ const {
     </div>
     <!-- 空状态 -->
     <div v-else class="flex-1 flex items-center justify-center">
-      <div class="text-center text-on-surface-variant/50">
+      <div :class="cover ? 'text-cover/30' : 'text-on-surface-variant/50'">
         <IconLucideListMusic class="size-10 mx-auto mb-2 opacity-40" />
         <div class="text-sm">{{ t("playlist.empty") }}</div>
       </div>
     </div>
-    <!-- 底部操作 -->
-    <div class="shrink-0 px-3 py-3 flex gap-3">
-      <SDialog v-model:open="clearConfirmOpen" :title="t('playlist.clearConfirmTitle')">
+    <!-- 操作 -->
+    <div class="shrink-0 p-3 flex gap-3">
+      <SDialog
+        v-model:open="clearConfirmOpen"
+        :title="t('playlist.clearConfirmTitle')"
+        :cover="cover"
+      >
         {{ t("playlist.clearConfirmContent") }}
         <template #footer="{ close }">
-          <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>
-          <SButton variant="secondary" type="error" @click="handleClear">{{
-            t("common.confirm")
-          }}</SButton>
+          <SButton :type="cover ? 'cover' : 'default'" variant="secondary" @click="close">
+            {{ t("common.cancel") }}
+          </SButton>
+          <SButton :type="cover ? 'cover' : 'error'" variant="secondary" @click="handleClear">
+            {{ t("common.confirm") }}
+          </SButton>
         </template>
       </SDialog>
       <SButton
+        :type="btnType"
         variant="secondary"
-        size="small"
         block
         :disabled="queueLength === 0"
         @click="clearConfirmOpen = true"
@@ -160,8 +185,8 @@ const {
         {{ t("playlist.clearList") }}
       </SButton>
       <SButton
+        :type="btnType"
         variant="secondary"
-        size="small"
         block
         :disabled="queueLength === 0"
         @click="scrollToCurrent"
@@ -172,6 +197,7 @@ const {
         {{ t("playlist.locateCurrent") }}
       </SButton>
     </div>
+
     <!-- 拖拽标签 -->
     <Teleport to="body">
       <Transition
@@ -182,7 +208,10 @@ const {
       >
         <div
           v-if="isDragging && dragLabelData"
-          class="fixed z-9999 pointer-events-none max-w-60 truncate px-4 py-2 rounded-full text-sm font-medium bg-surface-bright text-on-surface shadow-lg"
+          :class="[
+            'fixed z-9999 pointer-events-none max-w-60 truncate px-4 py-2 rounded-full text-sm font-medium shadow-lg',
+            cover ? 'bg-white/15 backdrop-blur-lg text-cover' : 'bg-surface-bright text-on-surface',
+          ]"
           :style="{
             top: `${dragLabelPosition.top + 12}px`,
             left: `${dragLabelPosition.left + 12}px`,

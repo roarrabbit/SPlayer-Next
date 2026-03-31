@@ -14,7 +14,7 @@ export interface SDrawerProps {
   description?: string;
   /** 是否显示关闭按钮 */
   closable?: boolean;
-  /** 封面主题模式（播放器内使用） */
+  /** 封面主题模式 */
   cover?: boolean;
 }
 
@@ -46,11 +46,10 @@ const setOpen = (val: boolean): void => {
 
 const contentClass = computed(() => {
   const base = [
-    "fixed top-0 bottom-0 z-300 flex flex-col",
-    "shadow-xl focus:outline-none",
+    "fixed top-0 bottom-0 z-300 flex flex-col focus:outline-none",
     props.cover
-      ? "bg-black/55 backdrop-blur-xl backdrop-saturate-160 text-cover"
-      : "bg-surface-bright text-on-surface",
+      ? "bg-transparent text-cover shadow-none"
+      : "bg-surface-bright text-on-surface shadow-xl",
   ];
 
   if (props.side === "left") {
@@ -83,7 +82,7 @@ const contentClass = computed(() => {
         :class="[
           'fixed inset-0 z-300',
           'data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out',
-          cover ? 'bg-black/50' : 'bg-black/40',
+          cover ? 'bg-black/30 backdrop-blur-xl' : 'bg-black/40',
         ]"
       />
 
