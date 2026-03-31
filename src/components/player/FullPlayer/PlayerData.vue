@@ -62,7 +62,7 @@ const alignItems = computed(() => {
     <!-- 元信息标签行 -->
     <div v-if="!simple" class="flex items-center gap-1.5 text-[0.8em] my-1 text-cover/60">
       <span
-        class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30"
+        class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30"
       >
         {{ sourceLabel }}
       </span>
@@ -70,7 +70,7 @@ const alignItems = computed(() => {
         <template #trigger>
           <span
             v-if="qualityLabel"
-            class="inline-flex items-center gap-1 leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30 cursor-pointer transition-colors hover:border-cover/60"
+            class="inline-flex items-center gap-1 leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30 cursor-pointer transition-colors hover:border-cover/60"
           >
             <IconSpLossless v-if="showLosslessIcon" class="text-[1.6em] -my-[0.5em]" />
             {{ qualityLabel }}
@@ -112,7 +112,7 @@ const alignItems = computed(() => {
         </div>
       </SPopover>
       <span
-        class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border-1 border-solid border-cover/30"
+        class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30"
       >
         {{ lyricLabel }}
       </span>

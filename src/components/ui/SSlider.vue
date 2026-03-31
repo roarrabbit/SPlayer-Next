@@ -237,7 +237,7 @@ const onPointerUp = (): void => {
       }"
     >
       <div
-        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border-1 border-solid"
+        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border border-solid"
         :style="{
           background: 'var(--s-slider-pop-bg, rgb(var(--s-surface-bright)))',
           color: 'var(--s-slider-pop-text, rgb(var(--s-on-surface)))',

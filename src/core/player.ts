@@ -165,6 +165,7 @@ const hasReachedSeekTarget = (position: number): boolean => {
   // 容差：后端推送的位置在 seek 目标 ±1s 内视为已到达
   if (Math.abs(position - seekTarget) < 1000) {
     seekTarget = null;
+    playback.setSeeking(false);
     return true;
   }
   return false;
@@ -175,10 +176,11 @@ const hasReachedSeekTarget = (position: number): boolean => {
  * @param posMs - 目标位置（毫秒）
  */
 export const seek = async (posMs: number): Promise<void> => {
-  // 立即更新 UI，不等 IPC 返回
   const status = useStatusStore();
+  // 立即更新 UI，冻结插值避免时间自行推进
   status.position = posMs;
   playback.setCurrentTime(posMs);
+  playback.setSeeking(true);
 
   // 设置 seek 目标，屏蔽旧 position 推送
   seekTarget = posMs;
@@ -242,10 +244,13 @@ export const nextTrack = async (): Promise<void> => {
   if (status.playIndex >= queue.queueLength.value - 1) {
     // 列表循环 / 单曲循环：回到首位继续播放
     if (status.repeatMode === "list" || status.repeatMode === "one") {
-      if (status.shuffleMode === "on") {
+      if (status.shuffleMode === "on" && queue.queueLength.value > 1) {
+        // 重新洗牌产生新顺序，当前歌在 index 0，从 1 开始避免重复
         queue.shuffleQueue(status.playIndex);
+        status.playIndex = 1;
+      } else {
+        status.playIndex = 0;
       }
-      status.playIndex = 0;
     }
     // 非循环：队列播完
     else {

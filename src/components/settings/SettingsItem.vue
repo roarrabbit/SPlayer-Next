@@ -34,7 +34,7 @@ const descriptionText = computed(() =>
 <template>
   <div :id="`setting-${item.key}`">
     <div
-      class="flex items-center justify-between gap-4 rounded-xl bg-surface-panel border-1 border-solid border-outline-variant/15 px-4 py-3.5 transition-all duration-300"
+      class="flex items-center justify-between gap-4 rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5 transition-all duration-300"
       :class="highlighted ? 'animate-highlight-pulse' : ''"
     >
       <div class="min-w-0 flex-1">

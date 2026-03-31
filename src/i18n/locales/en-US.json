@@ -24,6 +24,16 @@
     "repeatOne": "Repeat One",
     "volume": "Volume"
   },
+  "playlist": {
+    "title": "Playlist",
+    "totalSongs": "{count} songs",
+    "empty": "Playlist is empty",
+    "unknownArtist": "Unknown Artist",
+    "clearList": "Clear All",
+    "locateCurrent": "Now Playing",
+    "clearConfirmTitle": "Clear Playlist",
+    "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
+  },
   "settings": {
     "title": "Settings",
     "search": "Search settings...",

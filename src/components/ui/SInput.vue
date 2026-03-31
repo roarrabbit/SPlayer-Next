@@ -31,7 +31,7 @@ const handleClear = () => {
 
 <template>
   <div
-    class="flex w-full items-center gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border-1 border-solid rounded-lg transition-[border-color,box-shadow] duration-250"
+    class="flex w-full items-center gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border border-solid rounded-lg transition-[border-color,box-shadow] duration-250"
     :class="[
       isFocused
         ? 'border-primary shadow-[0_0_0_2px_rgb(var(--s-primary)/0.25)]'

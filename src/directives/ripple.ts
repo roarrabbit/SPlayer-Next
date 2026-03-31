@@ -75,10 +75,10 @@ const teardownRipple = (el: RippleElement) => {
 
 export const vRipple: Directive<RippleElement, unknown> = {
   mounted(el, binding) {
-    if (binding.value) setupRipple(el);
+    if (binding.value !== false) setupRipple(el);
   },
   updated(el, binding) {
-    if (binding.value) {
+    if (binding.value !== false) {
       setupRipple(el);
     } else {
       teardownRipple(el);

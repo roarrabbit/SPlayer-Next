@@ -53,7 +53,7 @@ const setOpen = (val: boolean): void => {
 
 <template>
   <DialogRoot :open="isOpen" :modal="modal" @update:open="setOpen">
-    <!-- 触发器插槽（可选，也可纯用 v-model:open 控制） -->
+    <!-- 触发器插槽 -->
     <DialogTrigger v-if="$slots.trigger" as-child>
       <slot name="trigger" />
     </DialogTrigger>
@@ -77,15 +77,15 @@ const setOpen = (val: boolean): void => {
           'focus:outline-none',
           height === 'auto' ? 'overflow-y-auto px-5 py-4' : 'flex flex-col',
           cover
-            ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border-1 border-solid border-white/10 text-cover'
-            : 'bg-surface-bright border-1 border-solid border-outline-variant/30 text-on-surface',
+            ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border border-solid border-white/10 text-cover'
+            : 'bg-surface-bright border border-solid border-outline-variant/30 text-on-surface',
         ]"
       >
         <!-- 标题 -->
-        <DialogTitle v-if="title" class="text-base font-semibold mb-0.5 pr-6">
+        <DialogTitle v-if="title" class="text-lg font-semibold mb-0.5 pr-6">
           {{ title }}
         </DialogTitle>
-        <!-- 无标题时仍需保留无障碍标题（视觉隐藏） -->
+        <!-- 无障碍标题 -->
         <DialogTitle v-else class="sr-only">对话框</DialogTitle>
 
         <!-- 描述 -->
@@ -98,9 +98,11 @@ const setOpen = (val: boolean): void => {
         <DialogDescription v-else class="sr-only" />
 
         <!-- 内容 -->
-        <slot />
+        <div :class="[height === 'auto' ? 'text-sm' : 'flex-1 min-h-0 text-sm']">
+          <slot />
+        </div>
 
-        <!-- 底部操作区 -->
+        <!-- 底部操作 -->
         <div v-if="$slots.footer" class="mt-3 flex items-center justify-end gap-2">
           <slot name="footer" :close="() => setOpen(false)" />
         </div>

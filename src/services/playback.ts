@@ -20,9 +20,12 @@ let lastSyncAt = 0;
 /** 是否正在播放 */
 let playing = false;
 
-/** 获取当前播放位置（毫秒），播放中自动插值 */
+/** 是否正在 seek（暂停插值，固定在 seek 目标位置） */
+let seeking = false;
+
+/** 获取当前播放位置（毫秒），播放中自动插值，seek 中冻结 */
 export const getCurrentTime = (): number => {
-  if (!playing) return currentTimeMs;
+  if (!playing || seeking) return currentTimeMs;
   const elapsed = performance.now() - lastSyncAt;
   return Math.min(currentTimeMs + elapsed, totalDurationMs);
 };
@@ -37,6 +40,12 @@ export const isPlaying = (): boolean => playing;
 export const setCurrentTime = (ms: number): void => {
   currentTimeMs = ms;
   lastSyncAt = performance.now();
+};
+
+/** 进入 seek 状态，冻结插值 */
+export const setSeeking = (value: boolean): void => {
+  seeking = value;
+  if (!value) lastSyncAt = performance.now();
 };
 
 /** 同步时长 */

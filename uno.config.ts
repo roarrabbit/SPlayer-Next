@@ -27,6 +27,14 @@ export default defineConfig({
           "{ from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }",
         "highlight-pulse":
           "{ 0%, 100% { box-shadow: 0 0 0 0 transparent } 25%, 75% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.3) } 50% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.15) } }",
+        "drawer-in-right":
+          "{ from { transform: translateX(100%) } to { transform: translateX(0) } }",
+        "drawer-out-right":
+          "{ from { transform: translateX(0) } to { transform: translateX(100%) } }",
+        "drawer-in-left":
+          "{ from { transform: translateX(-100%) } to { transform: translateX(0) } }",
+        "drawer-out-left":
+          "{ from { transform: translateX(0) } to { transform: translateX(-100%) } }",
       },
       durations: {
         "popover-in": "200ms",
@@ -41,6 +49,10 @@ export default defineConfig({
         "select-out": "100ms",
         "slide-in-item": "250ms",
         "highlight-pulse": "2s",
+        "drawer-in-right": "300ms",
+        "drawer-out-right": "200ms",
+        "drawer-in-left": "300ms",
+        "drawer-out-left": "200ms",
       },
       timingFns: {
         "popover-in": "cubic-bezier(0.16, 1, 0.3, 1)",
@@ -55,6 +67,10 @@ export default defineConfig({
         "select-out": "ease-in",
         "slide-in-item": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         "highlight-pulse": "ease-in-out",
+        "drawer-in-right": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "drawer-out-right": "ease-in",
+        "drawer-in-left": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "drawer-out-left": "ease-in",
       },
     },
     colors: {

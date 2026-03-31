@@ -17,6 +17,7 @@ export const useStatusStore = defineStore(
     /** 歌曲加载中（切歌期间屏蔽事件推送，避免 UI 跳变） */
     const trackLoading = ref(false);
     const isExpanded = ref(false);
+    const playlistOpen = ref(false);
     const playIndex = ref(-1);
     const repeatMode = ref<RepeatMode>("list");
     const shuffleMode = ref<ShuffleMode>("off");
@@ -46,6 +47,7 @@ export const useStatusStore = defineStore(
       progress,
       trackLoading,
       isExpanded,
+      playlistOpen,
       outputDevices,
       selectedDeviceName,
       playIndex,

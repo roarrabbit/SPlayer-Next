@@ -32,7 +32,7 @@ const iconStyles: Record<ToastType, string> = {
         <div
           v-for="item in toasts"
           :key="item.id"
-          class="pointer-events-auto border border-outline-variant/30 rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 text-sm bg-surface-bright text-on-surface shadow-lg whitespace-nowrap backdrop-blur-sm"
+          class="pointer-events-auto border border-solid border-outline-variant/30 rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 text-sm bg-surface-bright text-on-surface shadow-lg whitespace-nowrap backdrop-blur-sm"
         >
           <!-- 自定义图标 -->
           <template v-if="item.icon !== false">

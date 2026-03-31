@@ -34,9 +34,7 @@ const props = withDefaults(defineProps<SButtonProps>(), {
 
 const isDisabled = computed(() => props.disabled || props.loading);
 
-const enableRipple = computed(
-  () => (props.ripple && !props.disabled && !props.loading) || undefined,
-);
+const enableRipple = computed(() => props.ripple && !props.disabled && !props.loading);
 
 /** 预设尺寸名称 */
 type SizePreset = "tiny" | "small" | "medium" | "large";
@@ -106,33 +104,33 @@ const variantStyles = {
   },
   outline: {
     default:
-      "has-border border-outline-variant text-on-surface not-disabled:hover:bg-on-surface/6 not-disabled:active:bg-on-surface/10",
+      "has-border border-solid border-outline-variant text-on-surface not-disabled:hover:bg-on-surface/6 not-disabled:active:bg-on-surface/10",
     primary:
-      "has-border border-primary/15 bg-primary/5 text-primary not-disabled:hover:bg-primary/10 not-disabled:active:bg-primary/16",
+      "has-border border-solid border-primary/15 bg-primary/5 text-primary not-disabled:hover:bg-primary/10 not-disabled:active:bg-primary/16",
     cover:
-      "has-border border-cover/15 bg-cover/5 text-cover not-disabled:hover:bg-cover/10 not-disabled:active:bg-cover/16",
-    info: "has-border border-blue-500/15 bg-blue-500/5 text-blue-500 not-disabled:hover:bg-blue-500/10 not-disabled:active:bg-blue-500/16",
+      "has-border border-solid border-cover/15 bg-cover/5 text-cover not-disabled:hover:bg-cover/10 not-disabled:active:bg-cover/16",
+    info: "has-border border-solid border-blue-500/15 bg-blue-500/5 text-blue-500 not-disabled:hover:bg-blue-500/10 not-disabled:active:bg-blue-500/16",
     success:
-      "has-border border-green-600/15 bg-green-600/5 text-green-600 not-disabled:hover:bg-green-600/10 not-disabled:active:bg-green-600/16",
+      "has-border border-solid border-green-600/15 bg-green-600/5 text-green-600 not-disabled:hover:bg-green-600/10 not-disabled:active:bg-green-600/16",
     warning:
-      "has-border border-amber-500/15 bg-amber-500/5 text-amber-600 not-disabled:hover:bg-amber-500/10 not-disabled:active:bg-amber-500/16",
+      "has-border border-solid border-amber-500/15 bg-amber-500/5 text-amber-600 not-disabled:hover:bg-amber-500/10 not-disabled:active:bg-amber-500/16",
     error:
-      "has-border border-red-500/15 bg-red-500/5 text-red-500 not-disabled:hover:bg-red-500/10 not-disabled:active:bg-red-500/16",
+      "has-border border-solid border-red-500/15 bg-red-500/5 text-red-500 not-disabled:hover:bg-red-500/10 not-disabled:active:bg-red-500/16",
   },
   bordered: {
     default:
-      "has-border border-outline-variant text-on-surface not-disabled:hover:border-outline not-disabled:active:border-on-surface/30",
+      "has-border border-solid border-outline-variant text-on-surface not-disabled:hover:border-outline not-disabled:active:border-on-surface/30",
     primary:
-      "has-border border-primary/30 text-primary not-disabled:hover:border-primary/20 not-disabled:active:border-primary/14",
+      "has-border border-solid border-primary/30 text-primary not-disabled:hover:border-primary/20 not-disabled:active:border-primary/14",
     cover:
-      "has-border border-cover/30 text-cover not-disabled:hover:border-cover/20 not-disabled:active:border-cover/14",
-    info: "has-border border-blue-500/30 text-blue-500 not-disabled:hover:border-blue-500/20 not-disabled:active:border-blue-500/14",
+      "has-border border-solid border-cover/30 text-cover not-disabled:hover:border-cover/20 not-disabled:active:border-cover/14",
+    info: "has-border border-solid border-blue-500/30 text-blue-500 not-disabled:hover:border-blue-500/20 not-disabled:active:border-blue-500/14",
     success:
-      "has-border border-green-600/30 text-green-600 not-disabled:hover:border-green-600/20 not-disabled:active:border-green-600/14",
+      "has-border border-solid border-green-600/30 text-green-600 not-disabled:hover:border-green-600/20 not-disabled:active:border-green-600/14",
     warning:
-      "has-border border-amber-500/30 text-amber-600 not-disabled:hover:border-amber-500/20 not-disabled:active:border-amber-500/14",
+      "has-border border-solid border-amber-500/30 text-amber-600 not-disabled:hover:border-amber-500/20 not-disabled:active:border-amber-500/14",
     error:
-      "has-border border-red-500/30 text-red-500 not-disabled:hover:border-red-500/20 not-disabled:active:border-red-500/14",
+      "has-border border-solid border-red-500/30 text-red-500 not-disabled:hover:border-red-500/20 not-disabled:active:border-red-500/14",
   },
   secondary: {
     default:

@@ -24,6 +24,16 @@
     "repeatOne": "单曲循环",
     "volume": "音量"
   },
+  "playlist": {
+    "title": "播放列表",
+    "totalSongs": "共 {count} 首",
+    "empty": "播放列表为空",
+    "unknownArtist": "未知艺术家",
+    "clearList": "清空列表",
+    "locateCurrent": "当前播放",
+    "clearConfirmTitle": "清空播放列表",
+    "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
+  },
   "settings": {
     "title": "设置",
     "search": "搜索设置项...",

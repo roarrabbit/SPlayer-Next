@@ -19,6 +19,7 @@ const urlInput = ref("");
 /** 按钮加载状态演示 */
 const btnLoading = ref(false);
 
+
 /** 从网络地址加载并添加到队列 */
 const loadFromUrl = async (): Promise<void> => {
   const url = urlInput.value.trim();
@@ -101,7 +102,7 @@ const testLoadingToast = (): void => {
       <h2 class="text-lg font-semibold flex-1">SPlayer Audio Test</h2>
       <!-- 主题类型 -->
       <select
-        class="px-2 py-1.5 rounded-lg text-sm border border-outline-variant bg-surface-alt text-on-surface outline-none"
+        class="px-2 py-1.5 rounded-lg text-sm border border-solid border-outline-variant bg-surface-alt text-on-surface outline-none"
         :value="theme.source"
         @change="theme.source = ($event.target as HTMLSelectElement).value as ThemeSource"
       >
@@ -116,7 +117,7 @@ const testLoadingToast = (): void => {
       />
       <!-- 全局着色 -->
       <button
-        class="px-3 py-1.5 rounded-lg text-sm border border-outline-variant"
+        class="px-3 py-1.5 rounded-lg text-sm border border-solid border-outline-variant"
         :class="theme.globalTint ? 'bg-primary text-on-primary' : 'bg-surface-alt text-on-surface-variant'"
         @click="theme.globalTint = !theme.globalTint"
       >
@@ -124,7 +125,7 @@ const testLoadingToast = (): void => {
       </button>
       <!-- 明暗切换 -->
       <button
-        class="px-3 py-1.5 rounded-lg bg-surface-alt text-on-surface-variant text-sm border border-outline-variant"
+        class="px-3 py-1.5 rounded-lg bg-surface-alt text-on-surface-variant text-sm border border-solid border-outline-variant"
         @click="theme.cycleMode()"
       >
         {{ modeLabel[theme.mode] }}
@@ -137,11 +138,11 @@ const testLoadingToast = (): void => {
         v-model="urlInput"
         type="text"
         placeholder="输入网络音频地址..."
-        class="flex-1 px-3 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm outline-none focus:border-primary"
+        class="flex-1 px-3 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm outline-none focus:border-primary"
         @keydown.enter="loadFromUrl"
       />
       <button
-        class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm whitespace-nowrap hover:bg-secondary-container"
+        class="px-4 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm whitespace-nowrap hover:bg-secondary-container"
         @click="loadFromUrl"
       >
         加载网络音频
@@ -151,7 +152,7 @@ const testLoadingToast = (): void => {
     <!-- 本地文件选择 -->
     <div class="flex gap-2 w-full">
       <button
-        class="px-4 py-2 rounded-lg border border-outline-variant bg-surface-alt text-on-surface text-sm hover:bg-secondary-container"
+        class="px-4 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm hover:bg-secondary-container"
         @click="loadFromFile"
       >
         选择本地文件
@@ -256,7 +257,7 @@ const testLoadingToast = (): void => {
     <div class="flex items-center gap-2 w-full">
       <span class="text-xs text-on-surface-variant shrink-0">输出设备</span>
       <select
-        class="flex-1 px-2 py-1.5 rounded-lg text-sm border border-outline-variant bg-surface-alt text-on-surface outline-none"
+        class="flex-1 px-2 py-1.5 rounded-lg text-sm border border-solid border-outline-variant bg-surface-alt text-on-surface outline-none"
         :value="status.selectedDeviceName ?? ''"
         @change="player.switchDevice(($event.target as HTMLSelectElement).value || null)"
       >
@@ -270,7 +271,7 @@ const testLoadingToast = (): void => {
         </option>
       </select>
       <button
-        class="px-2 py-1.5 rounded-lg text-xs border border-outline-variant bg-surface-alt text-on-surface-variant hover:bg-secondary-container"
+        class="px-2 py-1.5 rounded-lg text-xs border border-solid border-outline-variant bg-surface-alt text-on-surface-variant hover:bg-secondary-container"
         @click="player.refreshDevices()"
       >
         刷新
@@ -337,6 +338,44 @@ const testLoadingToast = (): void => {
       <SButton type="cover" variant="ghost" @click="close">关闭</SButton>
     </template>
   </SDialog>
+
+  <!-- Drawer 测试 -->
+  <SDrawer title="播放列表">
+    <template #trigger>
+      <SButton>右侧抽屉</SButton>
+    </template>
+    <div class="flex flex-col gap-2 p-4">
+      <div
+        v-for="index in 20"
+        :key="index"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/8 cursor-pointer"
+      >
+        <span class="text-xs text-on-surface-variant min-w-5 text-right">{{ index }}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm truncate">示例歌曲 {{ index }}</div>
+          <div class="text-xs text-on-surface-variant truncate">未知艺术家</div>
+        </div>
+        <span class="text-xs text-on-surface-variant">3:30</span>
+      </div>
+    </div>
+  </SDrawer>
+
+  <!-- Drawer 左侧 -->
+  <SDrawer title="导航" side="left" width="280px">
+    <template #trigger>
+      <SButton>左侧抽屉</SButton>
+    </template>
+    <div class="p-4 text-sm">左侧抽屉内容</div>
+  </SDrawer>
+
+  <!-- Drawer 非模态 -->
+  <SDrawer title="非模态抽屉" :modal="false">
+    <template #trigger>
+      <SButton variant="outline">非模态抽屉</SButton>
+    </template>
+    <div class="p-4 text-sm">无遮罩，可以操作背后的内容</div>
+  </SDrawer>
+
 
     <!-- 状态信息 -->
     <div class="text-xs text-outline">

@@ -59,13 +59,12 @@ export const setQueue = (items: readonly Track[]): void => {
  * @param index - 插入位置（该位置原有元素后移）
  */
 export const insertToQueue = (item: Track, index: number): void => {
-  // 确保插入位置在合法范围内
   const safeIndex = Math.max(0, Math.min(index, queue.value.length));
-  queue.value.splice(safeIndex, 0, item);
-  triggerRef(queue);
+  const next = [...queue.value];
+  next.splice(safeIndex, 0, item);
+  queue.value = markRaw(next);
   if (originalQueue.value) {
-    originalQueue.value.push(item);
-    triggerRef(originalQueue);
+    originalQueue.value = markRaw([...originalQueue.value, item]);
   }
   save();
 };
@@ -76,13 +75,16 @@ export const insertToQueue = (item: Track, index: number): void => {
  */
 export const removeFromQueue = (index: number): void => {
   if (index < 0 || index >= queue.value.length) return;
-  const removed = queue.value.splice(index, 1)[0];
-  triggerRef(queue);
+  const removed = queue.value[index];
+  const next = [...queue.value];
+  next.splice(index, 1);
+  queue.value = markRaw(next);
   if (originalQueue.value) {
     const origIdx = originalQueue.value.findIndex((t) => t.id === removed.id);
     if (origIdx !== -1) {
-      originalQueue.value.splice(origIdx, 1);
-      triggerRef(originalQueue);
+      const nextOrig = [...originalQueue.value];
+      nextOrig.splice(origIdx, 1);
+      originalQueue.value = markRaw(nextOrig);
     }
   }
   save();
@@ -97,9 +99,10 @@ export const moveInQueue = (fromIndex: number, toIndex: number): void => {
   if (fromIndex === toIndex) return;
   if (fromIndex < 0 || fromIndex >= queue.value.length) return;
   if (toIndex < 0 || toIndex >= queue.value.length) return;
-  const [item] = queue.value.splice(fromIndex, 1);
-  queue.value.splice(toIndex, 0, item);
-  triggerRef(queue);
+  const next = [...queue.value];
+  const [item] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, item);
+  queue.value = markRaw(next);
   save();
 };
 
@@ -113,15 +116,17 @@ export const clearQueue = (): void => {
 };
 
 /**
- * 洗牌：备份当前顺序到 originalQueue，将 keepIndex 处的歌曲置于首位，其余随机打乱
+ * 洗牌：备份当前顺序到 originalQueue（仅首次），将 keepIndex 处的歌曲置于首位，其余随机打乱
  * @param keepIndex - 保持在首位的歌曲索引（通常是当前正在播放的歌）
  */
 export const shuffleQueue = (keepIndex: number): void => {
   const currentQueue = queue.value;
   if (currentQueue.length <= 1) return;
-  // 越界时默认保留首位
   const safeIndex = keepIndex >= 0 && keepIndex < currentQueue.length ? keepIndex : 0;
-  originalQueue.value = markRaw([...currentQueue]);
+  // 仅首次洗牌时备份，避免重新洗牌时覆盖原始顺序
+  if (!originalQueue.value) {
+    originalQueue.value = markRaw([...currentQueue]);
+  }
   const keepTrack = currentQueue[safeIndex];
   const rest = currentQueue.filter((_, index) => index !== safeIndex);
   shuffleArray(rest);

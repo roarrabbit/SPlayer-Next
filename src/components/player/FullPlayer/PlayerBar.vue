@@ -8,6 +8,7 @@ const media = useMediaStore();
 const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode } =
   storeToRefs(status);
 
+
 const hasTrack = computed(() => !!media.track);
 
 /** 当前歌词文本，播放中且有匹配歌词时显示 */
@@ -106,6 +107,7 @@ const onSeekDragEnd = (value: number): void => {
           <template #icon><IconLucideShuffle /></template>
         </SButton>
         <SButton
+          type="primary"
           variant="ghost"
           circle
           ripple
@@ -132,6 +134,7 @@ const onSeekDragEnd = (value: number): void => {
           </template>
         </SButton>
         <SButton
+          type="primary"
           variant="ghost"
           circle
           ripple
@@ -175,7 +178,18 @@ const onSeekDragEnd = (value: number): void => {
             @change="player.setVolume($event)"
           />
         </div>
+        <!-- 播放列表按钮 -->
+        <SButton
+          variant="ghost"
+          circle
+          :size="36"
+          class="text-on-surface-variant"
+          @click="status.playlistOpen = true"
+        >
+          <template #icon><IconLucideListMusic /></template>
+        </SButton>
       </div>
     </div>
+
   </div>
 </template>

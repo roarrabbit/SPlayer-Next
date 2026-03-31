@@ -2,7 +2,9 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
+import { queueLength } from "@/stores/queue";
 
+const { t } = useI18n();
 const status = useStatusStore();
 const settings = useSettingsStore();
 
@@ -26,15 +28,14 @@ const mainPaddingClass = computed(() => {
 
 /** 播放栏样式 */
 const playerBarClass = computed(() => {
-  const base =
-    "fixed bottom-0 h-20 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible";
+  const base = "fixed bottom-0 h-20 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible";
   switch (layoutMode.value) {
     case "sidebar-full":
-      return `${base} left-60 right-0 border-t border-t-primary/10`;
+      return `${base} left-60 right-0 border-t border-t-solid border-t-primary/10`;
     case "floating":
-      return `${base} left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl rounded-2xl mb-2 shadow-lg border border-primary/10`;
+      return `${base} left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl rounded-2xl mb-2 shadow-lg border border-solid border-primary/10`;
     default:
-      return `${base} left-0 right-0 border-t border-t-primary/10`;
+      return `${base} left-0 right-0 border-t border-t-solid border-t-primary/10`;
   }
 });
 </script>
@@ -47,7 +48,7 @@ const playerBarClass = computed(() => {
   >
     <!-- 侧边栏 -->
     <aside
-      class="w-60 shrink-0 border-r-1 border-r-solid border-r-primary/10 bg-surface-panel/90 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[margin] duration-300"
+      class="w-60 shrink-0 border-r border-r-solid border-r-primary/10 bg-surface-panel/90 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[margin] duration-300"
       :class="sidebarClass"
     >
       <SideBar />
@@ -56,7 +57,7 @@ const playerBarClass = computed(() => {
     <!-- 右侧主区域 -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- 顶部导航 -->
-      <header class="h-16 shrink-0 flex items-center px-3 border-b border-primary/10">
+      <header class="h-16 shrink-0 flex items-center px-3 border-b border-b-solid border-b-primary/10">
         <NavHeader />
       </header>
 
@@ -82,6 +83,16 @@ const playerBarClass = computed(() => {
   </div>
   <!-- 全屏播放器 -->
   <FullPlayer />
+  <!-- 播放列表抽屉 -->
+  <SDrawer v-model:open="status.playlistOpen">
+    <template #header>
+      <div class="flex flex-col">
+        <span class="text-base font-semibold">{{ t("playlist.title") }}</span>
+        <span class="text-xs text-on-surface-variant">{{ t("playlist.totalSongs", { count: queueLength }) }}</span>
+      </div>
+    </template>
+    <PlaylistPanel />
+  </SDrawer>
   <!-- 全局设置 -->
   <SettingsDialog />
 </template>
