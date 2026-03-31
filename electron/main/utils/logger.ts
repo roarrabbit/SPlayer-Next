@@ -80,3 +80,4 @@ export const trayLog = log.scope("tray");
 export const thumbarLog = log.scope("thumbar");
 export const systemLog = log.scope("system");
 export const ipcLog = log.scope("ipc");
+export const libraryLog = log.scope("library");

@@ -4,6 +4,7 @@ import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { createMainWindow } from "../window";
 import { registerIpcHandlers } from "../ipc";
 import { init as initMedia, shutdown as shutdownMedia } from "../services/media";
+import { initDatabase, closeDatabase } from "../services/database";
 import { coverCacheDir } from "../utils/config";
 import { coreLog, initLogger } from "../utils/logger";
 
@@ -64,6 +65,12 @@ export const initApp = (): void => {
       optimizer.watchWindowShortcuts(window);
     });
 
+    // 设置封面缓存目录环境变量（供 Rust 扫描器使用）
+    process.env.SPLAYER_COVER_CACHE_DIR = coverCacheDir;
+
+    // 初始化数据库
+    initDatabase();
+
     // 注册 IPC
     registerIpcHandlers();
 
@@ -90,5 +97,6 @@ export const initApp = (): void => {
   app.on("before-quit", () => {
     coreLog.info("应用即将退出，清理资源");
     shutdownMedia();
+    closeDatabase();
   });
 };

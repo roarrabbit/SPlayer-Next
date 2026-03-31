@@ -60,7 +60,7 @@ pub enum PlayerState {
 
 /// 内部播放器，管理音频输出、解码和状态
 pub struct InnerPlayer {
-    _stream: OutputStream,
+    stream: OutputStream,
     stream_handle: OutputStreamHandle,
     /// 使用 Arc 包装，允许 fade 线程在 Mutex 外操作音量
     sink: Option<Arc<Sink>>,
@@ -116,7 +116,7 @@ fn join_with_timeout(handle: JoinHandle<()>, timeout_ms: u64) {
 impl InnerPlayer {
     /// 根据选择的设备名称构建音频输出流
     fn build_output_stream(
-        device_name: &Option<String>,
+        device_name: Option<&String>,
     ) -> Result<(OutputStream, OutputStreamHandle)> {
         match device_name {
             Some(name) => {
@@ -133,11 +133,11 @@ impl InnerPlayer {
     }
 
     pub fn new() -> Result<Self> {
-        let (stream, stream_handle) = Self::build_output_stream(&None)?;
+        let (stream, stream_handle) = Self::build_output_stream(None)?;
         debug!("InnerPlayer 已创建，使用默认输出设备");
 
         Ok(Self {
-            _stream: stream,
+            stream,
             stream_handle,
             sink: None,
             shared: None,
@@ -362,8 +362,8 @@ impl InnerPlayer {
         self.stop_internal();
 
         // 重建音频输出（使用用户选择的设备或系统默认）
-        let (stream, stream_handle) = Self::build_output_stream(&self.selected_device_name)?;
-        self._stream = stream;
+        let (stream, stream_handle) = Self::build_output_stream(self.selected_device_name.as_ref())?;
+        self.stream = stream;
         self.stream_handle = stream_handle;
 
         // 恢复播放状态
@@ -588,10 +588,12 @@ impl InnerPlayer {
         self.fft.reset();
 
         // 在已有上下文上 seek（不重新打开文件）
-        let seek_ok = decoder_data
-            .as_mut()
-            .map(|d| d.seek(position_secs).is_ok())
-            .unwrap_or(false);
+        let seek_ok = if let Some(d) = decoder_data.as_mut() {
+            d.seek(position_secs);
+            true
+        } else {
+            false
+        };
 
         if !seek_ok {
             // 回收失败（线程 panic 或 seek 出错），回退到从头 load，不再递归 seek

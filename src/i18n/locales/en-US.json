@@ -12,6 +12,7 @@
   },
   "nav": {
     "home": "Home",
+    "library": "Local Music",
     "settings": "Settings"
   },
   "player": {
@@ -33,6 +34,27 @@
     "locateCurrent": "Now Playing",
     "clearConfirmTitle": "Clear Playlist",
     "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
+  },
+  "library": {
+    "title": "Local Music",
+    "totalSongs": "{count} songs",
+    "empty": "No local music yet",
+    "emptyHint": "Add a music folder to get started",
+    "addFolder": "Add Folder",
+    "scanAll": "Full Scan",
+    "scanning": "Scanning...",
+    "scanProgress": "Scanning {scanned}/{total}",
+    "scanDone": "Scan complete",
+    "scanError": "Scan failed",
+    "cancel": "Cancel Scan",
+    "folders": "Folders",
+    "folderCount": "{count} folders",
+    "removeFolder": "Remove",
+    "removeFolderConfirm": "Removing this folder will delete its songs from the library.",
+    "folderExists": "This folder already exists",
+    "folderNested": "This folder overlaps with an existing folder",
+    "playAll": "Play All",
+    "duration": "{time}"
   },
   "settings": {
     "title": "Settings",

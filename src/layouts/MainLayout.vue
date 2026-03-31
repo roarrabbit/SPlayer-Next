@@ -57,7 +57,7 @@ const playerBarClass = computed(() => {
     <!-- 右侧主区域 -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- 顶部导航 -->
-      <header class="h-16 shrink-0 flex items-center px-3 border-b border-b-solid border-b-primary/10">
+      <header class="h-16 shrink-0 flex items-center px-3">
         <NavHeader />
       </header>
 

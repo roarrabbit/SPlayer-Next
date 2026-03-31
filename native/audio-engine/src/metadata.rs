@@ -45,7 +45,7 @@ pub fn extract_cover_thumbnail(
 
     std::fs::create_dir_all(cache_dir).ok()?;
 
-    if generate_thumbnail(&data, &thumb_file).is_err() {
+    if generate_cover_thumbnail(&data, &thumb_file).is_err() {
         // 缩略图生成失败，直接写入原始数据作为回退
         std::fs::write(&thumb_file, &data).ok()?;
     }
@@ -75,8 +75,8 @@ pub fn read_attached_pic(input_ctx: &ffmpeg::format::context::Input) -> Option<V
     None
 }
 
-/// 将原始图片数据缩放为 JPEG 缩略图
-fn generate_thumbnail(data: &[u8], output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+/// 将原始图片数据缩放为 JPEG 缩略图（供 scanner 和 extract_cover_thumbnail 共用）
+pub fn generate_cover_thumbnail(data: &[u8], output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let img = image::load_from_memory(data)?;
     let thumb = img.thumbnail(THUMB_SIZE, THUMB_SIZE);
     thumb.save_with_format(output_path, image::ImageFormat::Jpeg)?;

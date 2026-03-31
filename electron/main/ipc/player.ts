@@ -1,27 +1,19 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { ipcMain, dialog, powerMonitor } from "electron";
-import { loadNativeModule } from "../utils/nativeLoader";
-import { coverCacheDir } from "../utils/config";
 import { broadcast } from "../utils/broadcast";
 import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
 import * as mediaService from "../services/media";
+import { getPlayer, resetPlayer } from "../services/engine";
 import { getThumbar } from "../services/thumbar";
 import { setTraySongName, setTrayPlayState, setTrayPlayMode } from "../services/tray";
 import { getMainWindow } from "../window";
 import { appName } from "../utils/config";
 import { parseArtists, parseAlbum, formatArtists } from "../utils/metadata";
-import { playerLog, nativeLogsDir } from "../utils/logger";
-import { isDev } from "../utils/config";
+import { playerLog } from "../utils/logger";
 import type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import type { MediaEvent } from "../services/media";
-
-type AudioEngineModule = typeof import("@splayer/audio-engine");
-
-let audioEngine: AudioEngineModule | null = null;
-let playerInstance: InstanceType<AudioEngineModule["AudioPlayer"]> | null = null;
-
 
 /**
  * 检测错误是否为音频设备丢失
@@ -32,25 +24,6 @@ const isDeviceError = (error: unknown): boolean => {
   return msg.includes("device") || msg.includes("output") || msg.includes("stream");
 };
 
-/** 销毁损坏的播放器实例，下次调用 player() 时自动重建 */
-const resetPlayer = (): void => {
-  playerLog.warn("销毁播放器实例，将在下次操作时重建");
-  playerInstance = null;
-};
-
-/** 获取原生音频引擎模块 */
-const engine = (): AudioEngineModule => {
-  if (!audioEngine) {
-    audioEngine = loadNativeModule<AudioEngineModule>("audio-engine.node", "audio-engine");
-    if (!audioEngine) {
-      throw new Error("Failed to load audio-engine.node");
-    }
-    // 初始化原生日志系统
-    audioEngine.initLogger(nativeLogsDir, isDev);
-  }
-  return audioEngine;
-};
-
 /** 轮询检测默认音频设备变化，首次创建播放器时启动 */
 let devicePollingStarted = false;
 const startDevicePolling = (): void => {
@@ -58,15 +31,15 @@ const startDevicePolling = (): void => {
   devicePollingStarted = true;
   let lastDefaultDevice: string | null = null;
   setInterval(() => {
-    if (!playerInstance) return;
     try {
-      const current = playerInstance.getDefaultDeviceName() ?? null;
+      const inst = getPlayer();
+      const current = inst.getDefaultDeviceName() ?? null;
       if (lastDefaultDevice !== null && current !== lastDefaultDevice) {
         playerLog.info(`检测到默认音频设备变化: ${lastDefaultDevice} → ${current}`);
-        const selected = playerInstance.getSelectedDeviceName() ?? null;
+        const selected = inst.getSelectedDeviceName() ?? null;
         if (selected === null) {
           try {
-            playerInstance.reinitOutput();
+            inst.reinitOutput();
             playerLog.info("已自动切换到新的默认设备");
           } catch (error) {
             playerLog.warn("自动切换设备失败:", error);
@@ -81,6 +54,8 @@ const startDevicePolling = (): void => {
     } catch {}
   }, 3000);
 };
+
+type AudioEngineModule = typeof import("@splayer/audio-engine");
 
 /** 为播放器实例注册原生事件回调 */
 const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"]>): void => {
@@ -146,19 +121,13 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
 
 /**
  * 获取播放器实例
- * 首次创建时设置封面缓存目录并注册原生事件回调
- * resetPlayer() 后会重建实例并重新注册，不会重复注册
+ * 首次创建时注册原生事件回调并启动设备轮询
  */
 const player = (): InstanceType<AudioEngineModule["AudioPlayer"]> => {
-  if (!playerInstance) {
-    const mod = engine();
-    playerInstance = new mod.AudioPlayer();
-    playerInstance.setCoverCacheDir(coverCacheDir);
-    registerNativeEvents(playerInstance);
+  return getPlayer((inst) => {
+    registerNativeEvents(inst);
     startDevicePolling();
-    playerLog.info("播放器实例已创建");
-  }
-  return playerInstance;
+  });
 };
 
 /** 注册播放器相关的所有 IPC 事件 */
@@ -509,7 +478,12 @@ export const registerPlayerIpc = (): void => {
 
   // 系统休眠唤醒后重建音频输出设备
   const resumeHandler = async (): Promise<void> => {
-    if (!playerInstance) return;
+    let inst: InstanceType<AudioEngineModule["AudioPlayer"]>;
+    try {
+      inst = player();
+    } catch {
+      return; // 播放器未初始化，无需处理
+    }
 
     // 延迟重试：系统唤醒后音频子系统可能需要时间恢复
     const MAX_RETRIES = 3;
@@ -518,7 +492,7 @@ export const registerPlayerIpc = (): void => {
     for (let i = 0; i < MAX_RETRIES; i++) {
       await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
       try {
-        playerInstance.reinitOutput();
+        inst.reinitOutput();
         playerLog.info(`唤醒后重建音频输出成功（第 ${i + 1} 次尝试）`);
         return;
       } catch (error) {
@@ -528,7 +502,7 @@ export const registerPlayerIpc = (): void => {
 
     // 全部重试失败：销毁损坏的实例，下次操作时会自动重建
     playerLog.error("重建音频输出全部失败，销毁播放器实例");
-    playerInstance = null;
+    resetPlayer();
 
     broadcast("player:event", {
       type: "status",

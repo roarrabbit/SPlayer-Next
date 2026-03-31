@@ -26,6 +26,7 @@ image = { version = "0.25", default-features = false, features = [
   "webp",
 ] }
 rustfft = "6"
+lofty = "0.22"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = [
   "env-filter",
@@ -33,16 +34,10 @@ tracing-subscriber = { version = "0.3", features = [
 ] }
 tracing-appender = "0.2"
 time = { version = "0.3", features = ["macros", "formatting"] }
+walkdir = "2"
 
 [build-dependencies]
 napi-build = "2.3"
 
-[lints.clippy]
-all = { level = "deny", priority = -1 }
-redundant_clone = "deny"
-needless_collect = "warn"
-large_enum_variant = "warn"
-
-[profile.release]
-lto = true
-strip = "symbols"
+[lints]
+workspace = true

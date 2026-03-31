@@ -49,12 +49,20 @@ export interface WindowState {
   maximized: boolean;
 }
 
+/** 音乐库配置 */
+export interface LibrarySettings {
+  /** 扫描目录列表 */
+  scanDirs: string[];
+}
+
 /** 后端配置汇总 */
 export interface SystemConfig {
   /** 播放器配置 */
   player: PlayerSettings;
   /** 媒体集成配置 */
   media: MediaSettings;
+  /** 音乐库配置 */
+  library: LibrarySettings;
   /** 系统配置 */
   system: {
     /** 窗口状态（主进程自动保存） */

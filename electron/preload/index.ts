@@ -67,6 +67,37 @@ const api = {
       };
     },
   },
+  library: {
+    // 开始扫描（默认增量）
+    scan: (incremental?: boolean) => ipcRenderer.invoke("library:scan", incremental),
+    // 取消扫描
+    cancelScan: () => ipcRenderer.invoke("library:cancelScan"),
+    // 获取全部曲目
+    getTracks: () => ipcRenderer.invoke("library:getTracks"),
+    // 搜索曲目
+    searchTracks: (query: string) => ipcRenderer.invoke("library:searchTracks", query),
+    // 获取曲目总数
+    getTrackCount: () => ipcRenderer.invoke("library:getTrackCount"),
+    // 获取扫描状态
+    isScanning: () => ipcRenderer.invoke("library:isScanning"),
+    // 弹出目录选择器，添加扫描目录
+    addScanDir: () => ipcRenderer.invoke("library:addScanDir"),
+    // 移除扫描目录及其下曲目
+    removeScanDir: (dir: string) => ipcRenderer.invoke("library:removeScanDir", dir),
+    // 获取已配置的扫描目录
+    getScanDirs: () => ipcRenderer.invoke("library:getScanDirs"),
+    // 订阅扫描进度事件
+    onScanProgress: (callback: (progress: unknown) => void) => {
+      ipcRenderer.removeAllListeners("library:scanProgress");
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => {
+        callback(data);
+      };
+      ipcRenderer.on("library:scanProgress", handler);
+      return () => {
+        ipcRenderer.removeListener("library:scanProgress", handler);
+      };
+    },
+  },
 };
 
 if (process.contextIsolated) {

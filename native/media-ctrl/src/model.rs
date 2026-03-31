@@ -88,6 +88,7 @@ impl fmt::Debug for MetadataPayload {
                     |bytes| format!("Some({} bytes)", bytes.len()),
                 ),
             )
+            .field("cover_url", &self.cover_url)
             .field("duration_ms", &self.duration_ms)
             .finish()
     }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SMenuItem } from "@/components/ui/SMenu.vue";
 import IconLucideHome from "~icons/lucide/home";
+import IconLucideMusic from "~icons/lucide/music";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -8,6 +9,7 @@ const route = useRoute();
 
 const menuItems = computed<SMenuItem[]>(() => [
   { key: "/", label: t("nav.home"), icon: markRaw(IconLucideHome) },
+  { key: "/library", label: t("nav.library"), icon: markRaw(IconLucideMusic) },
 ]);
 
 const activeKey = computed(() => {

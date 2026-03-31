@@ -59,7 +59,7 @@ pub struct DecoderData {
 
 impl DecoderData {
     /// 在已有上下文上 seek + flush，不重新打开文件
-    pub fn seek(&mut self, position_secs: f64) -> Result<()> {
+    pub fn seek(&mut self, position_secs: f64) {
         let ts = (position_secs * ffmpeg::ffi::AV_TIME_BASE as f64) as i64;
         if self.input_ctx.seek(ts, ..).is_err() {
             let _ = self.input_ctx.seek(ts, ..ts);
@@ -69,7 +69,6 @@ impl DecoderData {
         unsafe {
             ffmpeg::ffi::avcodec_flush_buffers(self.decoder.as_mut_ptr());
         }
-        Ok(())
     }
 }
 

@@ -12,6 +12,7 @@
   },
   "nav": {
     "home": "首页",
+    "library": "本地音乐",
     "settings": "设置"
   },
   "player": {
@@ -33,6 +34,27 @@
     "locateCurrent": "当前播放",
     "clearConfirmTitle": "清空播放列表",
     "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
+  },
+  "library": {
+    "title": "本地音乐",
+    "totalSongs": "共 {count} 首",
+    "empty": "还没有本地音乐",
+    "emptyHint": "添加音乐文件夹开始使用",
+    "addFolder": "添加文件夹",
+    "scanAll": "全量扫描",
+    "scanning": "正在扫描...",
+    "scanProgress": "正在扫描 {scanned}/{total}",
+    "scanDone": "扫描完成",
+    "scanError": "扫描出错",
+    "cancel": "取消扫描",
+    "folders": "文件夹",
+    "folderCount": "{count} 个文件夹",
+    "removeFolder": "移除",
+    "removeFolderConfirm": "移除该文件夹后，其中的歌曲将从音乐库中删除。",
+    "folderExists": "该文件夹已存在",
+    "folderNested": "该文件夹与已有文件夹存在包含关系",
+    "playAll": "播放全部",
+    "duration": "{time}"
   },
   "settings": {
     "title": "设置",

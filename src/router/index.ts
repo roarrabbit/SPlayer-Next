@@ -12,6 +12,11 @@ const router = createRouter({
           name: "home",
           component: () => import("@/pages/Home.vue"),
         },
+        {
+          path: "library",
+          name: "library",
+          component: () => import("@/pages/Library.vue"),
+        },
       ],
     },
     {

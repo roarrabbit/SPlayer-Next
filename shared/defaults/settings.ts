@@ -18,6 +18,9 @@ export const defaultSystemConfig: SystemConfig = {
       displayMode: "name",
     },
   },
+  library: {
+    scanDirs: [],
+  },
   system: {
     window: {
       width: 1280,
