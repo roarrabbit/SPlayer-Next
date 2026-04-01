@@ -9,6 +9,10 @@ declare global {
     api: {
       config: ConfigApi;
       player: PlayerApi;
+      system: {
+        toggleDevTools: () => Promise<void>;
+        showInExplorer: (filePath: string) => Promise<void>;
+      };
       library: LibraryApi;
     };
   }

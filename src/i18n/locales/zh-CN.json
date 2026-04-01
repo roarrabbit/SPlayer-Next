@@ -13,7 +13,10 @@
   "nav": {
     "home": "首页",
     "library": "本地音乐",
-    "settings": "设置"
+    "settings": "设置",
+    "reload": "热重载",
+    "devtools": "开发者工具",
+    "globalSettings": "全局设置"
   },
   "player": {
     "play": "播放",
@@ -29,7 +32,13 @@
     "title": "标题",
     "album": "专辑",
     "size": "大小",
-    "duration": "时长"
+    "duration": "时长",
+    "context": {
+      "play": "播放",
+      "playNext": "下一首播放",
+      "showInExplorer": "在文件管理器中显示",
+      "copyPath": "复制文件路径"
+    }
   },
   "playlist": {
     "title": "播放列表",

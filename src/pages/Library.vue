@@ -60,11 +60,6 @@ const handlePlayAll = (): void => {
   player.playFrom(tracks.value, 0);
 };
 
-// 双击播放
-const handlePlay = (index: number): void => {
-  player.playFrom(tracks.value, index);
-};
-
 // 扫描进度百分比
 const scanPercent = computed(() => {
   if (!scanProgress.value || scanProgress.value.total === 0) return 0;
@@ -152,7 +147,7 @@ const folderDialogOpen = ref(false);
 
     <!-- 曲目列表 -->
     <div v-if="tracks.length > 0" class="flex-1 min-h-0">
-      <SongList :items="tracks" show-size @play="handlePlay" />
+      <SongList :items="tracks" show-size />
     </div>
 
     <!-- 空状态：无目录或无歌曲 -->

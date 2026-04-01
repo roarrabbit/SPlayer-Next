@@ -13,7 +13,10 @@
   "nav": {
     "home": "Home",
     "library": "Local Music",
-    "settings": "Settings"
+    "settings": "Settings",
+    "reload": "Reload",
+    "devtools": "Developer Tools",
+    "globalSettings": "Global Settings"
   },
   "player": {
     "play": "Play",
@@ -29,7 +32,13 @@
     "title": "Title",
     "album": "Album",
     "size": "Size",
-    "duration": "Duration"
+    "duration": "Duration",
+    "context": {
+      "play": "Play",
+      "playNext": "Play Next",
+      "showInExplorer": "Show in Explorer",
+      "copyPath": "Copy File Path"
+    }
   },
   "playlist": {
     "title": "Playlist",

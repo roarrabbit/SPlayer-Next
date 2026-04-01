@@ -1,42 +1,12 @@
 <script setup lang="ts">
-import { useStatusStore } from "@/stores/status";
-import { useMediaStore } from "@/stores/media";
 import { useThemeStore } from "@/stores/theme";
-import * as player from "@/core/player";
 import { toast } from "@/composables/useToast";
 import type { ThemeSource } from "@/types/theme";
-import { formatTime } from "@/utils/time";
 
-const status = useStatusStore();
-const media = useMediaStore();
 const theme = useThemeStore();
-
-const { state, position, duration, volume, error, isPlaying, isLoading, progress } =
-  storeToRefs(status);
-
-/** 网络地址输入 */
-const urlInput = ref("");
 
 /** 按钮加载状态演示 */
 const btnLoading = ref(false);
-
-
-/** 从网络地址加载并添加到队列 */
-const loadFromUrl = async (): Promise<void> => {
-  const url = urlInput.value.trim();
-  if (!url) return;
-  await player.addAndPlay(url);
-};
-
-/** 打开本地文件对话框并添加到队列 */
-const loadFromFile = async (): Promise<void> => {
-  const result = await window.api.player.openFile();
-  if (!result.success || !result.data) return;
-  await player.addAndPlay(result.data);
-};
-
-/** 是否有可播放的曲目 */
-const hasTrack = computed(() => !!media.track);
 
 /** 主题模式显示 */
 const modeLabel: Record<string, string> = { light: "浅色", dark: "深色", system: "系统" };
@@ -57,18 +27,6 @@ watch(colorHex, (hex) => {
   theme.setCustomColor(hex);
 });
 
-/** 进度条拖动 */
-const onSeek = (e: Event): void => {
-  const value = Number((e.target as HTMLInputElement).value);
-  player.seek(value);
-};
-
-/** 音量条拖动 */
-const onVolumeChange = (e: Event): void => {
-  const value = Number((e.target as HTMLInputElement).value);
-  player.setVolume(value);
-};
-
 /** 测试 loading → success 的 toast 流程 */
 const testLoadingToast = (): void => {
   const t = toast.loading("加载中...");
@@ -82,7 +40,7 @@ const testLoadingToast = (): void => {
 <template>
   <div class="flex flex-col items-center gap-4 p-8 max-w-xl mx-auto">
     <div class="flex items-center gap-3 w-full">
-      <h2 class="text-lg font-semibold flex-1">SPlayer Audio Test</h2>
+      <h2 class="text-lg font-semibold flex-1">SPlayer UI Test</h2>
       <!-- 主题类型 -->
       <select
         class="px-2 py-1.5 rounded-lg text-sm border border-solid border-outline-variant bg-surface-alt text-on-surface outline-none"
@@ -115,55 +73,6 @@ const testLoadingToast = (): void => {
       </button>
     </div>
 
-    <!-- 网络地址输入 -->
-    <div class="flex gap-2 w-full">
-      <input
-        v-model="urlInput"
-        type="text"
-        placeholder="输入网络音频地址..."
-        class="flex-1 px-3 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm outline-none focus:border-primary"
-        @keydown.enter="loadFromUrl"
-      />
-      <button
-        class="px-4 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm whitespace-nowrap hover:bg-secondary-container"
-        @click="loadFromUrl"
-      >
-        加载网络音频
-      </button>
-    </div>
-
-    <!-- 本地文件选择 -->
-    <div class="flex gap-2 w-full">
-      <button
-        class="px-4 py-2 rounded-lg border border-solid border-outline-variant bg-surface-alt text-on-surface text-sm hover:bg-secondary-container"
-        @click="loadFromFile"
-      >
-        选择本地文件
-      </button>
-    </div>
-
-    <!-- 错误信息 -->
-    <div v-if="error" class="text-red-500 text-sm text-center">{{ error }}</div>
-
-    <!-- 播放控制 -->
-    <div class="flex gap-3">
-      <SButton type="primary" size="large" :disabled="!hasTrack" @click="player.stop()"> Stop </SButton>
-      <SButton
-        type="primary"
-        variant="secondary"
-        size="large"
-        circle
-        ripple
-        :loading="isLoading"
-        :disabled="!hasTrack && !isLoading"
-        @click="player.togglePlay()"
-      >
-        <template #icon>
-          <IconLucidePause v-if="isPlaying" />
-          <IconLucidePlay v-else />
-        </template>
-      </SButton>
-    </div>
     <!-- 默认按钮 -->
     <SButton ripple>默认按钮</SButton>
     <SButton disabled>取消</SButton>
@@ -200,66 +109,6 @@ const testLoadingToast = (): void => {
     <SButton variant="bordered">边框</SButton>
     <SButton type="info" variant="bordered">边框</SButton>
     <SButton type="info" variant="bordered" dashed>边框虚线</SButton>
-    <!-- 进度条 -->
-    <div class="flex items-center gap-2 w-full">
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{
-        formatTime(position)
-      }}</span>
-      <input
-        type="range"
-        min="0"
-        :max="duration"
-        step="100"
-        :value="position"
-        class="flex-1 accent-primary"
-        @input="onSeek"
-      />
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">{{
-        formatTime(duration)
-      }}</span>
-    </div>
-
-    <!-- 音量控制 -->
-    <div class="flex items-center gap-2 w-full">
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">VOL</span>
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        :value="volume"
-        class="flex-1 accent-primary"
-        @input="onVolumeChange"
-      />
-      <span class="text-xs text-on-surface-variant min-w-9 text-center">
-        {{ Math.round(volume * 100) }}%
-      </span>
-    </div>
-
-    <!-- 音频输出设备 -->
-    <div class="flex items-center gap-2 w-full">
-      <span class="text-xs text-on-surface-variant shrink-0">输出设备</span>
-      <select
-        class="flex-1 px-2 py-1.5 rounded-lg text-sm border border-solid border-outline-variant bg-surface-alt text-on-surface outline-none"
-        :value="status.selectedDeviceName ?? ''"
-        @change="player.switchDevice(($event.target as HTMLSelectElement).value || null)"
-      >
-        <option value="">系统默认</option>
-        <option
-          v-for="device in status.outputDevices"
-          :key="device.name"
-          :value="device.name"
-        >
-          {{ device.name }}{{ device.isDefault ? " (默认)" : "" }}
-        </option>
-      </select>
-      <button
-        class="px-2 py-1.5 rounded-lg text-xs border border-solid border-outline-variant bg-surface-alt text-on-surface-variant hover:bg-secondary-container"
-        @click="player.refreshDevices()"
-      >
-        刷新
-      </button>
-    </div>
 
     <!-- Toast 测试 -->
     <div class="flex gap-2 w-full flex-wrap">
@@ -276,94 +125,88 @@ const testLoadingToast = (): void => {
     </div>
 
     <!-- click 触发（默认） -->
-  <SPopover>
-    <template #trigger>
-      <SButton>点我</SButton>
-    </template>
-    弹出内容
-  </SPopover>
+    <SPopover>
+      <template #trigger>
+        <SButton>点我</SButton>
+      </template>
+      弹出内容
+    </SPopover>
 
-  <!-- hover 触发 -->
-  <SPopover trigger="hover" side="top" arrow>
-    <template #trigger>
-      <span>悬停查看</span>
-    </template>
-    提示信息
-  </SPopover>
+    <!-- hover 触发 -->
+    <SPopover trigger="hover" side="top" arrow>
+      <template #trigger>
+        <span>悬停查看</span>
+      </template>
+      提示信息
+    </SPopover>
 
-  <!-- focus 触发 -->
-  <SPopover trigger="focus" side="right">
-    <template #trigger>
-      <input placeholder="聚焦显示" />
-    </template>
-    输入帮助
-  </SPopover>
+    <!-- focus 触发 -->
+    <SPopover trigger="focus" side="right">
+      <template #trigger>
+        <input placeholder="聚焦显示" />
+      </template>
+      输入帮助
+    </SPopover>
 
-  <!-- Dialog 测试 -->
-  <SDialog title="确认操作" description="此操作不可撤销，确定继续吗？">
-    <template #trigger>
-      <SButton type="primary">打开对话框</SButton>
-    </template>
-    <p class="text-sm">这是对话框的主体内容区域。</p>
-    <template #footer="{ close }">
-      <SButton variant="ghost" @click="close">取消</SButton>
-      <SButton type="primary" @click="close">确认</SButton>
-    </template>
-  </SDialog>
+    <!-- Dialog 测试 -->
+    <SDialog title="确认操作" description="此操作不可撤销，确定继续吗？">
+      <template #trigger>
+        <SButton type="primary">打开对话框</SButton>
+      </template>
+      <p class="text-sm">这是对话框的主体内容区域。</p>
+      <template #footer="{ close }">
+        <SButton variant="ghost" @click="close">取消</SButton>
+        <SButton type="primary" @click="close">确认</SButton>
+      </template>
+    </SDialog>
 
-  <!-- Dialog cover 模式 -->
-  <SDialog title="音质详情" cover>
-    <template #trigger>
-      <SButton type="cover" variant="secondary">Cover 对话框</SButton>
-    </template>
-    <p class="text-sm text-cover/70">这是 cover 主题模式的对话框，适合在播放器内使用。</p>
-    <template #footer="{ close }">
-      <SButton type="cover" variant="ghost" @click="close">关闭</SButton>
-    </template>
-  </SDialog>
+    <!-- Dialog cover 模式 -->
+    <SDialog title="音质详情" cover>
+      <template #trigger>
+        <SButton type="cover" variant="secondary">Cover 对话框</SButton>
+      </template>
+      <p class="text-sm text-cover/70">这是 cover 主题模式的对话框，适合在播放器内使用。</p>
+      <template #footer="{ close }">
+        <SButton type="cover" variant="ghost" @click="close">关闭</SButton>
+      </template>
+    </SDialog>
 
-  <!-- Drawer 测试 -->
-  <SDrawer title="播放列表">
-    <template #trigger>
-      <SButton>右侧抽屉</SButton>
-    </template>
-    <div class="flex flex-col gap-2 p-4">
-      <div
-        v-for="index in 20"
-        :key="index"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/8 cursor-pointer"
-      >
-        <span class="text-xs text-on-surface-variant min-w-5 text-right">{{ index }}</span>
-        <div class="flex-1 min-w-0">
-          <div class="text-sm truncate">示例歌曲 {{ index }}</div>
-          <div class="text-xs text-on-surface-variant truncate">未知艺术家</div>
+    <!-- Drawer 测试 -->
+    <SDrawer title="播放列表">
+      <template #trigger>
+        <SButton>右侧抽屉</SButton>
+      </template>
+      <div class="flex flex-col gap-2 p-4">
+        <div
+          v-for="index in 20"
+          :key="index"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/8 cursor-pointer"
+        >
+          <span class="text-xs text-on-surface-variant min-w-5 text-right">{{ index }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm truncate">示例歌曲 {{ index }}</div>
+            <div class="text-xs text-on-surface-variant truncate">未知艺术家</div>
+          </div>
+          <span class="text-xs text-on-surface-variant">3:30</span>
         </div>
-        <span class="text-xs text-on-surface-variant">3:30</span>
       </div>
-    </div>
-  </SDrawer>
+    </SDrawer>
 
-  <!-- Drawer 左侧 -->
-  <SDrawer title="导航" side="left" width="280px">
-    <template #trigger>
-      <SButton>左侧抽屉</SButton>
-    </template>
-    <div class="p-4 text-sm">左侧抽屉内容</div>
-  </SDrawer>
+    <!-- Drawer 左侧 -->
+    <SDrawer title="导航" side="left" width="280px">
+      <template #trigger>
+        <SButton>左侧抽屉</SButton>
+      </template>
+      <div class="p-4 text-sm">左侧抽屉内容</div>
+    </SDrawer>
 
-  <!-- Drawer 非模态 -->
-  <SDrawer title="非模态抽屉" :modal="false">
-    <template #trigger>
-      <SButton variant="outline">非模态抽屉</SButton>
-    </template>
-    <div class="p-4 text-sm">无遮罩，可以操作背后的内容</div>
-  </SDrawer>
-
-
-    <!-- 状态信息 -->
-    <div class="text-xs text-outline">
-      状态: {{ state }} | 进度: {{ Math.round(progress * 100) }}%
-    </div>
+    <!-- Drawer 非模态 -->
+    <SDrawer title="非模态抽屉" :modal="false">
+      <template #trigger>
+        <SButton variant="outline">非模态抽屉</SButton>
+      </template>
+      <div class="p-4 text-sm">无遮罩，可以操作背后的内容</div>
+    </SDrawer>
 
     <!-- 颜色选择器（仅自定义时显示） -->
     <div v-if="theme.source === 'custom'" class="w-full mt-4 flex items-center gap-3">

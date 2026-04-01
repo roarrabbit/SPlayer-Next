@@ -95,27 +95,6 @@ const loadTrack = async (track: Track | null): Promise<void> => {
   await load(track.path);
 };
 
-/**
- * 加载单个音频源并添加到队列中播放
- * 已有同 ID 歌曲时跳转到该位置，否则插入到当前歌的下一位
- * @param source - 音频文件路径或网络地址
- */
-export const addAndPlay = async (source: string): Promise<void> => {
-  const track = await load(source);
-  if (!track) return;
-  const status = useStatusStore();
-  // 检查队列中是否已有同 ID 的歌，有则跳转到该位置
-  const existingIdx = queue.findTrackIndex(track.id);
-  if (existingIdx !== -1) {
-    status.playIndex = existingIdx;
-    return;
-  }
-  // 插入到当前歌的下一位，而不是末尾
-  const insertAt = status.playIndex + 1;
-  queue.insertToQueue(track, insertAt);
-  status.playIndex = insertAt;
-};
-
 /** 恢复播放 */
 export const play = async (): Promise<void> => {
   const status = useStatusStore();
@@ -236,14 +215,20 @@ export const switchDevice = async (deviceName: string | null): Promise<void> => 
 export const playFrom = async (items: readonly Track[], startIndex = 0): Promise<void> => {
   if (items.length === 0) return;
   const status = useStatusStore();
+  const media = useMediaStore();
+  const idx = Math.max(0, Math.min(startIndex, items.length - 1));
+  const isSameTrack = media.track?.id === items[idx]?.id;
   queue.setQueue(items);
-  status.playIndex = Math.max(0, Math.min(startIndex, items.length - 1));
-  // 随机模式下立即洗牌，当前歌置顶
+  status.playIndex = idx;
   if (status.shuffleMode === "on") {
     queue.shuffleQueue(status.playIndex);
     status.playIndex = 0;
   }
-  await loadTrack(status.currentTrack);
+  if (isSameTrack) {
+    if (!status.isPlaying) play();
+  } else {
+    await loadTrack(status.currentTrack);
+  }
 };
 
 /** 播放下一首，队列末尾时根据循环模式决定行为 */
@@ -372,16 +357,34 @@ export const removeFromQueue = async (index: number): Promise<void> => {
 
 /**
  * 插入歌曲到队列指定位置，自动调整 playIndex
+ * 队列中已有同 ID 歌曲时不重复插入，返回已有位置
  * @param item - 要插入的歌曲
  * @param afterIndex - 插入到此索引之后，默认为当前播放位置之后
+ * @returns 歌曲在队列中的实际索引
  */
-export const insertToQueue = (item: Track, afterIndex?: number): void => {
+export const insertToQueue = (item: Track, afterIndex?: number): number => {
   const status = useStatusStore();
-  // 确保插入位置合法，默认插在当前歌之后
+  const existingIdx = queue.findTrackIndex(item.id);
+  if (existingIdx !== -1) return existingIdx;
   const insertAt = Math.max(0, afterIndex ?? status.playIndex + 1);
   queue.insertToQueue(item, insertAt);
-  // 在当前歌之前或同位置插入，索引后移
   if (insertAt <= status.playIndex) status.playIndex++;
+  return insertAt;
+};
+
+/**
+ * 插入歌曲到当前位置之后并立即播放
+ * 如果是当前正在播放的歌曲则继续播放，不重新加载
+ */
+export const playNow = async (item: Track): Promise<void> => {
+  const status = useStatusStore();
+  const media = useMediaStore();
+  if (media.track?.id === item.id) {
+    if (!status.isPlaying) play();
+    return;
+  }
+  status.playIndex = insertToQueue(item);
+  await loadTrack(item);
 };
 
 /**

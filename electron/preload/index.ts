@@ -65,6 +65,12 @@ const api = {
       };
     },
   },
+  system: {
+    // 打开开发者工具
+    toggleDevTools: () => ipcRenderer.invoke("system:toggleDevTools"),
+    // 在文件管理器中显示文件
+    showInExplorer: (filePath: string) => ipcRenderer.invoke("system:showInExplorer", filePath),
+  },
   library: {
     // 开始扫描（默认增量）
     scan: (incremental?: boolean) => ipcRenderer.invoke("library:scan", incremental),
