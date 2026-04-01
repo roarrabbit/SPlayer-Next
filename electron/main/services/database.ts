@@ -3,7 +3,7 @@ import path from "node:path";
 import { app } from "electron";
 import Database from "better-sqlite3";
 import { libraryLog } from "../utils/logger";
-import type { Track, Artist, Album } from "@shared/types/player";
+import type { Track, Artist, Album, AudioQuality } from "@shared/types/player";
 
 /** 数据库文件路径（放在 Database 子目录，避免 userData 根目录杂乱） */
 const dbDir = path.join(app.getPath("userData"), "Database");
@@ -75,17 +75,31 @@ interface TrackRow {
 }
 
 /** 将数据库行解析为 Track */
-const rowToTrack = (row: TrackRow): Track => ({
-  id: row.id,
-  source: "local",
-  path: row.path,
-  title: row.title,
-  artists: JSON.parse(row.artists) as Artist[],
-  album: row.album ? (JSON.parse(row.album) as Album) : undefined,
-  duration: row.duration,
-  cover: row.cover ?? undefined,
-  fileSize: row.file_size || undefined,
-});
+const rowToTrack = (row: TrackRow): Track => {
+  const quality: AudioQuality | undefined =
+    row.codec != null
+      ? {
+          codec: row.codec,
+          sampleRate: row.sample_rate ?? 0,
+          bitRate: row.bit_rate ?? 0,
+          channels: row.channels ?? 0,
+          bitsPerSample: row.bits_per_sample ?? 0,
+        }
+      : undefined;
+
+  return {
+    id: row.id,
+    source: "local",
+    path: row.path,
+    title: row.title,
+    artists: JSON.parse(row.artists) as Artist[],
+    album: row.album ? (JSON.parse(row.album) as Album) : undefined,
+    duration: row.duration,
+    cover: row.cover ?? undefined,
+    fileSize: row.file_size || undefined,
+    quality,
+  };
+};
 
 /** 查询全部曲目 */
 export const getAllTracks = (): Track[] => {

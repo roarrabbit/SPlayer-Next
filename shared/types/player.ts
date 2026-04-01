@@ -64,6 +64,8 @@ export interface Track {
   coverOriginal?: string;
   /** 文件大小（字节，仅本地文件） */
   fileSize?: number;
+  /** 音质信息（本地文件扫描时填充） */
+  quality?: AudioQuality;
   matched?: OnlineMatch;
 }
 
