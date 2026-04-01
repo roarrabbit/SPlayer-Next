@@ -84,6 +84,7 @@ const rowToTrack = (row: TrackRow): Track => ({
   album: row.album ? (JSON.parse(row.album) as Album) : undefined,
   duration: row.duration,
   cover: row.cover ?? undefined,
+  fileSize: row.file_size || undefined,
 });
 
 /** 查询全部曲目 */

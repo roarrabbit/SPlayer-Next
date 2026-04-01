@@ -6,6 +6,7 @@ import { usePlaybackTime } from "@/composables/usePlaybackTime";
 import EffectsLyrics from "@/components/player/EffectsLyrics/index.vue";
 import SimpleLyrics from "@/components/player/SimpleLyrics/index.vue";
 import * as player from "@/core/player";
+import { formatTime } from "@/utils/time";
 
 const status = useStatusStore();
 const media = useMediaStore();
@@ -71,24 +72,8 @@ const springConfig = computed(() => ({
 }));
 
 
-const togglePlay = (): void => {
-  if (!hasTrack.value) return;
-  if (isPlaying.value) {
-    player.pause();
-  } else {
-    player.play();
-  }
-};
-
 const collapse = (): void => {
   isExpanded.value = false;
-};
-
-const formatTime = (ms: number): string => {
-  const totalSecs = Math.floor(ms / 1000);
-  const min = Math.floor(totalSecs / 60);
-  const sec = totalSecs % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
 };
 
 const onSeekDragEnd = (value: number): void => {
@@ -227,7 +212,7 @@ const onSeekDragEnd = (value: number): void => {
                 circle
                 :loading="isLoading"
                 :disabled="!hasTrack && !isLoading"
-                @click="togglePlay"
+                @click="player.togglePlay()"
               >
                 <template #icon>
                   <IconLucidePause v-if="isPlaying" />

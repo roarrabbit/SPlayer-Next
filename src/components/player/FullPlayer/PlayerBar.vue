@@ -2,6 +2,7 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import * as player from "@/core/player";
+import { formatTime } from "@/utils/time";
 
 const status = useStatusStore();
 const media = useMediaStore();
@@ -19,22 +20,6 @@ const currentLyricText = computed(() => {
   const text = line.words.map((w) => w.word).join("");
   return line.translatedLyric ? `${text}（${line.translatedLyric}）` : text;
 });
-
-const togglePlay = (): void => {
-  if (!hasTrack.value) return;
-  if (isPlaying.value) {
-    player.pause();
-  } else {
-    player.play();
-  }
-};
-
-const formatTime = (ms: number): string => {
-  const totalSecs = Math.floor(ms / 1000);
-  const min = Math.floor(totalSecs / 60);
-  const sec = totalSecs % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
-};
 
 const onSeekDragEnd = (value: number): void => {
   player.seek(value);
@@ -126,7 +111,7 @@ const onSeekDragEnd = (value: number): void => {
           :size="44"
           :loading="isLoading"
           :disabled="!hasTrack && !isLoading"
-          @click="togglePlay"
+          @click="player.togglePlay()"
         >
           <template #icon>
             <IconLucidePause v-if="isPlaying" />

@@ -25,6 +25,12 @@
     "repeatOne": "单曲循环",
     "volume": "音量"
   },
+  "songList": {
+    "title": "标题",
+    "album": "专辑",
+    "size": "大小",
+    "duration": "时长"
+  },
   "playlist": {
     "title": "播放列表",
     "totalSongs": "共 {count} 首",

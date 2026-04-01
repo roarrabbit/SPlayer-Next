@@ -98,6 +98,7 @@ declare module 'vue' {
     SLogo: typeof import('./src/components/ui/SLogo.vue')['default']
     SMarquee: typeof import('./src/components/ui/SMarquee.vue')['default']
     SMenu: typeof import('./src/components/ui/SMenu.vue')['default']
+    SongList: typeof import('./src/components/list/SongList.vue')['default']
     SPopover: typeof import('./src/components/ui/SPopover.vue')['default']
     SSelect: typeof import('./src/components/ui/SSelect.vue')['default']
     SSlider: typeof import('./src/components/ui/SSlider.vue')['default']

@@ -325,6 +325,9 @@ defineExpose({
     :style="{ height: containerHeightStyle }"
   >
     <div ref="scrollRef" class="size-full overflow-y-auto" @scroll="handleScroll">
+      <div v-if="$slots.header" class="sticky top-0 z-10 bg-surface">
+        <slot name="header" />
+      </div>
       <div :style="{ height: `${totalHeight}px`, position: 'relative' }">
         <div ref="contentRef" class="absolute inset-x-0 top-0">
           <div

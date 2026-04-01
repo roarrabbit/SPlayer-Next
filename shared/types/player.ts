@@ -62,6 +62,8 @@ export interface Track {
   duration: number;
   cover?: string;
   coverOriginal?: string;
+  /** 文件大小（字节，仅本地文件） */
+  fileSize?: number;
   matched?: OnlineMatch;
 }
 

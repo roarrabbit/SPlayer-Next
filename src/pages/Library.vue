@@ -1,25 +1,10 @@
 <script setup lang="ts">
-import type { Track } from "@shared/types/player";
 import { useLibraryStore } from "@/stores/library";
 import * as player from "@/core/player";
 
 const { t } = useI18n();
 const libraryStore = useLibraryStore();
 const { tracks, scanDirs, scanning, scanProgress, initialized } = storeToRefs(libraryStore);
-
-// 格式化时长 ms → m:ss
-const formatTime = (ms: number): string => {
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
-};
-
-// 格式化艺术家
-const formatArtists = (artists: Track["artists"]): string => {
-  if (!artists?.length) return t("playlist.unknownArtist");
-  return artists.map((ar) => ar.name).join(" / ");
-};
 
 // 截取目录名
 const folderName = (dir: string): string => {
@@ -167,41 +152,7 @@ const folderDialogOpen = ref(false);
 
     <!-- 曲目列表 -->
     <div v-if="tracks.length > 0" class="flex-1 min-h-0">
-      <SVirtualList
-        :items="tracks"
-        :item-height="60"
-        item-fixed
-        height="100%"
-        :get-item-key="(item: Track) => item.id"
-      >
-        <template #default="{ item, index }: { item: Track; index: number }">
-          <div class="px-4 py-1">
-            <div
-              class="flex items-center gap-3 px-3 h-12 rounded-lg cursor-pointer border border-solid border-transparent transition-[background-color,border-color] duration-200 bg-on-surface/0 hover:bg-on-surface/6 hover:border-primary/20 active:bg-on-surface/10"
-              @dblclick="handlePlay(index)"
-            >
-              <!-- 封面 -->
-              <SImg :src="item.cover" class="size-9 rounded-md shrink-0" />
-              <!-- 标题 -->
-              <div class="flex-1 min-w-0">
-                <div class="text-sm truncate text-on-surface">{{ item.title }}</div>
-              </div>
-              <!-- 艺术家 -->
-              <div class="w-40 shrink-0 truncate text-xs text-on-surface-variant">
-                {{ formatArtists(item.artists) }}
-              </div>
-              <!-- 专辑 -->
-              <div class="w-40 shrink-0 truncate text-xs text-on-surface-variant">
-                {{ item.album?.name || "" }}
-              </div>
-              <!-- 时长 -->
-              <div class="w-12 shrink-0 text-right text-xs text-on-surface-variant tabular-nums">
-                {{ formatTime(item.duration) }}
-              </div>
-            </div>
-          </div>
-        </template>
-      </SVirtualList>
+      <SongList :items="tracks" show-size @play="handlePlay" />
     </div>
 
     <!-- 空状态：无目录或无歌曲 -->

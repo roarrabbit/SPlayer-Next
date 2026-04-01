@@ -25,6 +25,12 @@
     "repeatOne": "Repeat One",
     "volume": "Volume"
   },
+  "songList": {
+    "title": "Title",
+    "album": "Album",
+    "size": "Size",
+    "duration": "Duration"
+  },
   "playlist": {
     "title": "Playlist",
     "totalSongs": "{count} songs",

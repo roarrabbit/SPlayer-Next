@@ -129,6 +129,16 @@ export const play = async (): Promise<void> => {
   }
 };
 
+/** 切换播放/暂停 */
+export const togglePlay = (): void => {
+  const status = useStatusStore();
+  if (status.isPlaying) {
+    pause();
+  } else {
+    play();
+  }
+};
+
 /** 暂停播放 */
 export const pause = async (): Promise<void> => {
   const status = useStatusStore();

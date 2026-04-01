@@ -5,6 +5,7 @@ import { useThemeStore } from "@/stores/theme";
 import * as player from "@/core/player";
 import { toast } from "@/composables/useToast";
 import type { ThemeSource } from "@/types/theme";
+import { formatTime } from "@/utils/time";
 
 const status = useStatusStore();
 const media = useMediaStore();
@@ -37,16 +38,6 @@ const loadFromFile = async (): Promise<void> => {
 /** 是否有可播放的曲目 */
 const hasTrack = computed(() => !!media.track);
 
-/** 切换播放/暂停 */
-const togglePlay = (): void => {
-  if (!hasTrack.value) return;
-  if (isPlaying.value) {
-    player.pause();
-  } else {
-    player.play();
-  }
-};
-
 /** 主题模式显示 */
 const modeLabel: Record<string, string> = { light: "浅色", dark: "深色", system: "系统" };
 
@@ -65,14 +56,6 @@ const colorHex = ref(theme.customColor);
 watch(colorHex, (hex) => {
   theme.setCustomColor(hex);
 });
-
-/** 格式化毫秒为 mm:ss */
-const formatTime = (ms: number): string => {
-  const totalSecs = Math.floor(ms / 1000);
-  const min = Math.floor(totalSecs / 60);
-  const sec = totalSecs % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
-};
 
 /** 进度条拖动 */
 const onSeek = (e: Event): void => {
@@ -173,7 +156,7 @@ const testLoadingToast = (): void => {
         ripple
         :loading="isLoading"
         :disabled="!hasTrack && !isLoading"
-        @click="togglePlay"
+        @click="player.togglePlay()"
       >
         <template #icon>
           <IconLucidePause v-if="isPlaying" />
