@@ -13,11 +13,82 @@ pub struct ExternalLyric {
     pub path: String,
 }
 
+/// 音频流基本参数（scanner 和 decoder 共用）
+pub struct StreamInfo {
+    /// 比特率（bps）
+    pub bit_rate: i64,
+    /// 原始采样率（Hz）
+    pub sample_rate: u32,
+    /// 位深（bits per sample）
+    pub bits_per_sample: u32,
+    /// 声道数
+    pub channels: u32,
+}
+
+/// 容器级别的 tag 信息
+pub struct Tags {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub comment: Option<String>,
+}
+
 /// 缩略图最大边长（px）
 const THUMB_SIZE: u32 = 300;
 
 /// 支持的歌词文件扩展名
 const LYRIC_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "lrc", "ass", "srt"];
+
+/// 从音频流参数中提取比特率、原始采样率和位深
+///
+/// # Safety
+/// `stream` 和 `input_ctx` 的底层指针必须有效（由调用方保证生命周期）
+pub unsafe fn extract_stream_info(
+    stream: &ffmpeg::Stream,
+    input_ctx: &ffmpeg::format::context::Input,
+) -> StreamInfo {
+    let params = stream.parameters().as_ptr();
+    let stream_bit_rate = (*params).bit_rate;
+    // FLAC 等无损格式的 stream bit_rate 通常为 0，fallback 到容器级别
+    let bit_rate = if stream_bit_rate > 0 {
+        stream_bit_rate
+    } else {
+        (*input_ctx.as_ptr()).bit_rate
+    };
+    let sample_rate = (*params).sample_rate as u32;
+    let bits_per_raw = (*params).bits_per_raw_sample as u32;
+    let bits_per_coded = (*params).bits_per_coded_sample as u32;
+    let bits_per_sample = if bits_per_raw > 0 {
+        bits_per_raw
+    } else {
+        bits_per_coded
+    };
+    let channels = (*params).ch_layout.nb_channels.max(0) as u32;
+    StreamInfo {
+        bit_rate,
+        sample_rate,
+        bits_per_sample,
+        channels,
+    }
+}
+
+/// 从容器 metadata 提取常见 tag
+pub fn extract_tags(input_ctx: &ffmpeg::format::context::Input) -> Tags {
+    let dict = input_ctx.metadata();
+    let title = dict.get("title").map(ToString::to_string);
+    let artist = dict
+        .get("artist")
+        .or_else(|| dict.get("album_artist"))
+        .map(ToString::to_string);
+    let album = dict.get("album").map(ToString::to_string);
+    let comment = dict.get("comment").map(ToString::to_string);
+    Tags {
+        title,
+        artist,
+        album,
+        comment,
+    }
+}
 
 /// 从已打开的 input_ctx 中提取封面缩略图，写入缓存目录，返回缩略图路径。
 ///

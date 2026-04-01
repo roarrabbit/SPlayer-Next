@@ -2,17 +2,16 @@
 //!
 //! 在后台线程中运行，避免阻塞 Node.js 事件循环。
 //! 支持增量扫描：比对文件 mtime/size 跳过未变化的文件。
+//! 使用 FFmpeg 提取元数据，无需额外依赖 lofty。
 
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fs;
-use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::SystemTime;
+use std::time::{Instant, SystemTime};
 
-use lofty::file::TaggedFileExt;
-use lofty::prelude::*;
+use ffmpeg_next as ffmpeg;
+use ffmpeg_next::media::Type;
 use tracing::{debug, info, warn};
 use walkdir::WalkDir;
 
@@ -81,50 +80,60 @@ fn is_audio_file(path: &Path) -> bool {
         .is_some_and(|ext| AUDIO_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str()))
 }
 
-/// 使用 lofty 快速读取音频文件元数据（纯 tag 解析，不解码音频数据，~5-20ms/文件）
+/// 使用 FFmpeg 快速读取音频文件元数据（仅读取容器头和 tag，不解码音频数据）
 fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<ScannedTrack> {
-    let tagged_file = lofty::read_from_path(path).ok()?;
-    let properties = tagged_file.properties();
-    let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
+    let ctx = ffmpeg::format::input(path).ok()?;
 
-    let duration = properties.duration().as_secs_f64();
-    let sample_rate = properties.sample_rate().unwrap_or(0);
-    let bit_rate = properties.audio_bitrate().map_or(0, |br| br as i64 * 1000);
-    let channels = properties.channels().unwrap_or(0) as u32;
-    let bits_per_sample = properties.bit_depth().unwrap_or(0) as u32;
-
-    // 从扩展名推导 codec
-    let codec = Path::new(path)
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase();
-
-    let (title, artist, album) = if let Some(tag) = tag {
-        (
-            tag.title().map(|s| s.to_string()),
-            tag.artist().map(|s| s.to_string()),
-            tag.album().map(|s| s.to_string()),
-        )
+    // 时长
+    let duration = if ctx.duration() >= 0 {
+        ctx.duration() as f64 / f64::from(ffmpeg::ffi::AV_TIME_BASE)
     } else {
-        (None, None, None)
+        0.0
     };
 
-    // 封面提取：从 tag 中读取图片，生成缩略图缓存
-    let cover = cover_cache_dir.and_then(|cache_dir| {
-        let pic = tag?.pictures().first()?;
-        let pic_data = pic.data();
-        if pic_data.is_empty() {
-            return None;
-        }
-        generate_cover_cache(path, pic_data, cache_dir)
-    });
+    // 音频流参数（全部从 AVCodecParameters 读取，不初始化解码器）
+    let mut sample_rate = 0u32;
+    let mut channels = 0u32;
+    let mut bits_per_sample = 0u32;
+    let mut bit_rate = 0i64;
+    let mut codec = String::new();
+
+    if let Some(stream) = ctx.streams().best(Type::Audio) {
+        // SAFETY: ctx 和 stream 在此作用域内有效
+        let info = unsafe { metadata::extract_stream_info(&stream, &ctx) };
+        bit_rate = info.bit_rate;
+        bits_per_sample = info.bits_per_sample;
+        sample_rate = info.sample_rate;
+        channels = info.channels;
+
+        codec = stream
+            .parameters()
+            .id()
+            .name()
+            .to_string();
+    }
+
+    // codec 兜底：从扩展名推导
+    if codec.is_empty() {
+        codec = Path::new(path)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+    }
+
+    // tag 提取（复用 metadata 模块）
+    let tags = metadata::extract_tags(&ctx);
+
+    // 封面缩略图（复用 metadata 模块，与播放时的封面缓存逻辑一致）
+    let cover =
+        cover_cache_dir.and_then(|dir| metadata::extract_cover_thumbnail(&ctx, path, dir));
 
     Some(ScannedTrack {
         path: path.to_string(),
-        title,
-        artist,
-        album,
+        title: tags.title,
+        artist: tags.artist,
+        album: tags.album,
         duration,
         codec,
         sample_rate,
@@ -135,30 +144,6 @@ fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<ScannedTrack>
         file_size: 0, // 由调用方填充
         file_mtime: 0,
     })
-}
-
-/// 生成封面缩略图缓存，返回缓存路径
-fn generate_cover_cache(source: &str, pic_data: &[u8], cache_dir: &str) -> Option<String> {
-    let cache_dir = Path::new(cache_dir);
-
-    let mut hasher = DefaultHasher::new();
-    source.hash(&mut hasher);
-    let hash = hasher.finish();
-    let thumb_file = cache_dir.join(format!("cover_{hash:016x}_thumb.jpg"));
-
-    // 缓存命中
-    if thumb_file.exists() {
-        return Some(thumb_file.to_string_lossy().into_owned());
-    }
-
-    fs::create_dir_all(cache_dir).ok()?;
-
-    // 尝试生成缩略图，失败则直接写原始数据
-    if metadata::generate_cover_thumbnail(pic_data, &thumb_file).is_err() {
-        fs::write(&thumb_file, pic_data).ok()?;
-    }
-
-    Some(thumb_file.to_string_lossy().into_owned())
 }
 
 /// 获取文件的 mtime（Unix 毫秒）和大小
@@ -187,6 +172,9 @@ pub fn scan_directories(
     cancel: &AtomicBool,
     callback: &dyn Fn(ScanEvent),
 ) {
+    let scan_start = Instant::now();
+    info!("开始扫描，目录数: {}", dirs.len());
+
     // 构建已有文件索引 path → (mtime, size)
     let existing: HashMap<&str, (u64, u64)> = incremental_data
         .map(|records| {
@@ -198,7 +186,7 @@ pub fn scan_directories(
         .unwrap_or_default();
 
     // 第一遍：收集所有音频文件路径
-    info!("开始收集音频文件...");
+    let walk_start = Instant::now();
     let mut audio_files: Vec<(String, u64, u64)> = Vec::new();
     let mut scanned_paths: Vec<String> = Vec::new();
 
@@ -232,13 +220,16 @@ pub fn scan_directories(
     }
 
     let total = audio_files.len() as u32;
+    let walk_elapsed = walk_start.elapsed();
     info!(
-        "收集完成: {} 个文件需要处理（共发现 {} 个音频文件）",
+        "目录遍历完成: 发现 {} 个音频文件，其中 {} 个需要处理，耗时 {:.2?}",
+        scanned_paths.len(),
         total,
-        scanned_paths.len()
+        walk_elapsed,
     );
 
     // 第二遍：逐文件提取元数据，分批回调
+    let parse_start = Instant::now();
     let mut scanned: u32 = 0;
     let mut batch: Vec<ScannedTrack> = Vec::with_capacity(BATCH_SIZE);
 
@@ -264,7 +255,7 @@ pub fn scan_directories(
                 batch.push(track);
             }
             None => {
-                debug!("跳过文件 {path_str}: lofty 无法解析");
+                debug!("跳过文件 {path_str}: FFmpeg 无法解析");
             }
         }
 
@@ -293,6 +284,23 @@ pub fn scan_directories(
     if !removed_paths.is_empty() {
         info!("发现 {} 个已删除文件", removed_paths.len());
     }
+
+    let parse_elapsed = parse_start.elapsed();
+    let total_elapsed = scan_start.elapsed();
+    let throughput = if parse_elapsed.as_secs_f64() > 0.0 {
+        scanned as f64 / parse_elapsed.as_secs_f64()
+    } else {
+        0.0
+    };
+    info!(
+        "扫描完成: 处理 {}/{} 个文件，目录遍历 {:.2?}，元数据解析 {:.2?}，总计 {:.2?}（{:.0} 文件/秒）",
+        scanned,
+        scanned_paths.len(),
+        walk_elapsed,
+        parse_elapsed,
+        total_elapsed,
+        throughput,
+    );
 
     callback(ScanEvent::Done {
         scanned,

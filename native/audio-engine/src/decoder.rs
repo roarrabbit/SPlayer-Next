@@ -21,32 +21,6 @@ const NETWORK_READ_RETRIES: u32 = 3;
 /// 重试间隔（毫秒）
 const NETWORK_RETRY_DELAY_MS: u64 = 500;
 
-/// 从音频流参数中提取比特率、原始采样率和位深
-///
-/// # Safety
-/// `stream` 和 `input_ctx` 的底层指针必须有效（由调用方保证生命周期）
-unsafe fn extract_stream_info(
-    stream: &ffmpeg::Stream,
-    input_ctx: &ffmpeg::format::context::Input,
-) -> (i64, u32, u32) {
-    let p = stream.parameters().as_ptr();
-    let stream_bit_rate = (*p).bit_rate;
-    // FLAC 等无损格式的 stream bit_rate 通常为 0，fallback 到容器级别
-    let bit_rate = if stream_bit_rate > 0 {
-        stream_bit_rate
-    } else {
-        (*input_ctx.as_ptr()).bit_rate
-    };
-    let original_sample_rate = (*p).sample_rate as u32;
-    let bits_per_raw = (*p).bits_per_raw_sample as u32;
-    let bits_per_coded = (*p).bits_per_coded_sample as u32;
-    let bits_per_sample = if bits_per_raw > 0 {
-        bits_per_raw
-    } else {
-        bits_per_coded
-    };
-    (bit_rate, original_sample_rate, bits_per_sample)
-}
 
 /// 解码会话所需的资源（跨 seek 复用，避免重建 FFmpeg 上下文）
 pub struct DecoderData {
@@ -106,15 +80,10 @@ pub fn start_decode(
         0.0
     };
 
-    let metadata_dict = input_ctx.metadata();
-    let title = metadata_dict.get("title").map(ToString::to_string);
-    let artist = metadata_dict.get("artist").map(ToString::to_string);
-    let album = metadata_dict.get("album").map(ToString::to_string);
-    let comment = metadata_dict.get("comment").map(ToString::to_string);
+    let tags = metadata::extract_tags(&input_ctx);
 
     // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
-    let (bit_rate, original_sample_rate, bits_per_sample) =
-        unsafe { extract_stream_info(&stream, &input_ctx) };
+    let stream_info = unsafe { metadata::extract_stream_info(&stream, &input_ctx) };
     let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
         .map(|c| c.name().to_string())
         .unwrap_or_default();
@@ -155,16 +124,16 @@ pub fn start_decode(
     )?;
 
     let metadata = AudioMetadata {
-        title,
-        artist,
-        album,
-        comment,
+        title: tags.title,
+        artist: tags.artist,
+        album: tags.album,
+        comment: tags.comment,
         duration_secs,
         sample_rate: TARGET_SAMPLE_RATE,
         channels: TARGET_CHANNELS,
-        original_sample_rate,
-        bits_per_sample,
-        bit_rate,
+        original_sample_rate: stream_info.sample_rate,
+        bits_per_sample: stream_info.bits_per_sample,
+        bit_rate: stream_info.bit_rate,
         codec,
         embedded_lyric,
         external_lyrics,
