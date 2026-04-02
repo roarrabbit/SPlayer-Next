@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import defaultFallback from "@/assets/images/song.jpg";
+
 export interface SImgProps {
   /** 图片地址 */
   src?: string;
@@ -9,7 +11,7 @@ export interface SImgProps {
 }
 
 const props = withDefaults(defineProps<SImgProps>(), {
-  fallback: "/images/song.jpg",
+  fallback: defaultFallback,
   alt: "",
 });
 

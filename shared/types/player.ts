@@ -137,6 +137,7 @@ export interface PlayerApi {
   openFile: () => Promise<IpcResponse<string>>;
   reinit: () => Promise<IpcResponse>;
   setFftEnabled: (enabled: boolean) => Promise<IpcResponse>;
+  setNormalizationEnabled: (enabled: boolean) => Promise<IpcResponse>;
   getOutputDevices: () => Promise<IpcResponse<AudioDevice[]>>;
   getDefaultDeviceName: () => Promise<IpcResponse<string | null>>;
   setOutputDevice: (deviceName: string | null) => Promise<IpcResponse>;

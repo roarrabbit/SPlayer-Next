@@ -7,6 +7,7 @@ use ffmpeg_next::ChannelLayout;
 use ffmpeg_next::Dictionary;
 use tracing::{debug, warn};
 
+use crate::loudness::LoudnessAnalyzer;
 use crate::metadata;
 use crate::shared::{AudioChunk, AudioMetadata, Shared};
 
@@ -93,6 +94,7 @@ pub fn start_decode(
     let cover_raw = metadata::read_attached_pic(&input_ctx);
     let embedded_lyric = metadata::extract_embedded_lyric(&input_ctx);
     let external_lyrics = metadata::find_all_external_lyrics(source);
+    let replay_gain_db = metadata::extract_replay_gain(&input_ctx);
 
     let decoder_ctx = ffmpeg::codec::context::Context::from_parameters(stream.parameters())?;
     let decoder = decoder_ctx.decoder().audio()?;
@@ -122,6 +124,11 @@ pub fn start_decode(
         ChannelLayout::MONO,
         FFT_SAMPLE_RATE,
     )?;
+
+    // 设置归一化增益：有 ReplayGain tag 时直接使用，否则由实时分析器动态计算
+    if let Some(db) = replay_gain_db {
+        shared.set_normalization_gain(metadata::db_to_linear(db));
+    }
 
     let metadata = AudioMetadata {
         title: tags.title,
@@ -217,6 +224,11 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
     let mut eof_sent = false;
     let mut consecutive_read_failures: u32 = 0;
 
+    // 响度归一化：有 ReplayGain 标签时用固定增益，否则用实时分析
+    let has_replay_gain = (shared.normalization_gain() - 1.0).abs() > f32::EPSILON;
+    let mut loudness = LoudnessAnalyzer::new();
+    loudness.set_has_replay_gain(has_replay_gain);
+
     loop {
         // 背压：缓冲区满时阻塞等待消费
         if !shared.wait_for_space() {
@@ -238,6 +250,22 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
                 fft_scratch.clear();
 
                 resample_frame(data, &mut decoded, &mut player_scratch, &mut fft_scratch);
+
+                // 音量归一化
+                if shared.is_normalization_enabled() {
+                    let gain = if has_replay_gain {
+                        // 有 ReplayGain 标签：用固定增益
+                        shared.normalization_gain()
+                    } else {
+                        // 无标签：实时分析动态增益
+                        loudness.process(&player_scratch)
+                    };
+                    if (gain - 1.0).abs() > f32::EPSILON {
+                        for sample in &mut player_scratch {
+                            *sample *= gain;
+                        }
+                    }
+                }
 
                 let chunk = AudioChunk {
                     player_samples: std::mem::take(&mut player_scratch),

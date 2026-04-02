@@ -20,7 +20,7 @@ export const getEngine = (): AudioEngineModule => {
   return audioEngine;
 };
 
-/** 获取播放器实例（首次创建时设置封面缓存目录） */
+/** 获取播放器实例 */
 export const getPlayer = (
   onCreated?: (inst: InstanceType<AudioEngineModule["AudioPlayer"]>) => void,
 ): InstanceType<AudioEngineModule["AudioPlayer"]> => {
@@ -34,8 +34,15 @@ export const getPlayer = (
   return playerInstance;
 };
 
-/** 销毁播放器实例，下次调用 getPlayer() 时自动重建 */
+/** 销毁播放器实例 */
 export const resetPlayer = (): void => {
   playerLog.warn("销毁播放器实例，将在下次操作时重建");
   playerInstance = null;
+};
+
+/** 同步音量均衡设置到播放器 */
+export const setNormalizationEnabled = (enabled: boolean): void => {
+  if (playerInstance) {
+    playerInstance.setNormalizationEnabled(enabled);
+  }
 };

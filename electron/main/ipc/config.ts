@@ -1,6 +1,8 @@
 import { ipcMain } from "electron";
 import { store } from "../store";
 import { enable as enableMedia, disable as disableMedia, reloadDiscordConfig } from "../services/media";
+import { setNormalizationEnabled } from "../services/engine";
+
 /** 配置写入后的副作用：根据 key 触发主进程对应操作 */
 const applyConfigChange = (keyPath: string, value: unknown): void => {
   switch (keyPath) {
@@ -11,6 +13,9 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
     case "media.discord.showWhenPaused":
     case "media.discord.displayMode":
       reloadDiscordConfig();
+      break;
+    case "player.loudnessNormalization":
+      setNormalizationEnabled(value as boolean);
       break;
   }
 };

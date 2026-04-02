@@ -102,6 +102,8 @@ pub struct InnerPlayer {
     fft_timer_handle: Option<JoinHandle<()>>,
     /// 用户选择的输出设备名称（None = 系统默认）
     selected_device_name: Option<String>,
+    /// 音量归一化开关
+    normalization_enabled: bool,
 }
 
 /// 等待线程退出，最多等 timeout_ms 毫秒，超时则放弃
@@ -162,6 +164,7 @@ impl InnerPlayer {
             fft_timer_stop: None,
             fft_timer_handle: None,
             selected_device_name: None,
+            normalization_enabled: false,
         })
     }
 
@@ -404,6 +407,8 @@ impl InnerPlayer {
         self.fft.reset();
 
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
+        // 将归一化开关同步到新的 Shared 实例
+        shared.set_normalization_enabled(self.normalization_enabled);
         let (mut metadata, handle) =
             decoder::start_decode(source, Arc::clone(&shared), self.cover_cache_dir.as_deref())?;
 
@@ -605,6 +610,11 @@ impl InnerPlayer {
 
         // 创建新的共享状态（旧的 is_stopping=true 不可复用）
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
+        // 同步归一化设置（从旧 Shared 继承增益值和开关）
+        if let Some(ref old_shared) = self.shared {
+            shared.set_normalization_enabled(old_shared.is_normalization_enabled());
+            shared.set_normalization_gain(old_shared.normalization_gain());
+        }
         let handle = decoder::resume_decode(decoder_data, Arc::clone(&shared));
 
         let sink =
@@ -704,5 +714,18 @@ impl InnerPlayer {
             (Some(shared), Some(sink)) => shared.is_done() && sink.empty(),
             _ => false,
         }
+    }
+
+    /// 设置音量归一化开关
+    pub fn set_normalization_enabled(&mut self, enabled: bool) {
+        self.normalization_enabled = enabled;
+        if let Some(ref shared) = self.shared {
+            shared.set_normalization_enabled(enabled);
+        }
+    }
+
+    /// 获取音量归一化开关状态
+    pub fn normalization_enabled(&self) -> bool {
+        self.normalization_enabled
     }
 }

@@ -90,6 +90,40 @@ pub fn extract_tags(input_ctx: &ffmpeg::format::context::Input) -> Tags {
     }
 }
 
+/// 从容器 metadata 提取 ReplayGain / R128 增益值（dB）
+///
+/// 按优先级尝试：R128_TRACK_GAIN → replaygain_track_gain → replaygain_album_gain
+pub fn extract_replay_gain(input_ctx: &ffmpeg::format::context::Input) -> Option<f32> {
+    let dict = input_ctx.metadata();
+
+    // EBU R128：值为 1/256 dB 单位的整数
+    if let Some(val) = dict.get("R128_TRACK_GAIN").or_else(|| dict.get("R128_ALBUM_GAIN")) {
+        if let Ok(raw) = val.trim().parse::<f32>() {
+            return Some(raw / 256.0);
+        }
+    }
+
+    // ReplayGain：格式如 "-6.50 dB"
+    if let Some(val) = dict
+        .get("replaygain_track_gain")
+        .or_else(|| dict.get("REPLAYGAIN_TRACK_GAIN"))
+        .or_else(|| dict.get("replaygain_album_gain"))
+        .or_else(|| dict.get("REPLAYGAIN_ALBUM_GAIN"))
+    {
+        let cleaned = val.trim().trim_end_matches(" dB").trim_end_matches("dB");
+        if let Ok(db) = cleaned.parse::<f32>() {
+            return Some(db);
+        }
+    }
+
+    None
+}
+
+/// 将 dB 增益转换为线性增益因子
+pub fn db_to_linear(db: f32) -> f32 {
+    10.0_f32.powf(db / 20.0)
+}
+
 /// 从已打开的 input_ctx 中提取封面缩略图，写入缓存目录，返回缩略图路径。
 ///
 /// 只缓存 300x300 JPEG 缩略图供前端日常显示，原图不落盘。

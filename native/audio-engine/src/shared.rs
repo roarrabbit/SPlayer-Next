@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 
 use parking_lot::{Condvar, Mutex};
@@ -29,6 +29,11 @@ pub struct Shared {
     /// 所有数据已被消费完毕（DecoderSource 返回 None 时设置）
     /// 比 is_done() 更准确：is_done 只表示缓冲区空，all_consumed 表示 rodio 侧已消费完
     all_consumed: AtomicBool,
+    /// 音量归一化增益因子（线性值，1.0 = 无增益）
+    /// 使用 AtomicU32 + f32::to_bits/from_bits 实现原子 f32
+    normalization_gain: AtomicU32,
+    /// 音量归一化开关
+    normalization_enabled: AtomicBool,
 }
 
 /// 共享缓冲区最大容量（背压阈值）
@@ -45,7 +50,30 @@ impl Shared {
             sample_rate,
             channels,
             all_consumed: AtomicBool::new(false),
+            normalization_gain: AtomicU32::new(1.0_f32.to_bits()),
+            normalization_enabled: AtomicBool::new(false),
         })
+    }
+
+    /// 设置归一化增益因子（线性值）
+    pub fn set_normalization_gain(&self, gain: f32) {
+        self.normalization_gain
+            .store(gain.to_bits(), Ordering::Relaxed);
+    }
+
+    /// 设置归一化开关
+    pub fn set_normalization_enabled(&self, enabled: bool) {
+        self.normalization_enabled.store(enabled, Ordering::Relaxed);
+    }
+
+    /// 归一化是否启用
+    pub fn is_normalization_enabled(&self) -> bool {
+        self.normalization_enabled.load(Ordering::Relaxed)
+    }
+
+    /// 获取原始增益值（不考虑开关）
+    pub fn normalization_gain(&self) -> f32 {
+        f32::from_bits(self.normalization_gain.load(Ordering::Relaxed))
     }
 
     /// 批量累加已消费的采样数（由 DecoderSource 按 chunk 调用）

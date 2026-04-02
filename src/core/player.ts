@@ -504,8 +504,10 @@ export const initPlayer = async (): Promise<void> => {
   await window.api.player.setVolume(status.volume);
   syncPlayMode();
   // 应用渐入渐出配置
-  const { fadeEnabled, fadeDuration } = settings.system.player;
+  const { fadeEnabled, fadeDuration, loudnessNormalization } = settings.system.player;
   await window.api.player.setFadeDuration(fadeEnabled ? fadeDuration : 0);
+  // 应用音量均衡配置
+  await window.api.player.setNormalizationEnabled(loudnessNormalization);
   const lastTrack = status.currentTrack;
   if (lastTrack?.path) {
     const lastPosition = status.position;

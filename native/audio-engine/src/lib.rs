@@ -4,6 +4,7 @@
 mod decoder;
 mod fft;
 mod logger;
+mod loudness;
 mod metadata;
 mod player;
 mod scanner;
@@ -324,6 +325,18 @@ impl AudioPlayer {
     #[napi]
     pub fn get_fft_enabled(&self) -> bool {
         self.inner.lock().fft_enabled()
+    }
+
+    /// 启用/禁用音量归一化（实时响度均衡）
+    #[napi]
+    pub fn set_normalization_enabled(&self, enabled: bool) {
+        self.inner.lock().set_normalization_enabled(enabled);
+    }
+
+    /// 获取音量归一化开关状态
+    #[napi]
+    pub fn get_normalization_enabled(&self) -> bool {
+        self.inner.lock().normalization_enabled()
     }
 
     /// 获取 FFT 频谱数据（128 个频段，值域 0.0 ~ 1.0）

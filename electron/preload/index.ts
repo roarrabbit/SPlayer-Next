@@ -34,6 +34,8 @@ const api = {
     getFftData: () => ipcRenderer.invoke("player:getFftData"),
     // 启用/禁用 FFT 频谱推送
     setFftEnabled: (enabled: boolean) => ipcRenderer.invoke("player:setFftEnabled", enabled),
+    // 启用/禁用音量均衡
+    setNormalizationEnabled: (enabled: boolean) => ipcRenderer.invoke("player:setNormalizationEnabled", enabled),
     // 重建音频输出设备
     reinit: () => ipcRenderer.invoke("player:reinit"),
     // 获取所有音频输出设备

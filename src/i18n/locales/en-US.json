@@ -116,6 +116,10 @@
       "label": "Fade Duration",
       "description": "Fade in/out duration (ms)"
     },
+    "loudnessNormalization": {
+      "label": "Loudness Normalization",
+      "description": "Automatically balance volume levels between tracks"
+    },
     "lyricMode": {
       "label": "Lyric Mode",
       "description": "Lyric rendering style in full-screen player",

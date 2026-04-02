@@ -9,6 +9,7 @@ export const defaultSystemConfig: SystemConfig = {
     fadeDuration: 200,
     outputDevice: null,
     volume: 1,
+    loudnessNormalization: false,
   },
   media: {
     systemMediaControls: true,

@@ -305,6 +305,16 @@ export const registerPlayerIpc = (): void => {
     }
   });
 
+  // 启用/禁用音量均衡
+  ipcMain.handle("player:setNormalizationEnabled", (_event, enabled: boolean) => {
+    try {
+      player().setNormalizationEnabled(enabled);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
   // 启用/禁用 FFT 频谱推送（前端组件挂载时启用，卸载时禁用）
   ipcMain.handle("player:setFftEnabled", (_event, enabled: boolean) => {
     try {

@@ -92,6 +92,12 @@ export const settingsSchema: SettingCategory[] = [
               },
             ],
           },
+          {
+            key: "loudnessNormalization",
+            type: "switch",
+            binding: { store: "settings", path: "system.player.loudnessNormalization" },
+            defaultValue: false,
+          },
         ],
       },
     ],
