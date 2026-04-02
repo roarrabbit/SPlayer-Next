@@ -60,22 +60,24 @@ jobs:
           $dir = (Get-ChildItem ffmpeg-build -Directory | Select-Object -First 1).FullName
           echo "FFMPEG_DIR=$dir" >> $env:GITHUB_ENV
 
-      # macOS: 通过 Homebrew 安装
+      # macOS: Homebrew 安装（BtbN 不提供 macOS 预编译包）
       - name: Install FFmpeg dev (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install ffmpeg pkg-config
+          brew install ffmpeg pkg-config nasm
           echo "FFMPEG_DIR=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
 
-      # Linux: 系统包 + 构建/打包依赖
+      # Linux: 预编译 FFmpeg + 构建/打包依赖
       - name: Install FFmpeg dev (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
-            libavutil-dev libavformat-dev libavcodec-dev libswresample-dev \
             libasound2-dev libdbus-1-dev pkg-config clang nasm \
             rpm libarchive-tools
+          curl -L "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl-shared.tar.xz" -o ffmpeg.tar.xz
+          tar xf ffmpeg.tar.xz
+          echo "FFMPEG_DIR=$(pwd)/$(ls -d ffmpeg-master-*)" >> $GITHUB_ENV
 
       # 清理旧构建产物
       - name: Clean workspace on Windows
@@ -101,7 +103,7 @@ jobs:
 
       - name: Build macOS App
         if: runner.os == 'macOS'
-        run: pnpm build:mac -- --x64
+        run: pnpm build:mac -- --arm64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -124,15 +126,15 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: SPlayer-Next-macOS-dmg-x64
-          path: dist/*-x64.dmg
+          name: SPlayer-Next-macOS-dmg-arm64
+          path: dist/*-arm64.dmg
 
       - name: Upload macOS Zip
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: SPlayer-Next-macOS-zip-x64
-          path: dist/*-x64.zip
+          name: SPlayer-Next-macOS-zip-arm64
+          path: dist/*-arm64.zip
 
       - name: Upload Linux AppImage
         if: runner.os == 'Linux'
