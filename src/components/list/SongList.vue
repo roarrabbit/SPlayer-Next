@@ -12,6 +12,8 @@ const props = withDefaults(
   defineProps<{
     /** 歌曲列表数据 */
     items: Track[];
+    /** 搜索关键词（模糊匹配标题、歌手、专辑） */
+    searchQuery?: string;
     /** 显示序号 */
     showIndex?: boolean;
     /** 显示专辑 */
@@ -22,6 +24,7 @@ const props = withDefaults(
     showSize?: boolean;
   }>(),
   {
+    searchQuery: "",
     showIndex: true,
     showAlbum: true,
     showDuration: true,
@@ -35,6 +38,18 @@ const status = useStatusStore();
 
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
+
+/** 根据搜索关键词过滤后的列表 */
+const filteredItems = computed(() => {
+  const query = props.searchQuery.trim().toLowerCase();
+  if (!query) return props.items;
+  return props.items.filter((track) => {
+    const title = track.title.toLowerCase();
+    const artists = track.artists.map((a) => a.name.toLowerCase()).join(" ");
+    const album = track.album?.name?.toLowerCase() ?? "";
+    return title.includes(query) || artists.includes(query) || album.includes(query);
+  });
+});
 
 /** 右键菜单 */
 const contextIndex = ref(-1);
@@ -61,13 +76,21 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
       </div>
     </template>
     <SVirtualList
-      :items="items"
+      :items="filteredItems"
       :item-height="88"
       :padding-bottom="80"
       :get-item-key="(item: Track) => item.id"
+      :no-transition="!!searchQuery"
       item-fixed
       height="100%"
     >
+      <!-- 搜索无结果 -->
+      <template v-if="searchQuery && filteredItems.length === 0" #empty>
+        <div class="flex flex-col items-center gap-2 text-on-surface-variant/40">
+          <IconLucideSearchX class="size-8" />
+          <span class="text-sm">{{ t("songList.noResults") }}</span>
+        </div>
+      </template>
       <!-- 固定表头 -->
       <template #header>
         <div class="flex items-center gap-3 pl-3 pr-6 mx-3 h-10 text-sm text-on-surface-variant/60">
@@ -90,7 +113,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
                 ? 'bg-primary/16 border-primary/40'
                 : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
             "
-            @dblclick="player.playFrom(items, index)"
+            @dblclick="player.playFrom(filteredItems, index)"
             @contextmenu="contextIndex = index"
           >
             <!-- 序号 -->
@@ -172,7 +195,6 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
             >
               {{ item.album?.name }}
             </div>
-
             <!-- 时长 -->
             <div
               v-if="showDuration"

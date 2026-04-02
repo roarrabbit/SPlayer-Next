@@ -357,19 +357,23 @@ export const removeFromQueue = async (index: number): Promise<void> => {
 
 /**
  * 插入歌曲到队列指定位置，自动调整 playIndex
- * 队列中已有同 ID 歌曲时不重复插入，返回已有位置
+ * 队列中已有同 ID 歌曲时移动到目标位置
  * @param item - 要插入的歌曲
  * @param afterIndex - 插入到此索引之后，默认为当前播放位置之后
  * @returns 歌曲在队列中的实际索引
  */
 export const insertToQueue = (item: Track, afterIndex?: number): number => {
   const status = useStatusStore();
+  const targetAt = Math.max(0, afterIndex ?? status.playIndex + 1);
   const existingIdx = queue.findTrackIndex(item.id);
-  if (existingIdx !== -1) return existingIdx;
-  const insertAt = Math.max(0, afterIndex ?? status.playIndex + 1);
-  queue.insertToQueue(item, insertAt);
-  if (insertAt <= status.playIndex) status.playIndex++;
-  return insertAt;
+  if (existingIdx !== -1) {
+    if (existingIdx === targetAt) return existingIdx;
+    moveInQueue(existingIdx, targetAt);
+    return targetAt;
+  }
+  queue.insertToQueue(item, targetAt);
+  if (targetAt <= status.playIndex) status.playIndex++;
+  return targetAt;
 };
 
 /**

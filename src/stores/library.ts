@@ -1,4 +1,3 @@
-import { defineStore } from "pinia";
 import type { Track } from "@shared/types/player";
 import type { ScanProgress } from "@shared/types/library";
 
@@ -66,18 +65,17 @@ export const useLibraryStore = defineStore("library", () => {
 
   let unsubscribe: (() => void) | null = null;
 
-  /** 监听扫描进度，scanning 阶段增量追加 tracks */
+  /** 监听扫描进度 */
   const subscribeScanProgress = (): void => {
     unsubscribe?.();
     unsubscribe = window.api.library.onScanProgress((data) => {
-      const progress = data as ScanProgress;
-      scanProgress.value = progress;
-      if (progress.phase === "done") {
+      scanProgress.value = data;
+      if (data.phase === "done") {
         scanning.value = false;
         window.api.library.getTracks().then((res) => {
           if (res.success && res.data) tracks.value = res.data;
         });
-      } else if (progress.phase === "error") {
+      } else if (data.phase === "error") {
         scanning.value = false;
       }
     });

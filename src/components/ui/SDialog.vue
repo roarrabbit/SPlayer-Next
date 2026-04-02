@@ -81,21 +81,20 @@ const setOpen = (val: boolean): void => {
             : 'bg-surface-bright border border-solid border-outline-variant/30 text-on-surface',
         ]"
       >
-        <!-- 标题 -->
-        <DialogTitle v-if="title" class="text-lg font-semibold mb-0.5 pr-6">
-          {{ title }}
-        </DialogTitle>
-        <!-- 无障碍标题 -->
-        <DialogTitle v-else class="sr-only">对话框</DialogTitle>
-
-        <!-- 描述 -->
-        <DialogDescription
-          v-if="description"
-          :class="['text-xs mb-3', cover ? 'text-cover/50' : 'text-on-surface/50']"
-        >
-          {{ description }}
-        </DialogDescription>
-        <DialogDescription v-else class="sr-only" />
+        <!-- 标题 + 描述 -->
+        <div class="mb-3 pr-6">
+          <DialogTitle v-if="title" class="text-lg font-semibold">
+            {{ title }}
+          </DialogTitle>
+          <DialogTitle v-else class="sr-only">对话框</DialogTitle>
+          <DialogDescription
+            v-if="description"
+            :class="['text-xs mt-1', cover ? 'text-cover/50' : 'text-on-surface/50']"
+          >
+            {{ description }}
+          </DialogDescription>
+          <DialogDescription v-else class="sr-only" />
+        </div>
 
         <!-- 内容 -->
         <div :class="[height === 'auto' ? 'text-sm' : 'flex-1 min-h-0 text-sm']">

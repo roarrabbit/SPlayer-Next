@@ -40,6 +40,9 @@ impl<T> IntoNapiResult<T> for anyhow::Result<T> {
 #[napi]
 pub fn init_logger(log_dir: String, is_dev: bool) {
     logger::init_logger(&log_dir, is_dev);
+    // 静默 FFmpeg 内部日志，避免 seek 时的 invalid sync code 等无害警告输出到控制台
+    // 只保留致命错误，过滤 seek 时的 invalid sync code 等无害警告
+    ffmpeg_next::log::set_level(ffmpeg_next::log::Level::Fatal);
     info!(log_dir, is_dev, "audio-engine 日志系统已初始化");
 }
 

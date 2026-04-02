@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { useLibraryStore } from "@/stores/library";
+import { formatFileSize } from "@/utils/format";
 import * as player from "@/core/player";
 
 const { t } = useI18n();
 const libraryStore = useLibraryStore();
 const { tracks, scanDirs, scanning, scanProgress, initialized } = storeToRefs(libraryStore);
+
+/** 搜索关键词 */
+const searchQuery = ref("");
+
+/** 所有歌曲的总文件大小 */
+const totalSize = computed(() => {
+  const bytes = tracks.value.reduce((sum, track) => sum + (track.fileSize ?? 0), 0);
+  return bytes > 0 ? formatFileSize(bytes) : "";
+});
 
 // 截取目录名
 const folderName = (dir: string): string => {
@@ -39,14 +49,15 @@ const handleAddFolder = async (): Promise<void> => {
 
 // 移除文件夹确认
 const removingDir = ref<string | null>(null);
-const removeConfirmOpen = computed({
-  get: () => removingDir.value !== null,
-  set: (val: boolean) => { if (!val) removingDir.value = null; },
-});
+const removeConfirmOpen = ref(false);
+const confirmRemoveDir = (dir: string): void => {
+  removingDir.value = dir;
+  removeConfirmOpen.value = true;
+};
 const handleRemoveFolder = async (): Promise<void> => {
   if (!removingDir.value) return;
   await libraryStore.removeScanDir(removingDir.value);
-  removingDir.value = null;
+  removeConfirmOpen.value = false;
 };
 
 // 全量扫描
@@ -68,88 +79,123 @@ const scanPercent = computed(() => {
 
 // 目录管理弹窗
 const folderDialogOpen = ref(false);
+
+// 更多菜单
+import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
+import IconFolderOpen from "~icons/lucide/folder-open";
+import IconRefreshCw from "~icons/lucide/refresh-cw";
+
+const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  { key: "folders", label: t("library.folders"), icon: IconFolderOpen },
+  {
+    key: "scan",
+    label: scanning.value ? t("library.scanning") : t("library.scanAll"),
+    icon: IconRefreshCw,
+    disabled: scanning.value || scanDirs.value.length === 0,
+  },
+]);
+
+const handleMoreMenu = (key: string): void => {
+  switch (key) {
+    case "folders":
+      folderDialogOpen.value = true;
+      break;
+    case "scan":
+      handleFullScan();
+      break;
+  }
+};
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <!-- 顶栏 -->
-    <div class="shrink-0 px-6 pt-4 pb-3">
-      <div class="flex items-center justify-between mb-3">
-        <h1 class="text-xl font-semibold text-on-surface">{{ t("library.title") }}</h1>
-        <div class="flex items-center gap-2">
-          <span v-if="tracks.length > 0" class="text-sm text-on-surface-variant mr-2">
-            {{ t("library.totalSongs", { count: tracks.length }) }}
-          </span>
-          <!-- 文件夹管理 -->
-          <SButton variant="secondary" size="small" @click="folderDialogOpen = true">
-            <template #icon><IconLucideFolderOpen /></template>
-            {{ t("library.folders") }}
-          </SButton>
-          <!-- 全量扫描 -->
-          <SButton
-            variant="secondary"
-            size="small"
-            :disabled="scanning || scanDirs.length === 0"
-            @click="handleFullScan"
+    <div class="shrink-0 px-5 pb-2">
+      <div class="flex items-center justify-between mt-2 mb-4">
+        <div class="flex items-baseline gap-4">
+          <h1 class="text-3xl font-bold text-on-surface">{{ t("library.title") }}</h1>
+          <div
+            v-if="tracks.length > 0"
+            class="flex items-center gap-3 text-sm text-on-surface-variant/50"
           >
-            <template #icon><IconLucideRefreshCw :class="{ 'animate-spin': scanning }" /></template>
-            {{ scanning ? t("library.scanning") : t("library.scanAll") }}
-          </SButton>
-          <!-- 播放全部 -->
+            <span class="flex items-center gap-1">
+              <IconLucideMusic class="size-3.5" />
+              {{ t("library.totalSongs", { count: tracks.length }) }}
+            </span>
+            <span v-if="totalSize" class="flex items-center gap-1">
+              <IconLucideHardDrive class="size-3.5" />
+              {{ totalSize }}
+            </span>
+          </div>
+        </div>
+        <!-- 扫描进度（轻量，不占高度） -->
+        <Transition
+          enter-active-class="transition-opacity duration-300"
+          enter-from-class="opacity-0"
+          leave-active-class="transition-opacity duration-200"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="scanning && scanProgress"
+            class="flex items-center gap-2 text-xs text-on-surface-variant/60"
+          >
+            <SLoading class="size-3.5 text-primary shrink-0" />
+            <span class="tabular-nums">{{ scanProgress.scanned }}/{{ scanProgress.total }}</span>
+            <span class="text-on-surface-variant/40">{{ scanPercent }}%</span>
+          </div>
+        </Transition>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
           <SButton
             type="primary"
             variant="secondary"
-            size="small"
+            round
             :disabled="tracks.length === 0"
             @click="handlePlayAll"
           >
-            <template #icon><IconLucidePlay /></template>
+            <template #icon>
+              <IconLucidePlay />
+            </template>
             {{ t("library.playAll") }}
           </SButton>
-        </div>
-      </div>
-
-      <!-- 扫描进度条 -->
-      <Transition
-        enter-active-class="transition-all duration-300"
-        enter-from-class="opacity-0 -translate-y-2"
-        leave-active-class="transition-all duration-200"
-        leave-to-class="opacity-0 -translate-y-2"
-      >
-        <div
-          v-if="scanning && scanProgress"
-          class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-primary/8"
-        >
-          <SLoading class="size-4 text-primary shrink-0" />
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs text-on-surface-variant">
-                {{ t("library.scanProgress", { scanned: scanProgress.scanned, total: scanProgress.total }) }}
-              </span>
-              <span class="text-xs text-on-surface-variant tabular-nums">{{ scanPercent }}%</span>
-            </div>
-            <div class="h-1 rounded-full bg-on-surface/10 overflow-hidden">
-              <div
-                class="h-full rounded-full bg-primary transition-[width] duration-300"
-                :style="{ width: `${scanPercent}%` }"
-              />
-            </div>
-            <div v-if="scanProgress.current" class="text-xs text-on-surface-variant/60 mt-1 truncate">
-              {{ scanProgress.current }}
-            </div>
-          </div>
-          <SButton variant="ghost" size="tiny" @click="libraryStore.cancelScan()">
-            <template #icon><IconLucideX /></template>
+          <SButton
+            variant="secondary"
+            circle
+            :disabled="scanning || scanDirs.length === 0"
+            @click="libraryStore.startScan(true)"
+          >
+            <template #icon>
+              <IconLucideRefreshCw :class="{ 'animate-spin': scanning }" />
+            </template>
           </SButton>
+          <SDropdownMenu :items="moreMenuItems" align="start" @select="handleMoreMenu">
+            <template #trigger>
+              <SButton variant="secondary" circle>
+                <template #icon>
+                  <IconLucideEllipsis />
+                </template>
+              </SButton>
+            </template>
+          </SDropdownMenu>
         </div>
-      </Transition>
+        <SInput
+          v-model="searchQuery"
+          :placeholder="t('common.search')"
+          clearable
+          round
+          class="w-40 focus-within:w-56"
+        >
+          <template #prefix>
+            <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
+          </template>
+        </SInput>
+      </div>
     </div>
-
     <!-- 曲目列表 -->
     <div v-if="tracks.length > 0" class="flex-1 min-h-0">
-      <SongList :items="tracks" show-size />
+      <SongList :items="tracks" :search-query="searchQuery" show-size />
     </div>
-
     <!-- 空状态：无目录或无歌曲 -->
     <div v-else class="flex-1 flex items-center justify-center">
       <div class="text-center text-on-surface-variant/50">
@@ -162,9 +208,13 @@ const folderDialogOpen = ref(false);
         </SButton>
       </div>
     </div>
-
-    <!-- 文件夹管理弹窗 -->
-    <SDialog v-model:open="folderDialogOpen" :title="t('library.folders')" width="480px">
+    <!-- 文件夹管理 -->
+    <SDialog
+      v-model:open="folderDialogOpen"
+      :title="t('library.folders')"
+      :description="t('library.foldersDescription')"
+      width="480px"
+    >
       <div class="space-y-2">
         <!-- 目录列表 -->
         <div
@@ -177,17 +227,15 @@ const folderDialogOpen = ref(false);
             <div class="text-sm truncate text-on-surface">{{ folderName(dir) }}</div>
             <div class="text-xs truncate text-on-surface-variant/60">{{ dir }}</div>
           </div>
-          <SButton
-            variant="ghost"
-            size="tiny"
-            type="error"
-            @click="removingDir = dir"
-          >
+          <SButton variant="ghost" size="small" @click="confirmRemoveDir(dir)">
             <template #icon><IconLucideTrash2 /></template>
           </SButton>
         </div>
         <!-- 空 -->
-        <div v-if="scanDirs.length === 0" class="py-6 text-center text-on-surface-variant/50 text-sm">
+        <div
+          v-if="scanDirs.length === 0"
+          class="py-6 text-center text-on-surface-variant/50 text-sm"
+        >
           {{ t("library.emptyHint") }}
         </div>
       </div>
@@ -198,16 +246,19 @@ const folderDialogOpen = ref(false);
         </SButton>
       </template>
     </SDialog>
-
-    <!-- 移除确认弹窗 -->
+    <!-- 移除确认 -->
     <SDialog v-model:open="removeConfirmOpen" :title="t('library.removeFolder')">
       <template #default>
         <p class="text-sm text-on-surface-variant">{{ t("library.removeFolderConfirm") }}</p>
         <p class="text-xs text-on-surface-variant/60 mt-2 break-all">{{ removingDir }}</p>
       </template>
       <template #footer="{ close }">
-        <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>
-        <SButton type="error" variant="secondary" @click="handleRemoveFolder">{{ t("common.confirm") }}</SButton>
+        <SButton variant="secondary" @click="close">
+          {{ t("common.cancel") }}
+        </SButton>
+        <SButton type="error" @click="handleRemoveFolder">
+          {{ t("common.confirm") }}
+        </SButton>
       </template>
     </SDialog>
   </div>
