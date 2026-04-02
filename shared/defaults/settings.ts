@@ -9,6 +9,7 @@ export const defaultSystemConfig: SystemConfig = {
     fadeDuration: 200,
     outputDevice: null,
     volume: 1,
+    loudnessNormalization: false,
   },
   media: {
     systemMediaControls: true,
@@ -18,12 +19,14 @@ export const defaultSystemConfig: SystemConfig = {
       displayMode: "name",
     },
   },
+  library: {
+    scanDirs: [],
+  },
   system: {
+    rememberWindowState: true,
     window: {
       width: 1280,
       height: 800,
-      x: null,
-      y: null,
       maximized: false,
     },
   },

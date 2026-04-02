@@ -4,12 +4,16 @@
 mod decoder;
 mod fft;
 mod logger;
+mod loudness;
 mod metadata;
 mod player;
+mod scanner;
 mod shared;
 mod source;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread;
 
 use napi::bindgen_prelude::*;
 use napi::threadsafe_function::ThreadsafeFunctionCallMode;
@@ -17,6 +21,9 @@ use napi_derive::napi;
 use parking_lot::Mutex;
 use player::{InnerPlayer, PlayerEvent, PlayerState};
 use tracing::info;
+
+/// 全局扫描取消标志
+static SCAN_CANCEL: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
 /// anyhow::Error → napi::Error 统一转换
 trait IntoNapiResult<T> {
@@ -33,6 +40,9 @@ impl<T> IntoNapiResult<T> for anyhow::Result<T> {
 #[napi]
 pub fn init_logger(log_dir: String, is_dev: bool) {
     logger::init_logger(&log_dir, is_dev);
+    // 静默 FFmpeg 内部日志，避免 seek 时的 invalid sync code 等无害警告输出到控制台
+    // 只保留致命错误，过滤 seek 时的 invalid sync code 等无害警告
+    ffmpeg_next::log::set_level(ffmpeg_next::log::Level::Fatal);
     info!(log_dir, is_dev, "audio-engine 日志系统已初始化");
 }
 
@@ -193,14 +203,6 @@ impl AudioPlayer {
         Ok(())
     }
 
-    /// 只读取轻量元数据（tag、封面），不含歌词，不启动解码和播放
-    #[napi]
-    pub fn probe(&self, source: String) -> Result<JsMusicMetadata> {
-        let player = self.inner.lock();
-        let meta = player.probe(&source).into_napi()?;
-        Ok(Self::meta_to_js(meta))
-    }
-
     /// 加载音频源，返回完整元信息（含封面路径和歌词）
     /// @param auto_play - 是否自动播放，false 时加载后立即暂停
     #[napi]
@@ -328,6 +330,18 @@ impl AudioPlayer {
         self.inner.lock().fft_enabled()
     }
 
+    /// 启用/禁用音量归一化（实时响度均衡）
+    #[napi]
+    pub fn set_normalization_enabled(&self, enabled: bool) {
+        self.inner.lock().set_normalization_enabled(enabled);
+    }
+
+    /// 获取音量归一化开关状态
+    #[napi]
+    pub fn get_normalization_enabled(&self) -> bool {
+        self.inner.lock().normalization_enabled()
+    }
+
     /// 获取 FFT 频谱数据（128 个频段，值域 0.0 ~ 1.0）
     #[napi]
     pub fn get_fft_data(&self) -> Vec<f64> {
@@ -374,5 +388,172 @@ impl AudioPlayer {
     #[napi]
     pub fn get_selected_device_name(&self) -> Option<String> {
         self.inner.lock().selected_device_name().map(String::from)
+    }
+}
+
+// ─── 批量扫描 ─────────────────────────────────────────────────────────────────
+
+/// 已有文件记录，用于增量扫描比对
+#[napi(object)]
+pub struct FileRecord {
+    pub path: String,
+    pub mtime: f64,
+    pub size: f64,
+}
+
+/// 扫描到的曲目信息
+#[napi(object)]
+pub struct JsScannedTrack {
+    pub path: String,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    /// 时长（秒）
+    pub duration: f64,
+    pub codec: String,
+    pub sample_rate: u32,
+    pub bit_rate: i64,
+    pub channels: u32,
+    pub bits_per_sample: u32,
+    /// 封面缓存路径
+    pub cover: Option<String>,
+    /// 文件大小（字节）
+    pub file_size: f64,
+    /// 文件修改时间（Unix ms）
+    pub file_mtime: f64,
+}
+
+/// 扫描事件回调数据
+#[napi(object)]
+#[derive(Default)]
+pub struct JsScanEvent {
+    /// "progress" | "done" | "error"
+    pub event_type: String,
+    /// 已扫描文件数
+    pub scanned: u32,
+    /// 总文件数
+    pub total: u32,
+    /// 当前正在处理的文件名
+    pub current: Option<String>,
+    /// 本批次扫描结果
+    pub tracks: Option<Vec<JsScannedTrack>>,
+    /// 已删除的文件路径列表（仅 done 事件）
+    pub removed_paths: Option<Vec<String>>,
+    /// 错误信息（仅 error 事件）
+    pub error: Option<String>,
+}
+
+/// 批量扫描目录，通过回调推送进度和结果
+///
+/// 在后台线程中执行，不阻塞 Node.js 事件循环。
+/// 每处理约 20 个文件回调一次 progress 事件，完成后回调 done 事件。
+#[napi(
+    ts_args_type = "dirs: Array<string>, callback: (event: JsScanEvent) => void, coverCacheDir?: string | undefined | null, incrementalData?: Array<FileRecord> | undefined | null"
+)]
+pub fn scan_dirs(
+    dirs: Vec<String>,
+    callback: Function<JsScanEvent, ()>,
+    cover_cache_dir: Option<String>,
+    incremental_data: Option<Vec<FileRecord>>,
+) -> Result<()> {
+    let tsfn = callback.build_threadsafe_function().build()?;
+
+    // 将 JS FileRecord 转为内部类型
+    let records: Option<Vec<scanner::FileRecord>> = incremental_data.map(|data| {
+        data.into_iter()
+            .map(|r| scanner::FileRecord {
+                path: r.path,
+                mtime: r.mtime as u64,
+                size: r.size as u64,
+            })
+            .collect()
+    });
+
+    // 创建取消标志并保存到全局，供 cancel_scan 使用
+    let cancel = Arc::new(AtomicBool::new(false));
+    *SCAN_CANCEL.lock() = Some(Arc::clone(&cancel));
+
+    thread::spawn(move || {
+        let emit = |event: scanner::ScanEvent| {
+            let js_event = match event {
+                scanner::ScanEvent::Progress {
+                    scanned,
+                    total,
+                    current,
+                    tracks,
+                } => JsScanEvent {
+                    event_type: "progress".into(),
+                    scanned,
+                    total,
+                    current,
+                    tracks: Some(
+                        tracks
+                            .into_iter()
+                            .map(|t| JsScannedTrack {
+                                path: t.path,
+                                title: t.title,
+                                artist: t.artist,
+                                album: t.album,
+                                duration: t.duration,
+                                codec: t.codec,
+                                sample_rate: t.sample_rate,
+                                bit_rate: t.bit_rate,
+                                channels: t.channels,
+                                bits_per_sample: t.bits_per_sample,
+                                cover: t.cover,
+                                file_size: t.file_size as f64,
+                                file_mtime: t.file_mtime as f64,
+                            })
+                            .collect(),
+                    ),
+                    ..Default::default()
+                },
+                scanner::ScanEvent::Done {
+                    scanned,
+                    total,
+                    removed_paths,
+                } => JsScanEvent {
+                    event_type: "done".into(),
+                    scanned,
+                    total,
+                    removed_paths: Some(removed_paths),
+                    ..Default::default()
+                },
+                scanner::ScanEvent::Error {
+                    scanned,
+                    total,
+                    error,
+                } => JsScanEvent {
+                    event_type: "error".into(),
+                    scanned,
+                    total,
+                    error: Some(error),
+                    ..Default::default()
+                },
+            };
+            tsfn.call(js_event, ThreadsafeFunctionCallMode::NonBlocking);
+        };
+
+        scanner::scan_directories(
+            &dirs,
+            cover_cache_dir.as_deref(),
+            records.as_deref(),
+            &cancel,
+            &emit,
+        );
+
+        // 扫描结束后清除全局取消标志
+        *SCAN_CANCEL.lock() = None;
+    });
+
+    Ok(())
+}
+
+/// 取消正在进行的扫描任务
+#[napi]
+pub fn cancel_scan() {
+    if let Some(cancel) = SCAN_CANCEL.lock().as_ref() {
+        cancel.store(true, Ordering::Release);
+        info!("已发送扫描取消信号");
     }
 }

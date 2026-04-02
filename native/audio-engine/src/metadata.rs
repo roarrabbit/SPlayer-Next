@@ -13,11 +13,116 @@ pub struct ExternalLyric {
     pub path: String,
 }
 
+/// 音频流基本参数（scanner 和 decoder 共用）
+pub struct StreamInfo {
+    /// 比特率（bps）
+    pub bit_rate: i64,
+    /// 原始采样率（Hz）
+    pub sample_rate: u32,
+    /// 位深（bits per sample）
+    pub bits_per_sample: u32,
+    /// 声道数
+    pub channels: u32,
+}
+
+/// 容器级别的 tag 信息
+pub struct Tags {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub comment: Option<String>,
+}
+
 /// 缩略图最大边长（px）
 const THUMB_SIZE: u32 = 300;
 
 /// 支持的歌词文件扩展名
 const LYRIC_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "lrc", "ass", "srt"];
+
+/// 从音频流参数中提取比特率、原始采样率和位深
+///
+/// # Safety
+/// `stream` 和 `input_ctx` 的底层指针必须有效（由调用方保证生命周期）
+pub unsafe fn extract_stream_info(
+    stream: &ffmpeg::Stream,
+    input_ctx: &ffmpeg::format::context::Input,
+) -> StreamInfo {
+    let params = stream.parameters().as_ptr();
+    let stream_bit_rate = (*params).bit_rate;
+    // FLAC 等无损格式的 stream bit_rate 通常为 0，fallback 到容器级别
+    let bit_rate = if stream_bit_rate > 0 {
+        stream_bit_rate
+    } else {
+        (*input_ctx.as_ptr()).bit_rate
+    };
+    let sample_rate = (*params).sample_rate as u32;
+    let bits_per_raw = (*params).bits_per_raw_sample as u32;
+    let bits_per_coded = (*params).bits_per_coded_sample as u32;
+    let bits_per_sample = if bits_per_raw > 0 {
+        bits_per_raw
+    } else {
+        bits_per_coded
+    };
+    let channels = (*params).ch_layout.nb_channels.max(0) as u32;
+    StreamInfo {
+        bit_rate,
+        sample_rate,
+        bits_per_sample,
+        channels,
+    }
+}
+
+/// 从容器 metadata 提取常见 tag
+pub fn extract_tags(input_ctx: &ffmpeg::format::context::Input) -> Tags {
+    let dict = input_ctx.metadata();
+    let title = dict.get("title").map(ToString::to_string);
+    let artist = dict
+        .get("artist")
+        .or_else(|| dict.get("album_artist"))
+        .map(ToString::to_string);
+    let album = dict.get("album").map(ToString::to_string);
+    let comment = dict.get("comment").map(ToString::to_string);
+    Tags {
+        title,
+        artist,
+        album,
+        comment,
+    }
+}
+
+/// 从容器 metadata 提取 ReplayGain / R128 增益值（dB）
+///
+/// 按优先级尝试：R128_TRACK_GAIN → replaygain_track_gain → replaygain_album_gain
+pub fn extract_replay_gain(input_ctx: &ffmpeg::format::context::Input) -> Option<f32> {
+    let dict = input_ctx.metadata();
+
+    // EBU R128：值为 1/256 dB 单位的整数
+    if let Some(val) = dict.get("R128_TRACK_GAIN").or_else(|| dict.get("R128_ALBUM_GAIN")) {
+        if let Ok(raw) = val.trim().parse::<f32>() {
+            return Some(raw / 256.0);
+        }
+    }
+
+    // ReplayGain：格式如 "-6.50 dB"
+    if let Some(val) = dict
+        .get("replaygain_track_gain")
+        .or_else(|| dict.get("REPLAYGAIN_TRACK_GAIN"))
+        .or_else(|| dict.get("replaygain_album_gain"))
+        .or_else(|| dict.get("REPLAYGAIN_ALBUM_GAIN"))
+    {
+        let cleaned = val.trim().trim_end_matches(" dB").trim_end_matches("dB");
+        if let Ok(db) = cleaned.parse::<f32>() {
+            return Some(db);
+        }
+    }
+
+    None
+}
+
+/// 将 dB 增益转换为线性增益因子
+pub fn db_to_linear(db: f32) -> f32 {
+    10.0_f32.powf(db / 20.0)
+}
 
 /// 从已打开的 input_ctx 中提取封面缩略图，写入缓存目录，返回缩略图路径。
 ///
@@ -45,7 +150,7 @@ pub fn extract_cover_thumbnail(
 
     std::fs::create_dir_all(cache_dir).ok()?;
 
-    if generate_thumbnail(&data, &thumb_file).is_err() {
+    if generate_cover_thumbnail(&data, &thumb_file).is_err() {
         // 缩略图生成失败，直接写入原始数据作为回退
         std::fs::write(&thumb_file, &data).ok()?;
     }
@@ -75,8 +180,8 @@ pub fn read_attached_pic(input_ctx: &ffmpeg::format::context::Input) -> Option<V
     None
 }
 
-/// 将原始图片数据缩放为 JPEG 缩略图
-fn generate_thumbnail(data: &[u8], output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+/// 将原始图片数据缩放为 JPEG 缩略图（供 scanner 和 extract_cover_thumbnail 共用）
+pub fn generate_cover_thumbnail(data: &[u8], output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let img = image::load_from_memory(data)?;
     let thumb = img.thumbnail(THUMB_SIZE, THUMB_SIZE);
     thumb.save_with_format(output_path, image::ImageFormat::Jpeg)?;

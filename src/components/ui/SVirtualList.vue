@@ -16,6 +16,8 @@ export interface SVirtualListProps<T> {
   defaultScrollIndex?: number;
   /** 获取唯一键 */
   getItemKey?: (item: T, index: number) => string | number;
+  /** 禁用列表项位移动画 */
+  noTransition?: boolean;
 }
 
 const props = withDefaults(defineProps<SVirtualListProps<T>>(), {
@@ -325,20 +327,39 @@ defineExpose({
     :style="{ height: containerHeightStyle }"
   >
     <div ref="scrollRef" class="size-full overflow-y-auto" @scroll="handleScroll">
-      <div :style="{ height: `${totalHeight}px`, position: 'relative' }">
-        <div ref="contentRef" class="absolute inset-x-0 top-0">
-          <div
-            v-for="(item, visibleIdx) in visibleItems"
-            :key="getItemKey(item, actualStartIndex + visibleIdx)"
-            ref="itemRefs"
-            :data-index="actualStartIndex + visibleIdx"
-            class="absolute inset-x-0 top-0 contain-[layout_paint] transition-transform duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
-            :style="{ transform: `translateY(${getItemTop(actualStartIndex + visibleIdx)}px)` }"
-          >
-            <slot :item="item" :index="actualStartIndex + visibleIdx" />
+      <div
+        v-if="items.length === 0 && $slots.empty"
+        class="flex items-center justify-center h-full"
+      >
+        <slot name="empty" />
+      </div>
+      <template v-else>
+        <div v-if="$slots.header" class="sticky top-0 z-10 bg-surface">
+          <slot name="header" />
+        </div>
+        <div
+          v-show="items.length > 0"
+          :style="{ height: `${totalHeight}px`, position: 'relative' }"
+        >
+          <div ref="contentRef" class="absolute inset-x-0 top-0">
+            <div
+              v-for="(item, visibleIdx) in visibleItems"
+              :key="getItemKey(item, actualStartIndex + visibleIdx)"
+              ref="itemRefs"
+              :data-index="actualStartIndex + visibleIdx"
+              class="absolute inset-x-0 top-0 contain-[layout_paint]"
+              :class="
+                noTransition
+                  ? ''
+                  : 'transition-transform duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]'
+              "
+              :style="{ transform: `translateY(${getItemTop(actualStartIndex + visibleIdx)}px)` }"
+            >
+              <slot :item="item" :index="actualStartIndex + visibleIdx" />
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>

@@ -7,6 +7,7 @@ use ffmpeg_next::ChannelLayout;
 use ffmpeg_next::Dictionary;
 use tracing::{debug, warn};
 
+use crate::loudness::LoudnessAnalyzer;
 use crate::metadata;
 use crate::shared::{AudioChunk, AudioMetadata, Shared};
 
@@ -18,35 +19,9 @@ pub const FFT_SAMPLE_RATE: u32 = 44100;
 
 /// 网络流读取失败最大重试次数
 const NETWORK_READ_RETRIES: u32 = 3;
-
-/// 从音频流参数中提取比特率、原始采样率和位深
-///
-/// # Safety
-/// `stream` 和 `input_ctx` 的底层指针必须有效（由调用方保证生命周期）
-unsafe fn extract_stream_info(
-    stream: &ffmpeg::Stream,
-    input_ctx: &ffmpeg::format::context::Input,
-) -> (i64, u32, u32) {
-    let p = stream.parameters().as_ptr();
-    let stream_bit_rate = (*p).bit_rate;
-    // FLAC 等无损格式的 stream bit_rate 通常为 0，fallback 到容器级别
-    let bit_rate = if stream_bit_rate > 0 {
-        stream_bit_rate
-    } else {
-        (*input_ctx.as_ptr()).bit_rate
-    };
-    let original_sample_rate = (*p).sample_rate as u32;
-    let bits_per_raw = (*p).bits_per_raw_sample as u32;
-    let bits_per_coded = (*p).bits_per_coded_sample as u32;
-    let bits_per_sample = if bits_per_raw > 0 {
-        bits_per_raw
-    } else {
-        bits_per_coded
-    };
-    (bit_rate, original_sample_rate, bits_per_sample)
-}
 /// 重试间隔（毫秒）
 const NETWORK_RETRY_DELAY_MS: u64 = 500;
+
 
 /// 解码会话所需的资源（跨 seek 复用，避免重建 FFmpeg 上下文）
 pub struct DecoderData {
@@ -59,80 +34,25 @@ pub struct DecoderData {
 
 impl DecoderData {
     /// 在已有上下文上 seek + flush，不重新打开文件
-    pub fn seek(&mut self, position_secs: f64) -> Result<()> {
+    /// 返回 false 表示 seek 失败，调用方应回退到完整 load
+    pub fn seek(&mut self, position_secs: f64) -> bool {
         let ts = (position_secs * ffmpeg::ffi::AV_TIME_BASE as f64) as i64;
-        if self.input_ctx.seek(ts, ..).is_err() {
-            let _ = self.input_ctx.seek(ts, ..ts);
+        let ok = self.input_ctx.seek(ts, ..).is_ok()
+            || self.input_ctx.seek(ts, ..ts).is_ok();
+        if ok {
+            // 清空解码器内部缓冲区
+            // SAFETY: decoder 内部持有有效的 AVCodecContext 指针
+            unsafe {
+                ffmpeg::ffi::avcodec_flush_buffers(self.decoder.as_mut_ptr());
+            }
         }
-        // 清空解码器内部缓冲区
-        // SAFETY: decoder 内部持有有效的 AVCodecContext 指针
-        unsafe {
-            ffmpeg::ffi::avcodec_flush_buffers(self.decoder.as_mut_ptr());
-        }
-        Ok(())
+        ok
     }
 }
 
 // SAFETY: DecoderData 的所有字段（FFmpeg C 指针的 Rust wrapper）
 // 仅被单一线程独占使用，在 spawn 时 move 进线程，不存在并发访问。
 unsafe impl Send for DecoderData {}
-
-/// 只读取轻量元数据（tag、时长、封面），不含歌词，不启动解码线程
-///
-/// 仅打开文件头提取信息，不创建解码器和重采样器，内存开销极小。
-/// 歌词在 `start_decode` 中随完整加载一起提取。
-pub fn probe_metadata(source: &str, cover_cache_dir: Option<&str>) -> Result<AudioMetadata> {
-    let input_ctx = open_input(source)?;
-
-    let stream = input_ctx
-        .streams()
-        .best(ffmpeg::media::Type::Audio)
-        .context("No audio stream found")?;
-
-    let time_base = stream.time_base();
-    let stream_duration = stream.duration();
-    let duration_secs = if stream_duration > 0 {
-        stream_duration as f64 * time_base.0 as f64 / time_base.1 as f64
-    } else if input_ctx.duration() > 0 {
-        input_ctx.duration() as f64 / f64::from(ffmpeg::ffi::AV_TIME_BASE)
-    } else {
-        0.0
-    };
-
-    let metadata_dict = input_ctx.metadata();
-    let title = metadata_dict.get("title").map(ToString::to_string);
-    let artist = metadata_dict.get("artist").map(ToString::to_string);
-    let album = metadata_dict.get("album").map(ToString::to_string);
-
-    // 只提取封面，跳过歌词（歌词在 load 播放时再读取）
-    let cover =
-        cover_cache_dir.and_then(|dir| metadata::extract_cover_thumbnail(&input_ctx, source, dir));
-
-    // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
-    let (bit_rate, original_sample_rate, bits_per_sample) =
-        unsafe { extract_stream_info(&stream, &input_ctx) };
-    let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
-        .map(|c| c.name().to_string())
-        .unwrap_or_default();
-    let comment = metadata_dict.get("comment").map(ToString::to_string);
-    Ok(AudioMetadata {
-        title,
-        artist,
-        album,
-        comment,
-        duration_secs,
-        sample_rate: TARGET_SAMPLE_RATE,
-        channels: TARGET_CHANNELS,
-        original_sample_rate,
-        bits_per_sample,
-        bit_rate,
-        codec,
-        embedded_lyric: None,
-        external_lyrics: Vec::new(),
-        cover,
-        cover_raw: None,
-    })
-}
 
 /// 启动解码线程，返回音频元数据和线程句柄。
 ///
@@ -153,7 +73,7 @@ pub fn start_decode(
         .context("No audio stream found")?;
     let audio_stream_index = stream.index();
 
-    // 优先从流的 time_base 获取时长（更准确）
+    // 时长：优先从流的 time_base 获取
     let time_base = stream.time_base();
     let stream_duration = stream.duration();
     let duration_secs = if stream_duration > 0 {
@@ -164,25 +84,20 @@ pub fn start_decode(
         0.0
     };
 
-    let metadata_dict = input_ctx.metadata();
-    let title = metadata_dict.get("title").map(ToString::to_string);
-    let artist = metadata_dict.get("artist").map(ToString::to_string);
-    let album = metadata_dict.get("album").map(ToString::to_string);
+    let tags = metadata::extract_tags(&input_ctx);
 
-    // 在同一个 input_ctx 上提取封面和内嵌歌词（不需要重新打开文件）
+    // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
+    let stream_info = unsafe { metadata::extract_stream_info(&stream, &input_ctx) };
+    let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
+        .map(|c| c.name().to_string())
+        .unwrap_or_default();
+
     let cover =
         cover_cache_dir.and_then(|dir| metadata::extract_cover_thumbnail(&input_ctx, source, dir));
     let cover_raw = metadata::read_attached_pic(&input_ctx);
     let embedded_lyric = metadata::extract_embedded_lyric(&input_ctx);
     let external_lyrics = metadata::find_all_external_lyrics(source);
-
-    // SAFETY: input_ctx 在此作用域内有效，stream 引用自 input_ctx
-    let (bit_rate, original_sample_rate, bits_per_sample) =
-        unsafe { extract_stream_info(&stream, &input_ctx) };
-    let codec = ffmpeg::codec::decoder::find(stream.parameters().id())
-        .map(|c| c.name().to_string())
-        .unwrap_or_default();
-    let comment = metadata_dict.get("comment").map(ToString::to_string);
+    let replay_gain_db = metadata::extract_replay_gain(&input_ctx);
 
     let decoder_ctx = ffmpeg::codec::context::Context::from_parameters(stream.parameters())?;
     let decoder = decoder_ctx.decoder().audio()?;
@@ -213,17 +128,22 @@ pub fn start_decode(
         FFT_SAMPLE_RATE,
     )?;
 
+    // 设置归一化增益：有 ReplayGain tag 时直接使用，否则由实时分析器动态计算
+    if let Some(db) = replay_gain_db {
+        shared.set_normalization_gain(metadata::db_to_linear(db));
+    }
+
     let metadata = AudioMetadata {
-        title,
-        artist,
-        album,
-        comment,
+        title: tags.title,
+        artist: tags.artist,
+        album: tags.album,
+        comment: tags.comment,
         duration_secs,
         sample_rate: TARGET_SAMPLE_RATE,
         channels: TARGET_CHANNELS,
-        original_sample_rate,
-        bits_per_sample,
-        bit_rate,
+        original_sample_rate: stream_info.sample_rate,
+        bits_per_sample: stream_info.bits_per_sample,
+        bit_rate: stream_info.bit_rate,
         codec,
         embedded_lyric,
         external_lyrics,
@@ -307,6 +227,11 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
     let mut eof_sent = false;
     let mut consecutive_read_failures: u32 = 0;
 
+    // 响度归一化：有 ReplayGain 标签时用固定增益，否则用实时分析
+    let has_replay_gain = (shared.normalization_gain() - 1.0).abs() > f32::EPSILON;
+    let mut loudness = LoudnessAnalyzer::new();
+    loudness.set_has_replay_gain(has_replay_gain);
+
     loop {
         // 背压：缓冲区满时阻塞等待消费
         if !shared.wait_for_space() {
@@ -328,6 +253,22 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
                 fft_scratch.clear();
 
                 resample_frame(data, &mut decoded, &mut player_scratch, &mut fft_scratch);
+
+                // 音量归一化
+                if shared.is_normalization_enabled() {
+                    let gain = if has_replay_gain {
+                        // 有 ReplayGain 标签：用固定增益
+                        shared.normalization_gain()
+                    } else {
+                        // 无标签：实时分析动态增益
+                        loudness.process(&player_scratch)
+                    };
+                    if (gain - 1.0).abs() > f32::EPSILON {
+                        for sample in &mut player_scratch {
+                            *sample *= gain;
+                        }
+                    }
+                }
 
                 let chunk = AudioChunk {
                     player_samples: std::mem::take(&mut player_scratch),

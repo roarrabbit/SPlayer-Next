@@ -2,15 +2,13 @@
 import { useSettingsStore } from "@/stores/settings";
 import { useThemeStore } from "@/stores/theme";
 import { useMediaStore } from "@/stores/media";
+import DEFAULT_COVER from "@/assets/images/song.jpg";
 
 const media = useMediaStore();
 const settings = useSettingsStore();
 const theme = useThemeStore();
 
 const bgType = computed(() => settings.player.playerBgType);
-
-/** 默认封面图 */
-const DEFAULT_COVER = "/images/song.jpg";
 
 // 封面颜色（纯色模式）
 const coverColor = computed(() => {

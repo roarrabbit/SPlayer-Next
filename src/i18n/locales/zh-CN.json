@@ -12,7 +12,11 @@
   },
   "nav": {
     "home": "首页",
-    "settings": "设置"
+    "library": "本地音乐",
+    "settings": "设置",
+    "reload": "热重载",
+    "devtools": "开发者工具",
+    "globalSettings": "全局设置"
   },
   "player": {
     "play": "播放",
@@ -24,6 +28,19 @@
     "repeatOne": "单曲循环",
     "volume": "音量"
   },
+  "songList": {
+    "title": "标题",
+    "album": "专辑",
+    "size": "大小",
+    "duration": "时长",
+    "noResults": "没有匹配的歌曲",
+    "context": {
+      "play": "播放",
+      "playNext": "下一首播放",
+      "showInExplorer": "在文件管理器中显示",
+      "copyPath": "复制文件路径"
+    }
+  },
   "playlist": {
     "title": "播放列表",
     "totalSongs": "共 {count} 首",
@@ -34,6 +51,28 @@
     "clearConfirmTitle": "清空播放列表",
     "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
   },
+  "library": {
+    "title": "本地音乐",
+    "totalSongs": "共 {count} 首",
+    "empty": "还没有本地音乐",
+    "emptyHint": "添加音乐文件夹开始使用",
+    "addFolder": "添加文件夹",
+    "scanAll": "全量扫描",
+    "scanning": "正在扫描...",
+    "scanProgress": "正在扫描 {scanned}/{total}",
+    "scanDone": "扫描完成",
+    "scanError": "扫描出错",
+    "cancel": "取消扫描",
+    "folders": "本地歌曲目录",
+    "foldersDescription": "文件夹内歌曲增删自动同步",
+    "folderCount": "{count} 个文件夹",
+    "removeFolder": "移除此目录",
+    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！",
+    "folderExists": "该文件夹已存在",
+    "folderNested": "该文件夹与已有文件夹存在包含关系",
+    "playAll": "播放全部",
+    "duration": "{time}"
+  },
   "settings": {
     "title": "设置",
     "search": "搜索设置项...",
@@ -42,7 +81,7 @@
       "player": "播放设置",
       "lyric": "歌词设置",
       "appearance": "外观设置",
-      "system": "系统设置"
+      "services": "网络与服务"
     },
     "section": {
       "language": "语言",
@@ -55,7 +94,8 @@
       "theme": "主题与风格",
       "layout": "布局",
       "media": "媒体控制",
-      "discord": "Discord RPC"
+      "discord": "Discord RPC",
+      "systemConfig": "系统配置"
     },
     "language": {
       "label": "界面语言",
@@ -78,6 +118,10 @@
     "fadeDuration": {
       "label": "渐变时长",
       "description": "渐入渐出的持续时长（毫秒）"
+    },
+    "loudnessNormalization": {
+      "label": "音量均衡",
+      "description": "自动调节不同歌曲之间的音量差异"
     },
     "lyricMode": {
       "label": "歌词模式",
@@ -218,6 +262,25 @@
       "name": "应用名",
       "details": "歌曲名",
       "state": "歌手名"
+    },
+    "rememberWindowState": {
+      "label": "记忆窗口状态",
+      "description": "下次启动时恢复窗口的大小、位置和最大化状态"
     }
+  },
+  "errors": {
+    "DEVICE_NOT_FOUND": "未找到音频输出设备",
+    "DEVICE_INIT_FAILED": "音频设备初始化失败",
+    "FILE_NOT_FOUND": "文件不存在或无法访问",
+    "FILE_NO_AUDIO_STREAM": "文件中未找到音频流",
+    "FILE_DECODE_ERROR": "音频解码失败",
+    "FILE_NOT_SELECTED": "未选择文件",
+    "NETWORK_ERROR": "网络连接失败，请检查网络",
+    "NETWORK_TIMEOUT": "网络请求超时",
+    "SCAN_NO_DIRS": "未配置扫描目录",
+    "SCAN_DIR_EXISTS": "该目录已存在",
+    "SCAN_DIR_NOT_FOUND": "目录不存在",
+    "SCAN_DIR_NOT_SELECTED": "未选择目录",
+    "UNKNOWN": "操作失败"
   }
 }

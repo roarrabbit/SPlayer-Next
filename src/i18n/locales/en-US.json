@@ -12,7 +12,11 @@
   },
   "nav": {
     "home": "Home",
-    "settings": "Settings"
+    "library": "Local Music",
+    "settings": "Settings",
+    "reload": "Reload",
+    "devtools": "Developer Tools",
+    "globalSettings": "Global Settings"
   },
   "player": {
     "play": "Play",
@@ -24,6 +28,19 @@
     "repeatOne": "Repeat One",
     "volume": "Volume"
   },
+  "songList": {
+    "title": "Title",
+    "album": "Album",
+    "size": "Size",
+    "duration": "Duration",
+    "noResults": "No matching songs",
+    "context": {
+      "play": "Play",
+      "playNext": "Play Next",
+      "showInExplorer": "Show in Explorer",
+      "copyPath": "Copy File Path"
+    }
+  },
   "playlist": {
     "title": "Playlist",
     "totalSongs": "{count} songs",
@@ -34,6 +51,28 @@
     "clearConfirmTitle": "Clear Playlist",
     "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
   },
+  "library": {
+    "title": "Local Music",
+    "totalSongs": "{count} songs",
+    "empty": "No local music yet",
+    "emptyHint": "Add a music folder to get started",
+    "addFolder": "Add Folder",
+    "scanAll": "Full Scan",
+    "scanning": "Scanning...",
+    "scanProgress": "Scanning {scanned}/{total}",
+    "scanDone": "Scan complete",
+    "scanError": "Scan failed",
+    "cancel": "Cancel Scan",
+    "folders": "Music Directories",
+    "foldersDescription": "Songs are automatically synced when added or removed",
+    "folderCount": "{count} folders",
+    "removeFolder": "Remove Directory",
+    "removeFolderConfirm": "Removing this directory will delete its songs from the library!",
+    "folderExists": "This folder already exists",
+    "folderNested": "This folder overlaps with an existing folder",
+    "playAll": "Play All",
+    "duration": "{time}"
+  },
   "settings": {
     "title": "Settings",
     "search": "Search settings...",
@@ -42,7 +81,7 @@
       "player": "Player",
       "lyric": "Lyrics",
       "appearance": "Appearance",
-      "system": "System"
+      "services": "Services"
     },
     "section": {
       "language": "Language",
@@ -55,7 +94,8 @@
       "theme": "Theme",
       "layout": "Layout",
       "media": "Media Controls",
-      "discord": "Discord RPC"
+      "discord": "Discord RPC",
+      "systemConfig": "System"
     },
     "language": {
       "label": "Language",
@@ -78,6 +118,10 @@
     "fadeDuration": {
       "label": "Fade Duration",
       "description": "Fade in/out duration (ms)"
+    },
+    "loudnessNormalization": {
+      "label": "Loudness Normalization",
+      "description": "Automatically balance volume levels between tracks"
     },
     "lyricMode": {
       "label": "Lyric Mode",
@@ -218,6 +262,25 @@
       "name": "App Name",
       "details": "Song Name",
       "state": "Artist Name"
+    },
+    "rememberWindowState": {
+      "label": "Remember Window State",
+      "description": "Restore window size, position and maximized state on next launch"
     }
+  },
+  "errors": {
+    "DEVICE_NOT_FOUND": "No audio output device found",
+    "DEVICE_INIT_FAILED": "Failed to initialize audio device",
+    "FILE_NOT_FOUND": "File not found or inaccessible",
+    "FILE_NO_AUDIO_STREAM": "No audio stream found in file",
+    "FILE_DECODE_ERROR": "Audio decode failed",
+    "FILE_NOT_SELECTED": "No file selected",
+    "NETWORK_ERROR": "Network connection failed",
+    "NETWORK_TIMEOUT": "Network request timed out",
+    "SCAN_NO_DIRS": "No scan directories configured",
+    "SCAN_DIR_EXISTS": "Directory already exists",
+    "SCAN_DIR_NOT_FOUND": "Directory not found",
+    "SCAN_DIR_NOT_SELECTED": "No directory selected",
+    "UNKNOWN": "Operation failed"
   }
 }

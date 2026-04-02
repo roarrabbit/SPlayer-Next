@@ -4,6 +4,7 @@ export interface SInputProps {
   placeholder?: string;
   disabled?: boolean;
   clearable?: boolean;
+  round?: boolean;
   type?: string;
 }
 
@@ -12,6 +13,7 @@ const props = withDefaults(defineProps<SInputProps>(), {
   placeholder: "",
   disabled: false,
   clearable: false,
+  round: false,
   type: "text",
 });
 
@@ -31,8 +33,9 @@ const handleClear = () => {
 
 <template>
   <div
-    class="flex w-full items-center gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border border-solid rounded-lg transition-[border-color,box-shadow] duration-250"
+    class="flex items-center gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border border-solid transition-[border-color,box-shadow,width] duration-250"
     :class="[
+      round ? 'rounded-full' : 'rounded-lg',
       isFocused
         ? 'border-primary shadow-[0_0_0_2px_rgb(var(--s-primary)/0.25)]'
         : 'border-outline-variant/50 hover:border-on-surface/30',
@@ -47,7 +50,7 @@ const handleClear = () => {
       :type="type"
       :placeholder="placeholder"
       :disabled="disabled"
-      class="flex-1 min-w-0 bg-transparent outline-none border-none shadow-none text-on-surface placeholder:text-on-surface-variant/40 disabled:cursor-not-allowed"
+      class="flex-1 min-w-0 h-full bg-transparent outline-none border-none shadow-none text-on-surface placeholder:text-on-surface-variant/40 disabled:cursor-not-allowed"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @focus="isFocused = true; emit('focus')"
       @blur="isFocused = false; emit('blur')"

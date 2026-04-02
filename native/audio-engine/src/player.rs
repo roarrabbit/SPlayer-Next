@@ -60,8 +60,8 @@ pub enum PlayerState {
 
 /// 内部播放器，管理音频输出、解码和状态
 pub struct InnerPlayer {
-    _stream: OutputStream,
-    stream_handle: OutputStreamHandle,
+    stream: Option<OutputStream>,
+    stream_handle: Option<OutputStreamHandle>,
     /// 使用 Arc 包装，允许 fade 线程在 Mutex 外操作音量
     sink: Option<Arc<Sink>>,
     shared: Option<Arc<Shared>>,
@@ -102,6 +102,8 @@ pub struct InnerPlayer {
     fft_timer_handle: Option<JoinHandle<()>>,
     /// 用户选择的输出设备名称（None = 系统默认）
     selected_device_name: Option<String>,
+    /// 音量归一化开关
+    normalization_enabled: bool,
 }
 
 /// 等待线程退出，最多等 timeout_ms 毫秒，超时则放弃
@@ -114,9 +116,19 @@ fn join_with_timeout(handle: JoinHandle<()>, timeout_ms: u64) {
 }
 
 impl InnerPlayer {
+    /// 确保音频输出已就绪，未初始化或设备丢失时重新打开
+    fn ensure_output(&mut self) -> Result<&OutputStreamHandle> {
+        if self.stream_handle.is_none() {
+            let (stream, handle) = Self::build_output_stream(self.selected_device_name.as_ref())?;
+            self.stream = Some(stream);
+            self.stream_handle = Some(handle);
+        }
+        Ok(self.stream_handle.as_ref().unwrap())
+    }
+
     /// 根据选择的设备名称构建音频输出流
     fn build_output_stream(
-        device_name: &Option<String>,
+        device_name: Option<&String>,
     ) -> Result<(OutputStream, OutputStreamHandle)> {
         match device_name {
             Some(name) => {
@@ -133,11 +145,15 @@ impl InnerPlayer {
     }
 
     pub fn new() -> Result<Self> {
-        let (stream, stream_handle) = Self::build_output_stream(&None)?;
-        debug!("InnerPlayer 已创建，使用默认输出设备");
+        // 延迟初始化：构造时不要求有音频设备，load 时再打开
+        let (stream, stream_handle) = match Self::build_output_stream(None) {
+            Ok(s) => (Some(s.0), Some(s.1)),
+            Err(_) => (None, None),
+        };
+        debug!("InnerPlayer 已创建");
 
         Ok(Self {
-            _stream: stream,
+            stream,
             stream_handle,
             sink: None,
             shared: None,
@@ -162,6 +178,7 @@ impl InnerPlayer {
             fft_timer_stop: None,
             fft_timer_handle: None,
             selected_device_name: None,
+            normalization_enabled: false,
         })
     }
 
@@ -362,9 +379,9 @@ impl InnerPlayer {
         self.stop_internal();
 
         // 重建音频输出（使用用户选择的设备或系统默认）
-        let (stream, stream_handle) = Self::build_output_stream(&self.selected_device_name)?;
-        self._stream = stream;
-        self.stream_handle = stream_handle;
+        let (stream, stream_handle) = Self::build_output_stream(self.selected_device_name.as_ref())?;
+        self.stream = Some(stream);
+        self.stream_handle = Some(stream_handle);
 
         // 恢复播放状态
         match prev_state {
@@ -397,11 +414,6 @@ impl InnerPlayer {
         self.cover_cache_dir = Some(dir);
     }
 
-    /// 只读取元数据，不启动解码和播放
-    pub fn probe(&self, source: &str) -> Result<AudioMetadata> {
-        decoder::probe_metadata(source, self.cover_cache_dir.as_deref())
-    }
-
     /// 加载音频源，auto_play 控制是否自动播放
     pub fn load(&mut self, source: &str, auto_play: bool) -> Result<AudioMetadata> {
         debug!(source, auto_play, "开始加载音频源");
@@ -409,11 +421,17 @@ impl InnerPlayer {
         self.fft.reset();
 
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
-        let (mut metadata, handle) =
+        // 将归一化开关同步到新的 Shared 实例
+        shared.set_normalization_enabled(self.normalization_enabled);
+        // 确保音频输出就绪（无设备时在此报错，不影响解码）
+        self.ensure_output()?;
+        let (mut metadata, decode_handle) =
             decoder::start_decode(source, Arc::clone(&shared), self.cover_cache_dir.as_deref())?;
 
-        let sink =
-            Arc::new(Sink::try_new(&self.stream_handle).context("Failed to create audio sink")?);
+        let sink = Arc::new(
+            Sink::try_new(self.stream_handle.as_ref().unwrap())
+                .context("Failed to create audio sink")?,
+        );
 
         let decoder_source = DecoderSource::new(
             Arc::clone(&shared),
@@ -423,7 +441,6 @@ impl InnerPlayer {
         );
 
         sink.set_volume(self.target_volume);
-        // 不自动播放时先暂停 sink，再 append，确保没有任何声音输出
         if !auto_play {
             sink.pause();
         }
@@ -431,7 +448,7 @@ impl InnerPlayer {
 
         self.sink = Some(sink);
         self.shared = Some(shared);
-        self.decoder_thread = Some(handle);
+        self.decoder_thread = Some(decode_handle);
         self.seek_base = 0.0;
         self.current_source = Some(source.to_string());
 
@@ -590,8 +607,7 @@ impl InnerPlayer {
         // 在已有上下文上 seek（不重新打开文件）
         let seek_ok = decoder_data
             .as_mut()
-            .map(|d| d.seek(position_secs).is_ok())
-            .unwrap_or(false);
+            .is_some_and(|d| d.seek(position_secs));
 
         if !seek_ok {
             // 回收失败（线程 panic 或 seek 出错），回退到从头 load，不再递归 seek
@@ -608,10 +624,16 @@ impl InnerPlayer {
 
         // 创建新的共享状态（旧的 is_stopping=true 不可复用）
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
+        // 同步归一化设置（从旧 Shared 继承增益值和开关）
+        if let Some(ref old_shared) = self.shared {
+            shared.set_normalization_enabled(old_shared.is_normalization_enabled());
+            shared.set_normalization_gain(old_shared.normalization_gain());
+        }
         let handle = decoder::resume_decode(decoder_data, Arc::clone(&shared));
 
+        let out_handle = self.ensure_output()?;
         let sink =
-            Arc::new(Sink::try_new(&self.stream_handle).context("Failed to create audio sink")?);
+            Arc::new(Sink::try_new(out_handle).context("Failed to create audio sink")?);
 
         let decoder_source = DecoderSource::new(
             Arc::clone(&shared),
@@ -707,5 +729,18 @@ impl InnerPlayer {
             (Some(shared), Some(sink)) => shared.is_done() && sink.empty(),
             _ => false,
         }
+    }
+
+    /// 设置音量归一化开关
+    pub fn set_normalization_enabled(&mut self, enabled: bool) {
+        self.normalization_enabled = enabled;
+        if let Some(ref shared) = self.shared {
+            shared.set_normalization_enabled(enabled);
+        }
+    }
+
+    /// 获取音量归一化开关状态
+    pub fn normalization_enabled(&self) -> bool {
+        self.normalization_enabled
     }
 }

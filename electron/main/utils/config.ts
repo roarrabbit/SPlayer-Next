@@ -24,5 +24,8 @@ export const appVersion = app.getVersion();
 /** 应用名称 */
 export const appName = app.getName();
 
-/** 封面缓存目录（供 cover:// 协议解析使用） */
-export const coverCacheDir = path.join(app.getPath("userData"), "cover-cache");
+/** 应用自有缓存根目录（区别于 Electron 内置的 Cache/Code Cache） */
+export const appCacheDir = path.join(app.getPath("userData"), "app-cache");
+
+/** 封面缩略图缓存目录（供 cover:// 协议解析使用） */
+export const coverCacheDir = path.join(appCacheDir, "covers");

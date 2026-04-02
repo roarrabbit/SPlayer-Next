@@ -62,6 +62,10 @@ export interface Track {
   duration: number;
   cover?: string;
   coverOriginal?: string;
+  /** 文件大小（字节，仅本地文件） */
+  fileSize?: number;
+  /** 音质信息（本地文件扫描时填充） */
+  quality?: AudioQuality;
   matched?: OnlineMatch;
 }
 
@@ -112,32 +116,54 @@ export type PlayerEvent =
 export interface IpcResponse<T = void> {
   success: boolean;
   data?: T;
+  /** 错误码（对应 ErrorCode 枚举） */
   error?: string;
 }
 
-/** 通过 preload 暴露的播放器 API */
+/** 播放器 API */
 export interface PlayerApi {
-  probe: (source: string) => Promise<IpcResponse<Track>>;
+  /** 加载音频（本地路径或网络地址） */
   load: (source: string, autoPlay?: boolean) => Promise<IpcResponse<LoadResult>>;
+  /** 恢复播放 */
   play: () => Promise<IpcResponse>;
+  /** 暂停播放 */
   pause: () => Promise<IpcResponse>;
+  /** 停止播放 */
   stop: () => Promise<IpcResponse>;
+  /** 跳转到指定位置（毫秒） */
   seek: (positionMs: number) => Promise<IpcResponse>;
+  /** 设置音量（0.0 ~ 1.0） */
   setVolume: (volume: number) => Promise<IpcResponse>;
+  /** 获取当前音量 */
   getVolume: () => Promise<IpcResponse<number>>;
+  /** 获取播放状态快照 */
   getStatus: () => Promise<IpcResponse<PlayerStatus>>;
-  getFftData: () => Promise<IpcResponse<number[]>>;
-  setFadeDuration: (ms: number) => Promise<IpcResponse>;
-  getFadeDuration: () => Promise<IpcResponse<number>>;
-  getCoverRaw: () => Promise<IpcResponse<string | null>>;
-  readLyricFile: (filePath: string) => Promise<IpcResponse<string>>;
-  openFile: () => Promise<IpcResponse<string>>;
-  reinit: () => Promise<IpcResponse>;
+  /** 设置 FFT 频谱推送 */
   setFftEnabled: (enabled: boolean) => Promise<IpcResponse>;
+  /** 获取 FFT 频谱数据 */
+  getFftData: () => Promise<IpcResponse<number[]>>;
+  /** 设置渐入渐出时长（毫秒） */
+  setFadeDuration: (ms: number) => Promise<IpcResponse>;
+  /** 获取渐入渐出时长（毫秒） */
+  getFadeDuration: () => Promise<IpcResponse<number>>;
+  /** 获取原始高清封面（base64 data URL） */
+  getCoverRaw: () => Promise<IpcResponse<string | null>>;
+  /** 读取外部歌词文件内容 */
+  readLyricFile: (filePath: string) => Promise<IpcResponse<string>>;
+  /** 重建音频输出设备 */
+  reinit: () => Promise<IpcResponse>;
+  /** 设置音量均衡 */
+  setNormalizationEnabled: (enabled: boolean) => Promise<IpcResponse>;
+  /** 获取所有音频输出设备 */
   getOutputDevices: () => Promise<IpcResponse<AudioDevice[]>>;
+  /** 获取系统默认输出设备名称 */
   getDefaultDeviceName: () => Promise<IpcResponse<string | null>>;
+  /** 切换输出设备（传 null 使用系统默认） */
   setOutputDevice: (deviceName: string | null) => Promise<IpcResponse>;
+  /** 获取当前选择的输出设备名称 */
   getSelectedDeviceName: () => Promise<IpcResponse<string | null>>;
+  /** 同步播放模式到托盘 */
   syncPlayMode: (repeatMode: string, shuffleMode: string) => void;
+  /** 订阅播放事件 */
   onEvent: (callback: (event: PlayerEvent) => void) => () => void;
 }

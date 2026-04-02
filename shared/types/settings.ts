@@ -12,6 +12,8 @@ export interface PlayerSettings {
   outputDevice: string | null;
   /** 默认音量（0.0 ~ 1.0） */
   volume: number;
+  /** 音量均衡（响度归一化） */
+  loudnessNormalization: boolean;
 }
 
 /** Discord 显示模式 */
@@ -41,12 +43,14 @@ export interface WindowState {
   width: number;
   /** 窗口高度 */
   height: number;
-  /** 窗口 X 坐标，null 为居中 */
-  x: number | null;
-  /** 窗口 Y 坐标，null 为居中 */
-  y: number | null;
   /** 是否最大化 */
   maximized: boolean;
+}
+
+/** 音乐库配置 */
+export interface LibrarySettings {
+  /** 扫描目录列表 */
+  scanDirs: string[];
 }
 
 /** 后端配置汇总 */
@@ -55,14 +59,18 @@ export interface SystemConfig {
   player: PlayerSettings;
   /** 媒体集成配置 */
   media: MediaSettings;
+  /** 音乐库配置 */
+  library: LibrarySettings;
   /** 系统配置 */
   system: {
+    /** 记忆窗口状态（大小、位置、是否最大化） */
+    rememberWindowState: boolean;
     /** 窗口状态（主进程自动保存） */
     window: WindowState;
   };
 }
 
-/** 后端配置 API（preload 暴露给渲染进程） */
+/** 配置 API */
 export interface ConfigApi {
   /** 获取单个配置项（点号路径，如 "player.fadeDuration"） */
   get: (keyPath: string) => Promise<unknown>;
