@@ -92,7 +92,6 @@ const api = {
     getScanDirs: () => ipcRenderer.invoke("library:getScanDirs"),
     // 订阅扫描进度事件
     onScanProgress: (callback: (progress: unknown) => void) => {
-      ipcRenderer.removeAllListeners("library:scanProgress");
       const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);
       ipcRenderer.on("library:scanProgress", handler);
       return () => ipcRenderer.removeListener("library:scanProgress", handler);

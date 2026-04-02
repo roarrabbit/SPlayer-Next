@@ -364,7 +364,7 @@ export const removeFromQueue = async (index: number): Promise<void> => {
  */
 export const insertToQueue = (item: Track, afterIndex?: number): number => {
   const status = useStatusStore();
-  const len = queue.getQueue().length;
+  const len = queue.queue.value.length;
   const raw = afterIndex ?? status.playIndex + 1;
   const existingIdx = queue.findTrackIndex(item.id);
   if (existingIdx !== -1) {
