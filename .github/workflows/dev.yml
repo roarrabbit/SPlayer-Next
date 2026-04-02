@@ -49,10 +49,32 @@ jobs:
         with:
           workspaces: "native/audio-engine -> target\nnative/media-ctrl -> target"
 
-      # FFmpeg 静态编译需要 NASM（Windows runner 未预装）
-      - name: Install NASM
+      # Windows: 下载 FFmpeg 预编译开发库
+      - name: Install FFmpeg dev (Windows)
         if: runner.os == 'Windows'
-        run: choco install nasm -y
+        run: |
+          choco install nasm -y
+          curl -L "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip" -o ffmpeg.zip
+          7z x ffmpeg.zip -offmpeg-build
+          $dir = (Get-ChildItem ffmpeg-build -Directory | Select-Object -First 1).FullName
+          echo "FFMPEG_DIR=$dir" >> $env:GITHUB_ENV
+
+      # macOS: 通过 Homebrew 安装
+      - name: Install FFmpeg dev (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ffmpeg pkg-config
+          echo "FFMPEG_DIR=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
+
+      # Linux: 系统包 + 构建/打包依赖
+      - name: Install FFmpeg dev (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libavutil-dev libavformat-dev libavcodec-dev libswresample-dev \
+            libasound2-dev libdbus-1-dev pkg-config clang nasm \
+            rpm libarchive-tools
 
       # 清理旧构建产物
       - name: Clean workspace on Windows
@@ -64,13 +86,6 @@ jobs:
       - name: Clean workspace on macOS & Linux
         if: runner.os != 'Windows'
         run: rm -rf dist out
-
-      # 安装 Linux 构建和打包依赖
-      - name: Install Linux build dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y rpm libarchive-tools libasound2-dev libdbus-1-dev pkg-config clang nasm
 
       # 安装项目依赖
       - name: Install dependencies
