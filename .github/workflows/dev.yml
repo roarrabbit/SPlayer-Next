@@ -142,6 +142,7 @@ jobs:
 
       # CI 不需要国内镜像
       - name: 移除 .npmrc
+        shell: bash
         run: rm -f .npmrc
 
       # 安装项目依赖
