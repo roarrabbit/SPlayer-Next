@@ -12,7 +12,7 @@
   },
   "nav": {
     "home": "Home",
-    "library": "Local Music",
+    "library": "Library",
     "settings": "Settings",
     "reload": "Reload",
     "devtools": "Developer Tools",
@@ -52,9 +52,9 @@
     "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
   },
   "library": {
-    "title": "Local Music",
+    "title": "Library",
     "totalSongs": "{count} songs",
-    "empty": "No local music yet",
+    "empty": "Library is empty",
     "emptyHint": "Add a music folder to get started",
     "addFolder": "Add Folder",
     "scanAll": "Full Scan",

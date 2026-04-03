@@ -12,7 +12,7 @@
   },
   "nav": {
     "home": "首页",
-    "library": "本地音乐",
+    "library": "音乐库",
     "settings": "设置",
     "reload": "热重载",
     "devtools": "开发者工具",
@@ -52,9 +52,9 @@
     "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
   },
   "library": {
-    "title": "本地音乐",
+    "title": "音乐库",
     "totalSongs": "共 {count} 首",
-    "empty": "还没有本地音乐",
+    "empty": "音乐库为空",
     "emptyHint": "添加音乐文件夹开始使用",
     "addFolder": "添加文件夹",
     "scanAll": "全量扫描",
