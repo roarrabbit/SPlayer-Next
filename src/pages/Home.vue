@@ -22,10 +22,50 @@ const sourceOptions: { value: ThemeSource; label: string }[] = [
 /** v-model 绑定的颜色字符串 */
 const colorHex = ref(theme.customColor);
 
+/** Radio 示例值 */
+const sortField = ref<"title" | "artist" | "album">("title");
+const radioGroupValue = ref("Shanghai");
+const radioSongs = [
+  { value: "Beijing", label: "北京" },
+  { value: "Shanghai", label: "上海" },
+  { value: "Guangzhou", label: "广州" },
+  { value: "Shenzhen", label: "深圳" },
+];
+
+/** Checkbox 示例值 */
+const onlyLossless = ref(false);
+const onlyLocal = ref(true);
+const withLyric = ref(false);
+const checkAll = ref(false);
+const cities = ref<string[]>(["Shanghai"]);
+
 /** 监听颜色变化，同步到主题 */
 watch(colorHex, (hex) => {
   theme.setCustomColor(hex);
 });
+
+/** 全选半选状态（示例） */
+const checkAllIndeterminate = computed(() => {
+  const values = [onlyLossless.value, onlyLocal.value, withLyric.value];
+  const checkedCount = values.filter(Boolean).length;
+  return checkedCount > 0 && checkedCount < values.length;
+});
+
+watch([onlyLossless, onlyLocal, withLyric], ([a, b, c]) => {
+  checkAll.value = a && b && c;
+});
+
+const handleToggleAll = (checked: boolean): void => {
+  onlyLossless.value = checked;
+  onlyLocal.value = checked;
+  withLyric.value = checked;
+};
+
+const handleSortFieldChange = (value: string | number | boolean): void => {
+  if (value === "title" || value === "artist" || value === "album") {
+    sortField.value = value;
+  }
+};
 
 /** 测试 loading → success 的 toast 流程 */
 const testLoadingToast = (): void => {
@@ -224,6 +264,111 @@ const testLoadingToast = (): void => {
       <span class="text-xs text-on-surface-variant font-mono shrink-0">{{
         theme.activeColor
       }}</span>
+    </div>
+
+    <!-- Radio / Checkbox 示例 -->
+    <div class="w-full mt-2 rounded-xl border border-solid border-outline-variant/40 p-4 space-y-4">
+      <h3 class="text-sm font-semibold text-on-surface">SRadio / SCheckbox 示例</h3>
+
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">Radio（排序字段）</div>
+        <div class="flex items-center flex-wrap gap-4">
+          <SRadio
+            :checked="sortField === 'title'"
+            value="title"
+            label="标题"
+            @change="handleSortFieldChange"
+          />
+          <SRadio
+            :checked="sortField === 'artist'"
+            value="artist"
+            label="歌手"
+            @change="handleSortFieldChange"
+          />
+          <SRadio
+            :checked="sortField === 'album'"
+            value="album"
+            label="专辑"
+            @change="handleSortFieldChange"
+          />
+          <SRadio :checked="false" value="album" label="禁用" disabled @change="handleSortFieldChange" />
+        </div>
+        <div class="text-xs text-on-surface-variant">当前值：{{ sortField }}</div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">Radio Group</div>
+        <SRadioGroup v-model:value="radioGroupValue" name="radiogroup-demo">
+          <SRadio
+            v-for="song in radioSongs"
+            :key="song.value"
+            :value="song.value"
+            :label="song.label"
+          />
+        </SRadioGroup>
+        <div class="text-xs text-on-surface-variant">当前值：{{ radioGroupValue }}</div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">Checkbox（筛选条件）</div>
+        <div class="flex items-center flex-wrap gap-4">
+          <SCheckbox
+            :checked="checkAll"
+            :indeterminate="checkAllIndeterminate"
+            label="全选"
+            @update:checked="handleToggleAll"
+          />
+          <SCheckbox :checked="onlyLossless" label="仅无损" @update:checked="onlyLossless = $event" />
+          <SCheckbox :checked="onlyLocal" label="仅本地" @update:checked="onlyLocal = $event" />
+          <SCheckbox :checked="withLyric" label="含歌词" @update:checked="withLyric = $event" />
+          <SCheckbox :checked="onlyLossless" label="禁用" disabled @update:checked="onlyLossless = $event" />
+        </div>
+        <div class="text-xs text-on-surface-variant">
+          当前值：{ onlyLossless: {{ onlyLossless }}, onlyLocal: {{ onlyLocal }}, withLyric:
+          {{ withLyric }} }
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">Checkbox Group</div>
+        <SCheckboxGroup v-model:value="cities">
+          <SCheckbox value="Beijing" label="北京" />
+          <SCheckbox value="Shanghai" label="上海" />
+          <SCheckbox value="Guangzhou" label="广州" />
+          <SCheckbox value="Shenzhen" label="深圳" />
+        </SCheckboxGroup>
+        <div class="text-xs text-on-surface-variant">当前值：{{ cities.join(" / ") || "（空）" }}</div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">尺寸</div>
+        <div class="flex items-center flex-wrap gap-5">
+          <SRadio
+            :checked="sortField === 'title'"
+            value="title"
+            size="small"
+            label="Radio small"
+            @change="handleSortFieldChange"
+          />
+          <SRadio
+            :checked="sortField === 'artist'"
+            value="artist"
+            size="medium"
+            label="Radio medium"
+            @change="handleSortFieldChange"
+          />
+          <SRadio
+            :checked="sortField === 'album'"
+            value="album"
+            size="large"
+            label="Radio large"
+            @change="handleSortFieldChange"
+          />
+          <SCheckbox :checked="onlyLocal" size="small" label="Check small" @update:checked="onlyLocal = $event" />
+          <SCheckbox :checked="onlyLocal" size="medium" label="Check medium" @update:checked="onlyLocal = $event" />
+          <SCheckbox :checked="onlyLocal" size="large" label="Check large" @update:checked="onlyLocal = $event" />
+        </div>
+      </div>
     </div>
   </div>
 </template>

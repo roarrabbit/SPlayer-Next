@@ -71,7 +71,6 @@ const springConfig = computed(() => ({
   stiffness: settings.lyric.springStiffness,
 }));
 
-
 const collapse = (): void => {
   isExpanded.value = false;
 };
@@ -110,16 +109,16 @@ const onSeekDragEnd = (value: number): void => {
           :style="coverCentered ? 'transform: translateX(calc(100% * 11 / 18))' : undefined"
         >
           <!-- 封面 + 歌曲信息：切歌时整体左右淡入淡出 -->
-          <div class="relative w-[clamp(200px,85%,50vh)] -translate-y-[10vh]">
-          <Transition name="scale-switch" mode="out-in">
-            <div :key="media.track?.id">
-              <PlayerCover />
-              <!-- 歌曲信息（绝对定位，不影响封面居中位置） -->
-              <div class="absolute top-full left-0 w-full pt-6">
-                <PlayerData align="left" />
+          <div class="relative w-[clamp(200px,85%,50vh)] -translate-y-[11vh]">
+            <Transition name="scale-switch" mode="out-in">
+              <div :key="media.track?.id">
+                <PlayerCover />
+                <!-- 歌曲信息（绝对定位，不影响封面居中位置） -->
+                <div class="absolute top-full left-0 w-full pt-6">
+                  <PlayerData align="left" />
+                </div>
               </div>
-            </div>
-          </Transition>
+            </Transition>
           </div>
         </div>
 
@@ -242,7 +241,9 @@ const onSeekDragEnd = (value: number): void => {
               </SButton>
             </div>
             <div class="flex items-center gap-2 w-full max-w-120">
-              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{ formatTime(position) }}</span>
+              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{
+                formatTime(position)
+              }}</span>
               <SSlider
                 :model-value="position"
                 :min="0"
@@ -251,7 +252,9 @@ const onSeekDragEnd = (value: number): void => {
                 class="flex-1"
                 @drag-end="onSeekDragEnd"
               />
-              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{ formatTime(duration) }}</span>
+              <span class="text-xs text-cover/50 tabular-nums min-w-9 text-center">{{
+                formatTime(duration)
+              }}</span>
             </div>
           </div>
 
@@ -271,7 +274,13 @@ const onSeekDragEnd = (value: number): void => {
                 @change="player.setVolume($event)"
               />
             </div>
-            <SButton type="cover" variant="ghost" circle @click="status.playlistOpen = true">
+            <SButton
+              type="cover"
+              variant="ghost"
+              size="large"
+              circle
+              @click="status.playlistOpen = true"
+            >
               <template #icon><IconLucideListMusic /></template>
             </SButton>
           </div>

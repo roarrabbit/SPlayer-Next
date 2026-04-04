@@ -45,11 +45,12 @@ const alignItems = computed(() => {
 <template>
   <div
     v-if="media.track"
-    class="w-full flex flex-col gap-[0.5em] overflow-hidden px-2 text-[clamp(0.7rem,1.4vw,0.95rem)]"
+    class="w-full flex flex-col gap-[0.5em] overflow-hidden px-2"
+    style="font-size: clamp(12px, calc(14 / 1080 * 100vh), 16px)"
     :class="alignItems"
   >
     <!-- 标题 -->
-    <div class="max-w-full text-[1.8em] font-semibold truncate">
+    <div class="max-w-full text-[2em] font-semibold truncate">
       {{ media.track.title }}
     </div>
     <!-- 副标题/注释 -->
@@ -60,7 +61,7 @@ const alignItems = computed(() => {
       {{ media.track.comment }}
     </div>
     <!-- 元信息标签行 -->
-    <div v-if="!simple" class="flex items-center gap-1.5 text-[0.8em] my-1 text-cover/60">
+    <div v-if="!simple" class="flex items-center gap-1.5 text-[1em] my-1 text-cover/60">
       <span
         class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30"
       >
@@ -72,7 +73,7 @@ const alignItems = computed(() => {
             v-if="qualityLabel"
             class="inline-flex items-center gap-1 leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30 cursor-pointer transition-colors hover:border-cover/60"
           >
-            <IconSpLossless v-if="showLosslessIcon" class="text-[1.6em] -my-[0.5em]" />
+            <IconSpLossless v-if="showLosslessIcon" class="text-[1.4em] -my-[0.4em]" />
             {{ qualityLabel }}
           </span>
         </template>
@@ -120,7 +121,7 @@ const alignItems = computed(() => {
     <!-- 歌手 -->
     <div
       v-if="media.track.artists.length"
-      class="max-w-full flex items-center gap-1.5 text-[1em] text-cover/60"
+      class="max-w-full flex items-center gap-1.5 text-[1.2em] text-cover/60"
     >
       <IconLucideMic class="shrink-0 translate-y-px text-cover/40" />
       <span class="truncate">
@@ -133,7 +134,7 @@ const alignItems = computed(() => {
       </span>
     </div>
     <!-- 专辑 -->
-    <div v-if="albumText" class="max-w-full flex items-center gap-1.5 text-[1em] text-cover/60">
+    <div v-if="albumText" class="max-w-full flex items-center gap-1.5 text-[1.2em] text-cover/60">
       <IconLucideDisc3 class="shrink-0 translate-y-px text-cover/40" />
       <span class="truncate cursor-pointer transition-colors hover:text-cover">
         {{ albumText }}
