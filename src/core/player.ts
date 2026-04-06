@@ -509,6 +509,9 @@ export const initPlayer = async (): Promise<void> => {
   await window.api.player.setFadeDuration(fadeEnabled ? fadeDuration : 0);
   // 应用音量均衡配置
   await window.api.player.setNormalizationEnabled(loudnessNormalization ?? false);
+  // 先订阅事件，确保 load 触发播放后 position 事件能被接收
+  if (unsubscribe) unsubscribe();
+  unsubscribe = window.api.player.onEvent(handleEvent);
   const lastTrack = status.currentTrack;
   if (lastTrack?.path) {
     const lastPosition = status.position;
@@ -522,8 +525,6 @@ export const initPlayer = async (): Promise<void> => {
   } else {
     status.state = "idle";
   }
-  if (unsubscribe) unsubscribe();
-  unsubscribe = window.api.player.onEvent(handleEvent);
 };
 
 /** 清理事件订阅 */

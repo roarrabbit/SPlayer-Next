@@ -189,7 +189,7 @@ onUnmounted(() => {
     </div>
     <!-- 曲目列表 -->
     <div v-if="tracks.length > 0" class="flex-1 min-h-0">
-      <SongList :items="tracks" :search-query="searchQuery" show-size />
+      <SongList :items="tracks" :search-query="searchQuery" enable-sort show-size />
     </div>
     <!-- 空状态：无目录或无歌曲 -->
     <div v-else class="flex-1 flex items-center justify-center">

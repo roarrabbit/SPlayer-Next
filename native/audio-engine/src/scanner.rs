@@ -46,7 +46,8 @@ pub struct ScannedTrack {
     pub bits_per_sample: u32,
     pub cover: Option<String>,
     pub file_size: u64,
-    pub file_mtime: u64,
+    pub mtime: u64,
+    pub ctime: u64,
 }
 
 /// 扫描事件
@@ -142,12 +143,15 @@ fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<ScannedTrack>
         bits_per_sample,
         cover,
         file_size: 0, // 由调用方填充
-        file_mtime: 0,
+        mtime: 0,
+        ctime: 0,
     })
 }
 
-/// 获取文件的 mtime（Unix 毫秒）和大小
-fn file_stat(path: &Path) -> Option<(u64, u64)> {
+/// 获取文件时间与大小：
+/// - mtime: 修改时间（Unix ms）
+/// - ctime: 创建时间（Unix ms，若不可用回退为 mtime）
+fn file_stat(path: &Path) -> Option<(u64, u64, u64)> {
     let meta = fs::metadata(path).ok()?;
     let mtime = meta
         .modified()
@@ -155,7 +159,13 @@ fn file_stat(path: &Path) -> Option<(u64, u64)> {
         .duration_since(SystemTime::UNIX_EPOCH)
         .ok()?
         .as_millis() as u64;
-    Some((mtime, meta.len()))
+    let ctime = meta
+        .created()
+        .ok()
+        .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(mtime);
+    Some((mtime, ctime, meta.len()))
 }
 
 /// 批量扫描目录
@@ -187,7 +197,7 @@ pub fn scan_directories(
 
     // 第一遍：收集所有音频文件路径
     let walk_start = Instant::now();
-    let mut audio_files: Vec<(String, u64, u64)> = Vec::new();
+    let mut audio_files: Vec<(String, u64, u64, u64)> = Vec::new();
     let mut scanned_paths: Vec<String> = Vec::new();
 
     for dir in dirs {
@@ -206,7 +216,7 @@ pub fn scan_directories(
                 continue;
             }
             let path_str = path.to_string_lossy().into_owned();
-            if let Some((mtime, size)) = file_stat(path) {
+            if let Some((mtime, ctime, size)) = file_stat(path) {
                 scanned_paths.push(path_str.clone());
                 // 增量比对：mtime 和 size 都未变化则跳过
                 if let Some(&(old_mtime, old_size)) = existing.get(path_str.as_str()) {
@@ -214,7 +224,7 @@ pub fn scan_directories(
                         continue;
                     }
                 }
-                audio_files.push((path_str, mtime, size));
+                audio_files.push((path_str, mtime, ctime, size));
             }
         }
     }
@@ -233,7 +243,7 @@ pub fn scan_directories(
     let mut scanned: u32 = 0;
     let mut batch: Vec<ScannedTrack> = Vec::with_capacity(BATCH_SIZE);
 
-    for (path_str, mtime, size) in &audio_files {
+    for (path_str, mtime, ctime, size) in &audio_files {
         if cancel.load(Ordering::Relaxed) {
             info!("扫描已取消（元数据提取阶段，已处理 {scanned}/{total}）");
             callback(ScanEvent::Done {
@@ -251,7 +261,8 @@ pub fn scan_directories(
         match probe_fast(path_str, cover_cache_dir) {
             Some(mut track) => {
                 track.file_size = *size;
-                track.file_mtime = *mtime;
+                track.mtime = *mtime;
+                track.ctime = *ctime;
                 batch.push(track);
             }
             None => {

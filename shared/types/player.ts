@@ -62,9 +62,13 @@ export interface Track {
   duration: number;
   cover?: string;
   coverOriginal?: string;
-  /** 文件大小（字节，仅本地文件） */
+  /** 文件大小（字节） */
   fileSize?: number;
-  /** 音质信息（本地文件扫描时填充） */
+  /** 修改时间（Unix ms） */
+  mtime?: number;
+  /** 创建时间（Unix ms） */
+  ctime?: number;
+  /** 音质信息 */
   quality?: AudioQuality;
   matched?: OnlineMatch;
 }

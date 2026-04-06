@@ -419,8 +419,10 @@ pub struct JsScannedTrack {
     pub cover: Option<String>,
     /// 文件大小（字节）
     pub file_size: f64,
-    /// 文件修改时间（Unix ms）
-    pub file_mtime: f64,
+    /// 修改时间（Unix ms）
+    pub mtime: f64,
+    /// 创建时间（Unix ms）
+    pub ctime: f64,
 }
 
 /// 扫描事件回调数据
@@ -502,7 +504,8 @@ pub fn scan_dirs(
                                 bits_per_sample: t.bits_per_sample,
                                 cover: t.cover,
                                 file_size: t.file_size as f64,
-                                file_mtime: t.file_mtime as f64,
+                                mtime: t.mtime as f64,
+                                ctime: t.ctime as f64,
                             })
                             .collect(),
                     ),

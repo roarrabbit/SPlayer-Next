@@ -34,6 +34,21 @@
     "size": "大小",
     "duration": "时长",
     "noResults": "没有匹配的歌曲",
+    "sort": {
+      "mode": "排列方式",
+      "order": "排序方向",
+      "default": "默认",
+      "restore": "恢复",
+      "asc": "正序",
+      "desc": "倒序",
+      "byTitle": "按标题",
+      "byArtist": "按歌手",
+      "byAlbum": "按专辑",
+      "byDuration": "按时长",
+      "bySize": "按大小",
+      "byMtime": "按修改时间",
+      "byCtime": "按创建时间"
+    },
     "context": {
       "play": "播放",
       "playNext": "下一首播放",

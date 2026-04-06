@@ -34,6 +34,21 @@
     "size": "Size",
     "duration": "Duration",
     "noResults": "No matching songs",
+    "sort": {
+      "mode": "Sort Mode",
+      "order": "Sort Order",
+      "default": "Default",
+      "restore": "Restore",
+      "asc": "Ascending",
+      "desc": "Descending",
+      "byTitle": "Sort by Title",
+      "byArtist": "Sort by Artist",
+      "byAlbum": "Sort by Album",
+      "byDuration": "Sort by Duration",
+      "bySize": "Sort by Size",
+      "byMtime": "Sort by Modified Time",
+      "byCtime": "Sort by Created Time"
+    },
     "context": {
       "play": "Play",
       "playNext": "Play Next",

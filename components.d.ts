@@ -36,6 +36,8 @@ declare module 'vue' {
     DropdownMenuTrigger: typeof import('reka-ui')['DropdownMenuTrigger']
     EffectsLyrics: typeof import('./src/components/player/EffectsLyrics/index.vue')['default']
     FullPlayer: typeof import('./src/components/player/FullPlayer/index.vue')['default']
+    IconLucideArrowUpAz: typeof import('~icons/lucide/arrow-up-az')['default']
+    IconLucideArrowUpDown: typeof import('~icons/lucide/arrow-up-down')['default']
     IconLucideCheck: typeof import('~icons/lucide/check')['default']
     IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     IconLucideChevronLeft: typeof import('~icons/lucide/chevron-left')['default']

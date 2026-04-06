@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
+import type { JsScanEvent } from "@splayer/audio-engine";
 import { getEngine } from "./engine";
 import {
   upsertTracks,
   deleteTracksByPaths,
   getFileRecords,
   type UpsertTrack,
-} from "./database";
+} from "../database";
 import { broadcast } from "../utils/broadcast";
 import { toCoverUrl } from "../utils/protocol";
 import { toMs } from "../utils/time";
@@ -42,29 +43,7 @@ export const startScan = (dirs: string[], incremental = true): void => {
   const engine = getEngine();
   engine.scanDirs(
     dirs,
-    (event: {
-      eventType: string;
-      scanned: number;
-      total: number;
-      current?: string;
-      tracks?: Array<{
-        path: string;
-        title?: string;
-        artist?: string;
-        album?: string;
-        duration: number;
-        codec: string;
-        sampleRate: number;
-        bitRate: number;
-        channels: number;
-        bitsPerSample: number;
-        cover?: string;
-        fileSize: number;
-        fileMtime: number;
-      }>;
-      removedPaths?: string[];
-      error?: string;
-    }) => {
+    (event: JsScanEvent) => {
       switch (event.eventType) {
         case "progress": {
           // 批量写入数据库
@@ -85,7 +64,8 @@ export const startScan = (dirs: string[], incremental = true): void => {
                 channels: t.channels,
                 bitsPerSample: t.bitsPerSample,
                 fileSize: t.fileSize,
-                fileMtime: t.fileMtime,
+                mtime: t.mtime,
+                ctime: t.ctime,
               };
             });
             upsertTracks(upserts);

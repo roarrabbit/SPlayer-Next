@@ -1,6 +1,6 @@
 import { ipcMain, dialog } from "electron";
 import { store } from "../store";
-import { getAllTracks, searchTracks, getTrackCount, deleteTracksByDir } from "../services/database";
+import { getAllTracks, searchTracks, getTrackCount, deleteTracksByDir } from "../database";
 import { startScan, cancelScan, isScanning } from "../services/scanner";
 import { libraryLog } from "../utils/logger";
 import { ErrorCode } from "@shared/types/errors";

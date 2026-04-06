@@ -8,12 +8,14 @@ import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import * as player from "@/core/player";
+import IconArrowUpDown from "~icons/lucide/arrow-up-down";
+import IconArrowUpAz from "~icons/lucide/arrow-up-az";
 
 const props = withDefaults(
   defineProps<{
     /** 歌曲列表数据 */
     items: Track[];
-    /** 搜索关键词（模糊匹配标题、歌手、专辑） */
+    /** 搜索关键词 */
     searchQuery?: string;
     /** 显示序号 */
     showIndex?: boolean;
@@ -23,6 +25,8 @@ const props = withDefaults(
     showDuration?: boolean;
     /** 显示文件大小 */
     showSize?: boolean;
+    /** 是否启用排序交互（默认关闭） */
+    enableSort?: boolean;
   }>(),
   {
     searchQuery: "",
@@ -30,6 +34,7 @@ const props = withDefaults(
     showAlbum: true,
     showDuration: true,
     showSize: false,
+    enableSort: false,
   },
 );
 
@@ -37,8 +42,52 @@ const { t } = useI18n();
 const media = useMediaStore();
 const status = useStatusStore();
 
+// 排序器 默认使用 base 敏感度，忽略大小写
+const textCollator = new Intl.Collator(undefined, {
+  usage: "sort",
+  sensitivity: "base",
+  numeric: true,
+});
+
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
+
+type SortField =
+  | "none"
+  | "title"
+  | "artist"
+  | "album"
+  | "duration"
+  | "size"
+  | "mtime"
+  | "ctime";
+type SortOrder = "asc" | "desc";
+
+/** 排序字段 */
+const sortField = ref<SortField>("none");
+/** 排序方向 */
+const sortOrder = ref<SortOrder>("asc");
+
+/** 字段文案 key 映射 */
+const sortFieldLabelKeyMap: Record<SortField, string> = {
+  none: "songList.sort.default",
+  title: "songList.sort.byTitle",
+  artist: "songList.sort.byArtist",
+  album: "songList.sort.byAlbum",
+  duration: "songList.sort.byDuration",
+  size: "songList.sort.bySize",
+  mtime: "songList.sort.byMtime",
+  ctime: "songList.sort.byCtime",
+};
+
+/** 表头显示的当前排序文案 */
+const sortTitleText = computed(() => {
+  if (!props.enableSort) return t("songList.title");
+  const isDefault = sortField.value === "none";
+  if (isDefault) return t("songList.title");
+  const arrow = sortOrder.value === "asc" ? "↑" : "↓";
+  return `${t("songList.title")}（ ${t(sortFieldLabelKeyMap[sortField.value])} ${arrow} ）`;
+});
 
 /** 根据搜索关键词过滤后的列表 */
 const filteredItems = computed(() => {
@@ -52,10 +101,48 @@ const filteredItems = computed(() => {
   });
 });
 
+/** 排序后列表 */
+const sortedItems = computed(() => {
+  if (!props.enableSort || sortField.value === "none") return filteredItems.value;
+  const result = [...filteredItems.value];
+  const field = sortField.value;
+  const direction = sortOrder.value === "asc" ? 1 : -1;
+
+  const toArtistText = (track: Track): string => track.artists.map((a) => a.name).join(" / ");
+  const toAlbumText = (track: Track): string => track.album?.name ?? "";
+
+  const compare = (a: Track, b: Track): number => {
+    let value = 0;
+    if (field === "title") {
+      value = textCollator.compare(a.title, b.title);
+    } else if (field === "artist") {
+      value = textCollator.compare(toArtistText(a), toArtistText(b));
+    } else if (field === "album") {
+      value = textCollator.compare(toAlbumText(a), toAlbumText(b));
+    } else if (field === "duration") {
+      value = a.duration - b.duration;
+    } else if (field === "size") {
+      value = (a.fileSize ?? 0) - (b.fileSize ?? 0);
+    } else if (field === "mtime") {
+      value = (a.mtime ?? 0) - (b.mtime ?? 0);
+    } else {
+      value = (a.ctime ?? 0) - (b.ctime ?? 0);
+    }
+    if (value !== 0) return value * direction;
+    // 次关键字兜底，保证排序稳定
+    const fallback = textCollator.compare(a.title, b.title);
+    if (fallback !== 0) return fallback;
+    return textCollator.compare(a.id, b.id);
+  };
+
+  result.sort(compare);
+  return result;
+});
+
 /** 当前播放歌曲在过滤后列表中的索引 */
 const playingIndex = computed(() => {
   if (!playingId.value) return -1;
-  return filteredItems.value.findIndex((track) => track.id === playingId.value);
+  return sortedItems.value.findIndex((track) => track.id === playingId.value);
 });
 
 /** 虚拟列表引用 */
@@ -94,7 +181,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
       </template>
       <SVirtualList
         ref="virtualListRef"
-        :items="filteredItems"
+        :items="sortedItems"
         :item-height="88"
         :padding-bottom="80"
         :get-item-key="(item: Track) => item.id"
@@ -103,7 +190,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
         height="100%"
       >
         <!-- 搜索无结果 -->
-        <template v-if="searchQuery && filteredItems.length === 0" #empty>
+        <template v-if="searchQuery && sortedItems.length === 0" #empty>
           <div class="flex flex-col items-center gap-2 text-on-surface-variant/40">
             <IconLucideSearchX class="size-8" />
             <span class="text-sm">{{ t("songList.noResults") }}</span>
@@ -115,7 +202,54 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
             class="flex items-center gap-3 pl-3 pr-6 mx-3 h-10 text-sm text-on-surface-variant/60"
           >
             <div v-if="showIndex" class="w-8 shrink-0 text-center">#</div>
-            <div class="flex-1 min-w-0">{{ t("songList.title") }}</div>
+            <div class="flex-1 min-w-0">
+              <SPopover
+                v-if="enableSort"
+                :side-offset="6"
+                trigger="click"
+                side="bottom"
+                align="start"
+                block
+              >
+                <template #trigger>
+                  <div
+                    class="w-full h-full px-1.5 py-1 rounded-md cursor-pointer transition-colors hover:bg-on-surface/8"
+                  >
+                    {{ sortTitleText }}
+                  </div>
+                </template>
+                <div class="w-60 flex flex-col gap-3 text-sm">
+                  <div class="flex items-center gap-2 text-xs">
+                    <IconArrowUpDown class="size-3.5" />
+                    <span>{{ t("songList.sort.mode") }}</span>
+                  </div>
+                  <SRadioGroup v-model:value="sortField" size="small">
+                    <SRadio value="none" :label="t('songList.sort.default')" />
+                    <SRadio value="title" :label="t('songList.sort.byTitle')" />
+                    <SRadio value="artist" :label="t('songList.sort.byArtist')" />
+                    <SRadio value="album" :label="t('songList.sort.byAlbum')" />
+                    <SRadio value="duration" :label="t('songList.sort.byDuration')" />
+                    <SRadio value="size" :label="t('songList.sort.bySize')" />
+                    <SRadio value="mtime" :label="t('songList.sort.byMtime')" />
+                    <SRadio value="ctime" :label="t('songList.sort.byCtime')" />
+                  </SRadioGroup>
+
+                  <div class="h-px bg-outline-variant/25" />
+
+                  <div class="flex items-center gap-2 text-xs">
+                    <IconArrowUpAz class="size-3.5" />
+                    <span>{{ t("songList.sort.order") }}</span>
+                  </div>
+                  <SRadioGroup v-model:value="sortOrder" size="small" :disabled="sortField === 'none'">
+                    <SRadio value="asc" :label="t('songList.sort.asc')" />
+                    <SRadio value="desc" :label="t('songList.sort.desc')" />
+                  </SRadioGroup>
+                </div>
+              </SPopover>
+              <div v-else class="w-full h-full px-1.5 py-1">
+                {{ t("songList.title") }}
+              </div>
+            </div>
             <div v-if="showAlbum" class="flex-1 min-w-0">{{ t("songList.album") }}</div>
             <div v-if="showDuration" class="w-16 shrink-0 text-center">
               {{ t("songList.duration") }}
@@ -133,7 +267,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
                   ? 'bg-primary/16 border-primary/40'
                   : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
               "
-              @dblclick="player.playFrom(filteredItems, index)"
+              @dblclick="player.playFrom(sortedItems, index)"
               @contextmenu="contextTrack = item"
             >
               <!-- 序号 -->

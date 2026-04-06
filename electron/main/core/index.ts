@@ -4,7 +4,7 @@ import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { createMainWindow } from "../window";
 import { registerIpcHandlers } from "../ipc";
 import { init as initMedia, shutdown as shutdownMedia } from "../services/media";
-import { initDatabase, closeDatabase } from "../services/database";
+import { initDatabase, closeDatabase } from "../database";
 import { coverCacheDir } from "../utils/config";
 import { coreLog, initLogger } from "../utils/logger";
 
