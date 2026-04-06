@@ -55,7 +55,7 @@ const handleSelect = (item: SMenuItem) => {
       side="right"
     >
       <div
-        class="relative flex items-center rounded-lg cursor-pointer select-none overflow-hidden whitespace-nowrap"
+        class="relative flex items-center rounded-lg cursor-pointer select-none overflow-hidden whitespace-nowrap transition-[background-color,color] duration-250"
         :class="[
           sizeClass.item,
           modelValue === item.key

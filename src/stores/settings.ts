@@ -1,4 +1,9 @@
-import type { PlayerSettings, LyricSettings, SpringPreset } from "@/types/settings";
+import type {
+  PlayerSettings,
+  LyricSettings,
+  AppearanceSettings,
+  SpringPreset,
+} from "@/types/settings";
 import { SPRING_PRESETS } from "@/types/settings";
 import type { LocaleCode } from "@/i18n";
 import type { SystemConfig } from "@shared/types/settings";
@@ -10,16 +15,21 @@ export const useSettingsStore = defineStore(
     /** 界面语言（持久化，由 main.ts 同步到 vue-i18n） */
     const locale = ref<LocaleCode>("zh-CN");
 
-    /** 播放器设置（持久化） */
+    /** 外观 */
+    const appearance = reactive<AppearanceSettings>({
+      layoutMode: "default",
+      routeTransition: "fade",
+      sidebarCollapsed: false,
+    });
+
+    /** 播放器 */
     const player = reactive<PlayerSettings>({
       playerBgType: "blur",
       autoCenterCover: true,
       followCoverColor: true,
-      layoutMode: "default",
-      routeTransition: "fade",
     });
 
-    /** 歌词设置（持久化） */
+    /** 歌词 */
     const lyric = reactive<LyricSettings>({
       lyricMode: "effects",
       adaptiveFontSize: true,
@@ -57,7 +67,9 @@ export const useSettingsStore = defineStore(
       await syncSystem();
       // 后处理
       if (keyPath === "player.fadeEnabled" || keyPath === "player.fadeDuration") {
-        await window.api.player.setFadeDuration(system.player.fadeEnabled ? system.player.fadeDuration : 0);
+        await window.api.player.setFadeDuration(
+          system.player.fadeEnabled ? system.player.fadeDuration : 0,
+        );
       }
     };
 
@@ -73,6 +85,7 @@ export const useSettingsStore = defineStore(
 
     return {
       locale,
+      appearance,
       player,
       lyric,
       system,

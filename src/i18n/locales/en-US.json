@@ -267,6 +267,10 @@
       "slide": "Slide",
       "zoom": "Zoom"
     },
+    "sidebarCollapsed": {
+      "label": "Collapse Sidebar",
+      "description": "Collapse the sidebar to icon-only mode"
+    },
     "systemMediaControls": {
       "label": "System Media Controls",
       "description": "Show playback info in system media controls"

@@ -53,7 +53,7 @@ const rowToTrack = (row: TrackRow): Track => {
 
 /** 查询全部曲目 */
 export const getAllTracks = (): Track[] => {
-  const rows = getDb().prepare("SELECT * FROM tracks ORDER BY title").all() as TrackRow[];
+  const rows = getDb().prepare("SELECT * FROM tracks").all() as TrackRow[];
   return rows.map(rowToTrack);
 };
 
@@ -153,7 +153,7 @@ export const searchTracks = (query: string): Track[] => {
   const pattern = `%${escaped}%`;
   const rows = getDb()
     .prepare(
-      "SELECT * FROM tracks WHERE title LIKE ? ESCAPE '\\' OR artists LIKE ? ESCAPE '\\' OR album LIKE ? ESCAPE '\\' ORDER BY title",
+      "SELECT * FROM tracks WHERE title LIKE ? ESCAPE '\\' OR artists LIKE ? ESCAPE '\\' OR album LIKE ? ESCAPE '\\'",
     )
     .all(pattern, pattern, pattern) as TrackRow[];
   return rows.map(rowToTrack);

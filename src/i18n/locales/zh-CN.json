@@ -267,6 +267,10 @@
       "slide": "滑动",
       "zoom": "缩放"
     },
+    "sidebarCollapsed": {
+      "label": "折叠侧边栏",
+      "description": "将侧边栏折叠为图标模式"
+    },
     "systemMediaControls": {
       "label": "系统媒体控制",
       "description": "在系统媒体控制中显示当前播放信息"

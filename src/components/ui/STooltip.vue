@@ -38,7 +38,7 @@ withDefaults(
           :align="align"
           :side-offset="sideOffset"
           :avoid-collisions="true"
-          class="z-300 px-2.5 py-1.5 rounded-lg bg-surface-bright border border-solid border-outline-variant/30 shadow-lg text-xs text-on-surface data-[state=delayed-open]:animate-popover-in data-[state=closed]:animate-popover-out"
+          class="z-300 px-3 py-2 rounded-lg bg-surface-bright border border-solid border-outline-variant/30 shadow-lg text-sm text-on-surface data-[state=delayed-open]:animate-popover-in data-[state=closed]:animate-popover-out"
         >
           {{ content }}
         </TooltipContent>

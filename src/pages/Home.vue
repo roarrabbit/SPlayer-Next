@@ -38,6 +38,9 @@ const onlyLocal = ref(true);
 const withLyric = ref(false);
 const checkAll = ref(false);
 const cities = ref<string[]>(["Shanghai"]);
+const activeTabLine = ref("recommend");
+const activeTabBar = ref("幸福");
+const activeTabSegment = ref("recommend");
 
 /** 监听颜色变化，同步到主题 */
 watch(colorHex, (hex) => {
@@ -368,6 +371,98 @@ const testLoadingToast = (): void => {
           <SCheckbox :checked="onlyLocal" size="medium" label="Check medium" @update:checked="onlyLocal = $event" />
           <SCheckbox :checked="onlyLocal" size="large" label="Check large" @update:checked="onlyLocal = $event" />
         </div>
+      </div>
+    </div>
+
+    <!-- Tabs 示例 -->
+    <div class="w-full rounded-xl border border-solid border-outline-variant/40 p-4 space-y-3">
+      <h3 class="text-sm font-semibold text-on-surface">STabs 示例</h3>
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">line</div>
+        <STabs
+          v-model="activeTabLine"
+          type="line"
+          animated
+          :tabs="[
+            { key: 'recommend', label: '推荐' },
+            { key: 'playlist', label: '歌单' },
+            { key: 'radio', label: '电台', disabled: true },
+          ]"
+        >
+          <template #recommend>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              这里是推荐内容面板
+            </div>
+          </template>
+          <template #playlist>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              这里是歌单内容面板，这里故意放一段更长的文本用于演示 animated 高度过渡效果。
+            </div>
+          </template>
+          <template #radio>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              这里是电台内容面板
+            </div>
+          </template>
+        </STabs>
+      </div>
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">bar</div>
+        <STabs
+          v-model="activeTabBar"
+          type="bar"
+          animated
+          :tabs="[
+            { key: '幸福' },
+            { key: '的' },
+            { key: '旁边' },
+          ]"
+        >
+          <template #幸福>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              寂寞围绕着电视
+            </div>
+          </template>
+          <template #的>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              垂死坚持
+            </div>
+          </template>
+          <template #旁边>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              在两点半消失
+            </div>
+          </template>
+        </STabs>
+      </div>
+      <div class="space-y-2">
+        <div class="text-xs text-on-surface-variant">segment</div>
+        <STabs
+          v-model="activeTabSegment"
+          type="segment"
+          animated
+          :tabs="[
+            { key: 'recommend', label: '第一章' },
+            { key: 'playlist', label: '第二章' },
+            { key: 'radio', label: '第三章' },
+          ]"
+        >
+          <template #recommend>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              第一章内容
+            </div>
+          </template>
+          <template #playlist>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              第二章内容
+            </div>
+          </template>
+          <template #radio>
+            <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">
+              第三章内容
+            </div>
+          </template>
+        </STabs>
       </div>
     </div>
   </div>

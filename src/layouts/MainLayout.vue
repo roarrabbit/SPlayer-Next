@@ -10,34 +10,34 @@ const settings = useSettingsStore();
 
 /** 有歌曲信息时显示播放栏 */
 const showPlayerBar = computed(() => !!useMediaStore().track);
-const { isExpanded, sidebarCollapsed } = storeToRefs(status);
-const layoutMode = computed(() => settings.player.layoutMode);
+const { isExpanded } = storeToRefs(status);
+const { appearance } = settings;
 
 /** 路由切换动效 */
 const routeTransitionName = computed(() => {
-  const transition = settings.player.routeTransition;
+  const transition = appearance.routeTransition;
   return transition === "none" ? "" : `route-${transition}`;
 });
 
 /** 侧边栏：仅 default 模式在有播放栏时加底部间距 */
 const sidebarClass = computed(() => {
-  if (showPlayerBar.value && layoutMode.value === "default") return "mb-20";
+  if (showPlayerBar.value && appearance.layoutMode === "default") return "mb-20";
   return "";
 });
 
 /** 主内容区底部间距 */
 const mainPaddingClass = computed(() => {
   if (!showPlayerBar.value) return "";
-  if (layoutMode.value === "floating") return "pb-24";
+  if (appearance.layoutMode === "floating") return "pb-24";
   return "pb-20";
 });
 
 /** 播放栏样式 */
 const playerBarClass = computed(() => {
   const base = "fixed bottom-0 h-20 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible transition-[left] duration-300";
-  switch (layoutMode.value) {
+  switch (appearance.layoutMode) {
     case "sidebar-full":
-      return `${base} ${sidebarCollapsed.value ? "left-16" : "left-60"} right-0 border-t border-t-solid border-t-primary/10`;
+      return `${base} ${appearance.sidebarCollapsed ? "left-16" : "left-60"} right-0 border-t border-t-solid border-t-primary/10`;
     case "floating":
       return `${base} left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl rounded-2xl mb-2 shadow-lg border border-solid border-primary/10`;
     default:
@@ -55,7 +55,7 @@ const playerBarClass = computed(() => {
     <!-- 侧边栏 -->
     <aside
       class="shrink-0 border-r border-r-solid border-r-primary/10 bg-surface-panel/90 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[width,margin] duration-300"
-      :class="[sidebarCollapsed ? 'w-16' : 'w-60', sidebarClass]"
+      :class="[appearance.sidebarCollapsed ? 'w-16' : 'w-60', sidebarClass]"
     >
       <SideBar />
     </aside>

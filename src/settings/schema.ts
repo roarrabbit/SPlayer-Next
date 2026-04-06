@@ -336,7 +336,7 @@ export const settingsSchema: SettingCategory[] = [
           {
             key: "layoutMode",
             type: "select",
-            binding: { store: "settings", path: "player.layoutMode" },
+            binding: { store: "settings", path: "appearance.layoutMode" },
             options: [
               { value: "default", labelKey: "settings.layoutMode.default" },
               { value: "sidebar-full", labelKey: "settings.layoutMode.sidebarFull" },
@@ -347,7 +347,7 @@ export const settingsSchema: SettingCategory[] = [
           {
             key: "routeTransition",
             type: "select",
-            binding: { store: "settings", path: "player.routeTransition" },
+            binding: { store: "settings", path: "appearance.routeTransition" },
             options: [
               { value: "none", labelKey: "settings.routeTransition.none" },
               { value: "fade", labelKey: "settings.routeTransition.fade" },
@@ -355,6 +355,12 @@ export const settingsSchema: SettingCategory[] = [
               { value: "zoom", labelKey: "settings.routeTransition.zoom" },
             ],
             defaultValue: "fade",
+          },
+          {
+            key: "sidebarCollapsed",
+            type: "switch",
+            binding: { store: "settings", path: "appearance.sidebarCollapsed" },
+            defaultValue: false,
           },
         ],
       },

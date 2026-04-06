@@ -81,8 +81,14 @@ export interface PlayerSettings {
   autoCenterCover: boolean;
   /** 颜色是否跟随封面 */
   followCoverColor: boolean;
-  /** 布局模式：default（默认）| sidebar-full（侧边栏全高）| floating（悬浮播放栏） */
+}
+
+/** 外观设置 */
+export interface AppearanceSettings {
+  /** 布局模式 */
   layoutMode: LayoutMode;
   /** 路由切换动效 */
   routeTransition: RouteTransition;
+  /** 侧边栏折叠 */
+  sidebarCollapsed: boolean;
 }
