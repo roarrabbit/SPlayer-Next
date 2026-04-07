@@ -301,6 +301,27 @@
       "description": "下次启动时恢复窗口的大小、位置和最大化状态"
     }
   },
+  "collection": {
+    "playAll": "播放全部",
+    "totalSongs": "共 {count} 首",
+    "totalDuration": "共 {time}",
+    "unknownAlbum": "未知专辑",
+    "unknownCreator": "未知创建者",
+    "empty": "暂无歌曲",
+    "album": "专辑",
+    "playlist": "歌单",
+    "radio": "电台",
+    "myPlaylist": "我的歌单",
+    "createPlaylist": "新建歌单",
+    "playlistName": "歌单名称",
+    "playlistDescription": "歌单描述",
+    "deletePlaylist": "删除歌单",
+    "deleteConfirm": "确认删除歌单「{title}」？此操作不可撤销",
+    "addToPlaylist": "添加到歌单",
+    "removeFromPlaylist": "从歌单移除",
+    "tracksAdded": "已添加 {count} 首歌曲",
+    "tracksRemoved": "已移除 {count} 首歌曲"
+  },
   "errors": {
     "DEVICE_NOT_FOUND": "未找到音频输出设备",
     "DEVICE_INIT_FAILED": "音频设备初始化失败",

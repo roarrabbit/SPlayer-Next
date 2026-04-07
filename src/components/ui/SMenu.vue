@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import type { Component } from "vue";
+import type { Component, VNode } from "vue";
 
 export interface SMenuItem {
+  /** 菜单项类型 */
+  type?: "item" | "divider" | "group";
   key: string;
-  label: string;
+  label?: string;
   icon?: Component;
   disabled?: boolean;
+  /** group 类型的自定义渲染内容 */
+  render?: () => VNode;
 }
 
 const props = withDefaults(
@@ -46,39 +50,51 @@ const handleSelect = (item: SMenuItem) => {
 
 <template>
   <nav class="flex flex-col gap-1">
-    <STooltip
-      v-for="item in items"
-      :key="item.key"
-      :content="item.label"
-      :disabled="!collapsed"
-      :side-offset="12"
-      side="right"
-    >
+    <template v-for="item in items" :key="item.key">
+      <!-- 分隔线 -->
+      <SDivider v-if="item.type === 'divider'" class="mx-1" />
+      <!-- 分类标题 -->
       <div
-        class="relative flex items-center rounded-lg cursor-pointer select-none overflow-hidden whitespace-nowrap transition-[background-color,color] duration-250"
-        :class="[
-          sizeClass.item,
-          modelValue === item.key
-            ? 'bg-primary/10 text-primary'
-            : 'text-on-surface-variant hover:bg-on-surface/5',
-          item.disabled ? 'opacity-40 pointer-events-none' : '',
-        ]"
-        @click="handleSelect(item)"
+        v-else-if="item.type === 'group' && item.render"
+        class="overflow-hidden transition-[max-height,opacity] duration-300"
+        :class="collapsed ? 'max-h-0 opacity-0' : 'max-h-11 opacity-100'"
       >
-        <component v-if="item.icon" :is="item.icon" :class="[sizeClass.icon, 'shrink-0 transition-[width,height] duration-300']" />
-        <span
-          class="truncate transition-opacity duration-300"
-          :class="collapsed ? 'opacity-0' : 'opacity-100'"
-        >
-          {{ item.label }}
-        </span>
-        <Transition name="fade">
-          <span
-            v-if="modelValue === item.key"
-            class="absolute left-0 top-2 bottom-2 w-0.75 rounded-full bg-primary"
-          />
-        </Transition>
+        <component :is="item.render" />
       </div>
-    </STooltip>
+      <!-- 菜单项 -->
+      <STooltip
+        v-else-if="!item.type || item.type === 'item'"
+        :content="item.label ?? ''"
+        :disabled="!collapsed"
+        :side-offset="12"
+        side="right"
+      >
+        <div
+          class="relative flex items-center rounded-lg cursor-pointer select-none overflow-hidden whitespace-nowrap transition-[background-color,color] duration-250"
+          :class="[
+            sizeClass.item,
+            modelValue === item.key
+              ? 'bg-primary/10 text-primary'
+              : 'text-on-surface-variant hover:bg-on-surface/5',
+            item.disabled ? 'opacity-40 pointer-events-none' : '',
+          ]"
+          @click="handleSelect(item)"
+        >
+          <component v-if="item.icon" :is="item.icon" :class="[sizeClass.icon, 'shrink-0 transition-[width,height] duration-300']" />
+          <span
+            class="truncate transition-opacity duration-300"
+            :class="collapsed ? 'opacity-0' : 'opacity-100'"
+          >
+            {{ item.label }}
+          </span>
+          <Transition name="fade">
+            <span
+              v-if="modelValue === item.key"
+              class="absolute left-0 top-2 bottom-2 w-0.75 rounded-full bg-primary"
+            />
+          </Transition>
+        </div>
+      </STooltip>
+    </template>
   </nav>
 </template>

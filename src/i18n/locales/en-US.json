@@ -301,6 +301,27 @@
       "description": "Restore window size, position and maximized state on next launch"
     }
   },
+  "collection": {
+    "playAll": "Play All",
+    "totalSongs": "{count} songs",
+    "totalDuration": "Total {time}",
+    "unknownAlbum": "Unknown Album",
+    "unknownCreator": "Unknown Creator",
+    "empty": "No songs",
+    "album": "Album",
+    "playlist": "Playlist",
+    "radio": "Radio",
+    "myPlaylist": "My Playlists",
+    "createPlaylist": "New Playlist",
+    "playlistName": "Playlist Name",
+    "playlistDescription": "Description",
+    "deletePlaylist": "Delete Playlist",
+    "deleteConfirm": "Delete playlist \"{title}\"? This cannot be undone",
+    "addToPlaylist": "Add to Playlist",
+    "removeFromPlaylist": "Remove from Playlist",
+    "tracksAdded": "{count} songs added",
+    "tracksRemoved": "{count} songs removed"
+  },
   "errors": {
     "DEVICE_NOT_FOUND": "No audio output device found",
     "DEVICE_INIT_FAILED": "Failed to initialize audio device",

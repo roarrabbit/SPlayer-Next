@@ -12,6 +12,8 @@ export interface DropdownMenuItem {
   disabled?: boolean;
   /** 分割线：在此项上方显示分割线 */
   separator?: boolean;
+  /** 子菜单 */
+  children?: DropdownMenuItem[];
 }
 
 const props = withDefaults(
@@ -57,10 +59,7 @@ const handleSelect = (item: DropdownMenuItem): void => {
         class="z-300 min-w-32 rounded-lg bg-surface-bright border border-solid border-outline-variant/30 shadow-lg p-1 text-sm data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out"
       >
         <template v-for="item in items" :key="item.key">
-          <DropdownMenuSeparator
-            v-if="item.separator"
-            class="h-px mx-1.5 my-0.5 bg-outline-variant/20"
-          />
+          <SDivider v-if="item.separator" class="mx-1.5 my-0.5" />
           <DropdownMenuItem
             :disabled="item.disabled"
             class="flex items-center gap-2 px-2 py-1.5 rounded-md text-on-surface outline-none select-none cursor-pointer transition-colors data-[highlighted]:bg-on-surface/5 data-[disabled]:opacity-40 data-[disabled]:pointer-events-none"

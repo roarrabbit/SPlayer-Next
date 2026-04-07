@@ -176,7 +176,6 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
               </div>
             </div>
           </div>
-          <div class="h-px mx-1.5 my-0.5 bg-outline-variant/20" />
         </div>
       </template>
       <SVirtualList
