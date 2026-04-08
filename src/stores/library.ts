@@ -1,6 +1,7 @@
 import localforage from "localforage";
 import type { Track } from "@shared/types/player";
 import type { ScanProgress } from "@shared/types/library";
+import type { Collection } from "@/types/collection";
 
 const trackDb = localforage.createInstance({ name: "splayer", storeName: "library" });
 
@@ -131,6 +132,30 @@ export const useLibraryStore = defineStore("library", () => {
     return { deleted: 0, failed: paths.length };
   };
 
+  /** 根据专辑名从曲库聚合出 Collection */
+  const getAlbumCollection = (albumName: string): Collection | null => {
+    const albumTracks = tracks.value.filter((t) => t.album?.name === albumName);
+    if (!albumTracks.length) return null;
+    // 收集所有不重复的艺术家
+    const artistMap = new Map<string, { id?: string; name: string }>();
+    for (const t of albumTracks) {
+      for (const a of t.artists) {
+        const key = a.name.toLowerCase();
+        if (!artistMap.has(key)) artistMap.set(key, a);
+      }
+    }
+    return {
+      id: encodeURIComponent(albumName),
+      type: "album",
+      source: "local",
+      title: albumName,
+      cover: albumTracks.find((t) => t.cover)?.cover,
+      artists: [...artistMap.values()],
+      tracks: albumTracks,
+      trackCount: albumTracks.length,
+    };
+  };
+
   return {
     tracks,
     scanDirs,
@@ -145,5 +170,6 @@ export const useLibraryStore = defineStore("library", () => {
     subscribeScanProgress,
     unsubscribeScanProgress,
     deleteTracks,
+    getAlbumCollection,
   };
 });

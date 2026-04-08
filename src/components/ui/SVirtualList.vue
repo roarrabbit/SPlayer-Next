@@ -312,9 +312,20 @@ onMounted(() => {
   });
 });
 
-/** 重新计算可见范围 */
+/** 滚动位置 */
+let savedScrollTop = 0;
+
+onDeactivated(() => {
+  savedScrollTop = scrollRef.value?.scrollTop ?? scrollTop.value;
+});
+
+/** 恢复滚动位置并重算可见范围 */
 onActivated(() => {
-  calculateVisibleRange(scrollTop.value);
+  nextTick(() => {
+    scrollRef.value?.scrollTo({ top: savedScrollTop });
+    scrollTop.value = savedScrollTop;
+    calculateVisibleRange(savedScrollTop);
+  });
 });
 
 onUnmounted(() => {

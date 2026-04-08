@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useMediaStore } from "@/stores/media";
+import { useStatusStore } from "@/stores/status";
 import { getQualityLabel, getQualityLevel } from "@/utils/quality";
+import { navigateToAlbum } from "@/utils/navigate";
 
 const props = withDefaults(
   defineProps<{
@@ -16,6 +18,15 @@ const props = withDefaults(
 );
 
 const media = useMediaStore();
+const status = useStatusStore();
+
+/** 跳转到专辑页 */
+const goToAlbum = () => {
+  const name = media.track?.album?.name;
+  if (!name) return;
+  status.isExpanded = false;
+  navigateToAlbum(name);
+};
 
 /** 来源标签 */
 const sourceLabel = computed(() => (media.track?.source === "online" ? "ONLINE" : "LOCAL"));
@@ -136,7 +147,7 @@ const alignItems = computed(() => {
     <!-- 专辑 -->
     <div v-if="albumText" class="max-w-full flex items-center gap-1.5 text-[1.2em] text-cover/60">
       <IconLucideDisc3 class="shrink-0 translate-y-px text-cover/40" />
-      <span class="truncate cursor-pointer transition-colors hover:text-cover">
+      <span class="truncate cursor-pointer transition-colors hover:text-cover" @click="goToAlbum">
         {{ albumText }}
       </span>
     </div>

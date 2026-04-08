@@ -48,6 +48,8 @@ const menuItems = computed<SMenuItem[]>(() => [
 ]);
 
 const activeKey = computed(() => {
+  // 本地专辑页
+  if (route.path.startsWith("/collection/local/album/")) return "/library";
   const items = menuItems.value.filter((item) => !item.type || item.type === "item");
   return (
     items.find((item) => route.path === item.key || route.path.startsWith(item.key + "/"))?.key ??

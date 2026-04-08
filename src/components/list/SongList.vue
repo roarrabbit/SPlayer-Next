@@ -8,6 +8,7 @@ import { useMultiSelect } from "@/composables/useMultiSelect";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
+import { navigateToAlbum } from "@/utils/navigate";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import * as player from "@/core/player";
 import IconArrowUpDown from "~icons/lucide/arrow-up-down";
@@ -405,6 +406,7 @@ defineExpose({
                 v-if="showAlbum"
                 class="flex-1 min-w-0 truncate text-sm cursor-pointer transition-opacity hover:opacity-70"
                 :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
+                @click.stop="navigateToAlbum(item.album?.name)"
               >
                 {{ item.album?.name }}
               </div>

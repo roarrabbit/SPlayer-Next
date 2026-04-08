@@ -3,6 +3,7 @@ import type { TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { usePlaylistStore } from "@/stores/playlist";
+import { useLibraryStore } from "@/stores/library";
 import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
 import * as player from "@/core/player";
@@ -13,6 +14,7 @@ import IconLucideListChecks from "~icons/lucide/list-checks";
 const { t } = useI18n();
 const route = useRoute();
 const playlistStore = usePlaylistStore();
+const libraryStore = useLibraryStore();
 
 const source = computed(() => route.params.source as TrackSource);
 const type = computed(() => route.params.type as CollectionType);
@@ -20,12 +22,18 @@ const id = computed(() => route.params.id as string);
 
 const collection = ref<Collection | null>(null);
 
-/** 根据路由参数加载数据 */
+/** 是否可编辑 */
+const editable = computed(() => source.value === "local" && type.value === "playlist");
+
+/** 加载数据 */
 const loadCollection = async () => {
   if (source.value === "local" && type.value === "playlist") {
     collection.value = await playlistStore.get(id.value);
+  } else if (source.value === "local" && type.value === "album") {
+    const albumName = decodeURIComponent(id.value);
+    collection.value = libraryStore.getAlbumCollection(albumName);
   }
-  // TODO: online / album / radio
+  // TODO: online / radio
 };
 
 watch(() => route.params, loadCollection, { immediate: true });
@@ -171,7 +179,12 @@ const handleMoreMenu = (key: string) => {
             </template>
             {{ t("collection.playAll") }}
           </SButton>
-          <SDropdownMenu :items="moreMenuItems" align="start" @select="handleMoreMenu">
+          <SDropdownMenu
+            v-if="editable"
+            :items="moreMenuItems"
+            align="start"
+            @select="handleMoreMenu"
+          >
             <template #trigger>
               <SButton variant="secondary" circle>
                 <template #icon>
@@ -206,7 +219,7 @@ const handleMoreMenu = (key: string) => {
           :items="collection.tracks"
           :search-query="searchQuery"
           :show-album="type !== 'album'"
-          :show-size="type === 'playlist' && source === 'local'"
+          :show-size="source === 'local'"
           :source="source"
           :collection-type="type"
           :collection-id="id"
