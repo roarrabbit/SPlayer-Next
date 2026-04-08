@@ -5,6 +5,7 @@ import { useMediaStore } from "@/stores/media";
 import { queue, queueLength } from "@/stores/queue";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import { useDragSort } from "@/composables/useDragSort";
+import { useThemeStore } from "@/stores/theme";
 import * as player from "@/core/player";
 
 const props = defineProps<{
@@ -41,6 +42,8 @@ const handleClear = (): void => {
   statusStore.playIndex = -1;
   queue.value = [];
   mediaStore.clear();
+  useThemeStore().coverColor = null;
+  statusStore.playlistOpen = false;
   clearConfirmOpen.value = false;
 };
 

@@ -34,7 +34,7 @@ const mainPaddingClass = computed(() => {
 
 /** 播放栏样式 */
 const playerBarClass = computed(() => {
-  const base = "fixed bottom-0 h-20 bg-surface-panel/90 backdrop-blur-lg z-50 overflow-visible transition-[left] duration-300";
+  const base = "fixed bottom-0 h-20 bg-surface-panel z-50 overflow-visible transition-[left] duration-300";
   switch (appearance.layoutMode) {
     case "sidebar-full":
       return `${base} ${appearance.sidebarCollapsed ? "left-16" : "left-60"} right-0 border-t border-t-solid border-t-primary/10`;
@@ -54,7 +54,7 @@ const playerBarClass = computed(() => {
   >
     <!-- 侧边栏 -->
     <aside
-      class="shrink-0 border-r border-r-solid border-r-primary/10 bg-surface-panel/90 backdrop-blur-lg overflow-y-auto scroll-trim z-10 transition-[width,margin] duration-300"
+      class="shrink-0 border-r border-r-solid border-r-primary/10 bg-surface-panel overflow-y-auto scroll-trim z-10 transition-[width,margin] duration-300"
       :class="[appearance.sidebarCollapsed ? 'w-16' : 'w-60', sidebarClass]"
     >
       <SideBar />

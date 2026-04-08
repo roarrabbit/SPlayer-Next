@@ -40,11 +40,6 @@ body {
   background: rgb(var(--s-on-surface) / 0.5);
 }
 
-/* 播放栏显示时，滚动条滑轨底部留出空间，避免被遮挡 */
-.scroll-trim.pb-20::-webkit-scrollbar-track {
-  margin-bottom: 5rem;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity var(--fade-duration, 0.3s) ease;
