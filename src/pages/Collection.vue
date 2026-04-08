@@ -100,6 +100,7 @@ const handleSaveEdit = async () => {
 
 /** 删除确认 */
 const deleteConfirmOpen = ref(false);
+const deleteTitle = ref("");
 const router = useRouter();
 
 const handleDelete = async () => {
@@ -118,6 +119,7 @@ const handleMoreMenu = (key: string) => {
       openEditDialog();
       break;
     case "delete":
+      deleteTitle.value = collection.value?.title ?? "";
       deleteConfirmOpen.value = true;
       break;
   }
@@ -239,7 +241,7 @@ const handleMoreMenu = (key: string) => {
     <!-- 删除确认 -->
     <SDialog v-model:open="deleteConfirmOpen" :title="t('collection.delete', { type: typeLabel })">
       <p class="text-sm text-on-surface-variant">
-        {{ t("collection.deleteConfirm", { type: typeLabel, title: collection?.title }) }}
+        {{ t("collection.deleteConfirm", { type: typeLabel, title: deleteTitle }) }}
       </p>
       <template #footer="{ close }">
         <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>

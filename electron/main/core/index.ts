@@ -36,6 +36,19 @@ export const initApp = (): void => {
   configureMemoryOptimizations();
   // 初始化日志
   initLogger();
+  // 单例锁：已有实例时聚焦现有窗口
+  const gotLock = app.requestSingleInstanceLock();
+  if (!gotLock) {
+    app.quit();
+    return;
+  }
+  app.on("second-instance", () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
   // 注册自定义协议
   protocol.registerSchemesAsPrivileged([
     {

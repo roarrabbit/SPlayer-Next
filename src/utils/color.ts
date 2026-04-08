@@ -52,7 +52,7 @@ export const generatePalette = (hex: string, isDark: boolean, globalTint = false
       secondaryContainer: isDark ? toneColor(30) : toneColor(90),
       surface: isDark ? toneColor(20) : toneColor(94),
       surfaceAlt: isDark ? toneColor(25) : toneColor(86),
-      surfacePanel: isDark ? toneColor(16) : toneColor(96),
+      surfacePanel: isDark ? toneColor(16) : toneColor(92),
       surfaceBright: isDark ? toneColor(35) : toneColor(98),
       onSurface: primary,
       onSurfaceVariant: isDark ? toneColor(70) : toneColor(30),
