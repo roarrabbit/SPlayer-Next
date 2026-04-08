@@ -307,7 +307,14 @@ onMounted(() => {
   if (props.defaultScrollIndex) scrollToIndex(props.defaultScrollIndex);
   nextTick(() => {
     if (!props.itemFixed) measureItemHeights();
+    // 重新计算
+    if (viewportHeight.value > 0) calculateVisibleRange(scrollTop.value);
   });
+});
+
+/** 重新计算可见范围 */
+onActivated(() => {
+  calculateVisibleRange(scrollTop.value);
 });
 
 onUnmounted(() => {

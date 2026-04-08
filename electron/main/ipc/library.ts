@@ -1,6 +1,7 @@
 import { ipcMain, dialog } from "electron";
+import fs from "node:fs/promises";
 import { store } from "../store";
-import { getAllTracks, searchTracks, getTrackCount, deleteTracksByDir } from "../database";
+import { getAllTracks, searchTracks, getTrackCount, deleteTracksByDir, deleteTracksByPaths } from "../database";
 import { startScan, cancelScan, isScanning } from "../services/scanner";
 import { libraryLog } from "../utils/logger";
 import { ErrorCode } from "@shared/types/errors";
@@ -101,5 +102,28 @@ export const registerLibraryIpc = (): void => {
   // 获取已配置的扫描目录列表
   ipcMain.handle("library:getScanDirs", () => {
     return { success: true, data: store.get("library.scanDirs") };
+  });
+
+  // 删除曲目文件并从数据库移除
+  ipcMain.handle("library:deleteTracks", async (_event, paths: string[]) => {
+    try {
+      const failed: string[] = [];
+      for (const filePath of paths) {
+        try {
+          await fs.unlink(filePath);
+        } catch {
+          failed.push(filePath);
+        }
+      }
+      const deleted = paths.filter((p) => !failed.includes(p));
+      if (deleted.length > 0) {
+        deleteTracksByPaths(deleted);
+      }
+      libraryLog.info(`删除 ${deleted.length} 个文件，${failed.length} 个失败`);
+      return { success: true, data: { deleted: deleted.length, failed: failed.length } };
+    } catch (error) {
+      libraryLog.error("批量删除文件失败:", error);
+      return { success: false, error: ErrorCode.UNKNOWN };
+    }
   });
 };

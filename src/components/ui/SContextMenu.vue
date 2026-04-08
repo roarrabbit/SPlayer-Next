@@ -18,6 +18,11 @@ const emit = defineEmits<{
   select: [key: string];
 }>();
 
+/** 显示的项 */
+const visibleItems = computed(() =>
+  props.items.filter((item) => item.show !== false),
+);
+
 /** 选择菜单项 */
 const handleSelect = (item: DropdownMenuItem): void => {
   if (item.disabled) return;
@@ -47,7 +52,7 @@ const menuItemClass =
       >
         <slot name="header" />
         <SDivider v-if="$slots.header" class="mx-1.5 my-0.5" />
-        <template v-for="item in items" :key="item.key">
+        <template v-for="item in visibleItems" :key="item.key">
           <SDivider v-if="item.separator" class="mx-1.5 my-0.5" />
           <!-- 子菜单 -->
           <ContextMenuSub v-if="item.children">

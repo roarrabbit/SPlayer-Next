@@ -36,6 +36,8 @@ export interface LibraryApi {
   removeScanDir: (dir: string) => Promise<IpcResponse>;
   /** 获取已配置的扫描目录 */
   getScanDirs: () => Promise<IpcResponse<string[]>>;
+  /** 删除曲目文件并从数据库移除 */
+  deleteTracks: (paths: string[]) => Promise<IpcResponse<{ deleted: number; failed: number }>>;
   /** 订阅扫描进度事件 */
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void;
 }

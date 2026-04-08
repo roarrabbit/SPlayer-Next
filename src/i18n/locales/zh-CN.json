@@ -53,7 +53,22 @@
       "play": "播放",
       "playNext": "下一首播放",
       "showInExplorer": "在文件管理器中显示",
-      "copyPath": "复制文件路径"
+      "copyPath": "复制文件路径",
+      "deleteFile": "删除文件"
+    },
+    "batch": {
+      "manage": "批量管理",
+      "selected": "已选 {count} 首",
+      "invert": "反选",
+      "addToQueue": "添加到播放列表",
+      "delete": "删除"
+    },
+    "delete": {
+      "removeConfirmOne": "确认从{type}移除「{title}」？",
+      "removeConfirm": "确认从{type}移除 {count} 首歌曲？",
+      "fileTitle": "删除文件",
+      "fileConfirmOne": "确认从磁盘删除「{title}」？此操作不可撤销",
+      "fileConfirm": "确认从磁盘删除 {count} 个文件？此操作不可撤销"
     }
   },
   "playlist": {

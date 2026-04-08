@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type { Track } from "@shared/types/player";
+import type { Track, TrackSource } from "@shared/types/player";
+import type { CollectionType } from "@/types/collection";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useTrackMenu } from "@/composables/useTrackMenu";
+import { useMultiSelect } from "@/composables/useMultiSelect";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
@@ -10,6 +12,11 @@ import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import * as player from "@/core/player";
 import IconArrowUpDown from "~icons/lucide/arrow-up-down";
 import IconArrowUpAz from "~icons/lucide/arrow-up-az";
+import IconLucideListEnd from "~icons/lucide/list-end";
+import IconLucideListMinus from "~icons/lucide/list-minus";
+import IconLucideTrash2 from "~icons/lucide/trash-2";
+import IconLucideArrowLeftRight from "~icons/lucide/arrow-left-right";
+import IconLucideX from "~icons/lucide/x";
 
 const props = withDefaults(
   defineProps<{
@@ -27,6 +34,12 @@ const props = withDefaults(
     showSize?: boolean;
     /** 是否启用排序交互（默认关闭） */
     enableSort?: boolean;
+    /** 列表来源 */
+    source?: TrackSource;
+    /** 集合类型 */
+    collectionType?: CollectionType;
+    /** 集合 ID（用于从歌单移除） */
+    collectionId?: string;
   }>(),
   {
     searchQuery: "",
@@ -35,6 +48,9 @@ const props = withDefaults(
     showDuration: true,
     showSize: false,
     enableSort: false,
+    source: "local",
+    collectionType: undefined,
+    collectionId: undefined,
   },
 );
 
@@ -42,7 +58,7 @@ const { t } = useI18n();
 const media = useMediaStore();
 const status = useStatusStore();
 
-// 排序器 默认使用 base 敏感度，忽略大小写
+/** 排序器 默认使用 base 敏感度，忽略大小写 */
 const textCollator = new Intl.Collator(undefined, {
   usage: "sort",
   sensitivity: "base",
@@ -52,15 +68,7 @@ const textCollator = new Intl.Collator(undefined, {
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
 
-type SortField =
-  | "none"
-  | "title"
-  | "artist"
-  | "album"
-  | "duration"
-  | "size"
-  | "mtime"
-  | "ctime";
+type SortField = "none" | "title" | "artist" | "album" | "duration" | "size" | "mtime" | "ctime";
 type SortOrder = "asc" | "desc";
 
 /** 排序字段 */
@@ -83,8 +91,7 @@ const sortFieldLabelKeyMap: Record<SortField, string> = {
 /** 表头显示的当前排序文案 */
 const sortTitleText = computed(() => {
   if (!props.enableSort) return t("songList.title");
-  const isDefault = sortField.value === "none";
-  if (isDefault) return t("songList.title");
+  if (sortField.value === "none") return t("songList.title");
   const arrow = sortOrder.value === "asc" ? "↑" : "↓";
   return `${t("songList.title")}（ ${t(sortFieldLabelKeyMap[sortField.value])} ${arrow} ）`;
 });
@@ -113,23 +120,14 @@ const sortedItems = computed(() => {
 
   const compare = (a: Track, b: Track): number => {
     let value = 0;
-    if (field === "title") {
-      value = textCollator.compare(a.title, b.title);
-    } else if (field === "artist") {
-      value = textCollator.compare(toArtistText(a), toArtistText(b));
-    } else if (field === "album") {
-      value = textCollator.compare(toAlbumText(a), toAlbumText(b));
-    } else if (field === "duration") {
-      value = a.duration - b.duration;
-    } else if (field === "size") {
-      value = (a.fileSize ?? 0) - (b.fileSize ?? 0);
-    } else if (field === "mtime") {
-      value = (a.mtime ?? 0) - (b.mtime ?? 0);
-    } else {
-      value = (a.ctime ?? 0) - (b.ctime ?? 0);
-    }
+    if (field === "title") value = textCollator.compare(a.title, b.title);
+    else if (field === "artist") value = textCollator.compare(toArtistText(a), toArtistText(b));
+    else if (field === "album") value = textCollator.compare(toAlbumText(a), toAlbumText(b));
+    else if (field === "duration") value = a.duration - b.duration;
+    else if (field === "size") value = (a.fileSize ?? 0) - (b.fileSize ?? 0);
+    else if (field === "mtime") value = (a.mtime ?? 0) - (b.mtime ?? 0);
+    else value = (a.ctime ?? 0) - (b.ctime ?? 0);
     if (value !== 0) return value * direction;
-    // 次关键字兜底，保证排序稳定
     const fallback = textCollator.compare(a.title, b.title);
     if (fallback !== 0) return fallback;
     return textCollator.compare(a.id, b.id);
@@ -150,18 +148,36 @@ const virtualListRef = shallowRef<SVirtualListExposed | null>(null);
 
 /** 定位到当前播放歌曲 */
 const scrollToPlaying = (): void => {
-  if (playingIndex.value >= 0) {
-    virtualListRef.value?.scrollToIndex(playingIndex.value);
-  }
+  if (playingIndex.value >= 0) virtualListRef.value?.scrollToIndex(playingIndex.value);
 };
+
+/** 批量操作 */
+const batch = useMultiSelect(sortedItems, {
+  source: computed(() => props.source),
+  collectionType: computed(() => props.collectionType),
+  collectionId: computed(() => props.collectionId),
+});
+const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
-const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack);
+const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
+  source: props.source,
+  collectionType: props.collectionType,
+  onRemove: (track) => batch.requestDelete([track], "remove"),
+  onDeleteFile: (track) => batch.requestDelete([track], "file"),
+});
+
+onActivated(batch.exit);
+
+defineExpose({
+  /** 进入批量管理模式 */
+  enterBatch: batch.enter,
+});
 </script>
 
 <template>
-  <div class="relative h-full">
+  <div class="relative h-full @container/batch">
     <SContextMenu :items="contextMenuItems" @select="onContextMenu">
       <template #header>
         <div v-if="contextTrack">
@@ -199,7 +215,17 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
           <div
             class="flex items-center gap-3 pl-3 pr-6 mx-3 h-10 text-sm text-on-surface-variant/60"
           >
-            <div v-if="showIndex" class="w-8 shrink-0 text-center">#</div>
+            <div v-if="showIndex" class="w-8 shrink-0 flex items-center justify-center">
+              <SCheckbox
+                v-if="batch.active.value"
+                :checked="batch.isAllSelected.value"
+                :indeterminate="batch.isPartial.value"
+                size="small"
+                @update:checked="batch.toggleSelectAll"
+                @click.stop
+              />
+              <span v-else>#</span>
+            </div>
             <div class="flex-1 min-w-0">
               <SPopover
                 v-if="enableSort"
@@ -238,7 +264,11 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
                     <IconArrowUpAz class="size-3.5" />
                     <span>{{ t("songList.sort.order") }}</span>
                   </div>
-                  <SRadioGroup v-model:value="sortOrder" size="small" :disabled="sortField === 'none'">
+                  <SRadioGroup
+                    v-model:value="sortOrder"
+                    size="small"
+                    :disabled="sortField === 'none'"
+                  >
                     <SRadio value="asc" :label="t('songList.sort.asc')" />
                     <SRadio value="desc" :label="t('songList.sort.desc')" />
                   </SRadioGroup>
@@ -261,39 +291,67 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
             <div
               class="group flex items-center gap-3 pl-3 pr-6 h-19 rounded-xl cursor-pointer border-2 border-solid transition-[background-color,border-color] duration-200"
               :class="
-                playingId === item.id
-                  ? 'bg-primary/16 border-primary/40'
-                  : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
+                batch.active.value
+                  ? batch.selectedIds.value.has(item.id)
+                    ? 'bg-primary/10 border-primary/30'
+                    : 'bg-surface-panel border-primary/12 hover:border-primary/20 hover:bg-on-surface/5'
+                  : playingId === item.id
+                    ? 'bg-primary/16 border-primary/40'
+                    : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
               "
-              @dblclick="player.playFrom(sortedItems, index)"
+              @click="batch.active.value ? batch.toggle(item.id) : undefined"
+              @dblclick="batch.active.value ? undefined : player.playFrom(sortedItems, index)"
               @contextmenu="contextTrack = item"
             >
-              <!-- 序号 -->
+              <!-- 序号 / 多选 -->
               <div
                 v-if="showIndex"
                 class="w-8 shrink-0 flex items-center justify-center relative"
-                :class="playingId === item.id ? 'text-primary' : 'text-on-surface-variant'"
-                @click.stop="playingId === item.id ? player.togglePlay() : player.playNow(item)"
+                :class="
+                  batch.active.value
+                    ? ''
+                    : playingId === item.id
+                      ? 'text-primary'
+                      : 'text-on-surface-variant'
+                "
+                @click.stop="
+                  batch.active.value
+                    ? batch.toggle(item.id)
+                    : playingId === item.id
+                      ? player.togglePlay()
+                      : player.playNow(item)
+                "
               >
-                <span
-                  v-if="playingId !== item.id"
-                  class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-300"
-                >
-                  {{ index + 1 }}
-                </span>
-                <IconLucideMusic
-                  v-else
-                  class="size-5 group-hover:opacity-0 transition-opacity duration-300"
+                <!-- 多选模式 -->
+                <SCheckbox
+                  v-if="batch.active.value"
+                  :checked="batch.selectedIds.value.has(item.id)"
+                  size="small"
+                  @update:checked="batch.toggle(item.id)"
+                  @click.stop
                 />
-                <div
-                  class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 group-hover:scale-100 scale-80 cursor-pointer"
-                >
-                  <IconLucidePause
-                    v-if="playingId === item.id && status.isPlaying"
-                    class="size-5"
+                <!-- 普通模式 -->
+                <template v-else>
+                  <span
+                    v-if="playingId !== item.id"
+                    class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-300"
+                  >
+                    {{ index + 1 }}
+                  </span>
+                  <IconLucideMusic
+                    v-else
+                    class="size-5 group-hover:opacity-0 transition-opacity duration-300"
                   />
-                  <IconLucidePlay v-else class="size-5" />
-                </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 group-hover:scale-100 scale-80 cursor-pointer"
+                  >
+                    <IconLucidePause
+                      v-if="playingId === item.id && status.isPlaying"
+                      class="size-5"
+                    />
+                    <IconLucidePlay v-else class="size-5" />
+                  </div>
+                </template>
               </div>
               <!-- 信息 -->
               <div class="flex-1 min-w-0 flex items-center gap-3">
@@ -374,7 +432,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
     <!-- 定位歌曲 -->
     <Transition name="fade">
       <div
-        v-if="playingIndex >= 0"
+        v-if="playingIndex >= 0 && !batch.active.value"
         class="absolute right-6 bottom-5 z-20 rounded-full bg-surface-panel shadow-lg border border-solid border-primary/10"
       >
         <SButton type="primary" variant="bordered" circle :size="40" @click="scrollToPlaying">
@@ -384,5 +442,81 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
         </SButton>
       </div>
     </Transition>
+    <!-- 批量操作栏 -->
+    <Transition name="fade">
+      <div
+        v-if="batch.active.value"
+        class="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-5 h-12 w-fit whitespace-nowrap rounded-xl bg-surface-bright/90 backdrop-blur-md border border-solid border-outline-variant/30 shadow-xl"
+      >
+        <span class="text-sm text-on-surface-variant tabular-nums shrink-0">
+          {{ t("songList.batch.selected", { count: batch.selectedCount.value }) }}
+        </span>
+        <SDivider vertical />
+        <SButton
+          variant="ghost"
+          size="small"
+          :disabled="batch.selectedCount.value === 0"
+          @click="batch.invertSelection"
+        >
+          <template #icon>
+            <IconLucideArrowLeftRight class="size-3.5" />
+          </template>
+          <span class="hidden @[640px]/batch:inline">{{ t("songList.batch.invert") }}</span>
+        </SButton>
+        <SDivider vertical />
+        <SButton
+          variant="ghost"
+          size="small"
+          :disabled="batch.selectedCount.value === 0"
+          @click="batch.addToQueue"
+        >
+          <template #icon>
+            <IconLucideListEnd class="size-3.5" />
+          </template>
+          <span class="hidden @[640px]/batch:inline">{{ t("songList.batch.addToQueue") }}</span>
+        </SButton>
+        <SButton
+          v-if="batch.canRemove.value"
+          variant="ghost"
+          size="small"
+          :disabled="batch.selectedCount.value === 0"
+          @click="batch.batchRemove"
+        >
+          <template #icon>
+            <IconLucideListMinus class="size-3.5" />
+          </template>
+          <span class="hidden @[640px]/batch:inline">{{
+            t("collection.removeFrom", { type: batch.collectionTypeLabel.value })
+          }}</span>
+        </SButton>
+        <SButton
+          v-if="source === 'local'"
+          type="error"
+          variant="ghost"
+          size="small"
+          :disabled="batch.selectedCount.value === 0"
+          @click="batch.batchDelete"
+        >
+          <template #icon>
+            <IconLucideTrash2 class="size-3.5" />
+          </template>
+          <span class="hidden @[640px]/batch:inline">{{ t("songList.context.deleteFile") }}</span>
+        </SButton>
+        <SDivider vertical />
+        <SButton variant="ghost" size="small" circle @click="batch.exit">
+          <template #icon>
+            <IconLucideX class="size-3.5" />
+          </template>
+        </SButton>
+      </div>
+    </Transition>
+    <!-- 删除确认弹窗 -->
+    <SDialog v-model:open="deleteConfirmOpen" :title="deleteDialogTitle">
+      <p class="text-sm text-on-surface-variant">{{ deleteDialogContent }}</p>
+      <template #footer>
+        <SButton variant="secondary" @click="batch.cancelDelete">{{ t("common.cancel") }}</SButton>
+        <SButton type="error" @click="batch.confirmDelete">{{ t("common.confirm") }}</SButton>
+      </template>
+    </SDialog>
   </div>
 </template>

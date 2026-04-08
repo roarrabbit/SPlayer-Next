@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import type { TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
-import type { TrackSource } from "@shared/types/player";
 import { usePlaylistStore } from "@/stores/playlist";
+import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
 import * as player from "@/core/player";
 import IconLucidePencil from "~icons/lucide/pencil";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
+import IconLucideListChecks from "~icons/lucide/list-checks";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -57,10 +59,14 @@ const handlePlayAll = () => {
 
 const searchQuery = ref("");
 
+/** 歌曲列表引用 */
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
+
 /** 更多菜单 */
 const editLabel = computed(() => t("collection.edit", { type: typeLabel.value }));
 
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
   { key: "edit", label: editLabel.value, icon: IconLucidePencil },
   {
     key: "delete",
@@ -105,6 +111,9 @@ const handleDelete = async () => {
 
 const handleMoreMenu = (key: string) => {
   switch (key) {
+    case "batchManage":
+      songListRef.value?.enterBatch();
+      break;
     case "edit":
       openEditDialog();
       break;
@@ -121,11 +130,7 @@ const handleMoreMenu = (key: string) => {
     <div v-if="collection" class="shrink-0 px-5 pb-2">
       <div class="flex gap-5 mt-2 mb-4">
         <!-- 封面 -->
-        <SImg
-          :src="collection.cover"
-          :alt="collection.title"
-          class="size-40 rounded-xl shrink-0"
-        />
+        <SImg :src="collection.cover" :alt="collection.title" class="size-40 rounded-xl shrink-0" />
         <!-- 信息 -->
         <div class="flex flex-col justify-end min-w-0 gap-1">
           <span class="text-xs text-on-surface-variant/50 uppercase tracking-wider">
@@ -137,7 +142,9 @@ const handleMoreMenu = (key: string) => {
           </div>
           <div class="flex items-center gap-3 text-sm text-on-surface-variant/50 mt-1">
             <span>{{ t("collection.totalSongs", { count: collection.tracks.length }) }}</span>
-            <span v-if="totalDuration">{{ t("collection.totalDuration", { time: totalDuration }) }}</span>
+            <span v-if="totalDuration">
+              {{ t("collection.totalDuration", { time: totalDuration }) }}
+            </span>
           </div>
           <p
             v-if="collection.description"
@@ -187,11 +194,21 @@ const handleMoreMenu = (key: string) => {
     </div>
     <Transition name="fade" mode="out-in" :duration="150">
       <!-- 歌曲列表 -->
-      <div v-if="collection && collection.tracks.length > 0" :key="collection.id" class="flex-1 min-h-0">
+      <div
+        v-if="collection && collection.tracks.length > 0"
+        :key="collection.id"
+        class="flex-1 min-h-0"
+      >
         <SongList
+          ref="songListRef"
           :items="collection.tracks"
           :search-query="searchQuery"
           :show-album="type !== 'album'"
+          :show-size="type === 'playlist' && source === 'local'"
+          :source="source"
+          :collection-type="type"
+          :collection-id="id"
+          enable-sort
         />
       </div>
       <!-- 空状态 -->

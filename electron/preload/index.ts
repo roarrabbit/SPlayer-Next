@@ -88,6 +88,8 @@ const api = {
     removeScanDir: (dir: string) => ipcRenderer.invoke("library:removeScanDir", dir),
     // 获取已配置的扫描目录
     getScanDirs: () => ipcRenderer.invoke("library:getScanDirs"),
+    // 删除曲目文件并从数据库移除
+    deleteTracks: (paths: string[]) => ipcRenderer.invoke("library:deleteTracks", paths),
     // 订阅扫描进度事件
     onScanProgress: (callback: (progress: unknown) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);

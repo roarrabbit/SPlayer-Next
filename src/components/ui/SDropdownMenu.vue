@@ -10,6 +10,8 @@ export interface DropdownMenuItem {
   icon?: Component;
   /** 是否禁用 */
   disabled?: boolean;
+  /** 是否显示 */
+  show?: boolean;
   /** 分割线：在此项上方显示分割线 */
   separator?: boolean;
   /** 子菜单 */
@@ -37,6 +39,11 @@ const props = withDefaults(
 const emit = defineEmits<{
   select: [key: string];
 }>();
+
+/** 显示的项 */
+const visibleItems = computed(() =>
+  props.items.filter((item) => item.show !== false),
+);
 
 const handleSelect = (item: DropdownMenuItem): void => {
   if (item.disabled) return;
@@ -66,7 +73,7 @@ const menuItemClass =
         :avoid-collisions="true"
         :class="contentClass"
       >
-        <template v-for="item in items" :key="item.key">
+        <template v-for="item in visibleItems" :key="item.key">
           <SDivider v-if="item.separator" class="mx-1.5 my-0.5" />
           <!-- 子菜单 -->
           <DropdownMenuSub v-if="item.children">

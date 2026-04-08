@@ -53,7 +53,22 @@
       "play": "Play",
       "playNext": "Play Next",
       "showInExplorer": "Show in Explorer",
-      "copyPath": "Copy File Path"
+      "copyPath": "Copy File Path",
+      "deleteFile": "Delete File"
+    },
+    "batch": {
+      "manage": "Batch Manage",
+      "selected": "{count} selected",
+      "invert": "Invert",
+      "addToQueue": "Add to Queue",
+      "delete": "Delete"
+    },
+    "delete": {
+      "removeConfirmOne": "Remove \"{title}\" from {type}?",
+      "removeConfirm": "Remove {count} songs from {type}?",
+      "fileTitle": "Delete File",
+      "fileConfirmOne": "Permanently delete \"{title}\" from disk? This cannot be undone",
+      "fileConfirm": "Permanently delete {count} files from disk? This cannot be undone"
     }
   },
   "playlist": {

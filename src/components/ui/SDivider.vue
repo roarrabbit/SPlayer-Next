@@ -12,6 +12,6 @@ withDefaults(
   <div
     role="separator"
     class="bg-on-surface/10 transition-background-color duration-300"
-    :class="vertical ? 'w-1px min-h-4 self-stretch' : 'h-px'"
+    :class="vertical ? 'w-px h-4' : 'h-px'"
   />
 </template>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { useLibraryStore } from "@/stores/library";
+import SongList from "@/components/list/SongList.vue";
 import { formatFileSize } from "@/utils/format";
 import IconFolderOpen from "~icons/lucide/folder-open";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
+import IconLucideListChecks from "~icons/lucide/list-checks";
 import * as player from "@/core/player";
 
 const { t } = useI18n();
@@ -12,6 +14,9 @@ const { tracks, scanDirs, scanning, scanProgress, initialized } = storeToRefs(li
 
 /** 搜索关键词 */
 const searchQuery = ref("");
+
+/** 多选模式 */
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 
 /** 所有歌曲的总文件大小 */
 const totalSize = computed(() => {
@@ -63,7 +68,8 @@ const scanPercent = computed(() => {
 const folderDialogOpen = ref(false);
 
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
-  { key: "folders", label: t("library.folders"), icon: IconFolderOpen },
+  { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
+  { key: "folders", label: t("library.folders"), icon: IconFolderOpen, separator: true },
   {
     key: "scan",
     label: scanning.value ? t("library.scanning") : t("library.scanAll"),
@@ -75,6 +81,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => [
 // 更多菜单
 const handleMoreMenu = (key: string): void => {
   switch (key) {
+    // 批量管理
+    case "batchManage":
+      songListRef.value?.enterBatch();
+      break;
     // 目录管理
     case "folders":
       folderDialogOpen.value = true;
@@ -119,7 +129,12 @@ onUnmounted(() => {
             >
               <SLoading class="size-3.5 text-primary shrink-0" />
               <span class="tabular-nums">
-                {{ t("library.scanProgress", { scanned: scanProgress.scanned, total: scanProgress.total }) }}
+                {{
+                  t("library.scanProgress", {
+                    scanned: scanProgress.scanned,
+                    total: scanProgress.total,
+                  })
+                }}
               </span>
               <span class="text-on-surface-variant/40">{{ scanPercent }}%</span>
             </div>
@@ -189,7 +204,13 @@ onUnmounted(() => {
     </div>
     <!-- 曲目列表 -->
     <div v-if="tracks.length > 0" class="flex-1 min-h-0">
-      <SongList :items="tracks" :search-query="searchQuery" enable-sort show-size />
+      <SongList
+        ref="songListRef"
+        :items="tracks"
+        :search-query="searchQuery"
+        enable-sort
+        show-size
+      />
     </div>
     <!-- 空状态：无目录或无歌曲 -->
     <div v-else class="flex-1 flex items-center justify-center">

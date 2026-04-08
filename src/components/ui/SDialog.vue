@@ -92,6 +92,7 @@ const setOpen = (val: boolean): void => {
           >
             {{ description }}
           </DialogDescription>
+          <DialogDescription v-else class="sr-only">{{ title }}</DialogDescription>
         </div>
         <!-- 无障碍 -->
         <template v-else>

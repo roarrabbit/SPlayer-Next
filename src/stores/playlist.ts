@@ -105,12 +105,18 @@ export const usePlaylistStore = defineStore("playlist", () => {
     const removeSet = new Set(trackIds);
     record.tracks = record.tracks.filter((t) => !removeSet.has(t.id));
     record.trackCount = record.tracks.length;
+    record.cover = record.tracks.find((t) => t.cover)?.cover;
     record.updateTime = Date.now();
     await db.setItem(id, record);
     const idx = playlists.value.findIndex((p) => p.id === id);
     if (idx !== -1) {
       const next = [...playlists.value];
-      next[idx] = { ...next[idx], trackCount: record.trackCount, updateTime: record.updateTime };
+      next[idx] = {
+        ...next[idx],
+        cover: record.cover,
+        trackCount: record.trackCount,
+        updateTime: record.updateTime,
+      };
       playlists.value = next;
     }
   };

@@ -56,6 +56,7 @@ declare module 'vue' {
     IconLucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
     IconLucideHardDrive: typeof import('~icons/lucide/hard-drive')['default']
     IconLucideInfo: typeof import('~icons/lucide/info')['default']
+    IconLucideListEnd: typeof import('~icons/lucide/list-end')['default']
     IconLucideListMusic: typeof import('~icons/lucide/list-music')['default']
     IconLucideLocate: typeof import('~icons/lucide/locate')['default']
     IconLucideMessageCircle: typeof import('~icons/lucide/message-circle')['default']
