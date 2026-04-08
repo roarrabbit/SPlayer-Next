@@ -41,9 +41,7 @@ const emit = defineEmits<{
 }>();
 
 /** 显示的项 */
-const visibleItems = computed(() =>
-  props.items.filter((item) => item.show !== false),
-);
+const visibleItems = computed(() => props.items.filter((item) => item.show !== false));
 
 const handleSelect = (item: DropdownMenuItem): void => {
   if (item.disabled) return;
@@ -78,12 +76,16 @@ const menuItemClass =
           <!-- 子菜单 -->
           <DropdownMenuSub v-if="item.children">
             <DropdownMenuSubTrigger :disabled="item.disabled" :class="menuItemClass">
-              <component v-if="item.icon" :is="item.icon" class="size-3.5 opacity-60 shrink-0" />
+              <component :is="item.icon" v-if="item.icon" class="size-3.5 opacity-60 shrink-0" />
               <span class="flex-1">{{ item.label }}</span>
               <IconLucideChevronRight class="size-3 opacity-40 shrink-0" />
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
-              <DropdownMenuSubContent :side-offset="4" :avoid-collisions="true" :class="[contentClass, 'max-h-60 overflow-y-auto']">
+              <DropdownMenuSubContent
+                :side-offset="4"
+                :avoid-collisions="true"
+                :class="[contentClass, 'max-h-60 overflow-y-auto']"
+              >
                 <template v-for="child in item.children" :key="child.key">
                   <SDivider v-if="child.separator" class="mx-1.5 my-0.5" />
                   <DropdownMenuItem
@@ -92,7 +94,11 @@ const menuItemClass =
                     :class="menuItemClass"
                     @select="handleSelect(child)"
                   >
-                    <component v-if="child.icon" :is="child.icon" class="size-3.5 opacity-60 shrink-0" />
+                    <component
+                      :is="child.icon"
+                      v-if="child.icon"
+                      class="size-3.5 opacity-60 shrink-0"
+                    />
                     <span>{{ child.label }}</span>
                   </DropdownMenuItem>
                 </template>
@@ -106,7 +112,7 @@ const menuItemClass =
             :class="menuItemClass"
             @select="handleSelect(item)"
           >
-            <component v-if="item.icon" :is="item.icon" class="size-3.5 opacity-60 shrink-0" />
+            <component :is="item.icon" v-if="item.icon" class="size-3.5 opacity-60 shrink-0" />
             <span>{{ item.label }}</span>
           </DropdownMenuItem>
         </template>

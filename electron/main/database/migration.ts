@@ -22,9 +22,7 @@ export const migrate = (d: Database.Database): void => {
 
   // 新库：表刚由 CREATE TABLE IF NOT EXISTS 创建，无需迁移
   if (version === 0) {
-    const row = d
-      .prepare("SELECT COUNT(*) as cnt FROM tracks")
-      .get() as { cnt: number };
+    const row = d.prepare("SELECT COUNT(*) as cnt FROM tracks").get() as { cnt: number };
     if (row.cnt === 0) {
       d.pragma(`user_version = ${SCHEMA_VERSION}`);
       return;

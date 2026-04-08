@@ -9,7 +9,6 @@ const media = useMediaStore();
 const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode } =
   storeToRefs(status);
 
-
 const hasTrack = computed(() => !!media.track);
 
 /** 当前歌词文本，播放中且有匹配歌词时显示 */
@@ -47,10 +46,17 @@ const onSeekDragEnd = (value: number): void => {
     <div class="grid grid-cols-[1fr_auto_1fr] items-center h-full px-3">
       <!-- 左侧 -->
       <div class="flex items-center gap-3 min-w-0">
-        <div class="relative size-14 shrink-0 rounded-lg overflow-hidden cursor-pointer group" @click="isExpanded = true">
+        <div
+          class="relative size-14 shrink-0 rounded-lg overflow-hidden cursor-pointer group"
+          @click="isExpanded = true"
+        >
           <SImg :src="media.track?.cover" class="size-full" />
-          <div class="absolute inset-0 z-10 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors duration-200">
-            <IconLucideChevronUp class="size-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          <div
+            class="absolute inset-0 z-10 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors duration-200"
+          >
+            <IconLucideChevronUp
+              class="size-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            />
           </div>
         </div>
         <!-- 歌曲信息 -->
@@ -176,6 +182,5 @@ const onSeekDragEnd = (value: number): void => {
         </SButton>
       </div>
     </div>
-
   </div>
 </template>

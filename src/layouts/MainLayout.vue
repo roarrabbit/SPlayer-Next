@@ -34,7 +34,8 @@ const mainPaddingClass = computed(() => {
 
 /** 播放栏样式 */
 const playerBarClass = computed(() => {
-  const base = "fixed bottom-0 h-20 bg-surface-panel z-50 overflow-visible transition-[left] duration-300";
+  const base =
+    "fixed bottom-0 h-20 bg-surface-panel z-50 overflow-visible transition-[left] duration-300";
   switch (appearance.layoutMode) {
     case "sidebar-full":
       return `${base} ${appearance.sidebarCollapsed ? "left-16" : "left-60"} right-0 border-t border-t-solid border-t-primary/10`;
@@ -100,7 +101,10 @@ const playerBarClass = computed(() => {
     <template #header>
       <div class="flex flex-col">
         <span class="text-base font-semibold">{{ t("playlist.title") }}</span>
-        <span class="text-xs" :class="status.isExpanded ? 'text-cover/50' : 'text-on-surface-variant'">
+        <span
+          class="text-xs"
+          :class="status.isExpanded ? 'text-cover/50' : 'text-on-surface-variant'"
+        >
           {{ t("playlist.totalSongs", { count: queueLength }) }}
         </span>
       </div>

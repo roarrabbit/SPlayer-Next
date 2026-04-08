@@ -66,7 +66,10 @@ export const parseSRT = (text: string): LyricLine[] => {
     const endTime = parseSrtTime(timeLine.slice(arrowIdx + 3));
 
     // 剩余行为文本内容
-    const textLines = parts.slice(2).filter((l) => l.trim()).map((l) => l.trim());
+    const textLines = parts
+      .slice(2)
+      .filter((l) => l.trim())
+      .map((l) => l.trim());
     if (textLines.length === 0) continue;
 
     // 最后一行是原词，往上依次是翻译、音译

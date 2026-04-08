@@ -91,7 +91,11 @@ const collectTranslations = (doc: Document): Map<string, { main: string; bg: str
 
     // 背景歌词文本去掉首尾括号
     main = main.trim();
-    bg = bg.trim().replace(/^[（(]/, "").replace(/[)）]$/, "").trim();
+    bg = bg
+      .trim()
+      .replace(/^[（(]/, "")
+      .replace(/[)）]$/, "")
+      .trim();
     if (main || bg) translations.set(key, { main, bg });
   }
 
@@ -153,7 +157,12 @@ export const parseTTML = (text: string): LyricLine[] => {
           // 非空文本节点作为无时间标记的单词
           line.words.push({ word, startTime: line.startTime, endTime: line.endTime });
           lastWasTimedSpan = false;
-        } else if (lastWasTimedSpan && word.includes(" ") && !word.includes("\n") && !word.includes("\r")) {
+        } else if (
+          lastWasTimedSpan &&
+          word.includes(" ") &&
+          !word.includes("\n") &&
+          !word.includes("\r")
+        ) {
           // 逐字 span 之间有意义的空格，保留为空白单词
           const lastWord = line.words[line.words.length - 1];
           line.words.push({

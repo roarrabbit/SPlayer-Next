@@ -73,9 +73,7 @@ export interface FileRecord {
 /** 获取所有文件记录（path + mtime + size），用于增量扫描比对 */
 export const getFileRecords = (): FileRecord[] => {
   return getDb()
-    .prepare(
-      "SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size FROM tracks",
-    )
+    .prepare("SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size FROM tracks")
     .all() as FileRecord[];
 };
 
@@ -162,5 +160,7 @@ export const searchTracks = (query: string): Track[] => {
 /** 删除指定目录下的所有曲目 */
 export const deleteTracksByDir = (dir: string): void => {
   const prefix = dir.endsWith("/") || dir.endsWith("\\") ? dir : dir + path.sep;
-  getDb().prepare("DELETE FROM tracks WHERE path LIKE ?").run(prefix + "%");
+  getDb()
+    .prepare("DELETE FROM tracks WHERE path LIKE ?")
+    .run(prefix + "%");
 };

@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 
-/** 
- * 向所有窗口广播事件 
+/**
+ * 向所有窗口广播事件
  * @param channel 通道名称
  * @param data 发送的数据
  */

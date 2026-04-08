@@ -214,7 +214,12 @@ const onPointerUp = (): void => {
         class="absolute text-xs text-on-surface-variant/50 leading-none select-none whitespace-nowrap cursor-pointer hover:text-on-surface-variant/80 transition-colors"
         :style="{
           left: `${toPercent(Number(key))}%`,
-          translate: toPercent(Number(key)) <= 0 ? '0 0' : toPercent(Number(key)) >= 100 ? '-100% 0' : '-50% 0',
+          translate:
+            toPercent(Number(key)) <= 0
+              ? '0 0'
+              : toPercent(Number(key)) >= 100
+                ? '-100% 0'
+                : '-50% 0',
         }"
         @click="onMarkClick(Number(key))"
       >

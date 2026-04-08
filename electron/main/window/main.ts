@@ -35,7 +35,9 @@ export const createMainWindow = (): BrowserWindow => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     if (!(store.get("system.rememberWindowState") ?? true)) return;
     const maximized = mainWindow.isMaximized();
-    const bounds = maximized ? (mainWindow.getNormalBounds?.() ?? mainWindow.getBounds()) : mainWindow.getBounds();
+    const bounds = maximized
+      ? (mainWindow.getNormalBounds?.() ?? mainWindow.getBounds())
+      : mainWindow.getBounds();
     store.set("system.window", {
       width: bounds.width,
       height: bounds.height,

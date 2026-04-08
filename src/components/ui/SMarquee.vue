@@ -55,7 +55,9 @@ onUnmounted(() => {
       }"
     >
       <span ref="textRef" class="s-marquee-text"><slot /></span>
-      <span v-if="isOverflowing" class="s-marquee-text s-marquee-clone" aria-hidden="true"><slot /></span>
+      <span v-if="isOverflowing" class="s-marquee-text s-marquee-clone" aria-hidden="true"
+        ><slot
+      /></span>
     </div>
   </div>
 </template>
@@ -84,7 +86,11 @@ onUnmounted(() => {
   animation: s-marquee-scroll var(--marquee-duration, 10s) linear var(--marquee-delay, 2s) infinite;
 }
 @keyframes s-marquee-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(-50% - var(--marquee-gap, 50px) / 2)); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - var(--marquee-gap, 50px) / 2));
+  }
 }
 </style>

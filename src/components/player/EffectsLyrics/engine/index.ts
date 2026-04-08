@@ -9,7 +9,7 @@
  */
 
 import { Spring, type SpringParams } from "./spring";
-import type { LyricLine } from "@/types/lyric"; 
+import type { LyricLine } from "@/types/lyric";
 import { setMin } from "../utils/math";
 import { DEFAULTS } from "./constants";
 import {
@@ -190,17 +190,13 @@ export class LyricRenderer {
     this.innerElement.className = "lp-inner";
     container.appendChild(this.innerElement);
     // 创建间奏圆点
-    [this.dotsContainer, this.dotElements] = createInterludeDots(
-      this.innerElement,
-    );
+    [this.dotsContainer, this.dotElements] = createInterludeDots(this.innerElement);
     if (config) this.applyConfig(config);
     // 缓存容器尺寸
     this.containerWidth = container.clientWidth;
     this.containerHeight = container.clientHeight;
     // 尺寸观察器
-    this.containerResizeObserver = new ResizeObserver(
-      this.handleContainerResize,
-    );
+    this.containerResizeObserver = new ResizeObserver(this.handleContainerResize);
     this.containerResizeObserver.observe(container);
     this.sentinelResizeObserver = new ResizeObserver(this.handleSentinelResize);
     // 事件监听
@@ -250,10 +246,7 @@ export class LyricRenderer {
     this.container.removeEventListener("click", this.handleLineClick);
     this.container.removeEventListener("mouseenter", this.handleMouseEnter);
     this.container.removeEventListener("mouseleave", this.handleMouseLeave);
-    document.removeEventListener(
-      "visibilitychange",
-      this.handleVisibilityChange,
-    );
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
     this.innerElement.remove();
     this.container.classList.remove("lp-root");
   };
@@ -320,8 +313,7 @@ export class LyricRenderer {
     for (let i = 0; i < lineCount; i++) {
       const line = lines[i];
       const lineEl = document.createElement("div");
-      lineEl.className =
-        "lp-line" + (line.isDuet ? " duet" : "") + (line.isBG ? " bg" : "");
+      lineEl.className = "lp-line" + (line.isDuet ? " duet" : "") + (line.isBG ? " bg" : "");
       const mainDiv = document.createElement("div");
       mainDiv.className = "lp-main";
 
@@ -330,21 +322,21 @@ export class LyricRenderer {
       this.isStaticLine[i] = isStatic;
 
       if (isStatic) {
-        mainDiv.appendChild(
-          document.createTextNode(line.words.map((w) => w.word).join("")),
-        );
+        mainDiv.appendChild(document.createTextNode(line.words.map((w) => w.word).join("")));
         // 给静态行也加统一 mask，让 --ba 对其生效，与逐字行透明度一致
-        mainDiv.style.setProperty("-webkit-mask-image", "linear-gradient(rgba(0,0,0,var(--ba)),rgba(0,0,0,var(--ba)))");
-        mainDiv.style.setProperty("mask-image", "linear-gradient(rgba(0,0,0,var(--ba)),rgba(0,0,0,var(--ba)))");
+        mainDiv.style.setProperty(
+          "-webkit-mask-image",
+          "linear-gradient(rgba(0,0,0,var(--ba)),rgba(0,0,0,var(--ba)))",
+        );
+        mainDiv.style.setProperty(
+          "mask-image",
+          "linear-gradient(rgba(0,0,0,var(--ba)),rgba(0,0,0,var(--ba)))",
+        );
         this.wordMeasurements[i] = [];
         this.lineAnimTargets[i] = [];
       } else {
         // 构建单词 span + 动画目标描述
-        const result = buildWordSpans(
-          line.words,
-          mainDiv,
-          this.enableEmphasizeEffect,
-        );
+        const result = buildWordSpans(line.words, mainDiv, this.enableEmphasizeEffect);
         this.wordMeasurements[i] = result.measurements;
         this.lineAnimTargets[i] = result.animTargets;
       }
@@ -386,11 +378,7 @@ export class LyricRenderer {
     this.dotsContainerWidth = this.dotsContainer.offsetWidth || 60;
     this.dotsContainerHeight = this.dotsContainer.offsetHeight || 20;
     this.measureLineHeights();
-    measureAndApplyWordMasks(
-      this.wordMeasurements,
-      this.wordFadeWidth,
-      this.lines,
-    );
+    measureAndApplyWordMasks(this.wordMeasurements, this.wordFadeWidth, this.lines);
 
     // 重置时间状态，避免残留旧歌的播放时间影响新歌词定位
     this.pendingPlayTime = -1;
@@ -424,15 +412,10 @@ export class LyricRenderer {
       const anims = this.activeAnimations.get(lineIdx);
       if (!anims?.length) continue;
       if (playing) {
-        const relativeTime = Math.max(
-          0,
-          this.lastProcessedTime - this.lines[lineIdx].startTime,
-        );
+        const relativeTime = Math.max(0, this.lastProcessedTime - this.lines[lineIdx].startTime);
         for (const anim of anims) {
           const timing = anim.effect?.getComputedTiming();
-          const endTime =
-            ((timing?.delay as number) || 0) +
-            ((timing?.duration as number) || 0);
+          const endTime = ((timing?.delay as number) || 0) + ((timing?.duration as number) || 0);
           if (anim.playbackRate >= 0 && relativeTime < endTime) {
             anim.currentTime = relativeTime;
             anim.play();
@@ -461,10 +444,7 @@ export class LyricRenderer {
    */
   private applyConfig = (config: Partial<RendererConfig>) => {
     let layoutDirty = false;
-    if (
-      config.alignPosition != null &&
-      config.alignPosition !== this.alignPosition
-    ) {
+    if (config.alignPosition != null && config.alignPosition !== this.alignPosition) {
       this.alignPosition = config.alignPosition;
       layoutDirty = true;
     }
@@ -472,48 +452,31 @@ export class LyricRenderer {
       this.isPlaying = config.playing;
       layoutDirty = true;
     }
-    if (
-      config.wordFadeWidth != null &&
-      config.wordFadeWidth !== this.wordFadeWidth
-    ) {
+    if (config.wordFadeWidth != null && config.wordFadeWidth !== this.wordFadeWidth) {
       this.wordFadeWidth = config.wordFadeWidth;
       if (this.lineElements.length > 0)
-        measureAndApplyWordMasks(
-          this.wordMeasurements,
-          this.wordFadeWidth,
-          this.lines,
-        );
+        measureAndApplyWordMasks(this.wordMeasurements, this.wordFadeWidth, this.lines);
     }
-    if (config.onLineClick !== undefined)
-      this.lineClickCallback = config.onLineClick ?? null;
+    if (config.onLineClick !== undefined) this.lineClickCallback = config.onLineClick ?? null;
     if (config.springConfig) {
       this.springParams = config.springConfig;
       this.applySpringParams();
     }
-    if (config.scrollResetDelay != null)
-      this.scrollResetDelay = config.scrollResetDelay;
-    if (config.minInterludeGap != null)
-      this.minInterludeGap = config.minInterludeGap;
-    if (config.breatheCycleTarget != null)
-      this.breatheCycleTarget = config.breatheCycleTarget;
-    if (config.alphaAttackSpeed != null)
-      this.alphaAttackSpeed = config.alphaAttackSpeed;
-    if (config.alphaReleaseSpeed != null)
-      this.alphaReleaseSpeed = config.alphaReleaseSpeed;
+    if (config.scrollResetDelay != null) this.scrollResetDelay = config.scrollResetDelay;
+    if (config.minInterludeGap != null) this.minInterludeGap = config.minInterludeGap;
+    if (config.breatheCycleTarget != null) this.breatheCycleTarget = config.breatheCycleTarget;
+    if (config.alphaAttackSpeed != null) this.alphaAttackSpeed = config.alphaAttackSpeed;
+    if (config.alphaReleaseSpeed != null) this.alphaReleaseSpeed = config.alphaReleaseSpeed;
     if (config.inactiveAlpha != null) this.inactiveAlpha = config.inactiveAlpha;
-    if (config.hidePassedLines != null)
-      this.hidePassedLines = config.hidePassedLines;
+    if (config.hidePassedLines != null) this.hidePassedLines = config.hidePassedLines;
     if (config.enableBlur != null) this.enableBlur = config.enableBlur;
-    if (config.enableWordHighlight != null)
-      this.enableWordHighlight = config.enableWordHighlight;
+    if (config.enableWordHighlight != null) this.enableWordHighlight = config.enableWordHighlight;
     if (config.enableFloatAnimation != null)
       this.enableFloatAnimation = config.enableFloatAnimation;
     if (config.enableEmphasizeEffect != null)
       this.enableEmphasizeEffect = config.enableEmphasizeEffect;
-    if (config.showTranslation != null)
-      this.showTranslation = config.showTranslation;
-    if (config.showRomanization != null)
-      this.showRomanization = config.showRomanization;
+    if (config.showTranslation != null) this.showTranslation = config.showTranslation;
+    if (config.showRomanization != null) this.showRomanization = config.showRomanization;
 
     if (layoutDirty && this.lineElements.length > 0) {
       this.measureLineHeights();
@@ -539,8 +502,7 @@ export class LyricRenderer {
     const isFirst = this.lastProcessedTime < 0;
     const isSeeked =
       !isFirst &&
-      (currentTime < this.lastProcessedTime - 100 ||
-        currentTime > this.lastProcessedTime + 2000);
+      (currentTime < this.lastProcessedTime - 100 || currentTime > this.lastProcessedTime + 2000);
     this.lastProcessedTime = currentTime;
 
     if (isFirst || isSeeked) {
@@ -574,10 +536,7 @@ export class LyricRenderer {
         continue;
       }
       if (line.isBG) {
-        if (
-          !this.activeLineSet.has(lineIdx - 1) ||
-          deactivated.includes(lineIdx - 1)
-        )
+        if (!this.activeLineSet.has(lineIdx - 1) || deactivated.includes(lineIdx - 1))
           deactivated.push(lineIdx);
         continue;
       }
@@ -590,11 +549,9 @@ export class LyricRenderer {
           Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
           Math.max(line.endTime, nextLine.endTime),
         );
-        if (pairStart > currentTime || pairEnd <= currentTime)
-          deactivated.push(lineIdx);
+        if (pairStart > currentTime || pairEnd <= currentTime) deactivated.push(lineIdx);
       } else {
-        if (line.startTime > currentTime || line.endTime <= currentTime)
-          deactivated.push(lineIdx);
+        if (line.startTime > currentTime || line.endTime <= currentTime) deactivated.push(lineIdx);
       }
     }
 
@@ -612,8 +569,7 @@ export class LyricRenderer {
       this.createAndPlayLineAnimations(lineIdx, currentTime);
     }
 
-    if (this.activeLineSet.size > 0)
-      this.activeLineIndex = setMin(this.activeLineSet);
+    if (this.activeLineSet.size > 0) this.activeLineIndex = setMin(this.activeLineSet);
 
     this.measureLineHeights();
     this.calculateLayout(false);
@@ -679,12 +635,7 @@ export class LyricRenderer {
     if (lineCount === 0) return;
 
     // 间奏检测
-    const interlude = detectInterlude(
-      currentTime,
-      targetIdx,
-      lines,
-      this.minInterludeGap,
-    );
+    const interlude = detectInterlude(currentTime, targetIdx, lines, this.minInterludeGap);
     const dotsGap = 10;
     if (interlude) {
       this.interludeState.startTime = interlude[0];
@@ -698,13 +649,11 @@ export class LyricRenderer {
     let position = -this.userScrollOffset;
     let heightAccum = 0;
     for (let i = 0; i < targetIdx; i++) {
-      if (lines[i]?.isBG && this.isPlaying && !this.activeLineSet.has(i))
-        continue;
+      if (lines[i]?.isBG && this.isPlaying && !this.activeLineSet.has(i)) continue;
       heightAccum += this.lineHeights[i] || 40;
     }
     position -= heightAccum;
-    position +=
-      viewHeight * this.alignPosition - (this.lineHeights[targetIdx] || 40) / 2;
+    position += viewHeight * this.alignPosition - (this.lineHeights[targetIdx] || 40) / 2;
 
     // 级联延迟：越远离激活行的行延迟越小，产生波浪效果
     let cascadeDelay = 0;
@@ -722,17 +671,14 @@ export class LyricRenderer {
         dotsInserted = true;
         position += dotsGap;
         const isDuet = interlude[3];
-        this.interludeState.x = isDuet
-          ? viewWidth - this.dotsContainerWidth
-          : 0;
+        this.interludeState.x = isDuet ? viewWidth - this.dotsContainerWidth : 0;
         this.interludeState.y = position;
         this.interludeState.alignRight = isDuet;
         position += this.dotsContainerHeight + dotsGap;
       }
 
       const isActive = this.activeLineSet.has(i);
-      const targetScale =
-        !isActive && this.isPlaying ? (line.isBG ? 75 : 97) : 100;
+      const targetScale = !isActive && this.isPlaying ? (line.isBG ? 75 : 97) : 100;
 
       const collapsedBG = line.isBG && this.isPlaying && !isActive;
 
@@ -745,8 +691,7 @@ export class LyricRenderer {
       }
 
       // 非激活 BG 行不占位
-      if (!collapsedBG)
-        position += this.lineHeights[i] || 40;
+      if (!collapsedBG) position += this.lineHeights[i] || 40;
 
       if (position >= 0 && !this.isUserScrolling) {
         if (!line.isBG) cascadeDelay += baseDelay;
@@ -781,9 +726,7 @@ export class LyricRenderer {
     if (!this.isPageVisible) return;
 
     // 计算帧间隔
-    const deltaTime = this.lastFrameTimestamp
-      ? timestamp - this.lastFrameTimestamp
-      : 16;
+    const deltaTime = this.lastFrameTimestamp ? timestamp - this.lastFrameTimestamp : 16;
     this.lastFrameTimestamp = timestamp;
 
     const lineCount = this.positionSprings.length;
@@ -857,17 +800,11 @@ export class LyricRenderer {
 
       const isActive = this.activeLineSet.has(i);
       const isPassed =
-        doPass &&
-        !this.isUserScrolling &&
-        (this.lines[i].isBG ? i - 1 < activeIdx : i < activeIdx);
+        doPass && !this.isUserScrolling && (this.lines[i].isBG ? i - 1 < activeIdx : i < activeIdx);
 
       // alpha：亮色（--ba）和暗色（--da）分别插值
       const alphaIdx = i * 2;
-      const targetBright = isPassed
-        ? 0.0001
-        : isActive
-          ? 1.0
-          : this.inactiveAlpha;
+      const targetBright = isPassed ? 0.0001 : isActive ? 1.0 : this.inactiveAlpha;
       let brightValue = this.alphaValues[alphaIdx];
       if (Math.abs(targetBright - brightValue) < 0.001) {
         brightValue = targetBright;
@@ -962,10 +899,7 @@ export class LyricRenderer {
    * @param lineIndex - 行索引
    * @param currentTime - 当前播放时间（毫秒）
    */
-  private createAndPlayLineAnimations = (
-    lineIndex: number,
-    currentTime: number,
-  ) => {
+  private createAndPlayLineAnimations = (lineIndex: number, currentTime: number) => {
     // 清理该行旧动画（上一次停用时保留的）
     const oldAnims = this.activeAnimations.get(lineIndex);
     if (oldAnims)
@@ -975,11 +909,7 @@ export class LyricRenderer {
       }
 
     const targets = this.lineAnimTargets[lineIndex];
-    if (
-      !targets?.length ||
-      (!this.enableFloatAnimation && !this.enableEmphasizeEffect)
-    )
-      return;
+    if (!targets?.length || (!this.enableFloatAnimation && !this.enableEmphasizeEffect)) return;
 
     const line = this.lines[lineIndex];
     const relativeTime = Math.max(0, currentTime - line.startTime);
@@ -998,11 +928,7 @@ export class LyricRenderer {
         );
       }
       // 强调动画（缩放 + 辉光 + 正弦浮动）
-      if (
-        this.enableEmphasizeEffect &&
-        target.isEmphasize &&
-        target.charElements.length > 0
-      ) {
+      if (this.enableEmphasizeEffect && target.isEmphasize && target.charElements.length > 0) {
         anims.push(
           ...createEmphasizeAnimations(
             target.charElements,
@@ -1021,8 +947,7 @@ export class LyricRenderer {
       anim.playbackRate = 1;
       const computedTiming = anim.effect?.getComputedTiming();
       const animEndTime =
-        ((computedTiming?.delay as number) || 0) +
-        ((computedTiming?.duration as number) || 0);
+        ((computedTiming?.delay as number) || 0) + ((computedTiming?.duration as number) || 0);
       if (this.isPlaying && relativeTime < animEndTime) anim.play();
       else anim.pause();
     }
@@ -1077,8 +1002,7 @@ export class LyricRenderer {
 
   /** 取消所有行的动画并清空映射 */
   private cancelAllActiveAnimations = () => {
-    for (const [, anims] of this.activeAnimations)
-      for (const anim of anims) anim.cancel();
+    for (const [, anims] of this.activeAnimations) for (const anim of anims) anim.cancel();
     this.activeAnimations.clear();
   };
 
@@ -1090,9 +1014,7 @@ export class LyricRenderer {
    */
   private handleLineClick = (event: MouseEvent) => {
     if (!this.lineClickCallback) return;
-    const lineEl = (event.target as HTMLElement).closest(
-      ".lp-line",
-    ) as HTMLDivElement | null;
+    const lineEl = (event.target as HTMLElement).closest(".lp-line") as HTMLDivElement | null;
     if (!lineEl) return;
     const lineIdx = this.lineElements.indexOf(lineEl);
     if (lineIdx !== -1 && this.lines[lineIdx])
@@ -1165,16 +1087,11 @@ export class LyricRenderer {
   private handleContainerResize = () => {
     const newWidth = this.container.clientWidth;
     const newHeight = this.container.clientHeight;
-    if (newWidth === this.containerWidth && newHeight === this.containerHeight)
-      return;
+    if (newWidth === this.containerWidth && newHeight === this.containerHeight) return;
     this.containerWidth = newWidth;
     this.containerHeight = newHeight;
     this.measureLineHeights();
-    measureAndApplyWordMasks(
-      this.wordMeasurements,
-      this.wordFadeWidth,
-      this.lines,
-    );
+    measureAndApplyWordMasks(this.wordMeasurements, this.wordFadeWidth, this.lines);
     // 入场动画期间跳过 calculateLayout，避免 setPosition 瞬移破坏弹簧入场
     if (!this.entranceComplete) {
       this.needsFullSync = true;
@@ -1190,11 +1107,7 @@ export class LyricRenderer {
     this.dotsContainerWidth = this.dotsContainer.offsetWidth || 60;
     this.dotsContainerHeight = this.dotsContainer.offsetHeight || 20;
     this.measureLineHeights();
-    measureAndApplyWordMasks(
-      this.wordMeasurements,
-      this.wordFadeWidth,
-      this.lines,
-    );
+    measureAndApplyWordMasks(this.wordMeasurements, this.wordFadeWidth, this.lines);
     // 入场动画期间跳过 calculateLayout，避免 setPosition 瞬移破坏弹簧入场
     if (!this.entranceComplete) {
       this.needsFullSync = true;

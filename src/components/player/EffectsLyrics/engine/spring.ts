@@ -197,8 +197,7 @@ export class Spring {
    */
   arrived = (): boolean => {
     if (this.settled) return true;
-    if (this.pendingParams !== undefined || this.pendingPosition !== undefined)
-      return false;
+    if (this.pendingParams !== undefined || this.pendingPosition !== undefined) return false;
     const isSettled =
       Math.abs(this.targetPosition - this.position) < 0.01 &&
       Math.abs(this.velocitySolver(this.elapsedTime)) < 0.01 &&

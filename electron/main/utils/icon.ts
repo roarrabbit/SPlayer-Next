@@ -10,7 +10,10 @@ const ICONS_DIR = join(__dirname, "../../public/icons");
  * @param size - 可选，resize 尺寸
  * @returns NativeImage 实例
  */
-export const loadIcon = (relativePath: string, size?: { width: number; height: number }): NativeImage => {
+export const loadIcon = (
+  relativePath: string,
+  size?: { width: number; height: number },
+): NativeImage => {
   const image = nativeImage.createFromPath(join(ICONS_DIR, relativePath));
   return size ? image.resize(size) : image;
 };
@@ -22,7 +25,11 @@ export const loadIcon = (relativePath: string, size?: { width: number; height: n
  * @param size - 可选，resize 尺寸
  * @returns NativeImage 实例
  */
-export const loadThemedIcon = (dir: string, name: string, size?: { width: number; height: number }): NativeImage => {
+export const loadThemedIcon = (
+  dir: string,
+  name: string,
+  size?: { width: number; height: number },
+): NativeImage => {
   const suffix = nativeTheme.shouldUseDarkColors ? "dark" : "light";
   return loadIcon(`${dir}/${name}-${suffix}.png`, size);
 };

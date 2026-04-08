@@ -3,11 +3,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 30 });
 </script>
 
 <template>
-  <svg
-    :style="{ height: `${size}px` }"
-    viewBox="0 0 1024 1024"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg :style="{ height: `${size}px` }" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
     <path
       class="fill-primary/30"
       d="M511.764091 131.708086a446.145957 446.145957 0 1 0 446.145957 446.145957 446.145957 446.145957 0 0 0-446.145957-446.145957z m0 519.76004A71.829499 71.829499 0 1 1 583.59359 580.530919 72.275645 72.275645 0 0 1 511.764091 651.468126z"

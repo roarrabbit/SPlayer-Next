@@ -159,7 +159,7 @@ const handleLineClick = (timeMs: number) => {
 onMounted(() => {
   console.log("[LyricPlayer] onMounted");
   if (!containerRef.value) return;
-  const { lyricLines, ...config } = props;
+  const { lyricLines: _lyricLines, ...config } = props;
   renderer = new LyricRenderer(containerRef.value, {
     ...config,
     springConfig: props.springConfig ?? {},

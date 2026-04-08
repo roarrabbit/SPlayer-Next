@@ -21,10 +21,7 @@ export const easeInOutBack = (progress: number): number => {
   const overshoot = 1.70158 * 1.525;
   return progress < 0.5
     ? ((2 * progress) ** 2 * ((overshoot + 1) * 2 * progress - overshoot)) / 2
-    : ((2 * progress - 2) ** 2 *
-          ((overshoot + 1) * (progress * 2 - 2) + overshoot) +
-        2) /
-        2;
+    : ((2 * progress - 2) ** 2 * ((overshoot + 1) * (progress * 2 - 2) + overshoot) + 2) / 2;
 };
 
 /**

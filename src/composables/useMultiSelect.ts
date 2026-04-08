@@ -22,7 +22,6 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
   const playlistStore = usePlaylistStore();
   const libraryStore = useLibraryStore();
 
-
   const active = ref(false);
   const selectedIds = ref(new Set<string>());
 
@@ -75,7 +74,6 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
     else selectAll();
   };
 
-
   const canRemove = computed(() => options.collectionType.value === "playlist");
 
   const collectionTypeLabel = computed(() => {
@@ -84,9 +82,8 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
       album: t("collection.album"),
       radio: t("collection.radio"),
     };
-    return options.collectionType.value ? map[options.collectionType.value] ?? "" : "";
+    return options.collectionType.value ? (map[options.collectionType.value] ?? "") : "";
   });
-
 
   type DeleteAction = "remove" | "file";
   const deleteConfirmOpen = ref(false);
@@ -107,7 +104,10 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
       if (paths.length > 0) await libraryStore.deleteTracks(paths);
     } else if (options.collectionId.value) {
       if (options.source.value === "local") {
-        await playlistStore.removeTracks(options.collectionId.value, tracks.map((t) => t.id));
+        await playlistStore.removeTracks(
+          options.collectionId.value,
+          tracks.map((t) => t.id),
+        );
       }
       // TODO: online
     }
@@ -140,7 +140,6 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
       ? t("songList.delete.fileConfirm", { count })
       : t("songList.delete.removeConfirm", { count, type });
   });
-
 
   const addToQueue = (): void => {
     const tracks = selectedItems.value;

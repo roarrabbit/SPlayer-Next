@@ -1,7 +1,13 @@
 import { ipcMain, dialog } from "electron";
 import fs from "node:fs/promises";
 import { store } from "../store";
-import { getAllTracks, searchTracks, getTrackCount, deleteTracksByDir, deleteTracksByPaths } from "../database";
+import {
+  getAllTracks,
+  searchTracks,
+  getTrackCount,
+  deleteTracksByDir,
+  deleteTracksByPaths,
+} from "../database";
 import { startScan, cancelScan, isScanning } from "../services/scanner";
 import { libraryLog } from "../utils/logger";
 import { ErrorCode } from "@shared/types/errors";
@@ -33,7 +39,7 @@ export const registerLibraryIpc = (): void => {
   ipcMain.handle("library:getTracks", () => {
     try {
       return { success: true, data: getAllTracks() };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
@@ -42,7 +48,7 @@ export const registerLibraryIpc = (): void => {
   ipcMain.handle("library:searchTracks", (_event, query: string) => {
     try {
       return { success: true, data: searchTracks(query) };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
@@ -51,7 +57,7 @@ export const registerLibraryIpc = (): void => {
   ipcMain.handle("library:getTrackCount", () => {
     try {
       return { success: true, data: getTrackCount() };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
@@ -94,7 +100,7 @@ export const registerLibraryIpc = (): void => {
       deleteTracksByDir(dir);
       libraryLog.info(`移除扫描目录: ${dir}`);
       return { success: true };
-    } catch (error) {
+    } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });

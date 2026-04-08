@@ -102,7 +102,9 @@ const testLoadingToast = (): void => {
       <!-- 全局着色 -->
       <button
         class="px-3 py-1.5 rounded-lg text-sm border border-solid border-outline-variant"
-        :class="theme.globalTint ? 'bg-primary text-on-primary' : 'bg-surface-alt text-on-surface-variant'"
+        :class="
+          theme.globalTint ? 'bg-primary text-on-primary' : 'bg-surface-alt text-on-surface-variant'
+        "
         @click="theme.globalTint = !theme.globalTint"
       >
         着色
@@ -294,7 +296,13 @@ const testLoadingToast = (): void => {
             label="专辑"
             @change="handleSortFieldChange"
           />
-          <SRadio :checked="false" value="album" label="禁用" disabled @change="handleSortFieldChange" />
+          <SRadio
+            :checked="false"
+            value="album"
+            label="禁用"
+            disabled
+            @change="handleSortFieldChange"
+          />
         </div>
         <div class="text-xs text-on-surface-variant">当前值：{{ sortField }}</div>
       </div>
@@ -321,10 +329,19 @@ const testLoadingToast = (): void => {
             label="全选"
             @update:checked="handleToggleAll"
           />
-          <SCheckbox :checked="onlyLossless" label="仅无损" @update:checked="onlyLossless = $event" />
+          <SCheckbox
+            :checked="onlyLossless"
+            label="仅无损"
+            @update:checked="onlyLossless = $event"
+          />
           <SCheckbox :checked="onlyLocal" label="仅本地" @update:checked="onlyLocal = $event" />
           <SCheckbox :checked="withLyric" label="含歌词" @update:checked="withLyric = $event" />
-          <SCheckbox :checked="onlyLossless" label="禁用" disabled @update:checked="onlyLossless = $event" />
+          <SCheckbox
+            :checked="onlyLossless"
+            label="禁用"
+            disabled
+            @update:checked="onlyLossless = $event"
+          />
         </div>
         <div class="text-xs text-on-surface-variant">
           当前值：{ onlyLossless: {{ onlyLossless }}, onlyLocal: {{ onlyLocal }}, withLyric:
@@ -340,7 +357,9 @@ const testLoadingToast = (): void => {
           <SCheckbox value="Guangzhou" label="广州" />
           <SCheckbox value="Shenzhen" label="深圳" />
         </SCheckboxGroup>
-        <div class="text-xs text-on-surface-variant">当前值：{{ cities.join(" / ") || "（空）" }}</div>
+        <div class="text-xs text-on-surface-variant">
+          当前值：{{ cities.join(" / ") || "（空）" }}
+        </div>
       </div>
 
       <div class="space-y-2">
@@ -367,9 +386,24 @@ const testLoadingToast = (): void => {
             label="Radio large"
             @change="handleSortFieldChange"
           />
-          <SCheckbox :checked="onlyLocal" size="small" label="Check small" @update:checked="onlyLocal = $event" />
-          <SCheckbox :checked="onlyLocal" size="medium" label="Check medium" @update:checked="onlyLocal = $event" />
-          <SCheckbox :checked="onlyLocal" size="large" label="Check large" @update:checked="onlyLocal = $event" />
+          <SCheckbox
+            :checked="onlyLocal"
+            size="small"
+            label="Check small"
+            @update:checked="onlyLocal = $event"
+          />
+          <SCheckbox
+            :checked="onlyLocal"
+            size="medium"
+            label="Check medium"
+            @update:checked="onlyLocal = $event"
+          />
+          <SCheckbox
+            :checked="onlyLocal"
+            size="large"
+            label="Check large"
+            @update:checked="onlyLocal = $event"
+          />
         </div>
       </div>
     </div>
@@ -412,11 +446,7 @@ const testLoadingToast = (): void => {
           v-model="activeTabBar"
           type="bar"
           animated
-          :tabs="[
-            { key: '幸福' },
-            { key: '的' },
-            { key: '旁边' },
-          ]"
+          :tabs="[{ key: '幸福' }, { key: '的' }, { key: '旁边' }]"
         >
           <template #幸福>
             <div class="rounded-lg bg-surface-alt/60 px-3 py-2 text-sm text-on-surface-variant">

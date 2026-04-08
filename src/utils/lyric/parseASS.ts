@@ -12,8 +12,7 @@
 import type { LyricLine, LyricWord } from "@/types/lyric";
 
 /** 匹配 Dialogue 行各字段 */
-const DIALOGUE_RE =
-  /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),([^,]*),/;
+const DIALOGUE_RE = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),([^,]*),/;
 
 /** 匹配卡拉OK 标签 {\kf<n>} / {\k<n>} / {\K<n>} */
 const KARAOKE_RE = /\{\\[kK]f?(\d+)\}([^{]*)/g;

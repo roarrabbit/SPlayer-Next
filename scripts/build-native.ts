@@ -22,9 +22,7 @@ if (process.env.SKIP_NATIVE_BUILD === "true") {
 
 if (!isRustAvailable()) {
   console.error("[BuildNative] 错误：检测不到 Rust 工具链");
-  console.error(
-    "[BuildNative] 未设置 SKIP_NATIVE_BUILD，因此必须包含 Rust 环境才能继续",
-  );
+  console.error("[BuildNative] 未设置 SKIP_NATIVE_BUILD，因此必须包含 Rust 环境才能继续");
   console.error(
     "[BuildNative] 安装 Rust (https://rust-lang.org/tools/install/) 或者设置环境变量 SKIP_NATIVE_BUILD=true",
   );

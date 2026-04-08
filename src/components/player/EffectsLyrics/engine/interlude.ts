@@ -6,7 +6,7 @@
  */
 
 import { clamp, easeInOutBack, easeOutExpo } from "../utils/math";
-import type { LyricLine } from "@/types/lyric"; 
+import type { LyricLine } from "@/types/lyric";
 
 /** 间奏检测结果：[起始时间, 结束时间, 前一行索引, 下一行是否为对唱] */
 export type InterludeInfo = [number, number, number, boolean];
@@ -43,9 +43,7 @@ export const detectInterlude = (
   };
 
   return (
-    checkGap(activeLineIndex - 1) ||
-    checkGap(activeLineIndex) ||
-    checkGap(activeLineIndex + 1)
+    checkGap(activeLineIndex - 1) || checkGap(activeLineIndex) || checkGap(activeLineIndex + 1)
   );
 };
 
@@ -132,8 +130,7 @@ export const renderInterludeDots = (
   }
 
   // 呼吸动画周期
-  const breatheCycle =
-    totalDuration / Math.ceil(totalDuration / breatheCycleTarget);
+  const breatheCycle = totalDuration / Math.ceil(totalDuration / breatheCycleTarget);
 
   let scale = 1;
   let opacity = 1;
@@ -169,10 +166,11 @@ export const renderInterludeDots = (
   // 各圆点透明度
   const activeDuration = Math.max(0, totalDuration - 750);
   const newOpacities: [string, string, string] = [
+    String(clamp(0, opacity * clamp(0.25, ((elapsed * 3) / activeDuration) * 0.75, 1), 1)),
     String(
       clamp(
         0,
-        opacity * clamp(0.25, ((elapsed * 3) / activeDuration) * 0.75, 1),
+        opacity * clamp(0.25, (((elapsed - activeDuration / 3) * 3) / activeDuration) * 0.75, 1),
         1,
       ),
     ),
@@ -180,24 +178,7 @@ export const renderInterludeDots = (
       clamp(
         0,
         opacity *
-          clamp(
-            0.25,
-            (((elapsed - activeDuration / 3) * 3) / activeDuration) * 0.75,
-            1,
-          ),
-        1,
-      ),
-    ),
-    String(
-      clamp(
-        0,
-        opacity *
-          clamp(
-            0.25,
-            (((elapsed - (activeDuration / 3) * 2) * 3) / activeDuration) *
-              0.75,
-            1,
-          ),
+          clamp(0.25, (((elapsed - (activeDuration / 3) * 2) * 3) / activeDuration) * 0.75, 1),
         1,
       ),
     ),

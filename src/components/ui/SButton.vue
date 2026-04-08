@@ -72,7 +72,11 @@ const numericSizeStyle = computed(() => {
   const px = `${props.size}px`;
   return props.circle
     ? { width: px, height: px }
-    : { height: px, paddingLeft: `${(props.size as number) * 0.35}px`, paddingRight: `${(props.size as number) * 0.35}px` };
+    : {
+        height: px,
+        paddingLeft: `${(props.size as number) * 0.35}px`,
+        paddingRight: `${(props.size as number) * 0.35}px`,
+      };
 });
 
 const iconSizeClass = computed(() => {
@@ -207,7 +211,12 @@ const variantClass = computed(() => {
     ]"
     :style="numericSizeStyle"
   >
-    <span v-if="$slots.icon || loading" class="shrink-0 flex items-center justify-center overflow-hidden *:size-full" :class="iconSizeClass" :style="numericIconStyle">
+    <span
+      v-if="$slots.icon || loading"
+      class="shrink-0 flex items-center justify-center overflow-hidden *:size-full"
+      :class="iconSizeClass"
+      :style="numericIconStyle"
+    >
       <SLoading v-if="loading" />
       <slot v-else name="icon" />
     </span>

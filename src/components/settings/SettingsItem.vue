@@ -28,7 +28,6 @@ const isDisabled = computed(() => props.item.disabled?.() ?? false);
 const descriptionText = computed(() =>
   t(props.item.descriptionKey ?? `settings.${props.item.key}.description`),
 );
-
 </script>
 
 <template>
@@ -85,8 +84,8 @@ const descriptionText = computed(() =>
           {{ t(`settings.${item.key}.label`) }}
         </SButton>
         <component
-          v-else-if="item.type === 'custom' && item.component"
           :is="item.component"
+          v-else-if="item.type === 'custom' && item.component"
           :model-value="model"
           @update:model-value="model = $event"
         />
@@ -94,12 +93,12 @@ const descriptionText = computed(() =>
     </div>
 
     <!-- 子项（父级关闭时禁用） -->
-    <div v-if="item.children?.length" class="mt-2.5 flex flex-col gap-2.5 transition-opacity duration-200" :class="isChildrenActive ? '' : 'opacity-50 pointer-events-none'">
-      <SettingsItem
-        v-for="child in item.children"
-        :key="child.key"
-        :item="child"
-      />
+    <div
+      v-if="item.children?.length"
+      class="mt-2.5 flex flex-col gap-2.5 transition-opacity duration-200"
+      :class="isChildrenActive ? '' : 'opacity-50 pointer-events-none'"
+    >
+      <SettingsItem v-for="child in item.children" :key="child.key" :item="child" />
     </div>
   </div>
 </template>

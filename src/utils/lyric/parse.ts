@@ -94,13 +94,22 @@ export const pairTranslation = (
 ): void => {
   for (const transLine of transLines) {
     // 跳过空行
-    const text = transLine.words.map((w) => w.word).join("").trim();
+    const text = transLine.words
+      .map((w) => w.word)
+      .join("")
+      .trim();
     if (!text) continue;
     // 在主歌词中找 startTime 最接近的非空行
     let nearest: LyricLine | undefined;
     let minDiff = Infinity;
     for (const mainLine of lines) {
-      if (mainLine.words.map((w) => w.word).join("").trim().length === 0) continue;
+      if (
+        mainLine.words
+          .map((w) => w.word)
+          .join("")
+          .trim().length === 0
+      )
+        continue;
 
       const diff = Math.abs(mainLine.startTime - transLine.startTime);
       // 精确匹配直接命中

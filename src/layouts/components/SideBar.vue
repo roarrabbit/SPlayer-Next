@@ -15,7 +15,9 @@ const { appearance } = useSettingsStore();
 const playlistStore = usePlaylistStore();
 
 const handleCreate = async () => {
-  const playlist = await playlistStore.create(t("collection.create", { type: t("collection.playlist") }));
+  const playlist = await playlistStore.create(
+    t("collection.create", { type: t("collection.playlist") }),
+  );
   router.push(`/collection/local/playlist/${playlist.id}`);
 };
 

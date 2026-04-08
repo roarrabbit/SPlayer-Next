@@ -36,20 +36,34 @@ const iconStyles: Record<ToastType, string> = {
         >
           <!-- 自定义图标 -->
           <template v-if="item.icon !== false">
-            <component :is="item.icon" v-if="item.icon" class="size-4 shrink-0" :class="iconStyles[item.type]" />
+            <component
+              :is="item.icon"
+              v-if="item.icon"
+              class="size-4 shrink-0"
+              :class="iconStyles[item.type]"
+            />
             <template v-else>
               <SLoading v-if="item.type === 'loading'" class="size-4 shrink-0" />
               <IconLucideMessageCircle
                 v-else-if="item.type === 'default'"
                 class="size-4 shrink-0 text-on-surface-variant"
               />
-              <IconLucideInfo v-else-if="item.type === 'info'" class="size-4 shrink-0 text-blue-500" />
-              <IconLucideCircleCheck v-else-if="item.type === 'success'" class="size-4 shrink-0 text-green-600" />
+              <IconLucideInfo
+                v-else-if="item.type === 'info'"
+                class="size-4 shrink-0 text-blue-500"
+              />
+              <IconLucideCircleCheck
+                v-else-if="item.type === 'success'"
+                class="size-4 shrink-0 text-green-600"
+              />
               <IconLucideTriangleAlert
                 v-else-if="item.type === 'warning'"
                 class="size-4 shrink-0 text-amber-500"
               />
-              <IconLucideCircleX v-else-if="item.type === 'error'" class="size-4 shrink-0 text-red-500" />
+              <IconLucideCircleX
+                v-else-if="item.type === 'error'"
+                class="size-4 shrink-0 text-red-500"
+              />
             </template>
           </template>
           <span>{{ item.message }}</span>

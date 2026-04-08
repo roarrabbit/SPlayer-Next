@@ -81,7 +81,10 @@
     position: absolute;
     inset: -0.15em -0.4em;
     border-radius: 8px;
-    background-color: var(--lp-hover-bg, color-mix(in srgb, var(--lp-color, #fff) 14%, transparent));
+    background-color: var(
+      --lp-hover-bg,
+      color-mix(in srgb, var(--lp-color, #fff) 14%, transparent)
+    );
     opacity: 0;
     z-index: -1;
     transform: scale(1.05);

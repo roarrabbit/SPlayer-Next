@@ -181,12 +181,9 @@ onUnmounted(() => {
           v-for="(word, wi) in line.words"
           :key="wi"
           class="simple-lyrics-word"
-          :style="
-            i === activeIndex
-              ? { '--p': `${wordPercent(word, i)}%` }
-              : undefined
-          "
-        >{{ word.word }}</span>
+          :style="i === activeIndex ? { '--p': `${wordPercent(word, i)}%` } : undefined"
+          >{{ word.word }}</span
+        >
       </div>
       <!-- 翻译 -->
       <div v-if="line.translatedLyric" class="simple-lyrics-sub">

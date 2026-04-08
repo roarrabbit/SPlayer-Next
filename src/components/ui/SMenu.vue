@@ -35,7 +35,10 @@ const sizeClass = computed(() => {
     case "small":
       return { item: "h-9 px-2.5 text-sm gap-2.5", icon: collapsed ? "size-5" : "size-[18px]" };
     case "large":
-      return { item: "h-11 px-3.5 text-[15px] gap-3.5", icon: collapsed ? "size-6" : "size-[22px]" };
+      return {
+        item: "h-11 px-3.5 text-[15px] gap-3.5",
+        icon: collapsed ? "size-6" : "size-[22px]",
+      };
     default:
       return { item: "h-10.5 px-3 text-sm gap-3", icon: collapsed ? "size-5.5" : "size-5" };
   }
@@ -80,7 +83,11 @@ const handleSelect = (item: SMenuItem) => {
           ]"
           @click="handleSelect(item)"
         >
-          <component v-if="item.icon" :is="item.icon" :class="[sizeClass.icon, 'shrink-0 transition-[width,height] duration-300']" />
+          <component
+            :is="item.icon"
+            v-if="item.icon"
+            :class="[sizeClass.icon, 'shrink-0 transition-[width,height] duration-300']"
+          />
           <span
             class="truncate transition-opacity duration-300"
             :class="collapsed ? 'opacity-0' : 'opacity-100'"

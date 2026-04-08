@@ -64,7 +64,11 @@ onMounted(() => {
       <p class="text-xs text-on-surface-variant/50 mb-5 px-1">SPlayer</p>
 
       <!-- 搜索 -->
-      <SettingsSearch class="mb-4" @select="onSearchSelect" @active-change="isSearchActive = $event" />
+      <SettingsSearch
+        class="mb-4"
+        @select="onSearchSelect"
+        @active-change="isSearchActive = $event"
+      />
 
       <!-- 菜单 -->
       <Transition name="fade">

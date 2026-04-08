@@ -26,7 +26,6 @@ const fail = (code: ErrorCode, error?: unknown) => {
   return { success: false as const, error: code };
 };
 
-
 /**
  * 播放器原生事件回调
  * @param inst 播放器实例
@@ -311,7 +310,6 @@ export const registerPlayerIpc = (): void => {
       return fail(ErrorCode.UNKNOWN, error);
     }
   });
-
 
   // 获取所有音频输出设备
   ipcMain.handle("player:getOutputDevices", () => {

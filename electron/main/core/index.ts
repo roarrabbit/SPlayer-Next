@@ -98,4 +98,4 @@ export const initApp = (): void => {
     shutdownMedia();
     closeDatabase();
   });
-};;
+};

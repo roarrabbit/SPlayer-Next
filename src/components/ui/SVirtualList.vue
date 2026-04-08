@@ -366,7 +366,11 @@ defineExpose({
         </div>
         <div
           v-show="items.length > 0"
-          :style="{ height: `${totalHeight}px`, position: 'relative', transition: 'height 0.3s ease' }"
+          :style="{
+            height: `${totalHeight}px`,
+            position: 'relative',
+            transition: 'height 0.3s ease',
+          }"
         >
           <div ref="contentRef" class="absolute inset-x-0 top-0">
             <div

@@ -80,9 +80,7 @@ export const optimizeLyricLines = (lines: LyricLine[]) => {
     const bg = lines[i + 1];
     if (!bg?.isBG) continue;
 
-    const allWords = [...line.words, ...bg.words].filter(
-      (w) => w.word.trim().length > 0,
-    );
+    const allWords = [...line.words, ...bg.words].filter((w) => w.word.trim().length > 0);
     if (allWords.length === 0) continue;
 
     let minStart = line.startTime;
@@ -130,9 +128,7 @@ export const optimizeLyricLines = (lines: LyricLine[]) => {
     if (prev) {
       const noOverlap = line.startTime >= prev.endTime;
       advance = noOverlap ? 1000 : 400;
-      boundary = noOverlap
-        ? prev.endTime
-        : prev.startTime + (prev.endTime - prev.startTime) * 0.3;
+      boundary = noOverlap ? prev.endTime : prev.startTime + (prev.endTime - prev.startTime) * 0.3;
     } else {
       advance = 1000;
       boundary = 0;

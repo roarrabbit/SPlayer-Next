@@ -3,10 +3,12 @@ import tseslint from "@electron-toolkit/eslint-config-ts";
 import eslintConfigPrettier from "@electron-toolkit/eslint-config-prettier";
 import eslintPluginVue from "eslint-plugin-vue";
 import vueParser from "vue-eslint-parser";
+import autoImports from "./auto-eslint.mjs";
 
 export default defineConfig(
   { ignores: ["**/node_modules", "**/dist", "**/out"] },
   tseslint.configs.recommended,
+  { languageOptions: { globals: autoImports.globals } },
   eslintPluginVue.configs["flat/recommended"],
   {
     files: ["**/*.vue"],
@@ -26,6 +28,14 @@ export default defineConfig(
     rules: {
       "vue/require-default-prop": "off",
       "vue/multi-word-component-names": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-empty": ["error", { allowEmptyCatch: true }],
+      "no-undef": "off",
       "vue/block-lang": [
         "error",
         {

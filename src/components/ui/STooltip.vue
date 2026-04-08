@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { TooltipRoot, TooltipTrigger, TooltipContent, TooltipPortal, TooltipProvider } from "reka-ui";
+import {
+  TooltipRoot,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipPortal,
+  TooltipProvider,
+} from "reka-ui";
 
 withDefaults(
   defineProps<{

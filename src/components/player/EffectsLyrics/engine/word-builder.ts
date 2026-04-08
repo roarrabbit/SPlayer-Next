@@ -3,7 +3,7 @@
  */
 
 import { chunkAndSplitLyricWords } from "../utils/split-words";
-import type { LyricLine ,LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@/types/lyric";
 import { needsSpaceBetween } from "../utils/split-words";
 import { shouldChunkEmphasize } from "./emphasize";
 
@@ -86,7 +86,13 @@ export const buildWordSpans = (
           span.textContent = text;
           mainDiv.appendChild(span);
           measurements.push({ element: span, word: atom, width: 0, fadeWidth: 0 });
-          animTargets.push({ element: span, word: atom, isEmphasize: false, charElements: [], isLastWord: false });
+          animTargets.push({
+            element: span,
+            word: atom,
+            isEmphasize: false,
+            charElements: [],
+            isLastWord: false,
+          });
         }
       }
       const lastAtom = atoms[atoms.length - 1];
@@ -118,7 +124,13 @@ export const buildWordSpans = (
           span.textContent = word.word;
           mainDiv.appendChild(span);
           measurements.push({ element: span, word, width: 0, fadeWidth: 0 });
-          animTargets.push({ element: span, word, isEmphasize: false, charElements: [], isLastWord: false });
+          animTargets.push({
+            element: span,
+            word,
+            isEmphasize: false,
+            charElements: [],
+            isLastWord: false,
+          });
         }
       }
 
@@ -149,7 +161,13 @@ export const buildWordSpans = (
         span.textContent = text.trim();
         mainDiv.appendChild(span);
         measurements.push({ element: span, word: chunk, width: 0, fadeWidth: 0 });
-        animTargets.push({ element: span, word: chunk, isEmphasize: false, charElements: [], isLastWord: false });
+        animTargets.push({
+          element: span,
+          word: chunk,
+          isEmphasize: false,
+          charElements: [],
+          isLastWord: false,
+        });
       }
 
       if (text.trimEnd() !== text) {
@@ -193,7 +211,13 @@ function buildEmphasizedChunk(
 
   mainDiv.appendChild(wrapper);
   measurements.push({ element: wrapper, word: mergedWord, width: 0, fadeWidth: 0 });
-  animTargets.push({ element: wrapper, word: mergedWord, isEmphasize: true, charElements, isLastWord });
+  animTargets.push({
+    element: wrapper,
+    word: mergedWord,
+    isEmphasize: true,
+    charElements,
+    isLastWord,
+  });
 }
 
 /**

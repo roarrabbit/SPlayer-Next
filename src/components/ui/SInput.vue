@@ -52,8 +52,14 @@ const handleClear = () => {
       :disabled="disabled"
       class="flex-1 min-w-0 h-full bg-transparent outline-none border-none shadow-none text-on-surface placeholder:text-on-surface-variant/40 disabled:cursor-not-allowed"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-      @focus="isFocused = true; emit('focus')"
-      @blur="isFocused = false; emit('blur')"
+      @focus="
+        isFocused = true;
+        emit('focus');
+      "
+      @blur="
+        isFocused = false;
+        emit('blur');
+      "
     />
 
     <!-- 清空按钮 -->

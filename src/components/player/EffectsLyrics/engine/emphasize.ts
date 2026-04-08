@@ -24,9 +24,7 @@ const normalize = (min: number, max: number, x: number) =>
   Math.min(1, Math.max(0, (x - min) / (max - min)));
 
 const empEasing = (x: number): number =>
-  x < EMP_MID
-    ? easeIn(normalize(0, EMP_MID, x))
-    : 1 - easeOut(normalize(EMP_MID, 1, x));
+  x < EMP_MID ? easeIn(normalize(0, EMP_MID, x)) : 1 - easeOut(normalize(EMP_MID, 1, x));
 
 // ---- CJK 检测 ----
 
@@ -96,10 +94,7 @@ export const createFloatAnimation = (
   const del = Math.max(0, delay);
 
   const anim = wordEl.animate(
-    [
-      { transform: "translateY(0px)" },
-      { transform: `translateY(${-up}em)` },
-    ],
+    [{ transform: "translateY(0px)" }, { transform: `translateY(${-up}em)` }],
     {
       duration: Number.isFinite(dur) ? dur : 0,
       delay: Number.isFinite(del) ? del : 0,
@@ -157,23 +152,21 @@ export const createEmphasizeAnimations = (
     const wordDe = de + (du / 2.5 / charCount) * i;
 
     // 1. Glow + Scale + Translate 动画
-    const glowFrames: Keyframe[] = new Array(FRAME_COUNT)
-      .fill(0)
-      .map((_, j) => {
-        const x = (j + 1) / FRAME_COUNT;
-        const transX = empEasing(x);
-        const glowLevel = empEasing(x) * blur;
+    const glowFrames: Keyframe[] = new Array(FRAME_COUNT).fill(0).map((_, j) => {
+      const x = (j + 1) / FRAME_COUNT;
+      const transX = empEasing(x);
+      const glowLevel = empEasing(x) * blur;
 
-        const scale = 1 + transX * 0.1 * amount;
-        const offsetX = -transX * 0.03 * amount * (charElements.length / 2 - i);
-        const offsetY = -transX * 0.025 * amount;
+      const scale = 1 + transX * 0.1 * amount;
+      const offsetX = -transX * 0.03 * amount * (charElements.length / 2 - i);
+      const offsetY = -transX * 0.025 * amount;
 
-        return {
-          offset: x,
-          transform: `${scaleMatrix3dCSS(scale)} translate(${offsetX}em, ${offsetY}em)`,
-          textShadow: `0 0 ${Math.min(0.3, blur * 0.3)}em rgba(255, 255, 255, ${glowLevel})`,
-        };
-      });
+      return {
+        offset: x,
+        transform: `${scaleMatrix3dCSS(scale)} translate(${offsetX}em, ${offsetY}em)`,
+        textShadow: `0 0 ${Math.min(0.3, blur * 0.3)}em rgba(255, 255, 255, ${glowLevel})`,
+      };
+    });
 
     const glow = el.animate(glowFrames, {
       duration: animDu,
@@ -188,17 +181,15 @@ export const createEmphasizeAnimations = (
     result.push(glow);
 
     // 2. 正弦浮动动画
-    const floatFrames: Keyframe[] = new Array(FRAME_COUNT)
-      .fill(0)
-      .map((_, j) => {
-        const x = (j + 1) / FRAME_COUNT;
-        let y = Math.sin(x * Math.PI);
-        if (isBG) y *= 2;
-        return {
-          offset: x,
-          transform: `translateY(${-y * 0.05}em)`,
-        };
-      });
+    const floatFrames: Keyframe[] = new Array(FRAME_COUNT).fill(0).map((_, j) => {
+      const x = (j + 1) / FRAME_COUNT;
+      let y = Math.sin(x * Math.PI);
+      if (isBG) y *= 2;
+      return {
+        offset: x,
+        transform: `translateY(${-y * 0.05}em)`,
+      };
+    });
 
     const float = el.animate(floatFrames, {
       duration: animDu * 1.4,
@@ -215,4 +206,3 @@ export const createEmphasizeAnimations = (
 
   return result;
 };
-
