@@ -5,8 +5,7 @@ import type {
   SpringPreset,
 } from "@/types/settings";
 import { SPRING_PRESETS } from "@/types/settings";
-import type { LocaleCode } from "@/i18n";
-import type { SystemConfig } from "@shared/types/settings";
+import type { SystemConfig, LocaleCode } from "@shared/types/settings";
 import { defaultSystemConfig } from "@shared/defaults/settings";
 
 export const useSettingsStore = defineStore(

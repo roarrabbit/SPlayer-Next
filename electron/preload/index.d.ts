@@ -1,6 +1,6 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
 import { PlayerApi } from "@shared/types/player";
-import { ConfigApi } from "@shared/types/settings";
+import { ConfigApi, LocaleCode } from "@shared/types/settings";
 import { LibraryApi } from "@shared/types/library";
 
 declare global {
@@ -12,6 +12,7 @@ declare global {
       system: {
         toggleDevTools: () => Promise<void>;
         showInExplorer: (filePath: string) => Promise<void>;
+        setLocale: (locale: LocaleCode) => void;
       };
       library: LibraryApi;
     };

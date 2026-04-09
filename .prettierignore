@@ -3,5 +3,8 @@ dist
 
 pnpm-lock.yaml
 LICENSE.md
+
 auto-eslint.mjs
 auto-imports.d.ts
+components.d.ts
+native/*/index.d.ts

@@ -1,11 +1,13 @@
 import { BrowserWindow, nativeTheme, ThumbarButton } from "electron";
 import { broadcast } from "../utils/broadcast";
 import { loadThemedIcon } from "../utils/icon";
+import { t } from "../utils/i18n";
 import { thumbarLog } from "../utils/logger";
 
 export interface Thumbar {
   clearThumbar(): void;
   updateThumbar(playing: boolean): void;
+  refreshLocale(): void;
 }
 
 let thumbar: Thumbar | null = null;
@@ -25,22 +27,22 @@ class ThumbarImpl implements Thumbar {
   constructor(win: BrowserWindow) {
     this.win = win;
     this.prev = {
-      tooltip: "上一曲",
+      tooltip: t("prev"),
       icon: thumbarIcon("prev"),
       click: () => broadcast("player:event", { type: "prev" }),
     };
     this.next = {
-      tooltip: "下一曲",
+      tooltip: t("next"),
       icon: thumbarIcon("next"),
       click: () => broadcast("player:event", { type: "next" }),
     };
     this.play = {
-      tooltip: "播放",
+      tooltip: t("play"),
       icon: thumbarIcon("play"),
       click: () => broadcast("player:event", { type: "play" }),
     };
     this.pause = {
-      tooltip: "暂停",
+      tooltip: t("pause"),
       icon: thumbarIcon("pause"),
       click: () => broadcast("player:event", { type: "pause" }),
     };
@@ -66,6 +68,15 @@ class ThumbarImpl implements Thumbar {
     if (this.win.isDestroyed()) return;
     this.isPlaying = playing;
     this.win.setThumbarButtons([this.prev, playing ? this.pause : this.play, this.next]);
+  }
+
+  // 语言变更后刷新 tooltip
+  refreshLocale(): void {
+    this.prev.tooltip = t("prev");
+    this.next.tooltip = t("next");
+    this.play.tooltip = t("play");
+    this.pause.tooltip = t("pause");
+    this.updateThumbar(this.isPlaying);
   }
 
   // 清除工具栏

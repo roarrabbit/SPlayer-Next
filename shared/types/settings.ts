@@ -1,3 +1,6 @@
+/** 支持的语言代码 */
+export type LocaleCode = "zh-CN" | "en-US";
+
 /** 播放器配置 */
 export interface PlayerSettings {
   /** 加载后自动播放 */

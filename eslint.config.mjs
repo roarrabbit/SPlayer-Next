@@ -1,12 +1,22 @@
+import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "@electron-toolkit/eslint-config-ts";
-import { defineConfig } from "eslint/config";
 import eslintConfigPrettier from "eslint-config-prettier";
 import eslintPluginVue from "eslint-plugin-vue";
 import vueParser from "vue-eslint-parser";
 import autoImports from "./auto-eslint.mjs";
 
 export default defineConfig(
-  { ignores: ["**/node_modules", "**/dist", "**/out"] },
+  globalIgnores([
+    "**/node_modules/",
+    "**/dist/",
+    "**/out/",
+    "**/target/",
+    "**/build/",
+    "**/resources/",
+    "**/public/",
+    "**/.git/",
+    "native/*/index.d.ts",
+  ]),
   tseslint.configs.recommended,
   { languageOptions: { globals: autoImports.globals } },
   eslintPluginVue.configs["flat/recommended"],

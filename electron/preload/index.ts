@@ -68,6 +68,8 @@ const api = {
     toggleDevTools: () => ipcRenderer.invoke("system:toggleDevTools"),
     // 在文件管理器中显示文件
     showInExplorer: (filePath: string) => ipcRenderer.invoke("system:showInExplorer", filePath),
+    // 同步语言到主进程
+    setLocale: (locale: string) => ipcRenderer.send("system:setLocale", locale),
   },
   library: {
     // 开始扫描（默认增量）

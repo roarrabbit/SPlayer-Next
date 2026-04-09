@@ -25,14 +25,14 @@ app.use(i18n);
 // 初始化主题
 useThemeStore().init();
 
-// 同步语言设置：store（持久化） ↔ vue-i18n（运行时）
-const settingsStore = useSettingsStore();
-i18n.global.locale.value = settingsStore.locale;
+// 同步语言设置
 watch(
-  () => settingsStore.locale,
+  () => useSettingsStore().locale,
   (v) => {
     i18n.global.locale.value = v;
+    window.api.system.setLocale(v);
   },
+  { immediate: true },
 );
 
 // 初始化程序

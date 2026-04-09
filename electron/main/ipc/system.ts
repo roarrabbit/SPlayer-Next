@@ -1,5 +1,9 @@
 import { ipcMain, shell } from "electron";
+import type { LocaleCode } from "@shared/types/settings";
+import { setLocale } from "../utils/i18n";
 import { systemLog } from "../utils/logger";
+import { refreshTray } from "../services/tray";
+import { getThumbar } from "../services/thumbar";
 import { getMainWindow } from "../window";
 
 /**
@@ -20,5 +24,13 @@ export const registerSystemIpc = (): void => {
   // 在文件管理器中显示文件
   ipcMain.handle("system:showInExplorer", (_event, filePath: string) => {
     shell.showItemInFolder(filePath);
+  });
+
+  // 切换主进程语言（托盘菜单、缩略图工具栏等）
+  ipcMain.on("system:setLocale", (_event, locale: LocaleCode) => {
+    if (setLocale(locale)) {
+      refreshTray();
+      getThumbar()?.refreshLocale();
+    }
   });
 };

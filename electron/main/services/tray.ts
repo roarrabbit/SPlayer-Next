@@ -3,6 +3,7 @@ import type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import { broadcast } from "../utils/broadcast";
 import { appName } from "../utils/config";
 import { loadIcon, loadThemedIcon } from "../utils/icon";
+import { t } from "../utils/i18n";
 import { trayLog } from "../utils/logger";
 
 type PlayState = "playing" | "paused";
@@ -14,11 +15,8 @@ let songName = "";
 let repeatMode: RepeatMode = "list";
 let shuffleMode: ShuffleMode = "off";
 
-const REPEAT_LABELS: Record<RepeatMode, string> = {
-  list: "列表循环",
-  one: "单曲循环",
-  off: "不循环",
-};
+const repeatLabel = (mode: RepeatMode): string =>
+  ({ list: t("repeatList"), one: t("repeatOne"), off: t("repeatOff") })[mode];
 /** 获取菜单图标 */
 const menuIcon = (name: string) => {
   try {
@@ -44,34 +42,34 @@ const buildMenu = (): Menu => {
     },
     { type: "separator" },
     {
-      label: "上一曲",
+      label: t("prev"),
       icon: menuIcon("prev"),
       click: () => broadcast("player:event", { type: "prev" }),
     },
     {
-      label: playState === "paused" ? "播放" : "暂停",
+      label: playState === "paused" ? t("play") : t("pause"),
       icon: menuIcon(playState === "paused" ? "play" : "pause"),
       click: () => broadcast("player:event", { type: playState === "paused" ? "play" : "pause" }),
     },
     {
-      label: "下一曲",
+      label: t("next"),
       icon: menuIcon("next"),
       click: () => broadcast("player:event", { type: "next" }),
     },
     { type: "separator" },
     {
-      label: shuffleMode === "on" ? "随机播放" : "顺序播放",
+      label: shuffleMode === "on" ? t("shuffle") : t("sequential"),
       icon: menuIcon("shuffle"),
       submenu: [
         {
-          label: "随机播放",
+          label: t("shuffle"),
           icon: menuIcon("shuffle"),
           type: "radio",
           checked: shuffleMode === "on",
           click: () => broadcast("player:event", { type: "setShuffle", data: { mode: "on" } }),
         },
         {
-          label: "顺序播放",
+          label: t("sequential"),
           icon: menuIcon("shuffle"),
           type: "radio",
           checked: shuffleMode === "off",
@@ -80,25 +78,25 @@ const buildMenu = (): Menu => {
       ],
     },
     {
-      label: REPEAT_LABELS[repeatMode],
+      label: repeatLabel(repeatMode),
       icon: menuIcon(repeatMode === "one" ? "repeat-once" : "repeat"),
       submenu: [
         {
-          label: "列表循环",
+          label: t("repeatList"),
           icon: menuIcon("repeat"),
           type: "radio",
           checked: repeatMode === "list",
           click: () => broadcast("player:event", { type: "setRepeat", data: { mode: "list" } }),
         },
         {
-          label: "单曲循环",
+          label: t("repeatOne"),
           icon: menuIcon("repeat-once"),
           type: "radio",
           checked: repeatMode === "one",
           click: () => broadcast("player:event", { type: "setRepeat", data: { mode: "one" } }),
         },
         {
-          label: "不循环",
+          label: t("repeatOff"),
           icon: menuIcon("repeat"),
           type: "radio",
           checked: repeatMode === "off",
@@ -108,7 +106,7 @@ const buildMenu = (): Menu => {
     },
     { type: "separator" },
     {
-      label: "退出",
+      label: t("quit"),
       icon: menuIcon("power"),
       click: () => app.quit(),
     },
@@ -117,7 +115,7 @@ const buildMenu = (): Menu => {
 };
 
 /** 刷新菜单和 tooltip */
-const refresh = (): void => {
+export const refreshTray = (): void => {
   if (!tray) return;
   tray.setContextMenu(buildMenu());
   tray.setToolTip(songName || appName);
@@ -151,7 +149,7 @@ export const initTray = (win: BrowserWindow): void => {
     }
   });
   // 系统主题变化时刷新菜单图标
-  nativeTheme.on("updated", refresh);
+  nativeTheme.on("updated", refreshTray);
   trayLog.info("初始化系统托盘");
 };
 
@@ -162,7 +160,7 @@ export const initTray = (win: BrowserWindow): void => {
 export const setTraySongName = (name: string): void => {
   // 限制显示长度，避免菜单过宽
   songName = name.length > 20 ? name.slice(0, 20) + "..." : name;
-  refresh();
+  refreshTray();
 };
 
 /**
@@ -171,7 +169,7 @@ export const setTraySongName = (name: string): void => {
  */
 export const setTrayPlayState = (state: PlayState): void => {
   playState = state;
-  refresh();
+  refreshTray();
 };
 
 /**
@@ -182,7 +180,7 @@ export const setTrayPlayState = (state: PlayState): void => {
 export const setTrayPlayMode = (repeat: RepeatMode, shuffle: ShuffleMode): void => {
   repeatMode = repeat;
   shuffleMode = shuffle;
-  refresh();
+  refreshTray();
 };
 
 /** 销毁托盘 */
