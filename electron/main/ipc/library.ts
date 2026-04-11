@@ -9,7 +9,7 @@ import {
   deleteTracksByPaths,
 } from "@main/database";
 import { startScan, cancelScan, isScanning } from "@main/services/scanner";
-import { fetchArtistAvatar } from "@server/artistAvatar";
+import { fetchArtistAvatar, prefetchArtistAvatars } from "@server/artistAvatar";
 import { libraryLog } from "@main/utils/logger";
 import { ErrorCode } from "@shared/types/errors";
 
@@ -122,6 +122,20 @@ export const registerLibraryIpc = (): void => {
     }
   });
 
+  // 预取歌手头像
+  ipcMain.handle("library:prefetchArtistAvatars", async (_event, artistNames: string[]) => {
+    try {
+      if (!Array.isArray(artistNames) || artistNames.length === 0) {
+        return { success: true, data: {} };
+      }
+      const data = await prefetchArtistAvatars(artistNames);
+      return { success: true, data };
+    } catch (error) {
+      libraryLog.error("预取歌手头像失败:", error);
+      return { success: false, error: ErrorCode.UNKNOWN };
+    }
+  });
+
   // 删除曲目文件并从数据库移除
   ipcMain.handle("library:deleteTracks", async (_event, paths: string[]) => {
     try {
@@ -144,4 +158,4 @@ export const registerLibraryIpc = (): void => {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
-};
+};;

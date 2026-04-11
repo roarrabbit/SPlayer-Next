@@ -23,6 +23,7 @@ export interface ExternalLyric {
 export interface Artist {
   id?: string;
   name: string;
+  avatar?: string;
 }
 
 /** 专辑 */
@@ -49,7 +50,7 @@ export interface OnlineMatch {
   coverOriginal?: string;
 }
 
-/** 歌曲（轻量，用于播放列表） */
+/** 歌曲信息 */
 export interface Track {
   id: string;
   source: TrackSource;
@@ -73,7 +74,7 @@ export interface Track {
   matched?: OnlineMatch;
 }
 
-/** 歌曲详细信息（按需加载） */
+/** 歌曲详细信息 */
 export interface TrackDetail {
   quality: AudioQuality;
   embeddedLyric?: string;

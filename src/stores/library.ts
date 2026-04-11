@@ -7,11 +7,61 @@ import type { ArtistProfile } from "@/types/artist";
 const trackDb = localforage.createInstance({ name: "splayer", storeName: "library" });
 
 export const useLibraryStore = defineStore("library", () => {
+  /** 曲目列表 */
   const tracks = shallowRef<Track[]>([]);
+  /** 扫描目录列表 */
   const scanDirs = ref<string[]>([]);
+  /** 是否正在扫描 */
   const scanning = ref(false);
+  /** 扫描进度 */
   const scanProgress = ref<ScanProgress | null>(null);
+  /** 是否已初始化 */
   const initialized = ref(false);
+  /** 歌手头像缓存 */
+  const artistAvatars = shallowRef<Record<string, string>>({});
+
+  /** 标准化歌手名 */
+  const normalizeArtistName = (name: string): string => name.trim().toLowerCase();
+
+  /**
+   * 获取歌手头像
+   * @param artistName 歌手名
+   */
+  const getArtistAvatar = (artistName: string): string | undefined => {
+    const key = normalizeArtistName(artistName);
+    if (!key) return;
+    return artistAvatars.value[key];
+  };
+
+  /**
+   * 设置歌手头像
+   * @param artistName 歌手名
+   * @param avatar 歌手头像
+   */
+  const setArtistAvatar = (artistName: string, avatar: string): void => {
+    const key = normalizeArtistName(artistName);
+    if (!key || !avatar) return;
+    if (artistAvatars.value[key] === avatar) return;
+    artistAvatars.value = { ...artistAvatars.value, [key]: avatar };
+  };
+
+  /** 批量预取头像 */
+  const loadArtistAvatars = (): void => {
+    const names = getArtistList()
+      .filter((item) => !artistAvatars.value[normalizeArtistName(item.name)])
+      .map((item) => item.name);
+    if (!names.length) return;
+    window.api.library.prefetchArtistAvatars(names).then((res) => {
+      if (!res.success || !res.data) return;
+      const patch: Record<string, string> = {};
+      for (const [key, avatar] of Object.entries(res.data)) {
+        if (avatar) patch[key] = avatar;
+      }
+      if (Object.keys(patch).length > 0) {
+        artistAvatars.value = { ...artistAvatars.value, ...patch };
+      }
+    });
+  };
 
   /** 将曲目写入 IndexedDB 缓存 */
   const cacheTracks = (items: Track[]): void => {
@@ -35,6 +85,8 @@ export const useLibraryStore = defineStore("library", () => {
     }
     if (dirsRes.success && dirsRes.data) scanDirs.value = dirsRes.data;
     initialized.value = true;
+    // 预取歌手头像
+    loadArtistAvatars();
   };
 
   /** 开始扫描 */
@@ -90,6 +142,7 @@ export const useLibraryStore = defineStore("library", () => {
     if (res.success && res.data) {
       tracks.value = res.data;
       cacheTracks(res.data);
+      loadArtistAvatars();
     }
   };
 
@@ -106,6 +159,7 @@ export const useLibraryStore = defineStore("library", () => {
           if (res.success && res.data) {
             tracks.value = res.data;
             cacheTracks(res.data);
+            loadArtistAvatars();
           }
         });
       } else if (data.phase === "error") {
@@ -133,6 +187,22 @@ export const useLibraryStore = defineStore("library", () => {
     return { deleted: 0, failed: paths.length };
   };
 
+  /** 获取所有歌手的聚合列表 */
+  const getArtistList = (): { name: string; trackCount: number }[] => {
+    const map = new Map<string, { name: string; trackCount: number }>();
+    for (const track of tracks.value) {
+      for (const artist of track.artists) {
+        const name = artist.name.trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        const existing = map.get(key);
+        if (existing) existing.trackCount++;
+        else map.set(key, { name, trackCount: 1 });
+      }
+    }
+    return [...map.values()];
+  };
+
   /** 根据专辑名从曲库聚合出 Collection */
   const getAlbumCollection = (albumName: string): Collection | null => {
     const albumTracks = tracks.value.filter((t) => t.album?.name === albumName);
@@ -157,7 +227,7 @@ export const useLibraryStore = defineStore("library", () => {
     };
   };
 
-  /** 根据歌手名从曲库聚合出 ArtistProfile */
+  /** 从曲库聚合歌手信息 */
   const getArtistProfile = (artistName: string): ArtistProfile | null => {
     const name = artistName.trim();
     if (!name) return null;
@@ -188,6 +258,7 @@ export const useLibraryStore = defineStore("library", () => {
     return {
       id: encodeURIComponent(name),
       name,
+      avatar: getArtistAvatar(name),
       source: "local",
       tracks: artistTracks,
       albums,
@@ -202,6 +273,7 @@ export const useLibraryStore = defineStore("library", () => {
     scanning,
     scanProgress,
     initialized,
+    artistAvatars,
     load,
     startScan,
     cancelScan,
@@ -210,6 +282,9 @@ export const useLibraryStore = defineStore("library", () => {
     subscribeScanProgress,
     unsubscribeScanProgress,
     deleteTracks,
+    getArtistAvatar,
+    setArtistAvatar,
+    getArtistList,
     getAlbumCollection,
     getArtistProfile,
   };

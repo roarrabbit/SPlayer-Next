@@ -95,6 +95,9 @@ const api = {
     // 获取歌手头像
     fetchArtistAvatar: (artistName: string) =>
       ipcRenderer.invoke("library:fetchArtistAvatar", artistName),
+    // 预取歌手头像
+    prefetchArtistAvatars: (artistNames: string[]) =>
+      ipcRenderer.invoke("library:prefetchArtistAvatars", artistNames),
     // 订阅扫描进度事件
     onScanProgress: (callback: (progress: unknown) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);

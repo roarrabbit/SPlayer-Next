@@ -57,12 +57,12 @@ const emit = defineEmits<{
       @click="emit('click', item)"
     >
       <!-- 封面 -->
-      <div class="relative overflow-hidden will-change-transform" :class="coverRounded">
+      <div class="relative overflow-hidden group-hover:will-change-transform" :class="coverRounded">
         <SImg
           :src="item.cover"
           :fallback="actualFallback"
           :alt="item.title"
-          class="w-full aspect-square transition-[transform,filter] duration-300 ease-out will-change-transform group-hover:scale-108 group-hover:brightness-80"
+          class="w-full aspect-square transition-[transform,filter] duration-300 ease-out group-hover:scale-108 group-hover:brightness-80"
         />
         <!-- 播放按钮 -->
         <div

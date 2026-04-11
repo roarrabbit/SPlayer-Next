@@ -55,6 +55,7 @@ const loadArtist = async () => {
     if (artist.value && !artist.value.avatar) {
       const res = await window.api.library.fetchArtistAvatar(artistName);
       if (res.success && res.data && artist.value?.name === artistName) {
+        libraryStore.setArtistAvatar(artistName, res.data);
         artist.value = { ...artist.value, avatar: res.data };
       }
     }
