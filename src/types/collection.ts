@@ -3,6 +3,20 @@ import type { Track, Artist, TrackSource } from "@shared/types/player";
 /** 合集类型 */
 export type CollectionType = "album" | "playlist" | "radio";
 
+/** 歌单持久化结构 */
+export interface PlaylistRecord {
+  id: string;
+  type: CollectionType;
+  source: TrackSource;
+  title: string;
+  description?: string;
+  /** 歌曲 ID 列表 */
+  trackIds: string[];
+  trackCount?: number;
+  createTime?: number;
+  updateTime?: number;
+}
+
 /** 合集信息 */
 export interface Collection {
   id: string;
