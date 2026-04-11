@@ -1,6 +1,7 @@
 import type { SettingCategory } from "@/types/settings-schema";
 import { useSettingsStore } from "@/stores/settings";
 import DeviceSelector from "@/components/settings/custom/DeviceSelector.vue";
+import StorageManager from "@/components/settings/custom/StorageManager.vue";
 import IconLucideCog from "~icons/lucide/cog";
 import IconLucidePlay from "~icons/lucide/play";
 import IconLucideMic2 from "~icons/lucide/mic-2";
@@ -41,6 +42,16 @@ export const settingsSchema: SettingCategory[] = [
             type: "switch",
             binding: { store: "settings", path: "system.system.taskbarProgress" },
             defaultValue: true,
+          },
+        ],
+      },
+      {
+        id: "reset",
+        items: [
+          {
+            key: "storageManager",
+            type: "custom",
+            component: StorageManager,
           },
         ],
       },

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TrackSource } from "@shared/types/player";
-import type { ArtistProfile } from "@/types/artist";
+import type { ArtistProfile, CoverItem } from "@/types/artist";
 import { useLibraryStore } from "@/stores/library";
 import { useSettingsStore } from "@/stores/settings";
 import { navigateToAlbum } from "@/utils/navigate";
@@ -106,6 +106,14 @@ const tabs = computed(() => {
     items.push({ key: "albums", label: t("artist.albums") });
   }
   return items;
+});
+
+const albumItems = computed<CoverItem[]>(() => {
+  if (!artist.value?.albums.length) return [];
+  return artist.value.albums.map((item) => ({
+    ...item,
+    subtitle: t("artist.totalSongs", { count: item.trackCount }),
+  }));
 });
 </script>
 
@@ -229,7 +237,7 @@ const tabs = computed(() => {
           </div>
           <!-- 专辑网格 -->
           <div v-else-if="activeTab === 'albums'" key="albums" class="flex-1 min-h-0 overflow-y-auto px-5 pt-3 pb-6">
-            <CoverList :items="artist.albums" @click="(item) => navigateToAlbum(item.title)" />
+            <CoverList :items="albumItems" @click="(item) => navigateToAlbum(item.title)" />
           </div>
         </Transition>
       </div>

@@ -4,6 +4,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { usePlaylistStore } from "@/stores/playlist";
 import IconLucideHome from "~icons/lucide/home";
 import IconLucideMusic from "~icons/lucide/music";
+import IconLucideUser from "~icons/lucide/user";
 import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucidePlus from "~icons/lucide/plus";
 import SButton from "@/components/ui/SButton.vue";
@@ -24,6 +25,7 @@ const handleCreate = async () => {
 const menuItems = computed<SMenuItem[]>(() => [
   { key: "/", label: t("nav.home"), icon: markRaw(IconLucideHome) },
   { key: "/library", label: t("nav.library"), icon: markRaw(IconLucideMusic) },
+  { key: "/artists/local", label: t("artist.label"), icon: markRaw(IconLucideUser) },
   { key: "divider", type: "divider" },
   {
     key: "playlist-group",
@@ -53,6 +55,8 @@ const activeKey = computed(() => {
   // 音乐库子页面
   if (route.path.startsWith("/collection/") && !route.path.includes("/playlist/"))
     return "/library";
+  // 歌手详情页归属歌手列表
+  if (route.path.startsWith("/artist/local/")) return "/artists/local";
   const items = menuItems.value.filter((item) => !item.type || item.type === "item");
   return (
     items.find((item) => route.path === item.key || route.path.startsWith(item.key + "/"))?.key ??

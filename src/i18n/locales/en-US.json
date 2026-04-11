@@ -126,7 +126,8 @@
       "media": "Media Controls",
       "device": "Output Device",
       "discord": "Discord RPC",
-      "systemConfig": "System"
+      "systemConfig": "System",
+      "reset": "Reset"
     },
     "language": {
       "label": "Language",
@@ -318,6 +319,18 @@
     "taskbarProgress": {
       "label": "Taskbar Progress",
       "description": "Show playback progress on the taskbar icon"
+    },
+    "storageManager": {
+      "label": "Data Management",
+      "description": "Reset settings or clear all data"
+    },
+    "resetSettings": {
+      "label": "Reset Settings",
+      "confirm": "Are you sure you want to restore all settings to default?"
+    },
+    "resetAll": {
+      "label": "Reset All Data",
+      "confirm": "This will clear all playlists, sign out, and reset all settings. This action cannot be undone!"
     }
   },
   "collection": {
@@ -344,8 +357,9 @@
     "edit": "Edit {type}"
   },
   "artist": {
-    "label": "Artist",
+    "label": "Artists",
     "songs": "Songs",
+    "totalArtists": "{count} artists",
     "totalSongs": "{count} songs",
     "totalAlbums": "{count} albums",
     "albums": "Albums"

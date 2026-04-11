@@ -142,6 +142,7 @@ declare module 'vue' {
     STabs: typeof import('./src/components/ui/STabs.vue')['default']
     SToast: typeof import('./src/components/ui/SToast.vue')['default']
     STooltip: typeof import('./src/components/ui/STooltip.vue')['default']
+    StorageManager: typeof import('./src/components/settings/custom/StorageManager.vue')['default']
     SVirtualList: typeof import('./src/components/ui/SVirtualList.vue')['default']
     SwitchRoot: typeof import('reka-ui')['SwitchRoot']
     SwitchThumb: typeof import('reka-ui')['SwitchThumb']

@@ -27,6 +27,11 @@ const router = createRouter({
           name: "artist",
           component: () => import("@/pages/Artist.vue"),
         },
+        {
+          path: "artists/local",
+          name: "artist-list",
+          component: () => import("@/pages/ArtistList.vue"),
+        },
       ],
     },
     {

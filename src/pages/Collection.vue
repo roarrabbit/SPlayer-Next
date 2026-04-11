@@ -47,10 +47,11 @@ const loadCollection = async () => {
   if (!isCurrentRoute.value) return;
   // 重置折叠状态
   collapsed.value = false;
+  // 确保音乐库已加载
+  if (source.value === "local" && !libraryStore.initialized) await libraryStore.load();
   if (source.value === "local" && type.value === "playlist") {
     collection.value = await playlistStore.get(id.value);
   } else if (source.value === "local" && type.value === "album") {
-    if (!libraryStore.initialized) await libraryStore.load();
     const albumName = decodeURIComponent(id.value);
     collection.value = libraryStore.getAlbumCollection(albumName);
   }
