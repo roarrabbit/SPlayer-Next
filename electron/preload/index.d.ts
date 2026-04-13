@@ -3,6 +3,7 @@ import { PlayerApi } from "@shared/types/player";
 import { ConfigApi, LocaleCode } from "@shared/types/settings";
 import { LibraryApi } from "@shared/types/library";
 import { NowPlayingApi } from "@shared/types/nowPlaying";
+import { WindowApi } from "@shared/types/window";
 
 declare global {
   interface Window {
@@ -16,6 +17,7 @@ declare global {
         setLocale: (locale: LocaleCode) => void;
       };
       library: LibraryApi;
+      window: WindowApi;
       nowPlaying: NowPlayingApi;
     };
   }

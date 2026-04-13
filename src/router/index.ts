@@ -39,11 +39,6 @@ const router = createRouter({
         },
       ],
     },
-    {
-      path: "/desktop-lyric",
-      name: "desktop-lyric",
-      component: () => import("@/pages/DesktopLyric.vue"),
-    },
   ],
 });
 

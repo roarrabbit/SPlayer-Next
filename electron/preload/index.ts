@@ -117,6 +117,12 @@ const api = {
       return () => ipcRenderer.removeListener("library:scanProgress", handler);
     },
   },
+  window: {
+    // 切换桌面歌词窗口
+    toggleDesktopLyric: () => ipcRenderer.invoke("window:toggleDesktopLyric"),
+    // 查询桌面歌词窗口是否打开
+    isDesktopLyricOpen: () => ipcRenderer.invoke("window:isDesktopLyricOpen"),
+  },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
     update: (payload: unknown) => ipcRenderer.send("nowPlaying:update", payload),

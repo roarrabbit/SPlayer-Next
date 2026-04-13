@@ -1,6 +1,7 @@
 import type { Track, TrackDetail } from "@shared/types/player";
 import type { LyricFormat, LyricLine, LyricSource } from "@shared/types/lyrics";
-import { bestExternalIndex, detectFormat, parseLyric, findLyricIndex } from "@/utils/lyric/parse";
+import { bestExternalIndex, detectFormat, parseLyric } from "@/utils/lyric/parse";
+import { findLyricIndex } from "@shared/utils/lyric";
 import { loadLyricContent } from "@/services/lyricLoader";
 
 export const useMediaStore = defineStore("media", () => {

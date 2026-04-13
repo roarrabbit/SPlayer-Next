@@ -50,6 +50,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "index.html"),
+          "desktop-lyric": resolve(__dirname, "windows/desktop-lyric/index.html"),
         },
       },
     },

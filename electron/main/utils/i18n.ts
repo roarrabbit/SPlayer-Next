@@ -10,6 +10,8 @@ interface MainMessages {
   repeatList: string;
   repeatOne: string;
   repeatOff: string;
+  openDesktopLyric: string;
+  closeDesktopLyric: string;
   quit: string;
 }
 
@@ -24,6 +26,8 @@ const messages: Record<LocaleCode, MainMessages> = {
     repeatList: "列表循环",
     repeatOne: "单曲循环",
     repeatOff: "不循环",
+    openDesktopLyric: "开启桌面歌词",
+    closeDesktopLyric: "关闭桌面歌词",
     quit: "退出",
   },
   "en-US": {
@@ -36,6 +40,8 @@ const messages: Record<LocaleCode, MainMessages> = {
     repeatList: "Repeat All",
     repeatOne: "Repeat One",
     repeatOff: "No Repeat",
+    openDesktopLyric: "Open Desktop Lyric",
+    closeDesktopLyric: "Close Desktop Lyric",
     quit: "Quit",
   },
 };
