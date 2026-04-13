@@ -1,4 +1,4 @@
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 
 /**
  * 查找下一个主行（非背景行）的索引

@@ -12,7 +12,7 @@
  * 逐字格式与 QRC 相同（文字在前，时间在后），但行头是属性码而非时间戳
  */
 
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 
 /** 匹配行头属性码 [0]~[9] */
 const PROP_RE = /^\[(\d)\]/;

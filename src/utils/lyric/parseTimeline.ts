@@ -8,7 +8,7 @@
  * QRC 额外支持 XML 包裹（LyricContent 属性或 CDATA 段）
  */
 
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 
 /** 匹配行头时间戳 [起始ms,时长ms] */
 const LINE_HEADER_RE = /^\[(\d+),(\d+)\]/;

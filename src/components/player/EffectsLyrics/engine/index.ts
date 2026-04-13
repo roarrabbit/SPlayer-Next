@@ -9,7 +9,7 @@
  */
 
 import { Spring, type SpringParams } from "./spring";
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 import { setMin } from "../utils/math";
 import { DEFAULTS } from "./constants";
 import {

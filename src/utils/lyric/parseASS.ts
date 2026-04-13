@@ -9,7 +9,7 @@
  * 时间格式：H:MM:SS.cc（厘秒，即 1/100 秒）
  */
 
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 
 /** 匹配 Dialogue 行各字段 */
 const DIALOGUE_RE = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),([^,]*),/;

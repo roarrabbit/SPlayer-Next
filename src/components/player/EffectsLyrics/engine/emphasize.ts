@@ -6,7 +6,7 @@
  * 2. 强调效果（长音节单词）：缩放 + 辉光 + 正弦浮动 + 逐字符延迟
  */
 
-import type { LyricWord } from "@/types/lyric";
+import type { LyricWord } from "@shared/types/lyrics";
 
 // ---- 常量 ----
 

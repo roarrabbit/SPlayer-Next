@@ -6,7 +6,7 @@
  */
 
 import { clamp, easeInOutBack, easeOutExpo } from "../utils/math";
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 
 /** 间奏检测结果：[起始时间, 结束时间, 前一行索引, 下一行是否为对唱] */
 export type InterludeInfo = [number, number, number, boolean];

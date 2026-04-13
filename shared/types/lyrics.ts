@@ -1,6 +1,11 @@
-// 基础类型从 shared 重导出
-export type { LyricFormat, ExternalLyric } from "@shared/types/player";
-import type { LyricFormat } from "@shared/types/player";
+/** 歌词格式 */
+export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "lrc" | "srt" | "ass";
+
+/** 外部歌词文件 */
+export interface ExternalLyric {
+  format: LyricFormat;
+  path: string;
+}
 
 /** 歌词来源标识 */
 export type LyricSource =
@@ -28,7 +33,7 @@ export interface LyricWord extends LyricSpan {
   ruby?: LyricSpan[];
 }
 
-/** 一行歌词，存储多个单词 */
+/** 一行歌词 */
 export interface LyricLine {
   /**
    * 该行的所有单词
@@ -43,8 +48,8 @@ export interface LyricLine {
   startTime: number;
   /** 句子的结束时间，单位为毫秒 */
   endTime: number;
-  /** 该行是否为背景歌词行，当该行歌词的上一句非背景歌词被激活时，这行歌词将会显示出来，注意每个非背景歌词下方只能拥有一个背景歌词 */
+  /** 是否为背景歌词行 */
   isBG: boolean;
-  /** 该行是否为对唱歌词行（即歌词行靠右对齐） */
+  /** 是否为对唱歌词行（右对齐） */
   isDuet: boolean;
 }

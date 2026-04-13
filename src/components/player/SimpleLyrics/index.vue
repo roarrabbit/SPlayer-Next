@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 
 const props = withDefaults(
   defineProps<{

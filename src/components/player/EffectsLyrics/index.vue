@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 import { LyricRenderer } from "./engine";
 import type { SpringParams } from "./engine/spring";
 import { DEFAULTS } from "./engine/constants";

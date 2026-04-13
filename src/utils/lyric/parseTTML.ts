@@ -10,7 +10,7 @@
  * - 逐字间有意义的空格保留
  */
 
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 import { parseTTMLTime } from "./timestamp";
 
 /**

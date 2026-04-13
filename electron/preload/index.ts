@@ -117,6 +117,30 @@ const api = {
       return () => ipcRenderer.removeListener("library:scanProgress", handler);
     },
   },
+  nowPlaying: {
+    // 渲染进程同步当前播放状态到主进程
+    update: (payload: unknown) => ipcRenderer.send("nowPlaying:update", payload),
+    // 拉取当前完整快照
+    requestSnapshot: () => ipcRenderer.invoke("nowPlaying:requestSnapshot"),
+    // 订阅歌曲切换事件
+    onTrackChange: (callback: (data: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);
+      ipcRenderer.on("nowPlaying:track-change", handler);
+      return () => ipcRenderer.removeListener("nowPlaying:track-change", handler);
+    },
+    // 订阅歌词内容变化事件
+    onLyricChange: (callback: (snapshot: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);
+      ipcRenderer.on("nowPlaying:lyric-change", handler);
+      return () => ipcRenderer.removeListener("nowPlaying:lyric-change", handler);
+    },
+    // 订阅播放位置锚点（跟随 position 事件 5Hz）
+    onPositionSync: (callback: (data: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => callback(data);
+      ipcRenderer.on("nowPlaying:position-sync", handler);
+      return () => ipcRenderer.removeListener("nowPlaying:position-sync", handler);
+    },
+  },
 };
 
 if (process.contextIsolated) {

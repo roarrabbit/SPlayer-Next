@@ -1,5 +1,5 @@
 import type { Track, TrackDetail } from "@shared/types/player";
-import type { LyricFormat, LyricLine, LyricSource } from "@/types/lyric";
+import type { LyricFormat, LyricLine, LyricSource } from "@shared/types/lyrics";
 import { bestExternalIndex, detectFormat, parseLyric, findLyricIndex } from "@/utils/lyric/parse";
 import { loadLyricContent } from "@/services/lyricLoader";
 
@@ -49,6 +49,22 @@ export const useMediaStore = defineStore("media", () => {
     lyricIndex.value = findLyricIndex(parsedLyric.value, time, lyricIndex.value);
   };
 
+  /** 同步当前歌词源到主进程 */
+  const syncToMain = (): void => {
+    try {
+      const payload = JSON.parse(
+        JSON.stringify({
+          track: track.value,
+          lyric: parsedLyric.value,
+          source: activeLyric.value,
+        }),
+      );
+      window.api.nowPlaying.update(payload);
+    } catch (error) {
+      console.error("[media] syncToMain failed", error);
+    }
+  };
+
   /**
    * 设置当前歌曲信息（同步，立即更新 UI）
    * 传 detail 时同步选择歌词源，但不加载歌词内容
@@ -72,9 +88,7 @@ export const useMediaStore = defineStore("media", () => {
     }
   };
 
-  /**
-   * 加载歌词内容（调用 lyricLoader 服务获取数据，自己管状态）
-   */
+  /** 加载歌词内容 */
   const loadLyric = async (): Promise<void> => {
     const token = ++lyricToken;
     const det = detail.value;
@@ -82,6 +96,7 @@ export const useMediaStore = defineStore("media", () => {
     if (!det || !active) {
       lyricContent.value = null;
       lyricLoading.value = false;
+      syncToMain();
       return;
     }
     lyricLoading.value = true;
@@ -91,6 +106,7 @@ export const useMediaStore = defineStore("media", () => {
       if (token !== lyricToken) return;
       lyricContent.value = content;
       lyricIndex.value = -1;
+      syncToMain();
     } finally {
       if (token === lyricToken) lyricLoading.value = false;
     }
@@ -112,6 +128,7 @@ export const useMediaStore = defineStore("media", () => {
     activeLyric.value = null;
     lyricContent.value = null;
     lyricIndex.value = -1;
+    syncToMain();
   };
 
   return {

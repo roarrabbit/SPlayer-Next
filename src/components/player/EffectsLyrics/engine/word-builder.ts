@@ -3,7 +3,7 @@
  */
 
 import { chunkAndSplitLyricWords } from "../utils/split-words";
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 import { needsSpaceBetween } from "../utils/split-words";
 import { shouldChunkEmphasize } from "./emphasize";
 

@@ -1,4 +1,4 @@
-import type { ExternalLyric, LyricFormat, LyricLine } from "@/types/lyric";
+import type { ExternalLyric, LyricFormat, LyricLine } from "@shared/types/lyrics";
 import { parseLRC } from "./parseLRC";
 import { parseQRC, parseYRC } from "./parseTimeline";
 import { parseTTML } from "./parseTTML";

@@ -5,6 +5,7 @@ import { broadcast } from "@main/utils/broadcast";
 import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";
 import * as mediaService from "@main/services/media";
+import * as nowPlaying from "@main/services/nowPlaying";
 import { getPlayer, resetPlayer, onPlayerCreated } from "@main/services/engine";
 import { startDevicePolling } from "@main/services/device";
 import { getThumbar } from "@main/services/thumbar";
@@ -51,6 +52,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           mediaService.setPlayState({ status: "Paused" });
           setTaskbarProgress(-1);
         }
+        nowPlaying.onPlayStateChange(state === "playing");
         broadcast("player:event", {
           type: "status",
           data: {
@@ -77,6 +79,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           data: { position: posMs, duration: durMs },
         });
         mediaService.setTimeline({ currentMs: posMs, totalMs: durMs });
+        nowPlaying.onPosition(posMs, true);
         if (store.get("system.taskbarProgress") && durMs > 0) setTaskbarProgress(posMs / durMs);
         break;
       }

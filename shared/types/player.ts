@@ -1,3 +1,5 @@
+import type { ExternalLyric } from "./lyrics";
+
 /** 播放器状态 */
 export type PlayerState = "idle" | "loading" | "playing" | "paused" | "stopped";
 
@@ -9,15 +11,6 @@ export type ShuffleMode = "off" | "on";
 
 /** 歌曲来源 */
 export type TrackSource = "local" | "online";
-
-/** 歌词格式 */
-export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "lrc" | "srt" | "ass";
-
-/** 外部歌词文件 */
-export interface ExternalLyric {
-  format: LyricFormat;
-  path: string;
-}
 
 /** 歌手 */
 export interface Artist {

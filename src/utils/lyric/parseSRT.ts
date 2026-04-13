@@ -17,7 +17,7 @@
  * - 3 行：音译 + 翻译 + 原词
  */
 
-import type { LyricLine } from "@/types/lyric";
+import type { LyricLine } from "@shared/types/lyrics";
 
 /** 匹配 SRT 时间戳 HH:MM:SS,mmm */
 const TIME_RE = /(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})/;

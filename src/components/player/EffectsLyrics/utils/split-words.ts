@@ -1,4 +1,4 @@
-import type { LyricWord } from "@/types/lyric";
+import type { LyricWord } from "@shared/types/lyrics";
 
 const CJK_RE = /^[\p{Unified_Ideograph}\u0800-\u9FFC]+$/u;
 

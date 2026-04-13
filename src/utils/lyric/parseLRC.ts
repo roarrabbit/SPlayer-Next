@@ -1,4 +1,4 @@
-import type { LyricLine, LyricWord } from "@/types/lyric";
+import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 import { BRACKET_TIME_RE, ANGLE_TIME_RE, parseTime, MAX_TIME } from "./timestamp";
 
 /** 匹配元数据标签（如 [ti:xxx]、[ar:xxx]） */

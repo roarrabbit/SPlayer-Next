@@ -7,7 +7,7 @@
  */
 
 import type { TrackDetail } from "@shared/types/player";
-import type { LyricSource } from "@/types/lyric";
+import type { LyricSource } from "@shared/types/lyrics";
 
 /**
  * 加载歌词内容
