@@ -423,6 +423,8 @@
     "totalAlbums": "{count} albums"
   },
   "errors": {
+    "dialogTitle": "Something went wrong",
+    "deviceHint": "No audio output device detected. Please connect headphones or speakers and try again.",
     "DEVICE_NOT_FOUND": "No audio output device found",
     "DEVICE_INIT_FAILED": "Failed to initialize audio device",
     "FILE_NOT_FOUND": "File not found or inaccessible",

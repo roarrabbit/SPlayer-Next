@@ -1,4 +1,4 @@
-import type { PlayerEvent, PlayerState, Track } from "@shared/types/player";
+import type { PlayerEvent, Track } from "@shared/types/player";
 import type { RepeatMode, ShuffleMode } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
@@ -8,22 +8,15 @@ import * as playback from "@/services/playback";
 import { loadAudio } from "@/services/audioLoader";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
-/**
- * 同步播放状态到非响应式时间源（供歌词等 60fps 动画使用）
- * @param state - 当前播放器状态
- */
-const syncPlayback = (state: PlayerState): void => {
-  playback.setPlaying(state === "playing");
-  if (state === "idle" || state === "stopped") {
-    playback.reset();
-  }
-};
 
-/** 竞态 token：每次加载递增，异步返回后检查是否过期 */
+/** 竞态 token */
 let loadToken = 0;
-
-/** 连续加载失败计数，成功时重置，超过队列长度则停止跳曲 */
+/** 连续加载失败计数，成功时重置 */
 let consecutiveFailures = 0;
+/** 连续失败硬上限 */
+const MAX_CONSECUTIVE_FAILURES = 5;
+/** 失败后跳下一首的节流延迟（毫秒） */
+const SKIP_ON_ERROR_DELAY_MS = 1000;
 
 /**
  * 加载音频源
@@ -67,8 +60,18 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
         // 仅单曲级错误才跳下一首（设备等全局错误跳了也没用）
         if (isSkippableError(error)) {
           consecutiveFailures++;
-          if (consecutiveFailures < queue.queueLength.value) {
-            nextTrack();
+          const reachedHardLimit = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
+          const reachedQueueEnd = consecutiveFailures >= queue.queueLength.value;
+          if (reachedHardLimit || reachedQueueEnd) {
+            // 达到上限，停止自动跳曲，等待用户介入
+            consecutiveFailures = 0;
+            await onQueueEnded();
+          } else {
+            // 节流：给主进程/文件系统喘息时间，也避免日志刷屏
+            setTimeout(() => {
+              // 期间用户可能已手动操作，token 变化则放弃
+              if (token === loadToken) nextTrack();
+            }, SKIP_ON_ERROR_DELAY_MS);
           }
         }
       }
@@ -434,7 +437,7 @@ const handleEvent = async (event: PlayerEvent): Promise<void> => {
       status.duration = event.data.duration;
       status.volume = event.data.volume;
       playback.setDuration(event.data.duration);
-      syncPlayback(event.data.state);
+      playback.setPlaying(event.data.state === "playing");
       break;
     case "position":
       // 歌曲加载中不更新进度

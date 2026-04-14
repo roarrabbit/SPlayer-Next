@@ -164,8 +164,14 @@ export const registerPlayerIpc = (): void => {
       playerLog.debug(`加载成功: ${trackTitle}`);
       return { success: true, data };
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      const isDeviceError = /output device|NoDevice|DeviceNotAvailable/i.test(msg);
       const isNetwork = source.startsWith("http://") || source.startsWith("https://");
-      const code = isNetwork ? ErrorCode.NETWORK_ERROR : ErrorCode.FILE_DECODE_ERROR;
+      const code = isDeviceError
+        ? ErrorCode.DEVICE_NOT_FOUND
+        : isNetwork
+          ? ErrorCode.NETWORK_ERROR
+          : ErrorCode.FILE_DECODE_ERROR;
       return fail(code, error);
     }
   });

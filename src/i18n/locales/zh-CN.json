@@ -423,6 +423,8 @@
     "totalAlbums": "共 {count} 张"
   },
   "errors": {
+    "dialogTitle": "出错了",
+    "deviceHint": "未检测到可用的音频输出设备，请连接耳机或音箱后重试。",
     "DEVICE_NOT_FOUND": "未找到音频输出设备",
     "DEVICE_INIT_FAILED": "音频设备初始化失败",
     "FILE_NOT_FOUND": "文件不存在或无法访问",

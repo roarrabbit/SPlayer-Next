@@ -99,6 +99,7 @@ declare module 'vue' {
     SColor: typeof import('./src/components/ui/SColor.vue')['default']
     SContextMenu: typeof import('./src/components/ui/SContextMenu.vue')['default']
     SDialog: typeof import('./src/components/ui/SDialog.vue')['default']
+    SDialogProvider: typeof import('./src/components/ui/SDialogProvider.vue')['default']
     SDivider: typeof import('./src/components/ui/SDivider.vue')['default']
     SDrawer: typeof import('./src/components/ui/SDrawer.vue')['default']
     SDropdownMenu: typeof import('./src/components/ui/SDropdownMenu.vue')['default']

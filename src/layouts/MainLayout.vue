@@ -89,9 +89,11 @@ const playerBarClass = computed(() => {
         <PlayerBar />
       </footer>
     </Transition>
-    <!-- Toast -->
-    <SToast :max="5" />
   </div>
+  <!-- Toast -->
+  <SToast :max="5" />
+  <!-- Dialog -->
+  <SDialogProvider />
   <!-- 全屏播放器 -->
   <FullPlayer />
   <!-- 播放列表抽屉 -->
