@@ -83,6 +83,7 @@ const displayItems = computed<DisplayItem[]>(() => {
       index: primary,
       line: makePlaceholderLine(current.translatedLyric),
       align: resolveAlign(primary, config.align),
+      isPlaceholder: true,
       isNext: true,
     });
     return items;

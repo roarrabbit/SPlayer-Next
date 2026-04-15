@@ -101,7 +101,10 @@ const currentValue = computed(() => {
 const currentRgb = computed(() => currentColord.value.alpha(1).toRgbString());
 
 /** chip / thumb 实际显示 */
-const currentBg = computed(() => currentColord.value.toRgbString());
+const currentBg = computed(() => {
+  const color = props.showAlpha ? currentColord.value : currentColord.value.alpha(1);
+  return color.toRgbString();
+});
 
 /** SV 面板背景 */
 const svBackground = computed(

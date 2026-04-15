@@ -42,9 +42,12 @@ const isCursorInsideBounds = (): boolean => {
   );
 };
 
+/** 启动光标位置轮询 */
 const startCursorPolling = (): void => {
   if (cursorPollTimer) return;
   lastCursorInside = isCursorInsideBounds();
+  // 推一次初始值
+  desktopLyricWindow?.webContents.send("desktopLyric:cursorInside", lastCursorInside);
   cursorPollTimer = setInterval(() => {
     if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) {
       stopCursorPolling();
@@ -58,6 +61,7 @@ const startCursorPolling = (): void => {
   }, CURSOR_POLL_MS);
 };
 
+/** 停止光标位置轮询 */
 const stopCursorPolling = (): void => {
   if (cursorPollTimer) {
     clearInterval(cursorPollTimer);
@@ -65,7 +69,7 @@ const stopCursorPolling = (): void => {
   }
 };
 
-/** 把当前位置 + 权威尺寸保存到配置 */
+/** 保存窗口状态 */
 const saveWindowState = (): void => {
   if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) return;
   const { x, y } = desktopLyricWindow.getBounds();
@@ -77,7 +81,10 @@ const saveWindowState = (): void => {
   });
 };
 
-/** 应用锁定状态：鼠标穿透 + 禁止拖动 */
+/**
+ * 应用锁定状态
+ * @param locked 是否锁定
+ */
 export const applyDesktopLyricLock = (locked: boolean): void => {
   const win = getDesktopLyricWindow();
   if (!win) return;
@@ -87,8 +94,8 @@ export const applyDesktopLyricLock = (locked: boolean): void => {
 };
 
 /**
- * 应用置顶状态
- * 用 "screen-saver" 级别，否则 Win10/11 的"总在最前"任务栏会压在桌面歌词之上
+ * 应用窗口置顶
+ * @param alwaysOnTop 是否置顶
  */
 export const applyDesktopLyricAlwaysOnTop = (alwaysOnTop: boolean): void => {
   const win = getDesktopLyricWindow();
@@ -104,7 +111,8 @@ export const applyDesktopLyricMouseIgnore = (ignore: boolean): void => {
 };
 
 /**
- * 把窗口移动到指定位置；尺寸始终用权威 cachedSize 写回
+ * 移动窗口到指定位置
+ * 尺寸始终用权威 cachedSize 写回
  * 开启 limitBounds 时把 x/y clamp 到光标所在显示器的 workArea，避免拖出屏幕 / 被任务栏挡住
  */
 export const moveDesktopLyricWindow = (x: number, y: number): void => {
@@ -126,12 +134,12 @@ export const moveDesktopLyricWindow = (x: number, y: number): void => {
   win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
 };
 
-/** 拖拽结束后保存最终位置；程序 setBounds 不触发 moved 事件，需显式存 */
+/** 拖拽结束后保存最终位置 */
 export const saveDesktopLyricState = (): void => {
   saveWindowState();
 };
 
-/** 锁定窗口高度并更新权威 cachedSize.height */
+/** 锁定窗口高度 */
 export const applyDesktopLyricHeight = (height: number): void => {
   const win = getDesktopLyricWindow();
   if (!win) return;
@@ -143,7 +151,7 @@ export const applyDesktopLyricHeight = (height: number): void => {
   win.setBounds({ x, y, width: cachedSize.width, height: h });
 };
 
-/** 创建桌面歌词窗口 */
+/** 创建桌面歌词窗口，如果窗口已存在则显示并聚焦 */
 export const createDesktopLyricWindow = (): BrowserWindow => {
   if (desktopLyricWindow && !desktopLyricWindow.isDestroyed()) {
     desktopLyricWindow.show();
@@ -198,7 +206,6 @@ export const createDesktopLyricWindow = (): BrowserWindow => {
     const b = desktopLyricWindow.getBounds();
     cachedSize.width = b.width;
     cachedSize.height = b.height;
-    // 用 screen-saver level 置顶，否则 Win10/11 任务栏会盖在歌词之上
     desktopLyricWindow.setAlwaysOnTop(config.alwaysOnTop, "screen-saver");
     startCursorPolling();
   });
