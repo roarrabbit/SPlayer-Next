@@ -9,7 +9,6 @@ export interface DisplayItem {
   align: DesktopLyricAlign;
   isPlaceholder?: boolean;
   isNext?: boolean;
-  isTranslation?: boolean;
 }
 
 /**
@@ -75,14 +74,24 @@ export const getLineTop = (index: number, fontSize: number): string => {
   return `${Math.round(fontSize * 1.9)}px`;
 };
 
+/** 字号下限（与设置 schema 一致） */
+const MIN_FONT_SIZE = 20;
+/** 字号上限（与设置 schema 一致） */
+const MAX_FONT_SIZE = 96;
+/** 对应最小字号的窗口高度 */
+const MIN_WINDOW_HEIGHT = 140;
+/** 对应最大字号的窗口高度 */
+const MAX_WINDOW_HEIGHT = 360;
+
 /**
- * 两行容器的总高度
+ * 字号线性映射到窗口总高度
+ * 与 CSS 解耦：不依赖 line-height / padding 等可变因素，留足视觉余量
  * @param fontSize 主字号 px
  */
-export const computeLinesHeight = (fontSize: number): number => {
-  const secondTop = Math.round(fontSize * 1.9);
-  const secondHeight = Math.round(fontSize * 0.8 * 1.25);
-  return secondTop + secondHeight;
+export const computeWindowHeight = (fontSize: number): number => {
+  const clamped = Math.min(Math.max(Math.round(fontSize), MIN_FONT_SIZE), MAX_FONT_SIZE);
+  const ratio = (clamped - MIN_FONT_SIZE) / (MAX_FONT_SIZE - MIN_FONT_SIZE);
+  return Math.round(MIN_WINDOW_HEIGHT + ratio * (MAX_WINDOW_HEIGHT - MIN_WINDOW_HEIGHT));
 };
 
 /**
@@ -90,10 +99,7 @@ export const computeLinesHeight = (fontSize: number): number => {
  * @param index 行索引
  * @param baseAlign 配置的基础对齐
  */
-export const resolveAlign = (
-  index: number,
-  baseAlign: DesktopLyricAlign,
-): DesktopLyricAlign => {
+export const resolveAlign = (index: number, baseAlign: DesktopLyricAlign): DesktopLyricAlign => {
   if (baseAlign !== "justify") return baseAlign;
   return index % 2 === 0 ? "left" : "right";
 };
@@ -108,7 +114,7 @@ export const resolveWordByWord = (
   item: DisplayItem,
 ): boolean => {
   if (!config.wordByWord) return false;
-  if (item.isTranslation || item.isPlaceholder) return false;
+  if (item.isPlaceholder) return false;
   if (config.autoGenerateWordByWord) return true;
   return hasRealWordTiming(item.line);
 };
@@ -120,10 +126,7 @@ const LAST_LINE_FALLBACK_MS = 8000;
  * @param lines 歌词行数组
  * @param trackDurationMs 曲目时长 ms
  */
-export const clampLastLineEnd = (
-  lines: LyricLine[],
-  trackDurationMs?: number,
-): LyricLine[] => {
+export const clampLastLineEnd = (lines: LyricLine[], trackDurationMs?: number): LyricLine[] => {
   if (lines.length === 0) return lines;
   const last = lines[lines.length - 1];
   const reasonable =

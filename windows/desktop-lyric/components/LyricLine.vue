@@ -11,6 +11,8 @@ const props = defineProps<{
   wordByWord: boolean;
   /** 静态模式下作为「下一行」渲染 */
   isNext: boolean;
+  /** 是否启用文本背景遮罩 */
+  backgroundMask: boolean;
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
@@ -20,13 +22,10 @@ const overflowPx = ref(0);
 
 /** 开始滚动的进度点：前 30% 停在开头 */
 const SCROLL_START_AT = 0.3;
-/** 结束提前量：比 endTime 早 2s 滚到底 */
+/** 结束提前量：比 endTime 早多少滚到底 */
 const END_MARGIN_MS = 2000;
 
-/**
- * 单词进度对应的 gradient --p 位置
- * @param word 单词时间段
- */
+/** 单词进度对应的 gradient --p 位置 */
 const wordP = (word: { startTime: number; endTime: number }): string => {
   const span = word.endTime - word.startTime;
   const progress =
@@ -47,7 +46,10 @@ const lineStyle = computed(() => ({
   textAlign: props.align,
 }));
 
-/** 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s） */
+/**
+ * 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s）
+ * 不做 Math.round —— 整数量化在 overflow 小（如 20px）时会变成每 ~150ms 跳 1px 的视觉台阶
+ */
 const scrollTransform = computed<string>(() => {
   const overflow = overflowPx.value;
   if (overflow <= 0) return "translateX(0)";
@@ -59,10 +61,15 @@ const scrollTransform = computed<string>(() => {
   const progress = Math.max(0, Math.min(1, (props.currentMs - startTime) / duration));
   if (progress <= SCROLL_START_AT) return "translateX(0)";
   const ratio = (progress - SCROLL_START_AT) / (1 - SCROLL_START_AT);
-  const offset = Math.round(overflow * ratio);
-  return `translateX(-${offset}px)`;
+  const offset = overflow * ratio;
+  return `translateX(-${offset.toFixed(3)}px)`;
 });
 
+/**
+ * 测量内容溢出量
+ * 用 getBoundingClientRect().width（fractional）替代 scrollWidth / clientWidth（整数），
+ * 否则亚像素截断会让终点差 0.x~1px
+ */
 const measure = (): void => {
   const outer = containerRef.value;
   const inner = contentRef.value;
@@ -70,42 +77,61 @@ const measure = (): void => {
     overflowPx.value = 0;
     return;
   }
-  overflowPx.value = Math.max(0, inner.scrollWidth - outer.clientWidth);
+  const diff = inner.getBoundingClientRect().width - outer.getBoundingClientRect().width;
+  overflowPx.value = diff > 0.5 ? diff : 0;
 };
 
-watch(() => props.line, () => nextTick(measure));
+// 字号变化兜底
+watch(
+  () => props.fontSize,
+  () => nextTick(measure),
+);
 
 let resizeObs: ResizeObserver | null = null;
 
+/** 字号 CSS transition 结束后重测 */
+const onTransitionEnd = (event: TransitionEvent): void => {
+  if (event.propertyName === "font-size") measure();
+};
+
 onMounted(() => {
   measure();
-  if (typeof ResizeObserver !== "undefined" && containerRef.value) {
-    resizeObs = new ResizeObserver(measure);
+  resizeObs = new ResizeObserver(measure);
+  if (containerRef.value) {
     resizeObs.observe(containerRef.value);
+    containerRef.value.addEventListener("transitionend", onTransitionEnd);
   }
 });
 
 onBeforeUnmount(() => {
   resizeObs?.disconnect();
   resizeObs = null;
+  containerRef.value?.removeEventListener("transitionend", onTransitionEnd);
 });
 </script>
 
 <template>
   <div class="dl-line-block">
     <div ref="containerRef" class="dl-line" :style="lineStyle">
-      <span ref="contentRef" class="dl-line-inner" :style="{ transform: scrollTransform }">
-        <template v-if="wordByWord">
-          <span
-            v-for="(word, i) in line.words"
-            :key="i"
-            class="dl-word"
-            :style="{ '--p': wordP(word) }"
-            >{{ word.word }}</span
-          >
-        </template>
-        <span v-else class="dl-static" :class="{ 'is-unplayed': isNext }">
-          {{ line.words.map((w) => w.word).join("") }}
+      <span
+        ref="contentRef"
+        class="dl-line-inner"
+        :class="{ 'has-mask': backgroundMask }"
+        :style="{ transform: scrollTransform }"
+      >
+        <span class="dl-text">
+          <template v-if="wordByWord">
+            <span
+              v-for="(word, i) in line.words"
+              :key="i"
+              class="dl-word"
+              :style="{ '--p': wordP(word) }"
+              >{{ word.word }}</span
+            >
+          </template>
+          <span v-else class="dl-static" :class="{ 'is-unplayed': isNext }">
+            {{ line.words.map((w) => w.word).join("") }}
+          </span>
         </span>
       </span>
     </div>
@@ -119,28 +145,38 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   width: 100%;
+  padding: 0 24px;
+  box-sizing: border-box;
   transform: translate3d(0, var(--dl-y, 0px), 0) translateY(0);
   transition:
-    transform 0.6s cubic-bezier(0.55, 0, 0.1, 1),
-    opacity 0.6s cubic-bezier(0.55, 0, 0.1, 1);
+    transform var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1),
+    opacity var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
   will-change: transform, opacity;
 }
 .dl-line {
   position: relative;
   width: 100%;
-  line-height: 1.25;
+  line-height: normal;
+  padding: 4px 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: font-size 0.6s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: font-size var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
 }
 .dl-line-inner {
   display: inline-block;
   will-change: transform;
 }
-/*
- * 逐字：gradient 围绕 var(--p) 展开 6px 软边。
- * --p 范围被 JS 扩到 calc(-3px .. 100%+3px)：极值位过渡带被挤出可视区 → 纯色无残留。
- */
+.dl-line-inner.has-mask {
+  line-height: 1;
+  padding: 0.25em 0.4em;
+  border-radius: 6px;
+  background-color: var(--dl-mask, transparent);
+}
+.dl-text {
+  display: inline-block;
+  filter: drop-shadow(0 0 1px var(--dl-stroke, transparent))
+    drop-shadow(0 0 2px var(--dl-stroke, transparent));
+}
 .dl-word {
   --p: 0%;
   display: inline;
@@ -148,20 +184,18 @@ onBeforeUnmount(() => {
   -webkit-text-fill-color: transparent;
   background: linear-gradient(
     90deg,
-    var(--dl-line-color, var(--dl-played)) 0%,
-    var(--dl-line-color, var(--dl-played)) calc(var(--p) - 3px),
+    var(--dl-played) 0%,
+    var(--dl-played) calc(var(--p) - 3px),
     var(--dl-unplayed) calc(var(--p) + 3px),
     var(--dl-unplayed) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
 }
 .dl-static {
   display: inline-block;
-  color: var(--dl-line-color, var(--dl-played));
-  transition: color 0.6s cubic-bezier(0.55, 0, 0.1, 1);
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+  color: var(--dl-played);
+  transition: color var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
 }
 .dl-static.is-unplayed {
   color: var(--dl-unplayed);

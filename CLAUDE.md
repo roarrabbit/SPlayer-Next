@@ -77,6 +77,7 @@ Two-tier position tracking to separate high-frequency animation from low-frequen
 ```
 
 **渲染进程（IndexedDB via localforage）**：
+
 - `splayer/library` — 曲目缓存（加速首屏）
 - `splayer/queue` — 播放队列持久化
 - `splayer/playlists` — 歌单数据

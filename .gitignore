@@ -10,4 +10,4 @@ out
 # Rust build artifacts
 **/target
 native/*/*.node
-native/*/index.d.ts
+# native/*/index.d.ts

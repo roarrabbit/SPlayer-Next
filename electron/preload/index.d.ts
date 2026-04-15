@@ -15,6 +15,11 @@ declare global {
         toggleDevTools: () => Promise<void>;
         showInExplorer: (filePath: string) => Promise<void>;
         setLocale: (locale: LocaleCode) => void;
+        focusMainWindow: () => Promise<void>;
+        openSettings: (category?: string, highlight?: string) => Promise<void>;
+        onOpenSettings: (
+          callback: (payload: { category?: string; highlight?: string }) => void,
+        ) => () => void;
       };
       library: LibraryApi;
       window: WindowApi;

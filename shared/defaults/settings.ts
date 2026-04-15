@@ -32,12 +32,32 @@ export const defaultSystemConfig: SystemConfig = {
     autoGenerateWordByWord: true,
     playedColor: "#ffffff",
     unplayedColor: "#7d7d7d",
-    translationColor: "#b3b3b3",
+    strokeColor: "rgba(0, 0, 0, 0.5)",
+    backgroundMask: false,
+    backgroundMaskColor: "rgba(0, 0, 0, 0.3)",
+    alwaysShowSongInfo: false,
+    limitBounds: false,
+    animation: true,
     alwaysOnTop: true,
     locked: false,
   },
   system: {
     rememberWindowState: true,
     taskbarProgress: true,
+  },
+  windowStates: {
+    main: {
+      width: 1280,
+      height: 800,
+      x: null,
+      y: null,
+      maximized: false,
+    },
+    desktopLyric: {
+      width: 800,
+      height: 200,
+      x: null,
+      y: null,
+    },
   },
 };

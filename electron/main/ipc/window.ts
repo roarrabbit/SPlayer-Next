@@ -1,11 +1,42 @@
 import { ipcMain } from "electron";
-import { toggleDesktopLyricWindow, getDesktopLyricWindow } from "@main/window";
+import {
+  toggleDesktopLyricWindow,
+  closeDesktopLyricWindow,
+  getDesktopLyricWindow,
+  applyDesktopLyricHeight,
+  applyDesktopLyricMouseIgnore,
+  moveDesktopLyricWindow,
+  saveDesktopLyricState,
+} from "@main/window";
 
 /** 窗口管理 IPC */
 export const registerWindowIpc = (): void => {
   // 切换桌面歌词窗口
   ipcMain.handle("window:toggleDesktopLyric", () => toggleDesktopLyricWindow());
 
+  // 关闭桌面歌词窗口
+  ipcMain.handle("window:closeDesktopLyric", () => closeDesktopLyricWindow());
+
   // 查询桌面歌词窗口是否打开
   ipcMain.handle("window:isDesktopLyricOpen", () => !!getDesktopLyricWindow());
+
+  // 锁定桌面歌词窗口高度
+  ipcMain.handle("desktopLyric:setHeight", (_event, height: number) => {
+    applyDesktopLyricHeight(height);
+  });
+
+  // 锁定态下切换鼠标穿透
+  ipcMain.on("desktopLyric:setMouseIgnore", (_event, ignore: boolean) => {
+    applyDesktopLyricMouseIgnore(ignore);
+  });
+
+  // 拖拽移动；只传位置，尺寸由主进程权威 cachedSize 写回
+  ipcMain.on("desktopLyric:move", (_event, x: number, y: number) => {
+    moveDesktopLyricWindow(x, y);
+  });
+
+  // 拖拽结束后保存最终位置
+  ipcMain.on("desktopLyric:saveState", () => {
+    saveDesktopLyricState();
+  });
 };

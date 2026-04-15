@@ -5,7 +5,6 @@ import { createWindow } from "./create";
 import { initThumbar } from "@main/services/thumbar";
 import { initTray } from "@main/services/tray";
 import { store } from "@main/store";
-import { windowStateStore } from "@main/store/windowStates";
 import { handleCacheProtocolOnPartition } from "@main/utils/protocol";
 
 /** 主窗口 session */
@@ -18,7 +17,7 @@ let mainWindow: BrowserWindow | null = null;
  */
 export const createMainWindow = (): BrowserWindow => {
   const remember = store.get("system.rememberWindowState") ?? true;
-  const saved = remember ? windowStateStore.get("main") : undefined;
+  const saved = remember ? store.get("windowStates.main") : undefined;
 
   // 注册 cache:// 协议
   handleCacheProtocolOnPartition(MAIN_PARTITION);
@@ -38,8 +37,8 @@ export const createMainWindow = (): BrowserWindow => {
   }
 
   mainWindow.once("ready-to-show", () => {
-    initThumbar(mainWindow!);
-    initTray(mainWindow!);
+    initThumbar();
+    initTray();
   });
 
   // 保存窗口状态
@@ -50,7 +49,7 @@ export const createMainWindow = (): BrowserWindow => {
     const bounds = maximized
       ? (mainWindow.getNormalBounds?.() ?? mainWindow.getBounds())
       : mainWindow.getBounds();
-    windowStateStore.set("main", {
+    store.set("windowStates.main", {
       width: bounds.width,
       height: bounds.height,
       x: bounds.x,
@@ -80,7 +79,7 @@ export const createMainWindow = (): BrowserWindow => {
   });
 
   return mainWindow;
-};;
+};
 
 /**
  * 获取主窗口实例，窗口不存在时返回 null
@@ -90,6 +89,15 @@ export const getMainWindow = (): BrowserWindow | null => {
     return mainWindow;
   }
   return null;
+};
+
+/** 显示并聚焦主窗口（最小化时自动恢复） */
+export const focusMainWindow = (): void => {
+  const win = getMainWindow();
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
 };
 
 /**

@@ -255,6 +255,10 @@
       "label": "Inactive Opacity",
       "description": "Base opacity for non-active lines"
     },
+    "desktopLyricEnabled": {
+      "label": "Enable Desktop Lyric",
+      "description": "Show a floating lyric window on desktop"
+    },
     "desktopLyricFontSize": {
       "label": "Font Size",
       "description": "Desktop lyric text size (px)"
@@ -295,9 +299,29 @@
       "label": "Unplayed Color",
       "description": "Color of unplayed lyric text"
     },
-    "desktopLyricTranslationColor": {
-      "label": "Translation Color",
-      "description": "Color of translation text"
+    "desktopLyricStrokeColor": {
+      "label": "Stroke Color",
+      "description": "Outline color of lyric text; transparent means stroke is off"
+    },
+    "desktopLyricBackgroundMask": {
+      "label": "Text Background Mask",
+      "description": "Add a translucent background block behind each lyric line for readability"
+    },
+    "desktopLyricBackgroundMaskColor": {
+      "label": "Mask Color",
+      "description": "Color and opacity of the text background mask"
+    },
+    "desktopLyricAlwaysShowSongInfo": {
+      "label": "Always Show Song Info",
+      "description": "Always show track title and artist; otherwise show only on hover"
+    },
+    "desktopLyricAnimation": {
+      "label": "Line Transition",
+      "description": "Enable slide-in / slide-out animation when lyric line switches"
+    },
+    "desktopLyricLimitBounds": {
+      "label": "Confine to Screen",
+      "description": "Clamp window position within the current display's work area while dragging"
     },
     "desktopLyricAlwaysOnTop": {
       "label": "Always On Top",

@@ -28,10 +28,7 @@ const handleOpenUpdate = (id: number, value: boolean): void => {
     width="420px"
     @update:open="(value: boolean) => handleOpenUpdate(item.id, value)"
   >
-    <p
-      v-if="item.options.content"
-      class="text-sm text-on-surface-variant m-0 whitespace-pre-line"
-    >
+    <p v-if="item.options.content" class="text-sm text-on-surface-variant m-0 whitespace-pre-line">
       {{ item.options.content }}
     </p>
 

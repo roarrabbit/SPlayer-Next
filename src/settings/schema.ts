@@ -296,14 +296,20 @@ export const settingsSchema: SettingCategory[] = [
         id: "desktopLyric",
         items: [
           {
+            key: "desktopLyricEnabled",
+            type: "switch",
+            binding: { store: "settings", path: "isDesktopLyricOpen" },
+            defaultValue: false,
+          },
+          {
             key: "desktopLyricFontSize",
-            type: "slider",
+            type: "select",
             binding: { store: "settings", path: "system.desktopLyric.fontSize" },
-            min: 14,
-            max: 48,
-            step: 1,
             defaultValue: 24,
-            marks: { 14: "14", 24: "24", 48: "48" },
+            options: Array.from({ length: 96 - 20 + 1 }, (_, i) => {
+              const n = 20 + i;
+              return { value: n, label: `${n} px` };
+            }),
           },
           {
             key: "desktopLyricFontWeight",
@@ -356,18 +362,52 @@ export const settingsSchema: SettingCategory[] = [
             type: "color",
             binding: { store: "settings", path: "system.desktopLyric.playedColor" },
             defaultValue: "#ffffff",
+            showAlpha: false,
           },
           {
             key: "desktopLyricUnplayedColor",
             type: "color",
             binding: { store: "settings", path: "system.desktopLyric.unplayedColor" },
             defaultValue: "#7d7d7d",
+            showAlpha: false,
           },
           {
-            key: "desktopLyricTranslationColor",
+            key: "desktopLyricStrokeColor",
             type: "color",
-            binding: { store: "settings", path: "system.desktopLyric.translationColor" },
-            defaultValue: "#b3b3b3",
+            binding: { store: "settings", path: "system.desktopLyric.strokeColor" },
+            defaultValue: "rgba(0, 0, 0, 0.5)",
+          },
+          {
+            key: "desktopLyricBackgroundMask",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.backgroundMask" },
+            defaultValue: false,
+            children: [
+              {
+                key: "desktopLyricBackgroundMaskColor",
+                type: "color",
+                binding: { store: "settings", path: "system.desktopLyric.backgroundMaskColor" },
+                defaultValue: "rgba(0, 0, 0, 0.3)",
+              },
+            ],
+          },
+          {
+            key: "desktopLyricAlwaysShowSongInfo",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.alwaysShowSongInfo" },
+            defaultValue: false,
+          },
+          {
+            key: "desktopLyricAnimation",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.animation" },
+            defaultValue: true,
+          },
+          {
+            key: "desktopLyricLimitBounds",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.limitBounds" },
+            defaultValue: false,
           },
           {
             key: "desktopLyricAlwaysOnTop",

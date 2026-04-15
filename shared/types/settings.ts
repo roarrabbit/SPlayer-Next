@@ -63,8 +63,18 @@ export interface DesktopLyricSettings {
   playedColor: string;
   /** 未播放颜色 */
   unplayedColor: string;
-  /** 翻译文本颜色 */
-  translationColor: string;
+  /** 描边颜色 */
+  strokeColor: string;
+  /** 是否启用文本背景遮罩 */
+  backgroundMask: boolean;
+  /** 文本背景遮罩颜色 */
+  backgroundMaskColor: string;
+  /** 是否常驻显示歌曲信息 */
+  alwaysShowSongInfo: boolean;
+  /** 拖拽时是否把窗口限制在屏幕工作区内 */
+  limitBounds: boolean;
+  /** 歌词行切换动画 */
+  animation: boolean;
   /** 窗口置顶 */
   alwaysOnTop: boolean;
   /** 锁定：鼠标穿透、禁止拖动 */
@@ -75,6 +85,29 @@ export interface DesktopLyricSettings {
 export interface LibrarySettings {
   /** 扫描目录列表 */
   scanDirs: string[];
+}
+
+/** 主窗口几何 */
+export interface MainWindowState {
+  width: number;
+  height: number;
+  x: number | null;
+  y: number | null;
+  maximized: boolean;
+}
+
+/** 桌面歌词窗口几何 */
+export interface DesktopLyricWindowState {
+  width: number;
+  height: number;
+  x: number | null;
+  y: number | null;
+}
+
+/** 窗口几何状态 */
+export interface WindowStates {
+  main: MainWindowState;
+  desktopLyric: DesktopLyricWindowState;
 }
 
 /** 后端配置汇总 */
@@ -94,6 +127,8 @@ export interface SystemConfig {
     /** 在任务栏显示播放进度 */
     taskbarProgress: boolean;
   };
+  /** 窗口几何状态（运行时自动记录，非用户主动配置） */
+  windowStates: WindowStates;
 }
 
 /** 配置 API */
