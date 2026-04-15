@@ -76,7 +76,10 @@ const emit = defineEmits<{
         </div>
       </div>
       <!-- 信息 -->
-      <div class="flex flex-col gap-0.5 px-2.5 py-2.5" :class="type === 'artist' ? 'items-center' : ''">
+      <div
+        class="flex flex-col gap-0.5 px-2.5 py-2.5"
+        :class="type === 'artist' ? 'items-center' : ''"
+      >
         <div
           class="text-sm text-on-surface line-clamp-2 leading-snug"
           :class="type === 'artist' ? 'text-center w-full' : ''"

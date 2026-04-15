@@ -99,10 +99,7 @@ export const computeWindowHeight = (fontSize: number): number => {
  * @param index 行索引
  * @param baseAlign 配置的基础对齐
  */
-export const resolveAlign = (
-  index: number,
-  baseAlign: DesktopLyricAlign,
-): DesktopLyricAlign => {
+export const resolveAlign = (index: number, baseAlign: DesktopLyricAlign): DesktopLyricAlign => {
   if (baseAlign !== "justify") return baseAlign;
   return index % 2 === 0 ? "left" : "right";
 };
@@ -129,10 +126,7 @@ const LAST_LINE_FALLBACK_MS = 8000;
  * @param lines 歌词行数组
  * @param trackDurationMs 曲目时长 ms
  */
-export const clampLastLineEnd = (
-  lines: LyricLine[],
-  trackDurationMs?: number,
-): LyricLine[] => {
+export const clampLastLineEnd = (lines: LyricLine[], trackDurationMs?: number): LyricLine[] => {
   if (lines.length === 0) return lines;
   const last = lines[lines.length - 1];
   const reasonable =

@@ -208,4 +208,4 @@ export const registerLibraryIpc = (): void => {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
-};;
+};

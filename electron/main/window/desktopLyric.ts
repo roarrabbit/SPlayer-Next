@@ -4,7 +4,6 @@ import { is } from "@electron-toolkit/utils";
 import { createWindow } from "./create";
 import { setTrayDesktopLyric } from "@main/services/tray";
 import { store } from "@main/store";
-import { windowStateStore } from "@main/store/windowStates";
 import { broadcast } from "@main/utils/broadcast";
 
 let desktopLyricWindow: BrowserWindow | null = null;
@@ -66,11 +65,11 @@ const stopCursorPolling = (): void => {
   }
 };
 
-/** 把当前位置 + 权威尺寸保存到 windowStateStore */
+/** 把当前位置 + 权威尺寸保存到配置 */
 const saveWindowState = (): void => {
   if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) return;
   const { x, y } = desktopLyricWindow.getBounds();
-  windowStateStore.set("desktopLyric", {
+  store.set("windowStates.desktopLyric", {
     x,
     y,
     width: cachedSize.width,
@@ -152,7 +151,7 @@ export const createDesktopLyricWindow = (): BrowserWindow => {
     return desktopLyricWindow;
   }
   const config = store.get("desktopLyric");
-  const saved = windowStateStore.get("desktopLyric");
+  const saved = store.get("windowStates.desktopLyric");
   const initialHeight = saved.height || FALLBACK_HEIGHT;
   const initialWidth = saved.width || FALLBACK_WIDTH;
 

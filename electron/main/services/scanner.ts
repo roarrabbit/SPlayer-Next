@@ -1,7 +1,12 @@
 import { createHash } from "node:crypto";
 import type { JsScanEvent } from "@splayer/audio-engine";
 import { getEngine } from "./engine";
-import { upsertTracks, deleteTracksByPaths, getFileRecords, type UpsertTrack } from "@main/database";
+import {
+  upsertTracks,
+  deleteTracksByPaths,
+  getFileRecords,
+  type UpsertTrack,
+} from "@main/database";
 import { broadcast } from "@main/utils/broadcast";
 import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";

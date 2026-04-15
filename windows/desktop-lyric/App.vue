@@ -404,6 +404,7 @@ onBeforeUnmount(() => {
 }
 .header-btn {
   width: 36px;
+  min-width: 36px;
   height: 36px;
   display: inline-flex;
   align-items: center;

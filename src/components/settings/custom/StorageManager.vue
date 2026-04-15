@@ -29,7 +29,9 @@ const handleConfirm = async () => {
     // 清空所有 IndexedDB 数据
     const stores = ["playlists", "queue", "library"];
     await Promise.all(
-      stores.map((name) => localforage.createInstance({ name: "splayer", storeName: name }).clear()),
+      stores.map((name) =>
+        localforage.createInstance({ name: "splayer", storeName: name }).clear(),
+      ),
     );
     // 重置设置
     const settingsStore = useSettingsStore();

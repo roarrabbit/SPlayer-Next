@@ -87,6 +87,29 @@ export interface LibrarySettings {
   scanDirs: string[];
 }
 
+/** 主窗口几何 */
+export interface MainWindowState {
+  width: number;
+  height: number;
+  x: number | null;
+  y: number | null;
+  maximized: boolean;
+}
+
+/** 桌面歌词窗口几何 */
+export interface DesktopLyricWindowState {
+  width: number;
+  height: number;
+  x: number | null;
+  y: number | null;
+}
+
+/** 窗口几何状态 */
+export interface WindowStates {
+  main: MainWindowState;
+  desktopLyric: DesktopLyricWindowState;
+}
+
 /** 后端配置汇总 */
 export interface SystemConfig {
   /** 播放器配置 */
@@ -104,6 +127,8 @@ export interface SystemConfig {
     /** 在任务栏显示播放进度 */
     taskbarProgress: boolean;
   };
+  /** 窗口几何状态（运行时自动记录，非用户主动配置） */
+  windowStates: WindowStates;
 }
 
 /** 配置 API */
