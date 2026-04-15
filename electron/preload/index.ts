@@ -3,7 +3,6 @@ import { electronAPI } from "@electron-toolkit/preload";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
-  ipcRenderer.removeAllListeners(channel);
   const handler = (_event: Electron.IpcRendererEvent, data: T): void => callback(data);
   ipcRenderer.on(channel, handler);
   return () => ipcRenderer.removeListener(channel, handler);

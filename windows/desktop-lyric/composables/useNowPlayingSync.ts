@@ -7,6 +7,11 @@ import { clampLastLineEnd, pickPrimaryIndex } from "../utils";
 /** 同步偏差阈值 */
 const SYNC_DRIFT_THRESHOLD = 300;
 
+/** 提供给逐字高亮的非响应式当前播放时间 */
+let currentNowPlayingMs = 0;
+
+export const getNowPlayingCurrentMs = (): number => currentNowPlayingMs;
+
 /**
  * 播放状态同步
  * 拉取 / 订阅快照、维护播放锚点、RAF 高频更新 currentMs 与 primaryIndex
@@ -15,7 +20,6 @@ export const useNowPlayingSync = (): {
   track: ShallowRef<Track | null>;
   lyric: ShallowRef<LyricLine[]>;
   playing: Ref<boolean>;
-  currentMs: Ref<number>;
   primaryIndex: Ref<number>;
 } => {
   /** 当前播放的曲目 */
@@ -24,8 +28,6 @@ export const useNowPlayingSync = (): {
   const lyric = shallowRef<LyricLine[]>([]);
   /** 是否正在播放 */
   const playing = ref(false);
-  /** 当前毫秒游标 */
-  const currentMs = ref(0);
   /** 当前行索引 */
   const primaryIndex = ref(-1);
 
@@ -43,7 +45,7 @@ export const useNowPlayingSync = (): {
     const ipcDelay = Math.max(0, Date.now() - sendTimestamp);
     anchorPos = positionMs + (playing.value ? ipcDelay : 0);
     anchorPerf = performance.now();
-    currentMs.value = anchorPos;
+    currentNowPlayingMs = anchorPos;
     anchorInitialized = true;
   };
 
@@ -75,7 +77,7 @@ export const useNowPlayingSync = (): {
   /** 一次同步 */
   const syncOnce = (): void => {
     const next = playing.value ? anchorPos + (performance.now() - anchorPerf) : anchorPos;
-    if (next !== currentMs.value) currentMs.value = next;
+    currentNowPlayingMs = next;
     const idx = pickPrimaryIndex(lyric.value, next);
     if (idx !== primaryIndex.value) primaryIndex.value = idx;
   };
@@ -125,5 +127,5 @@ export const useNowPlayingSync = (): {
     for (const off of unsubscribers) off();
   });
 
-  return { track, lyric, playing, currentMs, primaryIndex };
+  return { track, lyric, playing, primaryIndex };
 };
