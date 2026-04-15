@@ -20,13 +20,10 @@ const overflowPx = ref(0);
 
 /** 开始滚动的进度点：前 30% 停在开头 */
 const SCROLL_START_AT = 0.3;
-/** 结束提前量：比 endTime 早 2s 滚到底 */
+/** 结束提前量：比 endTime 早多少滚到底 */
 const END_MARGIN_MS = 2000;
 
-/**
- * 单词进度对应的 gradient --p 位置
- * @param word 单词时间段
- */
+/** 单词进度对应的 gradient --p 位置 */
 const wordP = (word: { startTime: number; endTime: number }): string => {
   const span = word.endTime - word.startTime;
   const progress =
@@ -47,7 +44,11 @@ const lineStyle = computed(() => ({
   textAlign: props.align,
 }));
 
-/** 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s） */
+/**
+ * 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s）
+ * 不做 Math.round —— 整数量化在 overflow 小（如 20px）时会变成每 ~150ms 跳 1px 的视觉台阶；
+ * 亚像素 translateX 有 will-change 兜底走 GPU 合成层，天然平滑
+ */
 const scrollTransform = computed<string>(() => {
   const overflow = overflowPx.value;
   if (overflow <= 0) return "translateX(0)";
@@ -59,10 +60,15 @@ const scrollTransform = computed<string>(() => {
   const progress = Math.max(0, Math.min(1, (props.currentMs - startTime) / duration));
   if (progress <= SCROLL_START_AT) return "translateX(0)";
   const ratio = (progress - SCROLL_START_AT) / (1 - SCROLL_START_AT);
-  const offset = Math.round(overflow * ratio);
-  return `translateX(-${offset}px)`;
+  const offset = overflow * ratio;
+  return `translateX(-${offset.toFixed(3)}px)`;
 });
 
+/**
+ * 测量内容溢出量
+ * 用 getBoundingClientRect().width（fractional）替代 scrollWidth / clientWidth（整数），
+ * 否则亚像素截断会让终点差 0.x~1px，表现为"滚不到底"
+ */
 const measure = (): void => {
   const outer = containerRef.value;
   const inner = contentRef.value;
@@ -70,19 +76,20 @@ const measure = (): void => {
     overflowPx.value = 0;
     return;
   }
-  overflowPx.value = Math.max(0, inner.scrollWidth - outer.clientWidth);
+  const diff = inner.getBoundingClientRect().width - outer.getBoundingClientRect().width;
+  overflowPx.value = diff > 0.5 ? diff : 0;
 };
 
 watch(() => props.line, () => nextTick(measure));
+// 字号变化只影响内容宽度，容器宽度不变 —— ResizeObserver 不会触发，需显式重测
+watch(() => props.fontSize, () => nextTick(measure));
 
 let resizeObs: ResizeObserver | null = null;
 
 onMounted(() => {
   measure();
-  if (typeof ResizeObserver !== "undefined" && containerRef.value) {
-    resizeObs = new ResizeObserver(measure);
-    resizeObs.observe(containerRef.value);
-  }
+  resizeObs = new ResizeObserver(measure);
+  if (containerRef.value) resizeObs.observe(containerRef.value);
 });
 
 onBeforeUnmount(() => {

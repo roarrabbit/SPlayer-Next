@@ -16,12 +16,10 @@ export interface DesktopLyricApi {
   onConfigChange: (callback: (config: DesktopLyricSettings) => void) => () => void;
   /** 将窗口高度锁定到指定像素 */
   setHeight: (height: number) => Promise<void>;
-  /** 锁定态下切换鼠标穿透（悬停解锁按钮时临时放开） */
+  /** 锁定态下切换鼠标穿透 */
   setMouseIgnore: (ignore: boolean) => void;
-  /** 自定义拖拽移动窗口（传完整 bounds 规避 DPI 缩放 bug） */
-  move: (x: number, y: number, width: number, height: number) => void;
-  /** 拖拽开始 / 结束时钉住 / 释放最大尺寸 */
-  freezeSize: (freeze: boolean) => void;
-  /** 查询窗口真实 bounds（高 DPI 下 window.screenX 不可靠） */
-  getBounds: () => Promise<{ x: number; y: number; width: number; height: number } | null>;
+  /** 拖拽移动；只传位置，主进程持有权威尺寸 */
+  move: (x: number, y: number) => void;
+  /** 拖拽结束后存最终位置；程序 setBounds 不触发 moved 事件，需显式存 */
+  saveState: () => void;
 }

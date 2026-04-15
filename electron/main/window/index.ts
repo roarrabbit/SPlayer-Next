@@ -10,6 +10,5 @@ export {
   applyDesktopLyricMouseIgnore,
   applyDesktopLyricHeight,
   moveDesktopLyricWindow,
-  freezeDesktopLyricSize,
-  getDesktopLyricBounds,
+  saveDesktopLyricState,
 } from "./desktopLyric";

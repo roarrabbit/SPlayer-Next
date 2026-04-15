@@ -40,9 +40,9 @@ const currentMs = ref(0);
 /** 当前行索引 */
 const primaryIndex = ref(-1);
 
-/** 锚点播放位置（ms） */
+/** 锚点播放位置 */
 let anchorPos = 0;
-/** 锚点对应的 performance.now() 时刻 */
+/** 锚点对应的 performance.now 时刻 */
 let anchorPerf = 0;
 
 /** 占位行 */
@@ -56,7 +56,7 @@ const placeholder = (key: string, text: string): DisplayItem[] => [
   },
 ];
 
-/** 艺术家 */
+/** 艺术家显示文本 */
 const artistsText = computed<string>(
   () => track.value?.artists?.map((a) => a.name).join(" / ") ?? "",
 );
@@ -138,7 +138,7 @@ const dispatchPlayerEvent = (type: "prev" | "next" | "play" | "pause"): void => 
 const togglePlay = (): void => {
   dispatchPlayerEvent(playing.value ? "pause" : "play");
 };
-/** 顶栏按钮：打开设置（定位到桌面歌词分类） */
+/** 顶栏按钮：打开设置 */
 const openSettings = (): void => {
   window.api.system.openSettings("desktopLyric").catch(() => {});
 };
@@ -146,7 +146,7 @@ const openSettings = (): void => {
 const toggleLocked = (): void => {
   window.api.config.set("desktopLyric.locked", !config.locked).catch(() => {});
 };
-/** 锁定时悬停解锁按钮：临时放开穿透以允许点击 */
+/** 锁定态下悬停解锁按钮：临时放开穿透以允许点击 */
 const onLockBtnEnter = (): void => {
   if (config.locked) window.api.desktopLyric.setMouseIgnore(false);
 };
@@ -184,99 +184,69 @@ const onDocMouseLeave = (): void => {
   isHovered.value = false;
 };
 
-/**
- * 自定义拖拽（对齐 SPlayer）：
- * - 挂载时预取一次 bounds 缓存到 cachedBounds
- * - pointerdown 同步从缓存拿起点，不等 IPC
- * - 拖拽前 freezeSize(true) 只钉 max，拖完 freezeSize(false) + 刷新缓存
- */
-interface CachedBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-const cachedBounds: CachedBounds = { x: 0, y: 0, width: 0, height: 0 };
-
-const updateCachedBounds = async (): Promise<void> => {
-  const bounds = await window.api.desktopLyric.getBounds();
-  if (!bounds) return;
-  cachedBounds.x = bounds.x;
-  cachedBounds.y = bounds.y;
-  cachedBounds.width = bounds.width;
-  cachedBounds.height = bounds.height;
-};
-
-/** 监听渲染窗口尺寸变化，实时同步到缓存 */
-const { width: winWidth, height: winHeight } = useWindowSize();
-watch([winWidth, winHeight], ([w, h]) => {
-  if (!dragState.dragging) {
-    cachedBounds.width = w;
-    cachedBounds.height = h;
-  }
-});
-
-interface DragState {
-  dragging: boolean;
-  startScreenX: number;
-  startScreenY: number;
-  startWinX: number;
-  startWinY: number;
-  winWidth: number;
-  winHeight: number;
-}
-const dragState: DragState = {
-  dragging: false,
-  startScreenX: 0,
-  startScreenY: 0,
-  startWinX: 0,
-  startWinY: 0,
-  winWidth: 0,
-  winHeight: 0,
-};
+// 拖拽：用 clientX/Y 作为鼠标在窗口内的偏移，pointermove 时 targetX = screenX - offsetX
+// 不依赖任何渲染端窗口位置缓存，避开 Windows 高 DPI 下 DIP↔物理像素回环造成的尺寸漂移
+let dragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let dragPointerId = -1;
+let dragTarget: HTMLElement | null = null;
 let moveRafPending = false;
 let pendingX = 0;
 let pendingY = 0;
+
 const flushMove = (): void => {
   moveRafPending = false;
-  window.api.desktopLyric.move(pendingX, pendingY, dragState.winWidth, dragState.winHeight);
+  window.api.desktopLyric.move(pendingX, pendingY);
 };
+
 const onPointerMove = (event: PointerEvent): void => {
-  if (!dragState.dragging) return;
-  const dx = event.screenX - dragState.startScreenX;
-  const dy = event.screenY - dragState.startScreenY;
-  pendingX = Math.round(dragState.startWinX + dx);
-  pendingY = Math.round(dragState.startWinY + dy);
+  if (!dragging) return;
+  pendingX = Math.round(event.screenX - dragOffsetX);
+  pendingY = Math.round(event.screenY - dragOffsetY);
   if (!moveRafPending) {
     moveRafPending = true;
     requestAnimationFrame(flushMove);
   }
 };
+
 const onPointerUp = (): void => {
-  if (!dragState.dragging) return;
-  dragState.dragging = false;
-  document.removeEventListener("pointermove", onPointerMove);
-  document.removeEventListener("pointerup", onPointerUp);
-  window.api.desktopLyric.freezeSize(false);
-  // 拖拽结束后刷新缓存供下一次拖拽使用
-  updateCachedBounds();
+  if (!dragging) return;
+  dragging = false;
+  if (dragTarget && dragPointerId !== -1) {
+    try {
+      dragTarget.releasePointerCapture(dragPointerId);
+    } catch {
+      /* 捕获已失效 */
+    }
+  }
+  dragTarget?.removeEventListener("pointermove", onPointerMove);
+  dragTarget?.removeEventListener("pointerup", onPointerUp);
+  dragTarget?.removeEventListener("pointercancel", onPointerUp);
+  dragTarget = null;
+  dragPointerId = -1;
+  window.api.desktopLyric.saveState();
 };
+
 const onRootPointerDown = (event: PointerEvent): void => {
   if (config.locked) return;
   if (event.button !== 0) return;
   const target = event.target as HTMLElement | null;
-  if (target?.closest(".header-btn")) return;
-  if (cachedBounds.width <= 0 || cachedBounds.height <= 0) return;
-  dragState.dragging = true;
-  dragState.startScreenX = event.screenX;
-  dragState.startScreenY = event.screenY;
-  dragState.startWinX = cachedBounds.x;
-  dragState.startWinY = cachedBounds.y;
-  dragState.winWidth = cachedBounds.width;
-  dragState.winHeight = cachedBounds.height;
-  window.api.desktopLyric.freezeSize(true);
-  document.addEventListener("pointermove", onPointerMove);
-  document.addEventListener("pointerup", onPointerUp);
+  if (!target || target.closest(".header-btn")) return;
+  dragging = true;
+  dragOffsetX = event.clientX;
+  dragOffsetY = event.clientY;
+  dragPointerId = event.pointerId;
+  dragTarget = target;
+  // 捕获指针：拖拽期间即便鼠标移出窗口（透明区 / 边界外）也能持续派发事件
+  try {
+    target.setPointerCapture(event.pointerId);
+  } catch {
+    /* target 不支持捕获 */
+  }
+  target.addEventListener("pointermove", onPointerMove);
+  target.addEventListener("pointerup", onPointerUp);
+  target.addEventListener("pointercancel", onPointerUp);
   event.preventDefault();
 };
 
@@ -291,7 +261,7 @@ const resetAnchor = (positionMs: number, sendTimestamp: number): void => {
   anchorInitialized = true;
 };
 
-/** 仅当与 RAF 插值的偏差超过阈值时才重置锚点 */
+// 仅当与 RAF 插值的偏差超过阈值时才重置锚点，避免每次 5Hz 同步都打断动画
 const applyAnchor = (positionMs: number, sendTimestamp: number): void => {
   if (!anchorInitialized || !playing.value) {
     resetAnchor(positionMs, sendTimestamp);
@@ -370,9 +340,6 @@ onMounted(async () => {
 
   document.addEventListener("mousemove", onDocMouseMove);
   document.addEventListener("mouseleave", onDocMouseLeave);
-
-  // 预取窗口 bounds 缓存，供同步拖拽起点使用
-  updateCachedBounds();
 });
 
 onBeforeUnmount(() => {
@@ -383,8 +350,11 @@ onBeforeUnmount(() => {
   clearHoverTimer();
   document.removeEventListener("mousemove", onDocMouseMove);
   document.removeEventListener("mouseleave", onDocMouseLeave);
-  document.removeEventListener("pointermove", onPointerMove);
-  document.removeEventListener("pointerup", onPointerUp);
+  if (dragTarget) {
+    dragTarget.removeEventListener("pointermove", onPointerMove);
+    dragTarget.removeEventListener("pointerup", onPointerUp);
+    dragTarget.removeEventListener("pointercancel", onPointerUp);
+  }
   for (const off of unsubscribers) off();
 });
 </script>

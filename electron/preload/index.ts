@@ -139,15 +139,12 @@ const api = {
       subscribe("desktopLyric:configChange", callback),
     // 将窗口高度锁定到指定像素
     setHeight: (height: number) => ipcRenderer.invoke("desktopLyric:setHeight", height),
-    // 锁定态下切换鼠标穿透（悬停解锁按钮时临时放开）
+    // 锁定态下切换鼠标穿透
     setMouseIgnore: (ignore: boolean) => ipcRenderer.send("desktopLyric:setMouseIgnore", ignore),
-    // 自定义拖拽移动窗口（传完整 bounds）
-    move: (x: number, y: number, width: number, height: number) =>
-      ipcRenderer.send("desktopLyric:move", x, y, width, height),
-    // 拖拽开始 / 结束时钉住 / 释放最大尺寸
-    freezeSize: (freeze: boolean) => ipcRenderer.send("desktopLyric:freezeSize", freeze),
-    // 查询窗口真实 bounds
-    getBounds: () => ipcRenderer.invoke("desktopLyric:getBounds"),
+    // 拖拽移动；只传位置，尺寸由主进程权威 cachedSize 写回
+    move: (x: number, y: number) => ipcRenderer.send("desktopLyric:move", x, y),
+    // 拖拽结束后保存最终位置
+    saveState: () => ipcRenderer.send("desktopLyric:saveState"),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
