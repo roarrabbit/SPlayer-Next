@@ -1,19 +1,27 @@
 <script setup lang="ts">
+import { colord } from "colord";
+
+/** 输出颜色格式 */
+export type SColorFormat = "rgb" | "hex";
+
 export interface SColorProps {
-  /** 当前颜色，hex 格式：#RRGGBB 或 #RRGGBBAA */
+  /** 当前颜色 */
   modelValue?: string;
   /** 禁用 */
   disabled?: boolean;
   /** 是否支持透明度 */
   showAlpha?: boolean;
+  /** 输出格式 */
+  format?: SColorFormat;
   /** 预设色板 */
   swatches?: string[];
 }
 
 const props = withDefaults(defineProps<SColorProps>(), {
-  modelValue: "#000000",
+  modelValue: "rgb(0, 0, 0)",
   disabled: false,
   showAlpha: true,
+  format: "rgb",
   swatches: () => [],
 });
 
@@ -21,89 +29,9 @@ const emit = defineEmits<{
   "update:modelValue": [value: string];
 }>();
 
-interface RGBA {
-  r: number;
-  g: number;
-  b: number;
-  a: number;
-}
-interface HSV {
-  h: number;
-  s: number;
-  v: number;
-}
-
-/** 把值限制在 [min, max] 区间 */
+/** 限制值在 [min, max] 区间 */
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
-
-/** 0-255 整数转两位 hex */
-const toHex2 = (n: number): string => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
-
-/** 解析 hex，支持 #RGB / #RGBA / #RRGGBB / #RRGGBBAA，非法返回黑色 */
-const parseHex = (input: string): RGBA => {
-  let hex = input.trim().replace(/^#/, "");
-  if (hex.length === 3 || hex.length === 4) {
-    hex = hex
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
-  if (hex.length === 6 || hex.length === 8) {
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
-    return { r, g, b, a };
-  }
-  return { r: 0, g: 0, b: 0, a: 1 };
-};
-
-/** RGBA 转 hex，alpha 为 1 或 withAlpha=false 时省略 alpha 段 */
-const rgbaToHex = ({ r, g, b, a }: RGBA, withAlpha: boolean): string => {
-  const base = `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
-  if (!withAlpha || a >= 1) return base;
-  return `${base}${toHex2(a * 255)}`;
-};
-
-/** RGB(0-255) 转 HSV(h:0-360, s/v:0-100) */
-const rgbToHsv = ({ r, g, b }: Pick<RGBA, "r" | "g" | "b">): HSV => {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const mx = Math.max(rn, gn, bn);
-  const mn = Math.min(rn, gn, bn);
-  const d = mx - mn;
-  let hue = 0;
-  if (d !== 0) {
-    if (mx === rn) hue = 60 * (((gn - bn) / d) % 6);
-    else if (mx === gn) hue = 60 * ((bn - rn) / d + 2);
-    else hue = 60 * ((rn - gn) / d + 4);
-  }
-  if (hue < 0) hue += 360;
-  const sat = mx === 0 ? 0 : d / mx;
-  return { h: hue, s: sat * 100, v: mx * 100 };
-};
-
-/** HSV(h:0-360, s/v:0-100) 转 RGB(0-255) */
-const hsvToRgb = ({ h, s, v }: HSV): Pick<RGBA, "r" | "g" | "b"> => {
-  const sn = s / 100;
-  const vn = v / 100;
-  const c = vn * sn;
-  const h6 = (h % 360) / 60;
-  const x = c * (1 - Math.abs((h6 % 2) - 1));
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (h6 < 1) [r, g, b] = [c, x, 0];
-  else if (h6 < 2) [r, g, b] = [x, c, 0];
-  else if (h6 < 3) [r, g, b] = [0, c, x];
-  else if (h6 < 4) [r, g, b] = [0, x, c];
-  else if (h6 < 5) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
-  const m = vn - c;
-  return { r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 };
-};
 
 /** 棋盘格多层 gradient 定义，用于模拟透明背景 */
 const CHECKER_IMAGE =
@@ -135,14 +63,15 @@ const v = ref(0);
 /** 不透明度 0-1 */
 const a = ref(1);
 
-/** 将外部 hex 解析为 HSV + alpha，s=0 时保持原 hue 避免漂移 */
-const syncFromModel = (hex: string): void => {
-  const rgba = parseHex(hex);
-  const hsv = rgbToHsv(rgba);
+/** 将外部颜色字符串解析为 HSV + alpha，s=0 时保持原 hue 避免漂移 */
+const syncFromModel = (input: string): void => {
+  const c = colord(input.trim());
+  if (!c.isValid()) return;
+  const hsv = c.toHsv();
   if (hsv.s > 0) h.value = hsv.h;
   s.value = hsv.s;
   v.value = hsv.v;
-  a.value = rgba.a;
+  a.value = hsv.a;
 };
 
 syncFromModel(props.modelValue);
@@ -150,33 +79,31 @@ syncFromModel(props.modelValue);
 watch(
   () => props.modelValue,
   (val) => {
-    if (val.toLowerCase() === currentHex.value.toLowerCase()) return;
+    if (
+      colord(val).isValid() &&
+      colord(val).toRgbString() === colord(currentValue.value).toRgbString()
+    )
+      return;
     syncFromModel(val);
   },
 );
 
-/** 当前色的 RGBA 数值表示 */
-const currentRgba = computed<RGBA>(() => ({
-  ...hsvToRgb({ h: h.value, s: s.value, v: v.value }),
-  a: a.value,
-}));
+/** colord 单一真值源：内部 HSV 状态（拾色器 UI 需要）+ alpha → colord 实例，所有输出都派生它 */
+const currentColord = computed(() => colord({ h: h.value, s: s.value, v: v.value, a: a.value }));
 
-/** 当前 hex 字符串，showAlpha=false 时省略 alpha 段 */
-const currentHex = computed(() => rgbaToHex(currentRgba.value, props.showAlpha));
-
-/** 不带 alpha 的 rgb() 字符串，用作 alpha 滑条渐变终点色 */
-const currentRgb = computed(() => {
-  const { r, g, b } = currentRgba.value;
-  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+/** 当前颜色的字符串表示 */
+const currentValue = computed(() => {
+  const c = props.showAlpha ? currentColord.value : currentColord.value.alpha(1);
+  return props.format === "hex" ? c.toHex() : c.toRgbString();
 });
 
-/** 带 alpha 的 rgba() 字符串，用作 chip / thumb 实际显示 */
-const currentBg = computed(() => {
-  const { r, g, b, a: al } = currentRgba.value;
-  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${al})`;
-});
+/** alpha 滑条渐变终点色 */
+const currentRgb = computed(() => currentColord.value.alpha(1).toRgbString());
 
-/** SV 面板背景：底层随 hue 变化的水平渐变 + 上层黑色纵向渐变 */
+/** chip / thumb 实际显示 */
+const currentBg = computed(() => currentColord.value.toRgbString());
+
+/** SV 面板背景 */
 const svBackground = computed(
   () =>
     `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${h.value}, 100%, 50%))`,
@@ -185,35 +112,30 @@ const svBackground = computed(
 /** 触发器色块样式 */
 const chipStyle = computed(() => buildChipStyle(currentBg.value));
 
-/** 把当前状态转 hex 并通知父组件 */
+/** 把当前状态格式化后通知父组件 */
 const emitUpdate = (): void => {
-  const next = currentHex.value;
+  const next = currentValue.value;
   if (next === props.modelValue) return;
   emit("update:modelValue", next);
 };
 
-/** HEX 输入框本地值，允许输入过程中暂时非法 */
-const hexInput = ref(currentHex.value);
-watch(currentHex, (val) => {
-  hexInput.value = val;
+/** 颜色输入框本地值 */
+const textInput = ref(currentValue.value);
+watch(currentValue, (val) => {
+  textInput.value = val;
 });
 
-const HEX_RE = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-
-/** 输入框 blur/enter 提交：合法则同步并上报，非法则回滚 */
-const commitHex = (): void => {
-  const raw = hexInput.value.trim();
-  const norm = raw.startsWith("#") ? raw : `#${raw}`;
-  if (HEX_RE.test(norm)) {
-    syncFromModel(norm);
+/** 输入框 blur/enter 提交 */
+const commitInput = (): void => {
+  const raw = textInput.value.trim();
+  if (colord(raw).isValid()) {
+    syncFromModel(raw);
     emitUpdate();
   }
-  hexInput.value = currentHex.value;
+  textInput.value = currentValue.value;
 };
 
-/**
- * 生成一组 pointer 事件处理器，把事件坐标换算为 track 内的 [0,1] 比例，交给 apply
- */
+/** 生成一组 pointer 事件处理器 */
 const useTrackPointer = (
   targetRef: Ref<HTMLElement | undefined>,
   apply: (ratioX: number, ratioY: number) => void,
@@ -254,7 +176,8 @@ const hue = useTrackPointer(hueRef, (x) => {
   h.value = x * 360;
 });
 const alpha = useTrackPointer(alphaRef, (x) => {
-  a.value = x;
+  // 透明度滑块按 1%（0.01）步进，避免 0.7234567 这种浮点尾巴
+  a.value = Math.round(x * 100) / 100;
 });
 
 /** 点击预设色块，同步到状态并上报 */
@@ -263,9 +186,12 @@ const selectSwatch = (swatch: string): void => {
   emitUpdate();
 };
 
-/** 判断预设色是否等于当前值 */
-const isSwatchActive = (swatch: string): boolean =>
-  swatch.toLowerCase() === currentHex.value.toLowerCase();
+/** 判断预设色是否等于当前值（基于 colord 标准化对比） */
+const isSwatchActive = (swatch: string): boolean => {
+  const x = colord(swatch);
+  const y = colord(currentValue.value);
+  return x.isValid() && y.isValid() && x.toRgbString() === y.toRgbString();
+};
 </script>
 
 <template>
@@ -353,12 +279,12 @@ const isSwatchActive = (swatch: string): boolean =>
       </div>
     </SPopover>
 
-    <div class="w-32">
+    <div class="w-40">
       <SInput
-        v-model="hexInput"
+        v-model="textInput"
         :disabled="disabled"
-        @blur="commitHex"
-        @keydown.enter="commitHex"
+        @blur="commitInput"
+        @keydown.enter="commitInput"
       />
     </div>
   </div>

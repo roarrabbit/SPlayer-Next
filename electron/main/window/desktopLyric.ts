@@ -1,4 +1,4 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, screen } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { createWindow } from "./create";
@@ -16,6 +16,8 @@ const MAX_WIDTH = 10000;
 const FALLBACK_HEIGHT = 200;
 /** 默认宽度 */
 const FALLBACK_WIDTH = 800;
+/** 光标位置轮询间隔（ms） */
+const CURSOR_POLL_MS = 150;
 
 /**
  * 权威尺寸缓存
@@ -23,6 +25,45 @@ const FALLBACK_WIDTH = 800;
  * 避免 Windows 高 DPI 下 DIP↔物理像素有损回环造成尺寸漂移
  */
 const cachedSize = { width: 0, height: 0 };
+
+/**
+ * 光标位置轮询
+ * 用 OS 级 screen.getCursorScreenPoint() 判断鼠标是否在歌词窗口内
+ */
+let cursorPollTimer: NodeJS.Timeout | null = null;
+let lastCursorInside = false;
+
+const isCursorInsideBounds = (): boolean => {
+  if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) return false;
+  const cursor = screen.getCursorScreenPoint();
+  const b = desktopLyricWindow.getBounds();
+  return (
+    cursor.x >= b.x && cursor.x < b.x + b.width && cursor.y >= b.y && cursor.y < b.y + b.height
+  );
+};
+
+const startCursorPolling = (): void => {
+  if (cursorPollTimer) return;
+  lastCursorInside = isCursorInsideBounds();
+  cursorPollTimer = setInterval(() => {
+    if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) {
+      stopCursorPolling();
+      return;
+    }
+    const inside = isCursorInsideBounds();
+    if (inside !== lastCursorInside) {
+      lastCursorInside = inside;
+      desktopLyricWindow.webContents.send("desktopLyric:cursorInside", inside);
+    }
+  }, CURSOR_POLL_MS);
+};
+
+const stopCursorPolling = (): void => {
+  if (cursorPollTimer) {
+    clearInterval(cursorPollTimer);
+    cursorPollTimer = null;
+  }
+};
 
 /** 把当前位置 + 权威尺寸保存到 windowStateStore */
 const saveWindowState = (): void => {
@@ -45,11 +86,14 @@ export const applyDesktopLyricLock = (locked: boolean): void => {
   win.setResizable(!locked);
 };
 
-/** 应用置顶状态 */
+/**
+ * 应用置顶状态
+ * 用 "screen-saver" 级别，否则 Win10/11 的"总在最前"任务栏会压在桌面歌词之上
+ */
 export const applyDesktopLyricAlwaysOnTop = (alwaysOnTop: boolean): void => {
   const win = getDesktopLyricWindow();
   if (!win) return;
-  win.setAlwaysOnTop(alwaysOnTop);
+  win.setAlwaysOnTop(alwaysOnTop, "screen-saver");
 };
 
 /** 锁定状态下由渲染端切换鼠标事件穿透 */
@@ -59,16 +103,27 @@ export const applyDesktopLyricMouseIgnore = (ignore: boolean): void => {
   win.setIgnoreMouseEvents(ignore, { forward: true });
 };
 
-/** 把窗口移动到指定位置；尺寸始终用权威 cachedSize 写回 */
+/**
+ * 把窗口移动到指定位置；尺寸始终用权威 cachedSize 写回
+ * 开启 limitBounds 时把 x/y clamp 到光标所在显示器的 workArea，避免拖出屏幕 / 被任务栏挡住
+ */
 export const moveDesktopLyricWindow = (x: number, y: number): void => {
   const win = getDesktopLyricWindow();
   if (!win) return;
-  win.setBounds({
-    x: Math.round(x),
-    y: Math.round(y),
-    width: cachedSize.width,
-    height: cachedSize.height,
-  });
+  let tx = Math.round(x);
+  let ty = Math.round(y);
+  if (store.get("desktopLyric").limitBounds) {
+    const display = screen.getDisplayMatching({
+      x: tx,
+      y: ty,
+      width: cachedSize.width,
+      height: cachedSize.height,
+    });
+    const wa = display.workArea;
+    tx = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, tx));
+    ty = Math.max(wa.y, Math.min(wa.y + wa.height - cachedSize.height, ty));
+  }
+  win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
 };
 
 /** 拖拽结束后保存最终位置；程序 setBounds 不触发 moved 事件，需显式存 */
@@ -143,13 +198,16 @@ export const createDesktopLyricWindow = (): BrowserWindow => {
     const b = desktopLyricWindow.getBounds();
     cachedSize.width = b.width;
     cachedSize.height = b.height;
+    // 用 screen-saver level 置顶，否则 Win10/11 任务栏会盖在歌词之上
+    desktopLyricWindow.setAlwaysOnTop(config.alwaysOnTop, "screen-saver");
+    startCursorPolling();
   });
 
   if (config.locked) {
     desktopLyricWindow.setIgnoreMouseEvents(true, { forward: true });
   }
 
-  // resized 仅由用户拖边触发；程序 setBounds 不触发，所以不会被脏值污染
+  /** 窗口大小变化事件 */
   desktopLyricWindow.on("resized", () => {
     if (!desktopLyricWindow) return;
     const b = desktopLyricWindow.getBounds();
@@ -158,8 +216,12 @@ export const createDesktopLyricWindow = (): BrowserWindow => {
     saveWindowState();
   });
 
+  /** 设置托盘图标 */
   setTrayDesktopLyric(true);
+
+  /** 窗口关闭事件 */
   desktopLyricWindow.on("closed", () => {
+    stopCursorPolling();
     desktopLyricWindow = null;
     setTrayDesktopLyric(false);
   });

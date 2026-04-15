@@ -145,6 +145,9 @@ const api = {
     move: (x: number, y: number) => ipcRenderer.send("desktopLyric:move", x, y),
     // 拖拽结束后保存最终位置
     saveState: () => ipcRenderer.send("desktopLyric:saveState"),
+    // 订阅主进程 screen 光标位置轮询
+    onCursorInside: (callback: (inside: boolean) => void) =>
+      subscribe<boolean>("desktopLyric:cursorInside", callback),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程

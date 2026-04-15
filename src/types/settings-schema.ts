@@ -7,7 +7,9 @@ export type SettingWidgetType = "switch" | "select" | "slider" | "color" | "butt
 export interface SettingOption {
   value: string | number | boolean;
   /** i18n key */
-  labelKey: string;
+  labelKey?: string;
+  /** 字面 label */
+  label?: string;
 }
 
 /** 设置项 */
@@ -26,6 +28,10 @@ export interface SettingItem {
   step?: number;
   /** slider 刻度标记 */
   marks?: Record<number, string>;
+  /** color 控件是否启用透明度（默认 true） */
+  showAlpha?: boolean;
+  /** color 控件输出格式（默认 rgb） */
+  colorFormat?: "rgb" | "hex";
   /** 默认值 */
   defaultValue?: unknown;
   /** 覆盖描述的 i18n key */

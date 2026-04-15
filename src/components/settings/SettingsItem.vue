@@ -14,7 +14,7 @@ const model = props.item.binding ? useSettingModel(props.item.binding) : ref<any
 const selectOptions = computed(() =>
   (props.item.options ?? []).map((o) => ({
     value: o.value,
-    label: t(o.labelKey),
+    label: o.label ?? (o.labelKey ? t(o.labelKey) : String(o.value)),
   })),
 );
 
@@ -78,6 +78,8 @@ const descriptionText = computed(() =>
           v-else-if="item.type === 'color'"
           :model-value="model"
           :disabled="isDisabled"
+          :show-alpha="item.showAlpha"
+          :format="item.colorFormat"
           @update:model-value="model = $event"
         />
         <SButton

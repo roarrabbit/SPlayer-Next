@@ -11,6 +11,8 @@ const props = defineProps<{
   wordByWord: boolean;
   /** 静态模式下作为「下一行」渲染 */
   isNext: boolean;
+  /** 是否启用文本背景遮罩 */
+  backgroundMask: boolean;
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
@@ -46,8 +48,7 @@ const lineStyle = computed(() => ({
 
 /**
  * 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s）
- * 不做 Math.round —— 整数量化在 overflow 小（如 20px）时会变成每 ~150ms 跳 1px 的视觉台阶；
- * 亚像素 translateX 有 will-change 兜底走 GPU 合成层，天然平滑
+ * 不做 Math.round —— 整数量化在 overflow 小（如 20px）时会变成每 ~150ms 跳 1px 的视觉台阶
  */
 const scrollTransform = computed<string>(() => {
   const overflow = overflowPx.value;
@@ -67,7 +68,7 @@ const scrollTransform = computed<string>(() => {
 /**
  * 测量内容溢出量
  * 用 getBoundingClientRect().width（fractional）替代 scrollWidth / clientWidth（整数），
- * 否则亚像素截断会让终点差 0.x~1px，表现为"滚不到底"
+ * 否则亚像素截断会让终点差 0.x~1px
  */
 const measure = (): void => {
   const outer = containerRef.value;
@@ -80,39 +81,57 @@ const measure = (): void => {
   overflowPx.value = diff > 0.5 ? diff : 0;
 };
 
-watch(() => props.line, () => nextTick(measure));
-// 字号变化只影响内容宽度，容器宽度不变 —— ResizeObserver 不会触发，需显式重测
-watch(() => props.fontSize, () => nextTick(measure));
+// 字号变化兜底
+watch(
+  () => props.fontSize,
+  () => nextTick(measure),
+);
 
 let resizeObs: ResizeObserver | null = null;
+
+/** 字号 CSS transition 结束后重测 */
+const onTransitionEnd = (event: TransitionEvent): void => {
+  if (event.propertyName === "font-size") measure();
+};
 
 onMounted(() => {
   measure();
   resizeObs = new ResizeObserver(measure);
-  if (containerRef.value) resizeObs.observe(containerRef.value);
+  if (containerRef.value) {
+    resizeObs.observe(containerRef.value);
+    containerRef.value.addEventListener("transitionend", onTransitionEnd);
+  }
 });
 
 onBeforeUnmount(() => {
   resizeObs?.disconnect();
   resizeObs = null;
+  containerRef.value?.removeEventListener("transitionend", onTransitionEnd);
 });
 </script>
 
 <template>
   <div class="dl-line-block">
     <div ref="containerRef" class="dl-line" :style="lineStyle">
-      <span ref="contentRef" class="dl-line-inner" :style="{ transform: scrollTransform }">
-        <template v-if="wordByWord">
-          <span
-            v-for="(word, i) in line.words"
-            :key="i"
-            class="dl-word"
-            :style="{ '--p': wordP(word) }"
-            >{{ word.word }}</span
-          >
-        </template>
-        <span v-else class="dl-static" :class="{ 'is-unplayed': isNext }">
-          {{ line.words.map((w) => w.word).join("") }}
+      <span
+        ref="contentRef"
+        class="dl-line-inner"
+        :class="{ 'has-mask': backgroundMask }"
+        :style="{ transform: scrollTransform }"
+      >
+        <span class="dl-text">
+          <template v-if="wordByWord">
+            <span
+              v-for="(word, i) in line.words"
+              :key="i"
+              class="dl-word"
+              :style="{ '--p': wordP(word) }"
+              >{{ word.word }}</span
+            >
+          </template>
+          <span v-else class="dl-static" :class="{ 'is-unplayed': isNext }">
+            {{ line.words.map((w) => w.word).join("") }}
+          </span>
         </span>
       </span>
     </div>
@@ -130,8 +149,8 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   transform: translate3d(0, var(--dl-y, 0px), 0) translateY(0);
   transition:
-    transform 0.6s cubic-bezier(0.55, 0, 0.1, 1),
-    opacity 0.6s cubic-bezier(0.55, 0, 0.1, 1);
+    transform var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1),
+    opacity var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
   will-change: transform, opacity;
 }
 .dl-line {
@@ -141,16 +160,23 @@ onBeforeUnmount(() => {
   padding: 4px 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: font-size 0.6s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: font-size var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
 }
 .dl-line-inner {
   display: inline-block;
   will-change: transform;
 }
-/*
- * 逐字：gradient 围绕 var(--p) 展开 6px 软边。
- * --p 范围被 JS 扩到 calc(-3px .. 100%+3px)：极值位过渡带被挤出可视区 → 纯色无残留。
- */
+.dl-line-inner.has-mask {
+  line-height: 1;
+  padding: 0.25em 0.4em;
+  border-radius: 6px;
+  background-color: var(--dl-mask, transparent);
+}
+.dl-text {
+  display: inline-block;
+  filter: drop-shadow(0 0 1px var(--dl-stroke, transparent))
+    drop-shadow(0 0 2px var(--dl-stroke, transparent));
+}
 .dl-word {
   --p: 0%;
   display: inline;
@@ -169,7 +195,7 @@ onBeforeUnmount(() => {
 .dl-static {
   display: inline-block;
   color: var(--dl-played);
-  transition: color 0.6s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: color var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
 }
 .dl-static.is-unplayed {
   color: var(--dl-unplayed);

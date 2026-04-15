@@ -295,6 +295,30 @@
       "label": "未播放颜色",
       "description": "未播放的歌词文字颜色"
     },
+    "desktopLyricStrokeColor": {
+      "label": "描边颜色",
+      "description": "歌词文字的描边颜色，透明则视为关闭描边"
+    },
+    "desktopLyricBackgroundMask": {
+      "label": "文本背景遮罩",
+      "description": "为每行歌词文字加半透明背景色块，提升弱对比下的可读性"
+    },
+    "desktopLyricBackgroundMaskColor": {
+      "label": "遮罩颜色",
+      "description": "文本背景遮罩的颜色与透明度"
+    },
+    "desktopLyricAlwaysShowSongInfo": {
+      "label": "常驻显示歌曲信息",
+      "description": "始终显示歌曲名与艺术家，关闭后仅悬停时显示"
+    },
+    "desktopLyricAnimation": {
+      "label": "切换动画",
+      "description": "歌词行切换时的滑入 / 滑出过渡动画"
+    },
+    "desktopLyricLimitBounds": {
+      "label": "限制在屏幕内",
+      "description": "拖拽时把窗口边界限制在当前屏幕的工作区范围内"
+    },
     "desktopLyricAlwaysOnTop": {
       "label": "窗口置顶",
       "description": "桌面歌词窗口始终保持在最前"

@@ -22,4 +22,6 @@ export interface DesktopLyricApi {
   move: (x: number, y: number) => void;
   /** 拖拽结束后存最终位置；程序 setBounds 不触发 moved 事件，需显式存 */
   saveState: () => void;
+  /** 订阅主进程 screen 光标位置判定 */
+  onCursorInside: (callback: (inside: boolean) => void) => () => void;
 }

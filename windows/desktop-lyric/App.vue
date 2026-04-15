@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import type { NowPlayingSnapshot, NowPlayingPositionSync } from "@shared/types/nowPlaying";
-import type { LyricLine } from "@shared/types/lyrics";
-import type { Track } from "@shared/types/player";
+import { TransitionGroup } from "vue";
 import type { DesktopLyricSettings } from "@shared/types/settings";
 import LyricLineView from "./components/LyricLine.vue";
 import {
-  pickPrimaryIndex,
   makePlaceholderLine,
   getLineTop,
   computeWindowHeight,
   resolveAlign,
   resolveWordByWord,
-  clampLastLineEnd,
   type DisplayItem,
 } from "./utils";
+import { useNowPlayingSync } from "./composables/useNowPlayingSync";
+import { useDragWindow } from "./composables/useDragWindow";
+import { useHoverState } from "./composables/useHoverState";
 
 const config = reactive<DesktopLyricSettings>({
   fontSize: 24,
@@ -25,25 +24,19 @@ const config = reactive<DesktopLyricSettings>({
   autoGenerateWordByWord: true,
   playedColor: "#ffffff",
   unplayedColor: "#7d7d7d",
+  strokeColor: "rgba(0, 0, 0, 0.5)",
+  backgroundMask: false,
+  backgroundMaskColor: "rgba(0, 0, 0, 0.3)",
+  alwaysShowSongInfo: false,
+  limitBounds: false,
+  animation: true,
   alwaysOnTop: true,
   locked: false,
 });
 
-/** 当前播放的曲目 */
-const track = shallowRef<Track | null>(null);
-/** 当前歌词数组 */
-const lyric = shallowRef<LyricLine[]>([]);
-/** 是否正在播放 */
-const playing = ref(false);
-/** 当前毫秒游标 */
-const currentMs = ref(0);
-/** 当前行索引 */
-const primaryIndex = ref(-1);
-
-/** 锚点播放位置 */
-let anchorPos = 0;
-/** 锚点对应的 performance.now 时刻 */
-let anchorPerf = 0;
+const { track, lyric, playing, currentMs, primaryIndex } = useNowPlayingSync();
+const { onRootPointerDown } = useDragWindow(() => config.locked);
+const { isHovered } = useHoverState();
 
 /** 占位行 */
 const placeholder = (key: string, text: string): DisplayItem[] => [
@@ -65,15 +58,15 @@ const artistsText = computed<string>(
 const displayItems = computed<DisplayItem[]>(() => {
   const lines = lyric.value;
   const cur = track.value;
-
+  // 如果当前没有曲目，则显示占位行
   if (!cur) return placeholder("ph-idle", "SPlayer Desktop Lyric");
   if (lines.length === 0) return placeholder("ph-inst", "纯音乐，请欣赏");
-
+  // 获取当前主行索引
   const primary = primaryIndex.value;
   if (primary < 0) {
     return placeholder(`ph-title-${cur.id ?? cur.title}`, cur.title);
   }
-
+  // 显示主行
   const items: DisplayItem[] = [
     {
       key: `m-${primary}`,
@@ -82,7 +75,7 @@ const displayItems = computed<DisplayItem[]>(() => {
       align: resolveAlign(primary, config.align),
     },
   ];
-
+  // 显示翻译行
   const current = lines[primary];
   if (config.showTranslation && current.translatedLyric) {
     items.push({
@@ -94,7 +87,7 @@ const displayItems = computed<DisplayItem[]>(() => {
     });
     return items;
   }
-
+  // 显示下一句
   if (config.doubleLine) {
     const nextIdx = primary + 1;
     if (nextIdx < lines.length) {
@@ -110,13 +103,22 @@ const displayItems = computed<DisplayItem[]>(() => {
   return items;
 });
 
-/** 根节点颜色 CSS 变量 */
+/** 根节点 CSS 变量 */
 const rootStyle = computed(() => ({
   "--dl-played": config.playedColor,
   "--dl-unplayed": config.unplayedColor,
+  "--dl-stroke": config.strokeColor,
+  "--dl-mask": config.backgroundMaskColor,
+  // 行位置 / 字号 / 颜色的过渡时长，关动画时置 0 让所有后代 transition 变瞬时
+  "--dl-anim": config.animation ? "0.6s" : "0s",
 }));
 
-/** 通知主进程把窗口高度锁定到当前字号对应值 */
+/** 常驻信息文字对齐 */
+const persistentTextAlign = computed<"left" | "center" | "right">(() =>
+  config.align === "justify" ? "center" : config.align,
+);
+
+/** 窗口高度锁定到当前字号对应值 */
 const pushWindowHeight = (): void => {
   const target = computeWindowHeight(config.fontSize);
   window.api.desktopLyric.setHeight(target).catch((error) => {
@@ -124,187 +126,55 @@ const pushWindowHeight = (): void => {
   });
 };
 
+// 监听字体大小变化，更新窗口高度
 watch(() => config.fontSize, pushWindowHeight);
 
-/** 顶栏按钮：聚焦主窗口 */
-const focusMainWindow = (): void => {
-  window.api.system.focusMainWindow().catch(() => {});
+/** 顶栏按钮 */
+const onHeaderAction = (
+  action:
+    | "focus-main"
+    | "prev"
+    | "next"
+    | "toggle-play"
+    | "open-settings"
+    | "toggle-locked"
+    | "close",
+): void => {
+  switch (action) {
+    case "focus-main":
+      window.api.system.focusMainWindow().catch(() => {});
+      break;
+    case "prev":
+    case "next":
+      window.api.player.dispatch(action);
+      break;
+    case "toggle-play":
+      window.api.player.dispatch(playing.value ? "pause" : "play");
+      break;
+    case "open-settings":
+      window.api.system.openSettings("desktopLyric").catch(() => {});
+      break;
+    case "toggle-locked":
+      window.api.config.set("desktopLyric.locked", !config.locked).catch(() => {});
+      break;
+    case "close":
+      window.api.window.closeDesktopLyric().catch(() => {});
+      break;
+  }
 };
-/** 顶栏按钮：广播播放控制事件 */
-const dispatchPlayerEvent = (type: "prev" | "next" | "play" | "pause"): void => {
-  window.api.player.dispatch(type);
-};
-/** 顶栏按钮：切换播放/暂停 */
-const togglePlay = (): void => {
-  dispatchPlayerEvent(playing.value ? "pause" : "play");
-};
-/** 顶栏按钮：打开设置 */
-const openSettings = (): void => {
-  window.api.system.openSettings("desktopLyric").catch(() => {});
-};
-/** 顶栏按钮：切换锁定状态 */
-const toggleLocked = (): void => {
-  window.api.config.set("desktopLyric.locked", !config.locked).catch(() => {});
-};
-/** 锁定态下悬停解锁按钮：临时放开穿透以允许点击 */
+
+// 锁定按钮鼠标进入事件：临时放开穿透以允许点击
 const onLockBtnEnter = (): void => {
   if (config.locked) window.api.desktopLyric.setMouseIgnore(false);
 };
+
+// 锁定按钮鼠标离开事件：恢复穿透
 const onLockBtnLeave = (): void => {
   if (config.locked) window.api.desktopLyric.setMouseIgnore(true);
 };
-/** 顶栏按钮：关闭桌面歌词窗口 */
-const closeWindow = (): void => {
-  window.api.window.closeDesktopLyric().catch(() => {});
-};
 
-/** hover 显示顶栏 / 背景；1s 无移动自动隐藏 */
-const isHovered = ref(false);
-let hoverTimer: number | null = null;
-const HOVER_IDLE_MS = 1000;
-const clearHoverTimer = (): void => {
-  if (hoverTimer !== null) {
-    window.clearTimeout(hoverTimer);
-    hoverTimer = null;
-  }
-};
-const startHoverIdle = (): void => {
-  clearHoverTimer();
-  hoverTimer = window.setTimeout(() => {
-    isHovered.value = false;
-    hoverTimer = null;
-  }, HOVER_IDLE_MS);
-};
-const onDocMouseMove = (): void => {
-  isHovered.value = true;
-  startHoverIdle();
-};
-const onDocMouseLeave = (): void => {
-  clearHoverTimer();
-  isHovered.value = false;
-};
-
-// 拖拽：用 clientX/Y 作为鼠标在窗口内的偏移，pointermove 时 targetX = screenX - offsetX
-// 不依赖任何渲染端窗口位置缓存，避开 Windows 高 DPI 下 DIP↔物理像素回环造成的尺寸漂移
-let dragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-let dragPointerId = -1;
-let dragTarget: HTMLElement | null = null;
-let moveRafPending = false;
-let pendingX = 0;
-let pendingY = 0;
-
-const flushMove = (): void => {
-  moveRafPending = false;
-  window.api.desktopLyric.move(pendingX, pendingY);
-};
-
-const onPointerMove = (event: PointerEvent): void => {
-  if (!dragging) return;
-  pendingX = Math.round(event.screenX - dragOffsetX);
-  pendingY = Math.round(event.screenY - dragOffsetY);
-  if (!moveRafPending) {
-    moveRafPending = true;
-    requestAnimationFrame(flushMove);
-  }
-};
-
-const onPointerUp = (): void => {
-  if (!dragging) return;
-  dragging = false;
-  if (dragTarget && dragPointerId !== -1) {
-    try {
-      dragTarget.releasePointerCapture(dragPointerId);
-    } catch {
-      /* 捕获已失效 */
-    }
-  }
-  dragTarget?.removeEventListener("pointermove", onPointerMove);
-  dragTarget?.removeEventListener("pointerup", onPointerUp);
-  dragTarget?.removeEventListener("pointercancel", onPointerUp);
-  dragTarget = null;
-  dragPointerId = -1;
-  window.api.desktopLyric.saveState();
-};
-
-const onRootPointerDown = (event: PointerEvent): void => {
-  if (config.locked) return;
-  if (event.button !== 0) return;
-  const target = event.target as HTMLElement | null;
-  if (!target || target.closest(".header-btn")) return;
-  dragging = true;
-  dragOffsetX = event.clientX;
-  dragOffsetY = event.clientY;
-  dragPointerId = event.pointerId;
-  dragTarget = target;
-  // 捕获指针：拖拽期间即便鼠标移出窗口（透明区 / 边界外）也能持续派发事件
-  try {
-    target.setPointerCapture(event.pointerId);
-  } catch {
-    /* target 不支持捕获 */
-  }
-  target.addEventListener("pointermove", onPointerMove);
-  target.addEventListener("pointerup", onPointerUp);
-  target.addEventListener("pointercancel", onPointerUp);
-  event.preventDefault();
-};
-
-const SYNC_DRIFT_THRESHOLD = 300;
-let anchorInitialized = false;
-
-const resetAnchor = (positionMs: number, sendTimestamp: number): void => {
-  const ipcDelay = Math.max(0, Date.now() - sendTimestamp);
-  anchorPos = positionMs + (playing.value ? ipcDelay : 0);
-  anchorPerf = performance.now();
-  currentMs.value = anchorPos;
-  anchorInitialized = true;
-};
-
-// 仅当与 RAF 插值的偏差超过阈值时才重置锚点，避免每次 5Hz 同步都打断动画
-const applyAnchor = (positionMs: number, sendTimestamp: number): void => {
-  if (!anchorInitialized || !playing.value) {
-    resetAnchor(positionMs, sendTimestamp);
-    return;
-  }
-  const ipcDelay = Math.max(0, Date.now() - sendTimestamp);
-  const candidate = positionMs + ipcDelay;
-  const projected = anchorPos + (performance.now() - anchorPerf);
-  if (Math.abs(candidate - projected) > SYNC_DRIFT_THRESHOLD) {
-    resetAnchor(positionMs, sendTimestamp);
-  }
-};
-
-const applySnapshot = (snap: NowPlayingSnapshot): void => {
-  track.value = snap.track;
-  // 桌面歌词只展示主行
-  const mainLines = snap.lyric.filter((line) => !line.isBG);
-  lyric.value = clampLastLineEnd(mainLines, snap.track?.duration);
-  playing.value = snap.playing;
-  primaryIndex.value = -1;
-  resetAnchor(snap.position, snap.sendTimestamp);
-};
-
-let rafId: number | null = null;
-const syncOnce = (): void => {
-  const next = playing.value ? anchorPos + (performance.now() - anchorPerf) : anchorPos;
-  if (next !== currentMs.value) currentMs.value = next;
-  const idx = pickPrimaryIndex(lyric.value, next);
-  if (idx !== primaryIndex.value) primaryIndex.value = idx;
-};
-
-const tick = (): void => {
-  syncOnce();
-  rafId = playing.value ? requestAnimationFrame(tick) : null;
-};
-
-/** 触发一帧同步 */
-const kickTick = (): void => {
-  if (rafId !== null) return;
-  rafId = requestAnimationFrame(tick);
-};
-
-const unsubscribers: Array<() => void> = [];
+/** 配置变更订阅取消器 */
+let unsubConfig: (() => void) | null = null;
 
 onMounted(async () => {
   try {
@@ -313,49 +183,13 @@ onMounted(async () => {
   } catch (error) {
     console.error("[desktop-lyric] load config failed", error);
   }
-
   pushWindowHeight();
-
-  try {
-    const snap = await window.api.nowPlaying.requestSnapshot();
-    applySnapshot(snap);
-  } catch (error) {
-    console.error("[desktop-lyric] requestSnapshot failed", error);
-  }
-
-  unsubscribers.push(
-    window.api.desktopLyric.onConfigChange((next) => Object.assign(config, next)),
-    window.api.nowPlaying.onLyricChange((snap) => {
-      applySnapshot(snap);
-      kickTick();
-    }),
-    window.api.nowPlaying.onPositionSync((data: NowPlayingPositionSync) => {
-      playing.value = data.playing;
-      applyAnchor(data.position, data.sendTimestamp);
-      kickTick();
-    }),
-  );
-
-  kickTick();
-
-  document.addEventListener("mousemove", onDocMouseMove);
-  document.addEventListener("mouseleave", onDocMouseLeave);
+  unsubConfig = window.api.desktopLyric.onConfigChange((next) => Object.assign(config, next));
 });
 
 onBeforeUnmount(() => {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
-  clearHoverTimer();
-  document.removeEventListener("mousemove", onDocMouseMove);
-  document.removeEventListener("mouseleave", onDocMouseLeave);
-  if (dragTarget) {
-    dragTarget.removeEventListener("pointermove", onPointerMove);
-    dragTarget.removeEventListener("pointerup", onPointerUp);
-    dragTarget.removeEventListener("pointercancel", onPointerUp);
-  }
-  for (const off of unsubscribers) off();
+  unsubConfig?.();
+  unsubConfig = null;
 });
 </script>
 
@@ -366,9 +200,24 @@ onBeforeUnmount(() => {
     :style="rootStyle"
     @pointerdown="onRootPointerDown"
   >
+    <div
+      v-if="track && config.alwaysShowSongInfo"
+      class="persistent-info"
+      :class="{ hidden: isHovered }"
+      :style="{ textAlign: persistentTextAlign }"
+    >
+      <div class="info-box" :class="{ 'has-mask': config.backgroundMask }">
+        <div class="name">{{ track.title }}</div>
+        <div v-if="artistsText" class="artist">{{ artistsText }}</div>
+      </div>
+    </div>
     <div class="header">
       <div class="header-section header-left">
-        <button class="header-btn" :title="track?.title ?? '回到主窗口'" @click="focusMainWindow">
+        <button
+          class="header-btn"
+          :title="track?.title ?? '回到主窗口'"
+          @click="onHeaderAction('focus-main')"
+        >
           <IconLucideMusic />
         </button>
         <div class="song-info">
@@ -377,37 +226,46 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div class="header-section header-center">
-        <button class="header-btn" title="上一曲" @click="dispatchPlayerEvent('prev')">
+        <button class="header-btn" title="上一曲" @click="onHeaderAction('prev')">
           <IconLucideSkipBack />
         </button>
-        <button class="header-btn" :title="playing ? '暂停' : '播放'" @click="togglePlay">
+        <button
+          class="header-btn"
+          :title="playing ? '暂停' : '播放'"
+          @click="onHeaderAction('toggle-play')"
+        >
           <IconLucidePause v-if="playing" />
           <IconLucidePlay v-else />
         </button>
-        <button class="header-btn" title="下一曲" @click="dispatchPlayerEvent('next')">
+        <button class="header-btn" title="下一曲" @click="onHeaderAction('next')">
           <IconLucideSkipForward />
         </button>
       </div>
       <div class="header-section header-right">
-        <button class="header-btn" title="设置" @click="openSettings">
+        <button class="header-btn" title="设置" @click="onHeaderAction('open-settings')">
           <IconLucideSettings />
         </button>
         <button
           class="header-btn lock-btn"
           :title="config.locked ? '解锁窗口' : '锁定窗口'"
-          @click="toggleLocked"
+          @click="onHeaderAction('toggle-locked')"
           @mouseenter="onLockBtnEnter"
           @mouseleave="onLockBtnLeave"
         >
           <IconLucideUnlock v-if="config.locked" />
           <IconLucideLock v-else />
         </button>
-        <button class="header-btn" title="关闭桌面歌词" @click="closeWindow">
+        <button class="header-btn" title="关闭桌面歌词" @click="onHeaderAction('close')">
           <IconLucideX />
         </button>
       </div>
     </div>
-    <TransitionGroup tag="div" name="dl-line" class="stage">
+    <component
+      :is="config.animation ? TransitionGroup : 'div'"
+      tag="div"
+      name="dl-line"
+      class="stage"
+    >
       <LyricLineView
         v-for="(item, index) in displayItems"
         :key="item.key"
@@ -418,11 +276,12 @@ onBeforeUnmount(() => {
         :align="item.align"
         :word-by-word="resolveWordByWord(config, item)"
         :is-next="!!item.isNext"
+        :background-mask="config.backgroundMask"
         :style="{
           '--dl-y': getLineTop(index, config.fontSize),
         }"
       />
-    </TransitionGroup>
+    </component>
   </div>
 </template>
 
@@ -466,6 +325,51 @@ onBeforeUnmount(() => {
 }
 .root.locked.hovered .lock-btn {
   opacity: 1;
+}
+.persistent-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  line-height: 56px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  color: #fff;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.2s ease;
+}
+.persistent-info.hidden {
+  opacity: 0;
+}
+.info-box {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  min-width: 0;
+  line-height: 1.2;
+}
+.info-box.has-mask {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: var(--dl-mask, transparent);
+}
+.info-box .name,
+.info-box .artist {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+.info-box .name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.info-box .artist {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
 }
 .header-section {
   display: flex;
@@ -540,7 +444,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   width: 100%;
   position: relative;
-  overflow: hidden;
+  pointer-events: none;
 }
 .dl-line-enter-from {
   opacity: 0;

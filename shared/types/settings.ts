@@ -63,6 +63,18 @@ export interface DesktopLyricSettings {
   playedColor: string;
   /** 未播放颜色 */
   unplayedColor: string;
+  /** 描边颜色 */
+  strokeColor: string;
+  /** 是否启用文本背景遮罩 */
+  backgroundMask: boolean;
+  /** 文本背景遮罩颜色 */
+  backgroundMaskColor: string;
+  /** 是否常驻显示歌曲信息 */
+  alwaysShowSongInfo: boolean;
+  /** 拖拽时是否把窗口限制在屏幕工作区内 */
+  limitBounds: boolean;
+  /** 歌词行切换动画 */
+  animation: boolean;
   /** 窗口置顶 */
   alwaysOnTop: boolean;
   /** 锁定：鼠标穿透、禁止拖动 */

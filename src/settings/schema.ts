@@ -297,13 +297,13 @@ export const settingsSchema: SettingCategory[] = [
         items: [
           {
             key: "desktopLyricFontSize",
-            type: "slider",
+            type: "select",
             binding: { store: "settings", path: "system.desktopLyric.fontSize" },
-            min: 20,
-            max: 96,
-            step: 1,
             defaultValue: 24,
-            marks: { 20: "20", 24: "24", 96: "96" },
+            options: Array.from({ length: 96 - 20 + 1 }, (_, i) => {
+              const n = 20 + i;
+              return { value: n, label: `${n} px` };
+            }),
           },
           {
             key: "desktopLyricFontWeight",
@@ -356,12 +356,52 @@ export const settingsSchema: SettingCategory[] = [
             type: "color",
             binding: { store: "settings", path: "system.desktopLyric.playedColor" },
             defaultValue: "#ffffff",
+            showAlpha: false,
           },
           {
             key: "desktopLyricUnplayedColor",
             type: "color",
             binding: { store: "settings", path: "system.desktopLyric.unplayedColor" },
             defaultValue: "#7d7d7d",
+            showAlpha: false,
+          },
+          {
+            key: "desktopLyricStrokeColor",
+            type: "color",
+            binding: { store: "settings", path: "system.desktopLyric.strokeColor" },
+            defaultValue: "rgba(0, 0, 0, 0.5)",
+          },
+          {
+            key: "desktopLyricBackgroundMask",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.backgroundMask" },
+            defaultValue: false,
+            children: [
+              {
+                key: "desktopLyricBackgroundMaskColor",
+                type: "color",
+                binding: { store: "settings", path: "system.desktopLyric.backgroundMaskColor" },
+                defaultValue: "rgba(0, 0, 0, 0.3)",
+              },
+            ],
+          },
+          {
+            key: "desktopLyricAlwaysShowSongInfo",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.alwaysShowSongInfo" },
+            defaultValue: false,
+          },
+          {
+            key: "desktopLyricAnimation",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.animation" },
+            defaultValue: true,
+          },
+          {
+            key: "desktopLyricLimitBounds",
+            type: "switch",
+            binding: { store: "settings", path: "system.desktopLyric.limitBounds" },
+            defaultValue: false,
           },
           {
             key: "desktopLyricAlwaysOnTop",
