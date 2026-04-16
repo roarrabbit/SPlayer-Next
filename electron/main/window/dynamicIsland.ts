@@ -28,14 +28,35 @@ const cachedSize = { width: INITIAL_WIDTH, height: 40 };
 const clampHeight = (h: number): number =>
   Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(h)));
 
-/** 计算吸附位置：主显示器 workArea 顶部居中 */
+/**
+ * 计算吸附位置：贴当前所在屏 workArea 顶部
+ * snapCentered=true 时按屏宽居中；snapCentered=false 且有 saved.x 时复用该 x，否则居中兜底
+ * 当前屏：优先取窗口实例所在屏；未创建时退回 saved 位置所在屏；都没有则主显示器
+ */
 const computeSnappedPos = (): { x: number; y: number } => {
-  const display = screen.getPrimaryDisplay();
+  const config = store.get("dynamicIsland");
+  const saved = store.get("windowStates.dynamicIsland");
+  let display;
+  if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) {
+    const bounds = dynamicIslandWindow.getBounds();
+    display = screen.getDisplayNearestPoint({
+      x: bounds.x + Math.round(bounds.width / 2),
+      y: bounds.y + Math.round(bounds.height / 2),
+    });
+  } else if (saved.x !== null && saved.y !== null) {
+    display = screen.getDisplayNearestPoint({
+      x: saved.x + Math.round(cachedSize.width / 2),
+      y: saved.y + Math.round(cachedSize.height / 2),
+    });
+  } else {
+    display = screen.getPrimaryDisplay();
+  }
   const wa = display.workArea;
-  return {
-    x: wa.x + Math.round((wa.width - cachedSize.width) / 2),
-    y: wa.y,
-  };
+  const x =
+    config.snapCentered || saved.x === null
+      ? wa.x + Math.round((wa.width - cachedSize.width) / 2)
+      : Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, saved.x));
+  return { x, y: wa.y };
 };
 
 /**
@@ -49,8 +70,36 @@ export const applyDynamicIslandAlwaysOnTop = (alwaysOnTop: boolean): void => {
 };
 
 /**
+ * 切换"吸附是否居中"配置后，立即重新对齐窗口
+ * - 切到居中：清掉 saved.x，重新居中到当前屏
+ * - 切到非居中：把当前位置写入 saved，方便下次启动恢复
+ */
+export const applyDynamicIslandSnapCentered = (snapCentered: boolean): void => {
+  const win = getDynamicIslandWindow();
+  if (!win) return;
+  const saved = store.get("windowStates.dynamicIsland");
+  if (saved.mode !== "snapped") return;
+  if (snapCentered) {
+    store.set("windowStates.dynamicIsland", { mode: "snapped", x: null, y: null });
+  } else if (saved.x === null) {
+    const bounds = win.getBounds();
+    const display = screen.getDisplayNearestPoint({
+      x: bounds.x + Math.round(bounds.width / 2),
+      y: bounds.y + Math.round(bounds.height / 2),
+    });
+    store.set("windowStates.dynamicIsland", {
+      mode: "snapped",
+      x: bounds.x,
+      y: display.workArea.y,
+    });
+  }
+  const pos = computeSnappedPos();
+  win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: cachedSize.height });
+};
+
+/**
  * 应用窗口高度：更新权威缓存 + 立即 setBounds
- * 吸附态下保持贴屏幕顶部；浮动态保持当前 x/y
+ * 吸附态走 computeSnappedPos 复用居中/保留水平位置策略；浮动态保持当前 x/y
  */
 export const applyDynamicIslandHeight = (height: number): void => {
   const win = getDynamicIslandWindow();
@@ -58,19 +107,30 @@ export const applyDynamicIslandHeight = (height: number): void => {
   const h = clampHeight(height);
   cachedSize.height = h;
   const saved = store.get("windowStates.dynamicIsland");
-  const b = win.getBounds();
-  const y = saved.mode === "snapped" ? screen.getDisplayMatching(b).workArea.y : b.y;
-  win.setBounds({ x: b.x, y, width: cachedSize.width, height: h });
+  if (saved.mode === "snapped") {
+    const pos = computeSnappedPos();
+    win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: h });
+  } else {
+    const bounds = win.getBounds();
+    win.setBounds({ x: bounds.x, y: bounds.y, width: cachedSize.width, height: h });
+  }
 };
 
 /**
  * 应用窗口宽度：渲染端上报目标宽度后立即 resize
  * snapped 模式重算 x 居中；floating 模式保持中心点不变
+ * 上限裁到所在屏 workArea 宽度，避免长歌词撑出屏幕
  */
 export const applyDynamicIslandWidth = (width: number): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
-  const newWidth = Math.max(1, Math.round(width));
+  const bounds = win.getBounds();
+  const display = screen.getDisplayNearestPoint({
+    x: bounds.x + Math.round(bounds.width / 2),
+    y: bounds.y + Math.round(bounds.height / 2),
+  });
+  const maxWidth = display.workArea.width;
+  const newWidth = Math.max(1, Math.min(maxWidth, Math.round(width)));
   const oldWidth = cachedSize.width;
   cachedSize.width = newWidth;
   const saved = store.get("windowStates.dynamicIsland");
@@ -78,33 +138,30 @@ export const applyDynamicIslandWidth = (width: number): void => {
     const pos = computeSnappedPos();
     win.setBounds({ x: pos.x, y: pos.y, width: newWidth, height: cachedSize.height });
   } else {
-    const b = win.getBounds();
     // 保持中心点不变
-    const centerX = b.x + Math.round(oldWidth / 2);
+    const centerX = bounds.x + Math.round(oldWidth / 2);
     const newX = centerX - Math.round(newWidth / 2);
-    win.setBounds({ x: newX, y: b.y, width: newWidth, height: cachedSize.height });
+    win.setBounds({ x: newX, y: bounds.y, width: newWidth, height: cachedSize.height });
   }
 };
 
 /**
  * 移动窗口到指定位置
  * 尺寸始终用权威 cachedSize 写回；拖拽过程保持自由移动
+ * 仅约束 y 不上下越界，x 允许超出屏幕（迁移到副屏或半隐都可）
  * 过程中根据距顶部距离实时广播视觉 mode，让圆角随拖拽平滑切换
  */
 export const moveDynamicIslandWindow = (x: number, y: number): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
-  let tx = Math.round(x);
+  const tx = Math.round(x);
   let ty = Math.round(y);
-  const display = screen.getDisplayMatching({
-    x: tx,
-    y: ty,
-    width: cachedSize.width,
-    height: cachedSize.height,
+  // 用窗口中心点找最近显示器，避免越界后 getDisplayMatching 选错屏
+  const display = screen.getDisplayNearestPoint({
+    x: tx + Math.round(cachedSize.width / 2),
+    y: ty + Math.round(cachedSize.height / 2),
   });
   const wa = display.workArea;
-  // 限制窗口不能拖出工作区
-  tx = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, tx));
   ty = Math.max(wa.y, Math.min(wa.y + wa.height - cachedSize.height, ty));
   win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
   broadcastMode(ty <= wa.y ? "snapped" : "floating");
@@ -123,19 +180,31 @@ const broadcastMode = (mode: "snapped" | "floating"): void => {
 
 /**
  * 拖拽结束时判定吸附
- * 落点 y 距离工作区顶部 < SNAP_THRESHOLD 则回吸居中并记录 snapped
+ * 落点 y 距离工作区顶部 < SNAP_THRESHOLD 则吸附；snapCentered 决定是否归中
  * 否则记录 floating + 当前坐标
  */
 export const saveDynamicIslandState = (): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
   const b = win.getBounds();
-  const display = screen.getDisplayMatching(b);
+  // 用窗口中心点找最近显示器，避免 x 超出屏幕时 getDisplayMatching 选错屏
+  const display = screen.getDisplayNearestPoint({
+    x: b.x + Math.round(b.width / 2),
+    y: b.y + Math.round(b.height / 2),
+  });
   const wa = display.workArea;
   if (b.y - wa.y <= SNAP_THRESHOLD) {
-    const pos = computeSnappedPos();
-    win.setBounds({ ...pos, width: cachedSize.width, height: cachedSize.height });
-    store.set("windowStates.dynamicIsland", { mode: "snapped", x: null, y: null });
+    const config = store.get("dynamicIsland");
+    if (config.snapCentered) {
+      const centerX = wa.x + Math.round((wa.width - cachedSize.width) / 2);
+      win.setBounds({ x: centerX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
+      store.set("windowStates.dynamicIsland", { mode: "snapped", x: null, y: null });
+    } else {
+      // 保留拖到的水平位置，仅 clamp 到当前屏；同时持久化所在屏锚点（saved.y = wa.y）
+      const clampedX = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, b.x));
+      win.setBounds({ x: clampedX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
+      store.set("windowStates.dynamicIsland", { mode: "snapped", x: clampedX, y: wa.y });
+    }
     broadcastMode("snapped");
   } else {
     store.set("windowStates.dynamicIsland", { mode: "floating", x: b.x, y: b.y });
@@ -156,10 +225,21 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
   cachedSize.width = INITIAL_WIDTH;
   cachedSize.height = clampHeight(config.height);
 
-  const initialPos =
-    saved.mode === "floating" && saved.x !== null && saved.y !== null
-      ? { x: saved.x, y: saved.y }
-      : computeSnappedPos();
+  let initialPos: { x: number; y: number };
+  if (saved.mode === "floating" && saved.x !== null && saved.y !== null) {
+    // 保存的 floating 位置可能已不在任何屏幕内（拔副屏、改分辨率等），按所在屏 workArea 纠正
+    const display = screen.getDisplayNearestPoint({
+      x: saved.x + Math.round(cachedSize.width / 2),
+      y: saved.y + Math.round(cachedSize.height / 2),
+    });
+    const wa = display.workArea;
+    initialPos = {
+      x: Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, saved.x)),
+      y: Math.max(wa.y, Math.min(wa.y + wa.height - cachedSize.height, saved.y)),
+    };
+  } else {
+    initialPos = computeSnappedPos();
+  }
 
   dynamicIslandWindow = createWindow({
     width: cachedSize.width,

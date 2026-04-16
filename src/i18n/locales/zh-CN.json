@@ -115,6 +115,7 @@
       "general": "常规设置",
       "player": "播放设置",
       "lyric": "歌词设置",
+      "externalLyric": "外部歌词",
       "appearance": "外观设置",
       "services": "网络与服务"
     },
@@ -363,6 +364,10 @@
     "dynamicIslandAlwaysOnTop": {
       "label": "窗口置顶",
       "description": "灵动岛窗口始终保持在最前"
+    },
+    "dynamicIslandSnapCentered": {
+      "label": "吸附时居中",
+      "description": "关闭后吸附到顶部时保留拖动到的水平位置"
     },
     "playerBgType": {
       "label": "播放器背景",

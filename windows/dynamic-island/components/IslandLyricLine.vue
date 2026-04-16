@@ -47,6 +47,7 @@ let lastWordProgress: string[] = [];
 
 const resetRenderCache = (): void => {
   lastWordProgress = [];
+  wordRefs.length = 0;
 };
 
 const renderFrame = (): void => {

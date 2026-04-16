@@ -153,7 +153,7 @@ const onHeaderAction = (
       window.api.player.dispatch(playing.value ? "pause" : "play");
       break;
     case "open-settings":
-      window.api.system.openSettings("lyric", "desktopLyricEnabled").catch(() => {});
+      window.api.system.openSettings("externalLyric", "desktopLyricEnabled").catch(() => {});
       break;
     case "toggle-locked":
       window.api.config.set("desktopLyric.locked", !config.locked).catch(() => {});

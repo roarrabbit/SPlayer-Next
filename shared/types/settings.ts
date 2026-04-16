@@ -97,6 +97,8 @@ export interface DynamicIslandSettings {
   backgroundColor: string;
   /** 窗口置顶 */
   alwaysOnTop: boolean;
+  /** 吸附时是否居中：false 时保留用户拖到的水平位置，y 仍贴顶 */
+  snapCentered: boolean;
 }
 
 /** 音乐库配置 */
@@ -124,9 +126,9 @@ export interface DesktopLyricWindowState {
 
 /** 灵动岛窗口几何 */
 export interface DynamicIslandWindowState {
-  /** snapped: 吸附到屏幕顶部居中；floating: 自由位置 */
+  /** snapped: 吸附到屏幕顶部；floating: 自由位置 */
   mode: "snapped" | "floating";
-  /** 仅 floating 模式下有效 */
+  /** floating 时为完整位置；snapped + 非居中时记录水平偏移与所在屏定位锚 */
   x: number | null;
   y: number | null;
 }

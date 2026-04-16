@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DynamicIslandSettings } from "@shared/types/settings";
 import type { LyricLine } from "@shared/types/lyrics";
+import DEFAULT_COVER from "@/assets/images/song.jpg";
 import IslandLyricLine from "./components/IslandLyricLine.vue";
 import { useNowPlayingSync } from "./composables/useNowPlayingSync";
 import { useDragWindow } from "./composables/useDragWindow";
@@ -13,6 +14,7 @@ const config = reactive<DynamicIslandSettings>({
   unplayedColor: "rgba(255, 255, 255, 0.5)",
   backgroundColor: "rgba(0, 0, 0, 0.5)",
   alwaysOnTop: true,
+  snapCentered: true,
 });
 
 // 基于权威高度配置计算所有几何尺寸（避免 useWindowSize 的初始值为 Infinity 的问题）
@@ -91,7 +93,7 @@ const lineText = (line: LyricLine): string => line.words.map((w) => w.word).join
 
 /**
  * 计算目标歌词区域宽度
- * 保底 1px 确保 transition 一定触发
+ * 保底 1px 确保 transition 一定触发；超过屏宽时由主进程 applyDynamicIslandWidth 兜底裁切
  */
 const measureTarget = (): number => {
   const line = currentLine.value;
@@ -238,8 +240,12 @@ onBeforeUnmount(() => {
     @pointerdown="onRootPointerDown"
   >
     <div class="cover">
-      <img v-if="track?.cover" :src="track.cover" alt="cover" draggable="false" />
-      <div v-else class="cover-fallback" />
+      <img
+        :src="track?.cover || DEFAULT_COVER"
+        alt="cover"
+        draggable="false"
+        @error="($event.target as HTMLImageElement).src = DEFAULT_COVER"
+      />
     </div>
     <div
       class="lyric"
@@ -249,7 +255,6 @@ onBeforeUnmount(() => {
     >
       <IslandLyricLine
         v-if="displayLine"
-        :key="displayIndex"
         :line="displayLine"
         :font-size="fontSize"
         :font-weight="config.fontWeight"
@@ -298,11 +303,6 @@ onBeforeUnmount(() => {
   object-fit: cover;
   user-select: none;
   pointer-events: none;
-}
-.cover-fallback {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
 }
 .lyric {
   height: 100%;

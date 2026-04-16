@@ -20,6 +20,7 @@ export {
   applyDynamicIslandAlwaysOnTop,
   applyDynamicIslandHeight,
   applyDynamicIslandWidth,
+  applyDynamicIslandSnapCentered,
   moveDynamicIslandWindow,
   saveDynamicIslandState,
 } from "./dynamicIsland";

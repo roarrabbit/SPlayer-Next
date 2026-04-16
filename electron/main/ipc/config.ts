@@ -13,6 +13,7 @@ import {
   applyDesktopLyricAlwaysOnTop,
   applyDynamicIslandAlwaysOnTop,
   applyDynamicIslandHeight,
+  applyDynamicIslandSnapCentered,
 } from "@main/window";
 import { broadcast } from "@main/utils/broadcast";
 
@@ -44,6 +45,9 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
       break;
     case "dynamicIsland.height":
       applyDynamicIslandHeight(value as number);
+      break;
+    case "dynamicIsland.snapCentered":
+      applyDynamicIslandSnapCentered(value as boolean);
       break;
   }
   // 桌面歌词配置变更广播到所有窗口

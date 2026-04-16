@@ -115,6 +115,7 @@
       "general": "General",
       "player": "Player",
       "lyric": "Lyrics",
+      "externalLyric": "External Lyrics",
       "appearance": "Appearance",
       "services": "Services"
     },
@@ -363,6 +364,10 @@
     "dynamicIslandAlwaysOnTop": {
       "label": "Always On Top",
       "description": "Keep the Dynamic Island window above others"
+    },
+    "dynamicIslandSnapCentered": {
+      "label": "Center When Snapped",
+      "description": "When off, snapping to the top keeps the dragged horizontal position"
     },
     "playerBgType": {
       "label": "Player Background",
