@@ -40,11 +40,5 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
-
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr *)'
-
+          # 始终使用中文回答，并遵循仓库的代码规范
+          claude_args: '--append-system-prompt "请始终使用简体中文回答所有问题、评论与代码注释。遵循项目 CLAUDE.md 中的约定。"'
