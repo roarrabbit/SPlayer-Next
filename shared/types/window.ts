@@ -50,4 +50,6 @@ export interface DynamicIslandApi {
   getMode: () => Promise<"snapped" | "floating">;
   /** 订阅吸附模式变化 */
   onModeChange: (callback: (mode: "snapped" | "floating") => void) => () => void;
+  /** 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏） */
+  onCursorInside: (callback: (inside: boolean) => void) => () => void;
 }

@@ -16,6 +16,8 @@ const MAX_HEIGHT = 64;
 const SNAP_THRESHOLD = 8;
 /** 初始宽度（渲染端上报实际宽度前的占位） */
 const INITIAL_WIDTH = 200;
+/** 光标位置轮询间隔（ms） */
+const CURSOR_POLL_MS = 150;
 
 /**
  * 权威尺寸缓存
@@ -30,8 +32,10 @@ const clampHeight = (h: number): number =>
 
 /**
  * 计算吸附位置：贴当前所在屏 workArea 顶部
- * snapCentered=true 时按屏宽居中；snapCentered=false 且有 saved.x 时复用该 x，否则居中兜底
- * 当前屏：优先取窗口实例所在屏；未创建时退回 saved 位置所在屏；都没有则主显示器
+ * snapCentered=true 时按屏宽居中
+ * snapCentered=false 时把 saved.x 当成窗口中心点 x，按 cachedSize.width 反算左上角；
+ *   宽度变化时中心点不变，避免长短歌词切换时窗口被 clamp 拉来拉去
+ * 当前屏：优先取窗口实例所在屏；未创建时退回 saved 锚点（中心点 + workArea.y）所在屏；都没有则主显示器
  */
 const computeSnappedPos = (): { x: number; y: number } => {
   const config = store.get("dynamicIsland");
@@ -44,18 +48,22 @@ const computeSnappedPos = (): { x: number; y: number } => {
       y: bounds.y + Math.round(bounds.height / 2),
     });
   } else if (saved.x !== null && saved.y !== null) {
+    // snapped 非居中：saved.x 已经是中心点；snapped 居中时 saved.x 必然是 null，不会进这个分支
     display = screen.getDisplayNearestPoint({
-      x: saved.x + Math.round(cachedSize.width / 2),
+      x: saved.x,
       y: saved.y + Math.round(cachedSize.height / 2),
     });
   } else {
     display = screen.getPrimaryDisplay();
   }
   const wa = display.workArea;
-  const x =
-    config.snapCentered || saved.x === null
-      ? wa.x + Math.round((wa.width - cachedSize.width) / 2)
-      : Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, saved.x));
+  let x: number;
+  if (config.snapCentered || saved.x === null) {
+    x = wa.x + Math.round((wa.width - cachedSize.width) / 2);
+  } else {
+    const leftFromCenter = saved.x - Math.round(cachedSize.width / 2);
+    x = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, leftFromCenter));
+  }
   return { x, y: wa.y };
 };
 
@@ -67,6 +75,66 @@ export const applyDynamicIslandAlwaysOnTop = (alwaysOnTop: boolean): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
   win.setAlwaysOnTop(alwaysOnTop, "screen-saver");
+};
+
+/**
+ * 光标位置轮询：用 OS 级 screen.getCursorScreenPoint() 判断鼠标是否在窗口内
+ * 不依赖 DOM 鼠标事件，避免 setIgnoreMouseEvents 穿透时事件漏发、opacity=0 不触发 leave 等坑
+ */
+let cursorPollTimer: NodeJS.Timeout | null = null;
+let lastCursorInside = false;
+
+const isCursorInsideBounds = (): boolean => {
+  if (!dynamicIslandWindow || dynamicIslandWindow.isDestroyed()) return false;
+  const cursor = screen.getCursorScreenPoint();
+  const b = dynamicIslandWindow.getBounds();
+  return (
+    cursor.x >= b.x && cursor.x < b.x + b.width && cursor.y >= b.y && cursor.y < b.y + b.height
+  );
+};
+
+const startCursorPolling = (): void => {
+  if (cursorPollTimer) return;
+  lastCursorInside = isCursorInsideBounds();
+  dynamicIslandWindow?.webContents.send("dynamicIsland:cursorInside", lastCursorInside);
+  cursorPollTimer = setInterval(() => {
+    if (!dynamicIslandWindow || dynamicIslandWindow.isDestroyed()) {
+      stopCursorPolling();
+      return;
+    }
+    const inside = isCursorInsideBounds();
+    if (inside !== lastCursorInside) {
+      lastCursorInside = inside;
+      dynamicIslandWindow.webContents.send("dynamicIsland:cursorInside", inside);
+    }
+  }, CURSOR_POLL_MS);
+};
+
+const stopCursorPolling = (): void => {
+  if (cursorPollTimer) {
+    clearInterval(cursorPollTimer);
+    cursorPollTimer = null;
+  }
+  // 离开时推一次 false，避免渲染端卡在 inside=true 状态
+  if (lastCursorInside) {
+    lastCursorInside = false;
+    dynamicIslandWindow?.webContents.send("dynamicIsland:cursorInside", false);
+  }
+};
+
+/**
+ * 应用非遮挡模式：开启后鼠标点击穿透窗口，并启动光标位置轮询
+ * 渲染端据此在悬停时把内容渐隐为透明
+ */
+export const applyDynamicIslandNonOcclusive = (enabled: boolean): void => {
+  const win = getDynamicIslandWindow();
+  if (!win) return;
+  win.setIgnoreMouseEvents(enabled, { forward: true });
+  if (enabled) {
+    startCursorPolling();
+  } else {
+    stopCursorPolling();
+  }
 };
 
 /**
@@ -87,9 +155,10 @@ export const applyDynamicIslandSnapCentered = (snapCentered: boolean): void => {
       x: bounds.x + Math.round(bounds.width / 2),
       y: bounds.y + Math.round(bounds.height / 2),
     });
+    // 存中心点 x，与拖拽吸附保持同一语义
     store.set("windowStates.dynamicIsland", {
       mode: "snapped",
-      x: bounds.x,
+      x: bounds.x + Math.round(bounds.width / 2),
       y: display.workArea.y,
     });
   }
@@ -196,14 +265,15 @@ export const saveDynamicIslandState = (): void => {
   if (b.y - wa.y <= SNAP_THRESHOLD) {
     const config = store.get("dynamicIsland");
     if (config.snapCentered) {
-      const centerX = wa.x + Math.round((wa.width - cachedSize.width) / 2);
-      win.setBounds({ x: centerX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
+      const leftX = wa.x + Math.round((wa.width - cachedSize.width) / 2);
+      win.setBounds({ x: leftX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
       store.set("windowStates.dynamicIsland", { mode: "snapped", x: null, y: null });
     } else {
-      // 保留拖到的水平位置，仅 clamp 到当前屏；同时持久化所在屏锚点（saved.y = wa.y）
-      const clampedX = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, b.x));
-      win.setBounds({ x: clampedX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
-      store.set("windowStates.dynamicIsland", { mode: "snapped", x: clampedX, y: wa.y });
+      // 保留拖到的水平位置；存中心点而非左上角，让后续宽度变化围绕中心点对称伸缩
+      const clampedLeftX = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, b.x));
+      const centerX = clampedLeftX + Math.round(cachedSize.width / 2);
+      win.setBounds({ x: clampedLeftX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
+      store.set("windowStates.dynamicIsland", { mode: "snapped", x: centerX, y: wa.y });
     }
     broadcastMode("snapped");
   } else {
@@ -281,12 +351,17 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
   dynamicIslandWindow.once("ready-to-show", () => {
     if (!dynamicIslandWindow) return;
     dynamicIslandWindow.setAlwaysOnTop(config.alwaysOnTop, "screen-saver");
+    if (config.nonOcclusive) {
+      dynamicIslandWindow.setIgnoreMouseEvents(true, { forward: true });
+      startCursorPolling();
+    }
   });
 
   setTrayDynamicIsland(true);
   broadcast("dynamicIsland:visibilityChange", true);
 
   dynamicIslandWindow.on("closed", () => {
+    stopCursorPolling();
     dynamicIslandWindow = null;
     lastBroadcastMode = null;
     setTrayDynamicIsland(false);

@@ -176,6 +176,9 @@ const api = {
     // 订阅吸附模式变化：snapped（顶部居中）/ floating（自由位置）
     onModeChange: (callback: (mode: "snapped" | "floating") => void) =>
       subscribe<"snapped" | "floating">("dynamicIsland:modeChange", callback),
+    // 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏）
+    onCursorInside: (callback: (inside: boolean) => void) =>
+      subscribe<boolean>("dynamicIsland:cursorInside", callback),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程

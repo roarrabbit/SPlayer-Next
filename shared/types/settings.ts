@@ -93,12 +93,14 @@ export interface DynamicIslandSettings {
   playedColor: string;
   /** 未播放颜色 */
   unplayedColor: string;
-  /** 背景颜色（含透明度） */
+  /** 背景颜色 */
   backgroundColor: string;
   /** 窗口置顶 */
   alwaysOnTop: boolean;
-  /** 吸附时是否居中：false 时保留用户拖到的水平位置，y 仍贴顶 */
+  /** 吸附时是否居中 */
   snapCentered: boolean;
+  /** 非遮挡模式 */
+  nonOcclusive: boolean;
 }
 
 /** 音乐库配置 */
@@ -128,8 +130,9 @@ export interface DesktopLyricWindowState {
 export interface DynamicIslandWindowState {
   /** snapped: 吸附到屏幕顶部；floating: 自由位置 */
   mode: "snapped" | "floating";
-  /** floating 时为完整位置；snapped + 非居中时记录水平偏移与所在屏定位锚 */
+  /** floating: 窗口左上角 x；snapped + 非居中: 窗口中心点 x（让宽度变化时围绕中心对称伸缩） */
   x: number | null;
+  /** floating: 窗口左上角 y；snapped + 非居中: 当时所在屏 workArea.y（用于找回所在屏） */
   y: number | null;
 }
 

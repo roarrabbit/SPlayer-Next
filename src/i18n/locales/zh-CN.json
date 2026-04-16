@@ -369,6 +369,10 @@
       "label": "吸附时居中",
       "description": "关闭后吸附到顶部时保留拖动到的水平位置"
     },
+    "dynamicIslandNonOcclusive": {
+      "label": "非遮挡模式",
+      "description": "鼠标穿透窗口，悬停时隐藏内容"
+    },
     "playerBgType": {
       "label": "播放器背景",
       "description": "全屏播放器的背景类型",

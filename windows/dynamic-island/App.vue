@@ -15,7 +15,11 @@ const config = reactive<DynamicIslandSettings>({
   backgroundColor: "rgba(0, 0, 0, 0.5)",
   alwaysOnTop: true,
   snapCentered: true,
+  nonOcclusive: false,
 });
+
+/** 非遮挡模式下鼠标悬停状态：用于把内容渐隐 */
+const hovering = ref(false);
 
 // 基于权威高度配置计算所有几何尺寸（避免 useWindowSize 的初始值为 Infinity 的问题）
 const padX = computed(() => Math.round(config.height * 0.4));
@@ -195,6 +199,7 @@ const rootStyle = computed(() => ({
 
 let unsubConfig: (() => void) | null = null;
 let unsubMode: (() => void) | null = null;
+let unsubCursor: (() => void) | null = null;
 
 onMounted(async () => {
   // 初始窗口宽度匹配 fallback 文本宽度，避免启动时窗口偏心
@@ -222,6 +227,10 @@ onMounted(async () => {
   unsubMode = window.api.dynamicIsland.onModeChange((next) => {
     mode.value = next;
   });
+  // 主进程 screen 轮询驱动悬停判定：不依赖 DOM 鼠标事件，穿透窗口也能稳定识别
+  unsubCursor = window.api.dynamicIsland.onCursorInside((inside) => {
+    hovering.value = inside;
+  });
 });
 
 onBeforeUnmount(() => {
@@ -229,13 +238,18 @@ onBeforeUnmount(() => {
   unsubConfig = null;
   unsubMode?.();
   unsubMode = null;
+  unsubCursor?.();
+  unsubCursor = null;
 });
 </script>
 
 <template>
   <div
     class="root"
-    :class="mode === 'snapped' ? 'is-snapped' : 'is-floating'"
+    :class="[
+      mode === 'snapped' ? 'is-snapped' : 'is-floating',
+      { 'is-hidden': config.nonOcclusive && hovering },
+    ]"
     :style="rootStyle"
     @pointerdown="onRootPointerDown"
   >
@@ -279,7 +293,13 @@ onBeforeUnmount(() => {
   cursor: move;
   color: var(--di-played);
   width: fit-content;
-  transition: border-radius 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    border-radius 0.3s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.2s ease-out;
+}
+/* 非遮挡模式悬停隐藏：opacity 不影响穿透判定，鼠标离开物理区域后会自然恢复 */
+.root.is-hidden {
+  opacity: 0;
 }
 /* 吸附：仅底部圆角，顶部与屏幕边缘齐平 */
 .root.is-snapped {

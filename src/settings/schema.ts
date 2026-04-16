@@ -534,6 +534,12 @@ export const settingsSchema: SettingCategory[] = [
             binding: { store: "settings", path: "system.dynamicIsland.snapCentered" },
             defaultValue: true,
           },
+          {
+            key: "dynamicIslandNonOcclusive",
+            type: "switch",
+            binding: { store: "settings", path: "system.dynamicIsland.nonOcclusive" },
+            defaultValue: false,
+          },
         ],
       },
     ],

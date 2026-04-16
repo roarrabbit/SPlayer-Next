@@ -50,6 +50,7 @@ export const defaultSystemConfig: SystemConfig = {
     backgroundColor: "rgba(0, 0, 0, 1)",
     alwaysOnTop: true,
     snapCentered: true,
+    nonOcclusive: false,
   },
   system: {
     rememberWindowState: true,

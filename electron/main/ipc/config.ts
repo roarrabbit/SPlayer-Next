@@ -14,6 +14,7 @@ import {
   applyDynamicIslandAlwaysOnTop,
   applyDynamicIslandHeight,
   applyDynamicIslandSnapCentered,
+  applyDynamicIslandNonOcclusive,
 } from "@main/window";
 import { broadcast } from "@main/utils/broadcast";
 
@@ -48,6 +49,9 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
       break;
     case "dynamicIsland.snapCentered":
       applyDynamicIslandSnapCentered(value as boolean);
+      break;
+    case "dynamicIsland.nonOcclusive":
+      applyDynamicIslandNonOcclusive(value as boolean);
       break;
   }
   // 桌面歌词配置变更广播到所有窗口

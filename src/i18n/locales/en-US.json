@@ -369,6 +369,10 @@
       "label": "Center When Snapped",
       "description": "When off, snapping to the top keeps the dragged horizontal position"
     },
+    "dynamicIslandNonOcclusive": {
+      "label": "Non-Occlusive Mode",
+      "description": "Click-through window; hide on hover"
+    },
     "playerBgType": {
       "label": "Player Background",
       "description": "Background type of the full-screen player",
