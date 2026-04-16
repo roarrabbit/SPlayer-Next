@@ -53,7 +53,7 @@ export const defaultSystemConfig: SystemConfig = {
     scale: 1,
     fontWeight: 500,
     wordByWord: true,
-    playedColor: "#rgba(255, 255, 255, 1)",
+    playedColor: "rgba(255, 255, 255, 1)",
     unplayedColor: "rgba(255, 255, 255, 0.5)",
     backgroundColor: "rgba(0, 0, 0, 1)",
     alwaysOnTop: true,
