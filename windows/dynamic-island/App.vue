@@ -64,27 +64,39 @@ const displayIndex = ref(-1);
 
 /**
  * 回弹 easing 的最大过冲比例
- * cubic-bezier(0.34, 1.56, 0.64, 1) 峰值约 1.09
+ * cubic-bezier(0.34, 1.56, 0.64, 1) 峰值约 1.10，15% 留安全余量避免文本被裁
  */
-const BOUNCE_OVERSHOOT = 0.1;
+const BOUNCE_OVERSHOOT = 0.15;
 
-/** 歌词区域宽度，CSS transition 驱动动画 */
-const lyricWidth = ref(0);
+/**
+ * 歌词区域宽度，CSS transition 驱动动画
+ * 初始即测量 fallback 文本宽度，避免首次渲染 width=0 看不到内容
+ */
+const lyricWidth = ref(measureTextWidth(displayFallback.value));
 /** 歌词区域透明度 */
 const lyricOpacity = ref(1);
 /** 是否正在收缩（驱动收缩 CSS transition） */
 const shrinking = ref(false);
 /** 动画阶段 */
 let phase: "idle" | "shrinking" | "expanding" = "idle";
+/**
+ * 首次 paint 是否完成
+ * HMR 后浏览器可能未必 paint 初始 width 就被 Vue 批更新到下一个值，
+ * 这会让 shrink transition 实际不触发；首次 paint 前任何内容变化都走 applyImmediate 跳过动画
+ */
+let hasPainted = false;
 
 /** 拼接行文本 */
 const lineText = (line: LyricLine): string => line.words.map((w) => w.word).join("");
 
-/** 计算目标歌词区域宽度 */
+/**
+ * 计算目标歌词区域宽度
+ * 保底 1px 确保 transition 一定触发
+ */
 const measureTarget = (): number => {
   const line = currentLine.value;
   const text = line ? lineText(line) : fallbackText.value;
-  return measureTextWidth(text);
+  return Math.max(1, measureTextWidth(text));
 };
 
 /** 计算完整窗口宽度（含回弹余量） */
@@ -98,7 +110,7 @@ const resizeWindow = (lyricPx: number): void => {
   window.api.dynamicIsland.resize(computeWindowWidth(lyricPx));
 };
 
-/** 直接设置内容并展开（lyricWidth=0 时的初次/冷启动路径，跳过 shrink） */
+/** 直接切换内容到目标宽度，跳过 shrink 阶段（用于异常恢复） */
 const applyImmediate = (): void => {
   displayLine.value = currentLine.value;
   displayFallback.value = fallbackText.value;
@@ -111,7 +123,7 @@ const applyImmediate = (): void => {
   phase = "expanding";
 };
 
-/** 启动缩 → 换 → 展动画 */
+/** 启动缩 → 换 → 展动画（由 transitionend 驱动阶段推进） */
 const startSwapAnimation = (): void => {
   phase = "shrinking";
   shrinking.value = true;
@@ -119,23 +131,26 @@ const startSwapAnimation = (): void => {
   lyricOpacity.value = 0;
 };
 
-/** transitionend 驱动阶段切换 */
+/** CSS transition 结束事件：驱动阶段推进 */
 const onLyricTransitionEnd = (event: TransitionEvent): void => {
   if (event.propertyName !== "width") return;
   if (phase === "shrinking") {
-    // 宽度到 0，静默替换内容
+    // 宽度到 0：替换内容、resize 窗口
     displayLine.value = currentLine.value;
     displayFallback.value = fallbackText.value;
     displayIndex.value = primaryIndex.value;
-    // 测量新内容并 resize 窗口
     const targetPx = measureTarget();
     resizeWindow(targetPx);
-    // 下帧开始展开（先切回展开态再设宽度，确保用展开 transition）
+    // 双 rAF 保证 class 先切掉（transition 规则换成展开），下一帧再设新宽度
     requestAnimationFrame(() => {
+      if (phase !== "shrinking") return;
       shrinking.value = false;
-      phase = "expanding";
-      lyricOpacity.value = 1;
-      lyricWidth.value = targetPx;
+      requestAnimationFrame(() => {
+        if (phase !== "shrinking") return;
+        phase = "expanding";
+        lyricOpacity.value = 1;
+        lyricWidth.value = targetPx;
+      });
     });
   } else if (phase === "expanding") {
     phase = "idle";
@@ -156,8 +171,8 @@ watch([currentLine, fallbackText], () => {
     return;
   }
 
-  // 当前 lyricWidth 为 0（首次显示或尚未加载）直接展开，不经过 shrink
-  if (lyricWidth.value === 0) {
+  // 首次 paint 尚未完成或 lyricWidth 已经为 0 → 直接展开，不经过 shrink
+  if (!hasPainted || lyricWidth.value === 0) {
     applyImmediate();
     return;
   }
@@ -180,11 +195,24 @@ let unsubConfig: (() => void) | null = null;
 let unsubMode: (() => void) | null = null;
 
 onMounted(async () => {
+  // 初始窗口宽度匹配 fallback 文本宽度，避免启动时窗口偏心
+  resizeWindow(lyricWidth.value);
+  // 双 rAF 确保初始 width 真正被浏览器 paint，之后动画才能正确从当前值过渡
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      hasPainted = true;
+    });
+  });
+  // 并行拉取 config 与 mode，和桌面歌词一样主动查询
   try {
-    const saved = (await window.api.config.get("dynamicIsland")) as DynamicIslandSettings;
+    const [saved, currentMode] = await Promise.all([
+      window.api.config.get("dynamicIsland") as Promise<DynamicIslandSettings>,
+      window.api.dynamicIsland.getMode(),
+    ]);
     Object.assign(config, saved);
+    mode.value = currentMode;
   } catch (error) {
-    console.error("[dynamic-island] load config failed", error);
+    console.error("[dynamic-island] load state failed", error);
   }
   unsubConfig = window.api.dynamicIsland.onConfigChange((next) =>
     Object.assign(config, next as DynamicIslandSettings),

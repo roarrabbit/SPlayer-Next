@@ -1,6 +1,29 @@
 import type { LyricLine } from "@shared/types/lyrics";
 
 /**
+ * 选出「最新已开始」的行索引（startTime <= time 的最大下标）
+ * 下一句一开始就切到下一句，不管上一句是否结束
+ * @param lines 歌词行数组
+ * @param time 当前播放毫秒
+ */
+export const pickLatestStartedIndex = (lines: LyricLine[], time: number): number => {
+  if (lines.length === 0) return -1;
+  let lo = 0;
+  let hi = lines.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (lines[mid].startTime <= time) {
+      result = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return result;
+};
+
+/**
  * 选出当前应作为 primary 的行索引
  * @param lines 歌词行数组
  * @param time 当前播放毫秒

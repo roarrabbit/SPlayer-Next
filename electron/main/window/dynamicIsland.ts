@@ -94,16 +94,20 @@ export const applyDynamicIslandWidth = (width: number): void => {
 export const moveDynamicIslandWindow = (x: number, y: number): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
-  const tx = Math.round(x);
-  const ty = Math.round(y);
-  win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
+  let tx = Math.round(x);
+  let ty = Math.round(y);
   const display = screen.getDisplayMatching({
     x: tx,
     y: ty,
     width: cachedSize.width,
     height: cachedSize.height,
   });
-  broadcastMode(ty <= display.workArea.y ? "snapped" : "floating");
+  const wa = display.workArea;
+  // 限制窗口不能拖出工作区
+  tx = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, tx));
+  ty = Math.max(wa.y, Math.min(wa.y + wa.height - cachedSize.height, ty));
+  win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
+  broadcastMode(ty <= wa.y ? "snapped" : "floating");
 };
 
 /** 当前广播过的吸附模式，用于跨阈值时去抖 */

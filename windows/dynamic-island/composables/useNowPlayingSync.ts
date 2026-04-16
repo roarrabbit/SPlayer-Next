@@ -2,7 +2,7 @@ import type { Ref, ShallowRef } from "vue";
 import type { LyricLine } from "@shared/types/lyrics";
 import type { NowPlayingSnapshot } from "@shared/types/nowPlaying";
 import type { Track } from "@shared/types/player";
-import { clampLastLineEnd, pickPrimaryIndex } from "@shared/utils/lyricSync";
+import { clampLastLineEnd, pickLatestStartedIndex } from "@shared/utils/lyricSync";
 
 /** 同步偏差阈值 */
 const SYNC_DRIFT_THRESHOLD = 300;
@@ -77,7 +77,7 @@ export const useNowPlayingSync = (): {
   const syncOnce = (): void => {
     const next = playing.value ? anchorPos + (performance.now() - anchorPerf) : anchorPos;
     currentNowPlayingMs = next;
-    const idx = pickPrimaryIndex(lyric.value, next);
+    const idx = pickLatestStartedIndex(lyric.value, next);
     if (idx !== primaryIndex.value) primaryIndex.value = idx;
   };
 

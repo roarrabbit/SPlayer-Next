@@ -1,4 +1,5 @@
 import { ipcMain } from "electron";
+import { store } from "@main/store";
 import {
   toggleDesktopLyricWindow,
   closeDesktopLyricWindow,
@@ -68,5 +69,11 @@ export const registerWindowIpc = (): void => {
   // 灵动岛宽度变化：渲染端上报目标宽度
   ipcMain.on("dynamicIsland:resize", (_event, width: number) => {
     applyDynamicIslandWidth(width);
+  });
+
+  // 灵动岛查询当前吸附模式（HMR 后渲染端主动拉取）
+  ipcMain.handle("dynamicIsland:getMode", () => {
+    const saved = store.get("windowStates.dynamicIsland");
+    return saved.mode === "floating" ? "floating" : "snapped";
   });
 };
