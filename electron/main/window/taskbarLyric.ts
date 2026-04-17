@@ -52,6 +52,17 @@ let trayWatcher: WatcherInstance | null = null;
 /** 当前歌词显示的期望宽度（像素），用于触发 Rust 侧布局计算 */
 const currentWidth = 300;
 
+/**
+ * 初始窗口尺寸——故意设大，覆盖任何可能的任务栏宽度/高度。
+ * 关键原因：Electron BrowserWindow 在 `transparent:true`+SetParent 到任务栏后，
+ * Chromium 视口（layered window 的 compositor surface）不会随 setBounds 扩大，
+ * 只会收缩。初始尺寸小于后续 setBounds 目标时，超出初始尺寸的区域像素 alpha=0，
+ * 按像素 alpha 命中测试会吞掉鼠标事件——即表现为"只有前面一点点可以操作"。
+ * 解决方法：初始尺寸开到足够大，后续 setBounds 只做缩小，视口永远覆盖整个 HWND。
+ */
+const INITIAL_WIDTH = 3000;
+const INITIAL_HEIGHT = 200;
+
 /** 获取窗口实例 */
 export const getTaskbarLyricWindow = (): BrowserWindow | null =>
   taskbarLyricWindow && !taskbarLyricWindow.isDestroyed() ? taskbarLyricWindow : null;
@@ -91,6 +102,9 @@ const pickSpace = (layout: JsTaskbarLayout): PickedSpace | null => {
   return null;
 };
 
+/** 首次 applyLayout 成功后才 show 窗口——避免初始 3000x200 大窗口闪现 */
+let firstLayoutDone = false;
+
 /** 应用布局——将 Rust 返回的坐标设置到窗口 */
 const applyLayout = (layout: JsTaskbarLayout): void => {
   const win = getTaskbarLyricWindow();
@@ -114,9 +128,7 @@ const applyLayout = (layout: JsTaskbarLayout): void => {
   // autoMaxWidth 开启时占满可用空间，关闭时按 maxWidth 限制（永不超出可用空间）
   const autoMaxWidth = store.get("taskbarLyric.autoMaxWidth") ?? true;
   const maxWidth = store.get("taskbarLyric.maxWidth") ?? 400;
-  const windowWidth = autoMaxWidth
-    ? availWidthLogical
-    : Math.min(maxWidth, availWidthLogical);
+  const windowWidth = autoMaxWidth ? availWidthLogical : Math.min(maxWidth, availWidthLogical);
 
   // 按 anchor 决定窗口 x：左锚 = 空间左边缘，右锚 = 空间右边缘对齐
   const windowX =
@@ -128,6 +140,12 @@ const applyLayout = (layout: JsTaskbarLayout): void => {
     width: windowWidth,
     height: availHeightLogical,
   });
+
+  // 首次确定位置后才显示，避免初始大窗口在任意位置闪现
+  if (!firstLayoutDone) {
+    firstLayoutDone = true;
+    win.show();
+  }
 
   // 通知渲染端布局信息
   win.webContents.send("taskbarLyric:layout", {
@@ -156,10 +174,7 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
 
   // 加载原生模块
   if (!nativeModule) {
-    nativeModule = loadNativeModule<TaskbarLyricNative>(
-      "taskbar-lyric.node",
-      "taskbar-lyric",
-    );
+    nativeModule = loadNativeModule<TaskbarLyricNative>("taskbar-lyric.node", "taskbar-lyric");
     if (!nativeModule) {
       taskbarLog.error("原生模块加载失败");
       return null;
@@ -169,11 +184,11 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
   // 创建 TaskbarService
   service = new nativeModule.TaskbarService(applyLayout);
 
-  // 创建窗口
+  // 创建窗口——初始尺寸故意设大，见 INITIAL_WIDTH 的注释
   taskbarLyricWindow = createWindow({
-    width: currentWidth,
-    height: 40,
-    // 覆盖默认窗口 minWidth/minHeight（800/600），否则 setBounds 会被撑成大窗口
+    width: INITIAL_WIDTH,
+    height: INITIAL_HEIGHT,
+    // 覆盖默认 minWidth/minHeight（800/600），允许 setBounds 缩小到很小
     minWidth: 0,
     minHeight: 0,
     type: "toolbar",
@@ -198,9 +213,7 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
       `${process.env["ELECTRON_RENDERER_URL"]}/windows/taskbar-lyric/index.html`,
     );
   } else {
-    taskbarLyricWindow.loadFile(
-      join(__dirname, "../renderer/windows/taskbar-lyric/index.html"),
-    );
+    taskbarLyricWindow.loadFile(join(__dirname, "../renderer/windows/taskbar-lyric/index.html"));
   }
 
   // 渲染就绪后嵌入任务栏
@@ -214,12 +227,8 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
 
     taskbarLog.info(`嵌入窗口 hwnd=${hwndPtr}`);
     service.embedWindowByPtr(hwndPtr);
-
-    taskbarLyricWindow.show();
-
     // 初始布局
     service.update(currentWidth);
-
     // 启动监听器
     try {
       registryWatcher = new nativeModule!.RegistryWatcher(onLayoutChange);
@@ -240,6 +249,7 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
 
   taskbarLyricWindow.on("closed", () => {
     taskbarLyricWindow = null;
+    firstLayoutDone = false;
     cleanupWatchers();
     setTrayTaskbarLyric(false);
     broadcast("taskbarLyric:visibilityChange", false);
