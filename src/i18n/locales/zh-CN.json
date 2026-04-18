@@ -401,6 +401,33 @@
       "label": "最大宽度",
       "description": "超出可用空间时仍以可用空间为准，避免挤占"
     },
+    "taskbarLyricColorMode": {
+      "label": "配色模式",
+      "description": "任务栏歌词的文字与背景配色",
+      "taskbar": "跟随任务栏",
+      "light": "浅色",
+      "dark": "深色"
+    },
+    "taskbarLyricFontSize": {
+      "label": "字号",
+      "description": "任务栏歌词的文字大小（像素）"
+    },
+    "taskbarLyricShowCover": {
+      "label": "显示封面",
+      "description": "在歌词旁显示当前曲目的封面缩略图"
+    },
+    "taskbarLyricDoubleLine": {
+      "label": "双行显示",
+      "description": "同时显示当前歌词与翻译或下一行"
+    },
+    "taskbarLyricShowTranslation": {
+      "label": "显示翻译",
+      "description": "双行模式下优先显示翻译，无翻译时回退到下一行"
+    },
+    "taskbarLyricWordByWord": {
+      "label": "逐字高亮",
+      "description": "按单词进度逐字渲染高亮"
+    },
     "playerBgType": {
       "label": "播放器背景",
       "description": "全屏播放器的背景类型",

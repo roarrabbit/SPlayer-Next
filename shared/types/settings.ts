@@ -110,6 +110,9 @@ export interface DynamicIslandSettings {
 /** 任务栏歌词位置模式 */
 export type TaskbarLyricPosition = "auto" | "left" | "right";
 
+/** 任务栏歌词配色模式：taskbar=跟随任务栏主题，light=强制浅色，dark=强制深色 */
+export type TaskbarLyricColorMode = "taskbar" | "light" | "dark";
+
 /** 任务栏歌词配置（仅 Windows） */
 export interface TaskbarLyricSettings {
   /** 位置：auto 根据任务栏对齐方式自动选择，left 固定左侧，right 固定右侧 */
@@ -118,6 +121,18 @@ export interface TaskbarLyricSettings {
   autoMaxWidth: boolean;
   /** 最大宽度（逻辑像素）；仅在 autoMaxWidth 关闭时生效；超出可用空间时仍以可用空间为准 */
   maxWidth: number;
+  /** 配色模式 */
+  colorMode: TaskbarLyricColorMode;
+  /** 双行显示（歌词 + 翻译 / 下一行） */
+  doubleLine: boolean;
+  /** 显示翻译（doubleLine 开启时，副行优先显示翻译，没有翻译则回退到下一行） */
+  showTranslation: boolean;
+  /** 显示封面 */
+  showCover: boolean;
+  /** 逐字高亮 */
+  wordByWord: boolean;
+  /** 字号（逻辑像素） */
+  fontSize: number;
 }
 
 /** 音乐库配置 */

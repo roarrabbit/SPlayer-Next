@@ -64,6 +64,10 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
   if (keyPath.startsWith("dynamicIsland.")) {
     broadcast("dynamicIsland:configChange", store.get("dynamicIsland"));
   }
+  // 任务栏歌词配置变更广播到所有窗口
+  if (keyPath.startsWith("taskbarLyric.")) {
+    broadcast("taskbarLyric:configChange", store.get("taskbarLyric"));
+  }
 };
 
 /** 注册配置相关 IPC */

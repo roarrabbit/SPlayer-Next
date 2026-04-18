@@ -66,6 +66,12 @@ export const defaultSystemConfig: SystemConfig = {
     position: "auto",
     autoMaxWidth: true,
     maxWidth: 400,
+    colorMode: "taskbar",
+    doubleLine: true,
+    showTranslation: true,
+    showCover: true,
+    wordByWord: true,
+    fontSize: 14,
   },
   system: {
     rememberWindowState: true,

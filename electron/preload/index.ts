@@ -192,18 +192,24 @@ const api = {
       subscribe<boolean>("dynamicIsland:cursorInside", callback),
   },
   taskbarLyric: {
-    // 订阅布局变化（锚定方向、是否居中、系统类型）
+    // 订阅布局变化（锚定方向、是否居中、系统类型、任务栏主题）
     onLayout: (
       callback: (data: {
         isCentered: boolean;
         systemType: string;
+        isLight: boolean;
         anchor: "left" | "right";
       }) => void,
     ) =>
-      subscribe<{ isCentered: boolean; systemType: string; anchor: "left" | "right" }>(
-        "taskbarLyric:layout",
-        callback,
-      ),
+      subscribe<{
+        isCentered: boolean;
+        systemType: string;
+        isLight: boolean;
+        anchor: "left" | "right";
+      }>("taskbarLyric:layout", callback),
+    // 订阅任务栏歌词配置变化
+    onConfigChange: (callback: (config: unknown) => void) =>
+      subscribe("taskbarLyric:configChange", callback),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程

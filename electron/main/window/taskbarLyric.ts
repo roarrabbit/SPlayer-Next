@@ -16,10 +16,16 @@ let taskbarLyricWindow: BrowserWindow | null = null;
 /** 原生模块类型（从 NAPI 自动生成的 index.d.ts 推断） */
 interface TaskbarLyricNative {
   TaskbarService: new (callback: (layout: JsTaskbarLayout) => void) => TaskbarServiceInstance;
-  RegistryWatcher: new (callback: () => void) => WatcherInstance;
+  RegistryWatcher: new (subKey: string, callback: () => void) => WatcherInstance;
   UiaWatcher: new (callback: () => void) => WatcherInstance;
   TrayWatcher: new (callback: () => void) => WatcherInstance;
 }
+
+/** HKCU 下的监听键路径 */
+const REG_SUBKEY_EXPLORER_ADVANCED =
+  "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced";
+const REG_SUBKEY_PERSONALIZE =
+  "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 
 interface TaskbarServiceInstance {
   embedWindowByPtr(hwndPtr: number): void;
@@ -40,12 +46,13 @@ interface JsRect {
 
 interface JsTaskbarLayout {
   space: { left: JsRect; right: JsRect };
-  extra: { systemType: string; isCentered: boolean };
+  extra: { systemType: string; isCentered: boolean; isLight: boolean };
 }
 
 let nativeModule: TaskbarLyricNative | null = null;
 let service: TaskbarServiceInstance | null = null;
-let registryWatcher: WatcherInstance | null = null;
+let advancedRegWatcher: WatcherInstance | null = null;
+let themeRegWatcher: WatcherInstance | null = null;
 let uiaWatcher: WatcherInstance | null = null;
 let trayWatcher: WatcherInstance | null = null;
 
@@ -151,6 +158,7 @@ const applyLayout = (layout: JsTaskbarLayout): void => {
   win.webContents.send("taskbarLyric:layout", {
     isCentered: layout.extra.isCentered,
     systemType: layout.extra.systemType,
+    isLight: layout.extra.isLight,
     anchor,
   });
 };
@@ -231,9 +239,21 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
     service.update(currentWidth);
     // 启动监听器
     try {
-      registryWatcher = new nativeModule!.RegistryWatcher(onLayoutChange);
+      advancedRegWatcher = new nativeModule!.RegistryWatcher(
+        REG_SUBKEY_EXPLORER_ADVANCED,
+        onLayoutChange,
+      );
     } catch (error) {
-      taskbarLog.warn("RegistryWatcher 启动失败", error);
+      taskbarLog.warn("RegistryWatcher(Advanced) 启动失败", error);
+    }
+    try {
+      // 监听浅色/深色主题切换，变更即重算布局，携带最新 isLight 回流到渲染端
+      themeRegWatcher = new nativeModule!.RegistryWatcher(
+        REG_SUBKEY_PERSONALIZE,
+        onLayoutChange,
+      );
+    } catch (error) {
+      taskbarLog.warn("RegistryWatcher(Personalize) 启动失败", error);
     }
     try {
       uiaWatcher = new nativeModule!.UiaWatcher(onLayoutChange);
@@ -262,8 +282,10 @@ export const createTaskbarLyricWindow = (): BrowserWindow | null => {
 
 /** 关闭所有监听器 */
 const cleanupWatchers = (): void => {
-  registryWatcher?.stop();
-  registryWatcher = null;
+  advancedRegWatcher?.stop();
+  advancedRegWatcher = null;
+  themeRegWatcher?.stop();
+  themeRegWatcher = null;
   uiaWatcher?.stop();
   uiaWatcher = null;
   trayWatcher?.stop();

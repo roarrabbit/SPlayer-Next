@@ -16,7 +16,10 @@ use crate::{
         TaskbarStrategy,
     },
     uia::TaskbarScanner,
-    utils::{BRIDGE_CLASS, check_registry_value, find_taskbar_hwnd, modify_window_long},
+    utils::{
+        BRIDGE_CLASS, check_registry_value, find_taskbar_hwnd, modify_window_long,
+        read_system_uses_light_theme,
+    },
 };
 
 pub struct Win11Strategy {
@@ -179,6 +182,7 @@ impl TaskbarStrategy for Win11Strategy {
             extra: ExtraLayoutInfo {
                 system_type: SystemType::Win11,
                 is_centered,
+                is_light: read_system_uses_light_theme(),
             },
         })
     }

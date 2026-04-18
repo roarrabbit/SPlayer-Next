@@ -24,6 +24,9 @@ pub const BRIDGE_CLASS: PCWSTR = w!("Windows.UI.Composition.DesktopWindowContent
 pub const REG_KEY_ADVANCED: &str =
     "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced";
 
+pub const REG_KEY_PERSONALIZE: &str =
+    "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+
 pub unsafe fn modify_window_long(
     hwnd: HWND,
     index: WINDOW_LONG_PTR_INDEX,
@@ -56,4 +59,13 @@ pub fn get_windows_build_number() -> u32 {
         .open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")
         .and_then(|key| key.get_value::<String, _>("CurrentBuild"))
         .map_or(0, |s| s.parse::<u32>().unwrap_or(0))
+}
+
+/// 读取 `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\SystemUsesLightTheme`
+/// 返回 true 表示任务栏处于浅色；读取失败时按 Windows 默认值（深色）返回 false
+pub fn read_system_uses_light_theme() -> bool {
+    RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey(REG_KEY_PERSONALIZE)
+        .and_then(|key| key.get_value::<u32, _>("SystemUsesLightTheme"))
+        .map_or(false, |v| v != 0)
 }

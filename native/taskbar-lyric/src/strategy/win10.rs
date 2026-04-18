@@ -16,7 +16,7 @@ use crate::{
         AvailableSpace, ExtraLayoutInfo, LayoutParams, Rect, SystemType, TaskbarLayout,
         TaskbarStrategy,
     },
-    utils::{find_taskbar_hwnd, modify_window_long},
+    utils::{find_taskbar_hwnd, modify_window_long, read_system_uses_light_theme},
 };
 
 #[allow(clippy::struct_field_names)]
@@ -172,6 +172,7 @@ impl TaskbarStrategy for LegacyStrategy {
                 extra: ExtraLayoutInfo {
                     system_type: SystemType::Win10,
                     is_centered: false,
+                    is_light: read_system_uses_light_theme(),
                 },
             })
         }

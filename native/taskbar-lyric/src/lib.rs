@@ -6,9 +6,10 @@ use std::{
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc::{self, Receiver, Sender},
+        mpsc::{self, Receiver, RecvTimeoutError, Sender},
     },
     thread,
+    time::Duration,
 };
 
 use napi::{
@@ -34,7 +35,7 @@ use windows::{
             Threading::{CreateEventW, INFINITE, SetEvent, WaitForMultipleObjects},
         },
     },
-    core::w,
+    core::HSTRING,
 };
 
 /// 任务列表和歌词之间的微小间距
@@ -72,6 +73,8 @@ pub struct JsExtraLayoutInfo {
     /// "win10" | "win11"
     pub system_type: String,
     pub is_centered: bool,
+    /// 任务栏是否为浅色主题
+    pub is_light: bool,
 }
 
 #[napi(object)]
@@ -104,6 +107,7 @@ impl From<strategy::TaskbarLayout> for JsTaskbarLayout {
                     strategy::SystemType::Win11 => "win11".to_string(),
                 },
                 is_centered: layout.extra.is_centered,
+                is_light: layout.extra.is_light,
             },
         }
     }
@@ -214,14 +218,8 @@ fn worker_loop(
                     break;
                 }
 
-                if let Some(s) = strategy.as_mut() {
-                    let params = LayoutParams {
-                        lyric_width: final_width,
-                    };
-                    if let Some(layout) = s.update_layout(params) {
-                        let js_layout: JsTaskbarLayout = layout.into();
-                        tsfn.call(js_layout, ThreadsafeFunctionCallMode::NonBlocking);
-                    }
+                if !run_update_with_retry(&mut strategy, final_width, tsfn, rx) {
+                    break;
                 }
             }
 
@@ -237,6 +235,55 @@ fn worker_loop(
     unsafe {
         CoUninitialize();
     }
+}
+
+/// 对 `update_layout` 做有界退避重试，专门兜底 UIA 冷启动首次扫描返回 None 的情形。
+///
+/// 重试窗口累计约 1.1s：第一次立即尝试，之后分别等 50/150/300/600ms；
+/// 每次等待都用 `recv_timeout` 可被新命令打断（新 Update 改宽度、Embed 继续嵌入、Stop 退出）。
+///
+/// 注意：`update_layout` 返回 `Some(layout)`（含"两侧空间都 0"这种合法的"无空间"情况）会立即 emit 并返回——
+/// 这种是真·无位置展示，不该被当成失败；只有真·扫描失败（UIA 树冷启拿不到内容）才会走重试。
+///
+/// 返回 false 表示接收到 Stop，上层应退出 worker_loop。
+fn run_update_with_retry(
+    strategy: &mut Option<Box<dyn TaskbarStrategy>>,
+    initial_width: i32,
+    tsfn: &LayoutTsfn,
+    rx: &Receiver<TaskbarCommand>,
+) -> bool {
+    const DELAYS_MS: &[u64] = &[0, 50, 150, 300, 600];
+    let mut current_width = initial_width;
+
+    for &delay_ms in DELAYS_MS {
+        if delay_ms > 0 {
+            match rx.recv_timeout(Duration::from_millis(delay_ms)) {
+                Ok(TaskbarCommand::Update { width }) => current_width = width,
+                Ok(TaskbarCommand::Embed { hwnd_ptr }) => {
+                    let hwnd = HWND(hwnd_ptr as *mut c_void);
+                    if let Some(s) = strategy.as_ref() {
+                        s.embed_window(hwnd);
+                    }
+                }
+                Ok(TaskbarCommand::Stop) => return false,
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => return false,
+            }
+        }
+
+        if let Some(s) = strategy.as_mut() {
+            let params = LayoutParams {
+                lyric_width: current_width,
+            };
+            if let Some(layout) = s.update_layout(params) {
+                let js_layout: JsTaskbarLayout = layout.into();
+                tsfn.call(js_layout, ThreadsafeFunctionCallMode::NonBlocking);
+                return true;
+            }
+        }
+    }
+
+    true
 }
 
 fn create_strategy() -> Option<Box<dyn TaskbarStrategy>> {
@@ -289,9 +336,12 @@ pub struct RegistryWatcher {
 
 #[napi]
 impl RegistryWatcher {
-    #[napi(constructor, ts_args_type = "callback: () => void")]
+    /// 监听 HKCU 下指定子键变化；`sub_key` 用反斜杠分隔，如
+    /// `Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced`
+    #[napi(constructor, ts_args_type = "subKey: string, callback: () => void")]
     #[allow(clippy::needless_pass_by_value)]
     pub fn new(
+        sub_key: String,
         callback: Function<(), UnknownReturnValue>,
     ) -> napi::Result<Self> {
         let tsfn = callback
@@ -306,7 +356,7 @@ impl RegistryWatcher {
         let thread_event = stop_event.clone();
 
         thread::spawn(move || unsafe {
-            registry_watch_loop(&thread_event, &tsfn);
+            registry_watch_loop(&thread_event, &tsfn, &sub_key);
         });
 
         Ok(Self {
@@ -332,16 +382,17 @@ impl RegistryWatcher {
 unsafe fn registry_watch_loop(
     stop_event_wrapper: &Arc<EventHandle>,
     tsfn: &VoidTsfn,
+    sub_key: &str,
 ) {
     let stop_event = stop_event_wrapper.0;
 
     let mut h_key = HKEY::default();
-    let sub_key = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced");
+    let sub_key_wide = HSTRING::from(sub_key);
 
     unsafe {
         if RegOpenKeyExW(
             HKEY_CURRENT_USER,
-            sub_key,
+            &sub_key_wide,
             Some(0),
             KEY_NOTIFY,
             &raw mut h_key,

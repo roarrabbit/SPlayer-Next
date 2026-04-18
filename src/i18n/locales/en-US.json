@@ -401,6 +401,33 @@
       "label": "Max Width",
       "description": "Capped by available space to avoid squeezing"
     },
+    "taskbarLyricColorMode": {
+      "label": "Color Mode",
+      "description": "Text and background color scheme of the taskbar lyric",
+      "taskbar": "Follow Taskbar",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "taskbarLyricFontSize": {
+      "label": "Font Size",
+      "description": "Taskbar lyric text size (px)"
+    },
+    "taskbarLyricShowCover": {
+      "label": "Show Cover",
+      "description": "Show the current track's cover thumbnail beside the lyric"
+    },
+    "taskbarLyricDoubleLine": {
+      "label": "Double Line",
+      "description": "Show current lyric together with translation or next line"
+    },
+    "taskbarLyricShowTranslation": {
+      "label": "Show Translation",
+      "description": "In double-line mode, prefer translation; fall back to the next line when unavailable"
+    },
+    "taskbarLyricWordByWord": {
+      "label": "Word by Word",
+      "description": "Render highlight progress per word"
+    },
     "playerBgType": {
       "label": "Player Background",
       "description": "Background type of the full-screen player",

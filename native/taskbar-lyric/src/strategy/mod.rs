@@ -62,6 +62,8 @@ pub enum SystemType {
 pub struct ExtraLayoutInfo {
     pub system_type: SystemType,
     pub is_centered: bool,
+    /// 任务栏是否为浅色主题（读自 `SystemUsesLightTheme`）
+    pub is_light: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
