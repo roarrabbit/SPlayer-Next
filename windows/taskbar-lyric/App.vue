@@ -99,8 +99,7 @@ const rootStyle = computed(() => ({ "--tbl-font-size": `${config.fontSize}px` })
 
 const handlePrev = (): void => window.api.player.dispatch("prev");
 const handleNext = (): void => window.api.player.dispatch("next");
-const handleTogglePlay = (): void =>
-  window.api.player.dispatch(playing.value ? "pause" : "play");
+const handleTogglePlay = (): void => window.api.player.dispatch(playing.value ? "pause" : "play");
 const handleFocusMain = (): void => {
   window.api.system.focusMainWindow().catch(() => {});
 };
@@ -156,28 +155,13 @@ onBeforeUnmount(() => {
       <!-- 控件：hover 时从 0fr 展开到内容宽度 -->
       <div class="controls-wrapper">
         <div class="controls-inner">
-          <button
-            class="control-btn"
-            type="button"
-            @click.stop="handlePrev"
-            @dblclick.stop
-          >
+          <button class="control-btn" type="button" @click.stop="handlePrev" @dblclick.stop>
             <IconSkipBack class="control-icon" />
           </button>
-          <button
-            class="control-btn"
-            type="button"
-            @click.stop="handleTogglePlay"
-            @dblclick.stop
-          >
+          <button class="control-btn" type="button" @click.stop="handleTogglePlay" @dblclick.stop>
             <component :is="playing ? IconPause : IconPlay" class="control-icon-play" />
           </button>
-          <button
-            class="control-btn"
-            type="button"
-            @click.stop="handleNext"
-            @dblclick.stop
-          >
+          <button class="control-btn" type="button" @click.stop="handleNext" @dblclick.stop>
             <IconSkipForward class="control-icon" />
           </button>
         </div>

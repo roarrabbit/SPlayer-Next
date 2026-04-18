@@ -21,8 +21,7 @@ type TaskbarLyricNative = typeof import("@splayer/taskbar-lyric");
 
 const REG_SUBKEY_EXPLORER_ADVANCED =
   "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced";
-const REG_SUBKEY_PERSONALIZE =
-  "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+const REG_SUBKEY_PERSONALIZE = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 
 type AnchorSide = "left" | "right";
 

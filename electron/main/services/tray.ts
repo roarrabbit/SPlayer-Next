@@ -5,7 +5,12 @@ import { appName } from "@main/utils/config";
 import { loadIcon, loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
 import { trayLog } from "@main/utils/logger";
-import { toggleDesktopLyricWindow, toggleDynamicIslandWindow, toggleTaskbarLyricWindow, focusMainWindow } from "@main/window";
+import {
+  toggleDesktopLyricWindow,
+  toggleDynamicIslandWindow,
+  toggleTaskbarLyricWindow,
+  focusMainWindow,
+} from "@main/window";
 
 type PlayState = "playing" | "paused";
 

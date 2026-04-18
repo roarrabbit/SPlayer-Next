@@ -13,9 +13,7 @@ const props = withDefaults(
 );
 
 const useKaraoke = computed(() => props.wordByWord && !!props.line);
-const plainText = computed(
-  () => props.text ?? props.line?.words.map((w) => w.word).join("") ?? "",
-);
+const plainText = computed(() => props.text ?? props.line?.words.map((w) => w.word).join("") ?? "");
 
 const wrapperRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
@@ -123,7 +121,10 @@ watch(
     nextTick(updateMetrics);
   },
 );
-watch(() => props.text, () => nextTick(updateMetrics));
+watch(
+  () => props.text,
+  () => nextTick(updateMetrics),
+);
 
 onMounted(() => {
   resizeObserver = new ResizeObserver(updateMetrics);
