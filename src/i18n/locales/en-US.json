@@ -384,7 +384,7 @@
     },
     "taskbarLyricEnabled": {
       "label": "Enable Taskbar Lyric",
-      "description": "Embed lyrics into the Windows taskbar (Windows only)"
+      "description": "Embed lyrics into the Windows taskbar"
     },
     "taskbarLyricPosition": {
       "label": "Position",

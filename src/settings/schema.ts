@@ -339,6 +339,7 @@ export const settingsSchema: SettingCategory[] = [
     sections: [
       {
         id: "desktopLyric",
+        tag: { text: "Beta" },
         items: [
           {
             key: "desktopLyricEnabled",
@@ -470,6 +471,7 @@ export const settingsSchema: SettingCategory[] = [
       },
       {
         id: "dynamicIsland",
+        tag: { text: "Beta" },
         items: [
           {
             key: "dynamicIslandEnabled",
@@ -558,6 +560,7 @@ export const settingsSchema: SettingCategory[] = [
         ? [
             {
               id: "taskbarLyric",
+              tag: { text: "Beta" },
               items: [
                 {
                   key: "taskbarLyricEnabled",
@@ -617,16 +620,22 @@ export const settingsSchema: SettingCategory[] = [
                   key: "taskbarLyricFontSize",
                   type: "slider" as const,
                   binding: { store: "settings" as const, path: "system.taskbarLyric.fontSize" },
-                  min: 11,
+                  min: 12,
                   max: 20,
                   step: 1,
                   defaultValue: 14,
-                  marks: { 11: "11", 14: "14", 17: "17", 20: "20" },
+                  marks: { 12: "12", 14: "14", 17: "17", 20: "20" },
                 },
                 {
                   key: "taskbarLyricShowCover",
                   type: "switch" as const,
                   binding: { store: "settings" as const, path: "system.taskbarLyric.showCover" },
+                  defaultValue: true,
+                },
+                {
+                  key: "taskbarLyricWordByWord",
+                  type: "switch" as const,
+                  binding: { store: "settings" as const, path: "system.taskbarLyric.wordByWord" },
                   defaultValue: true,
                 },
                 {
@@ -642,12 +651,6 @@ export const settingsSchema: SettingCategory[] = [
                     store: "settings" as const,
                     path: "system.taskbarLyric.showTranslation",
                   },
-                  defaultValue: true,
-                },
-                {
-                  key: "taskbarLyricWordByWord",
-                  type: "switch" as const,
-                  binding: { store: "settings" as const, path: "system.taskbarLyric.wordByWord" },
                   defaultValue: true,
                 },
               ],

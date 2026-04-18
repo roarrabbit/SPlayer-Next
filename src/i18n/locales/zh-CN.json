@@ -384,7 +384,7 @@
     },
     "taskbarLyricEnabled": {
       "label": "开启任务栏歌词",
-      "description": "将歌词嵌入 Windows 任务栏中显示（仅 Windows）"
+      "description": "将歌词嵌入 Windows 任务栏中显示"
     },
     "taskbarLyricPosition": {
       "label": "显示位置",
