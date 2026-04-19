@@ -14,6 +14,8 @@ export interface SButtonProps {
   circle?: boolean;
   /** 尺寸：预设名称或自定义数值（px） */
   size?: "tiny" | "small" | "medium" | "large" | number;
+  /** 图标尺寸（px） */
+  iconSize?: number;
   /** 禁用 */
   disabled?: boolean;
   /** 加载中（禁止点击，显示 spinner） */
@@ -84,8 +86,12 @@ const iconSizeClass = computed(() => {
   return iconSizePresets[props.size as SizePreset];
 });
 
-/** 数值 size 时图标大小：按钮尺寸的 50% */
+/** 图标尺寸内联样式：iconSize 优先，否则数值 size 按 50% 自动计算 */
 const numericIconStyle = computed(() => {
+  if (typeof props.iconSize === "number") {
+    const px = `${props.iconSize}px`;
+    return { width: px, height: px };
+  }
   if (!isNumericSize.value) return undefined;
   const iconPx = `${Math.round((props.size as number) * 0.5)}px`;
   return { width: iconPx, height: iconPx };

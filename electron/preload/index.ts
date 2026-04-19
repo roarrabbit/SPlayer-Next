@@ -154,6 +154,14 @@ const api = {
     // 订阅任务栏歌词窗口开关状态
     onTaskbarLyricVisibilityChange: (callback: (open: boolean) => void) =>
       subscribe<boolean>("taskbarLyric:visibilityChange", callback),
+    // 主窗口控制
+    minimize: () => ipcRenderer.send("window:minimize"),
+    toggleMaximize: () => ipcRenderer.send("window:toggleMaximize"),
+    isMaximized: () => ipcRenderer.invoke("window:isMaximized"),
+    onMaximizeChange: (callback: (maximized: boolean) => void) =>
+      subscribe<boolean>("window:maximizeChange", callback),
+    hide: () => ipcRenderer.send("window:hide"),
+    quit: () => ipcRenderer.send("window:quit"),
   },
   desktopLyric: {
     // 订阅桌面歌词配置变化

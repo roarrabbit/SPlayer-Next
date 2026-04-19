@@ -9,6 +9,12 @@ export declare class RegistryWatcher {
   stop(): void
 }
 
+export declare class TaskbarCreatedWatcher {
+  constructor(callback: () => void)
+  stop(): void
+}
+export type NapiTaskbarCreatedWatcher = TaskbarCreatedWatcher
+
 export declare class TaskbarService {
   constructor(callback: (layout: JsTaskbarLayout) => void)
   /** 嵌入窗口到任务栏。传入 Electron BrowserWindow 的 native handle (Buffer → usize) */
@@ -18,11 +24,6 @@ export declare class TaskbarService {
   /** 通知服务重建策略（explorer.exe 重启时由 JS 层调用） */
   reinit(): void
   /** 停止服务并恢复任务栏原始状态 */
-  stop(): void
-}
-
-export declare class TaskbarCreatedWatcher {
-  constructor(callback: () => void)
   stop(): void
 }
 

@@ -499,6 +499,23 @@
       "label": "Taskbar Progress",
       "description": "Show playback progress on the taskbar icon"
     },
+    "closeAction": {
+      "label": "Close Button Action",
+      "description": "What to do when the title bar close button is clicked",
+      "quit": "Quit application",
+      "hide": "Minimize to tray"
+    },
+    "rememberCloseChoice": {
+      "label": "Remember Close Choice",
+      "description": "When off, asks every time the close button is clicked"
+    },
+    "closeDialog": {
+      "title": "Close Window",
+      "description": "Choose what to do this time",
+      "remember": "Remember my choice, don't ask again",
+      "quit": "Quit application",
+      "hide": "Minimize to tray"
+    },
     "storageManager": {
       "label": "Data Management",
       "description": "Reset settings or clear all data"

@@ -24,11 +24,16 @@ const handleOpenUpdate = (id: number, value: boolean): void => {
     :key="item.id"
     :open="item.open.value"
     :title="item.options.title"
+    :description="item.options.description"
     :closable="item.options.closable ?? true"
     width="420px"
     @update:open="(value: boolean) => handleOpenUpdate(item.id, value)"
   >
-    <p v-if="item.options.content" class="text-sm text-on-surface-variant m-0 whitespace-pre-line">
+    <component :is="item.options.body" v-if="item.options.body" />
+    <p
+      v-else-if="item.options.content"
+      class="text-sm text-on-surface-variant m-0 whitespace-pre-line"
+    >
       {{ item.options.content }}
     </p>
 

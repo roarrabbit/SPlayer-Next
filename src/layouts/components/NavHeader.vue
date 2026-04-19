@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import { useThemeStore } from "@/stores/theme";
+import { useWindowControls } from "@/composables/useWindowControls";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import IconSun from "~icons/lucide/sun";
 import IconMoon from "~icons/lucide/moon";
@@ -8,11 +9,17 @@ import IconMonitor from "~icons/lucide/monitor";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
 import IconTerminal from "~icons/lucide/terminal";
 import IconSettings from "~icons/lucide/settings";
+import IconMinus from "~icons/lucide/minus";
+import IconSquare from "~icons/lucide/square";
+import IconCopy from "~icons/lucide/copy";
+import IconX from "~icons/lucide/x";
 
 const router = useRouter();
 const { t } = useI18n();
 const { show: showSettings } = useSettingsDialog();
 const theme = useThemeStore();
+
+const { isMaximized, minimize, toggleMaximize, close } = useWindowControls();
 
 const themeIcon = computed(() => {
   if (theme.mode === "light") return IconMoon;
@@ -42,9 +49,9 @@ const onMenuSelect = (key: string): void => {
 </script>
 
 <template>
-  <div class="flex items-center flex-1">
+  <div class="flex items-center flex-1 h-full app-drag-region">
     <!-- 左侧：前进后退 -->
-    <div class="flex items-center gap-3 shrink-0">
+    <div class="flex items-center gap-3 shrink-0 app-no-drag">
       <SButton variant="tertiary" circle ripple :size="40" @click="router.back()">
         <template #icon><IconLucideChevronLeft /></template>
       </SButton>
@@ -52,10 +59,10 @@ const onMenuSelect = (key: string): void => {
         <template #icon><IconLucideChevronRight /></template>
       </SButton>
     </div>
-    <!-- 中间：可拖拽窗口区域 -->
-    <div class="flex-1 h-full app-drag-region" />
-    <!-- 右侧：菜单 -->
-    <div class="flex items-center shrink-0">
+    <!-- 中间：弹性填充（继承父级 drag） -->
+    <div class="flex-1 h-full" />
+    <!-- 右侧：菜单 + 窗口控制 -->
+    <div class="flex items-center gap-3 shrink-0 app-no-drag">
       <SDropdownMenu :items="menuItems" @select="onMenuSelect">
         <template #trigger>
           <SButton variant="tertiary" circle ripple :size="40">
@@ -63,6 +70,25 @@ const onMenuSelect = (key: string): void => {
           </SButton>
         </template>
       </SDropdownMenu>
+      <SDivider vertical />
+      <SButton variant="tertiary" circle ripple :size="40" :icon-size="16" @click="minimize">
+        <template #icon><IconMinus /></template>
+      </SButton>
+      <SButton
+        variant="tertiary"
+        circle
+        ripple
+        :size="40"
+        :icon-size="16"
+        @click="toggleMaximize"
+      >
+        <template #icon>
+          <component :is="isMaximized ? IconCopy : IconSquare" />
+        </template>
+      </SButton>
+      <SButton variant="tertiary" circle ripple :size="40" :icon-size="16" @click="close">
+        <template #icon><IconX /></template>
+      </SButton>
     </div>
   </div>
 </template>

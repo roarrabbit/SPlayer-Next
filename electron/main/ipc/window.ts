@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { app, ipcMain } from "electron";
 import { store } from "@main/store";
 import {
   toggleDesktopLyricWindow,
@@ -18,6 +18,10 @@ import {
   toggleTaskbarLyricWindow,
   closeTaskbarLyricWindow,
   getTaskbarLyricWindow,
+  minimizeMainWindow,
+  toggleMaximizeMainWindow,
+  isMainWindowMaximized,
+  hideMainWindow,
 } from "@main/window";
 
 /** 窗口管理 IPC */
@@ -94,4 +98,11 @@ export const registerWindowIpc = (): void => {
 
   // 查询任务栏歌词窗口是否打开
   ipcMain.handle("window:isTaskbarLyricOpen", () => !!getTaskbarLyricWindow());
+
+  // 主窗口控制
+  ipcMain.on("window:minimize", () => minimizeMainWindow());
+  ipcMain.on("window:toggleMaximize", () => toggleMaximizeMainWindow());
+  ipcMain.handle("window:isMaximized", () => isMainWindowMaximized());
+  ipcMain.on("window:hide", () => hideMainWindow());
+  ipcMain.on("window:quit", () => app.quit());
 };

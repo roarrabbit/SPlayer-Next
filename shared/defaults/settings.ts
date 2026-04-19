@@ -90,11 +90,16 @@ export const defaultSystemConfig: SystemConfig = {
       height: 200,
       x: null,
       y: null,
+      visible: false,
     },
     dynamicIsland: {
       mode: "snapped",
       x: null,
       y: null,
+      visible: false,
+    },
+    taskbarLyric: {
+      visible: false,
     },
   },
 };

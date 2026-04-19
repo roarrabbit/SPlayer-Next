@@ -1,5 +1,20 @@
+import { store } from "@main/store";
+import { createDesktopLyricWindow } from "./desktopLyric";
+import { createDynamicIslandWindow } from "./dynamicIsland";
+import { createTaskbarLyricWindow } from "./taskbarLyric";
+import { isWin } from "@main/utils/config";
+
 export { createWindow } from "./create";
-export { createMainWindow, getMainWindow, focusMainWindow, setTaskbarProgress } from "./main";
+export {
+  createMainWindow,
+  getMainWindow,
+  focusMainWindow,
+  setTaskbarProgress,
+  minimizeMainWindow,
+  toggleMaximizeMainWindow,
+  isMainWindowMaximized,
+  hideMainWindow,
+} from "./main";
 export {
   createDesktopLyricWindow,
   closeDesktopLyricWindow,
@@ -32,3 +47,13 @@ export {
   getTaskbarLyricWindow,
   applyTaskbarLyricLayout,
 } from "./taskbarLyric";
+
+/** 恢复歌词相关窗口 */
+export const restoreLyricWindows = (): void => {
+  if (!(store.get("system.rememberWindowState") ?? true)) return;
+  if (store.get("windowStates.desktopLyric.visible")) createDesktopLyricWindow();
+  if (store.get("windowStates.dynamicIsland.visible")) createDynamicIslandWindow();
+  if (isWin && store.get("windowStates.taskbarLyric.visible")) {
+    createTaskbarLyricWindow();
+  }
+};

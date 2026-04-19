@@ -1,12 +1,16 @@
-import type { Ref } from "vue";
+import type { Ref, VNode } from "vue";
 
 export type DialogType = "default" | "info" | "success" | "warning" | "error";
 
 export interface DialogOptions {
   /** 标题 */
   title?: string;
-  /** 正文内容（纯文本，支持 \n 换行） */
+  /** 副标题描述 */
+  description?: string;
+  /** 正文内容 */
   content?: string;
+  /** 自定义正文渲染 */
+  body?: () => VNode | VNode[];
   /** 确认按钮文案，默认"确定" */
   confirmText?: string;
   /** 取消按钮文案，默认"取消"；仅 confirm 有效 */

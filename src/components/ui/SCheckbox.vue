@@ -100,7 +100,7 @@ const onKeydown = (event: KeyboardEvent): void => {
         'rounded-[5px]',
         checked || indeterminate
           ? 'bg-primary border-primary text-on-primary'
-          : 'bg-transparent border-outline-variant/70 text-transparent hover:border-on-surface/35',
+          : 'bg-transparent border-on-surface/35 text-transparent hover:border-on-surface/55',
       ]"
       @keydown="onKeydown"
     >

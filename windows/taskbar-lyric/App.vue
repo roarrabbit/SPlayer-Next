@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
         />
       </div>
 
-      <!-- 控件：hover 时从 0fr 展开到内容宽度 -->
+      <!-- 播放控件 -->
       <div class="controls-wrapper">
         <div class="controls-inner">
           <button class="control-btn" type="button" @click.stop="handlePrev" @dblclick.stop>
@@ -167,8 +167,9 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- 文本区：歌词层 + 歌曲信息层（hover 交叉淡入淡出） -->
+      <!-- 文本区 -->
       <div class="lyric-area">
+        <!-- 歌词层 -->
         <TransitionGroup tag="div" name="line" class="lyric-column">
           <div v-for="item in items" :key="item.key" class="lyric-line" :data-role="item.role">
             <TaskbarLyricLine
@@ -179,10 +180,12 @@ onBeforeUnmount(() => {
             />
           </div>
         </TransitionGroup>
-
+        <!-- 歌曲信息 -->
         <div class="song-info">
           <div class="song-title">{{ titleText }}</div>
-          <div v-if="config.doubleLine" class="song-artist">{{ artistsText }}</div>
+          <div v-if="config.doubleLine" class="song-artist">
+            {{ artistsText }}
+          </div>
         </div>
       </div>
     </div>
@@ -309,14 +312,10 @@ onBeforeUnmount(() => {
 .lyric-area {
   flex: 1 1 auto;
   min-width: 0;
-  margin-left: 4px;
+  margin: 0 4px;
   position: relative;
   height: 100%;
   overflow: hidden;
-}
-.container[data-align="right"] .lyric-area {
-  margin-left: 0;
-  margin-right: 4px;
 }
 
 .lyric-column {

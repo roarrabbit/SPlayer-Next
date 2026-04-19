@@ -19,6 +19,8 @@ export const useSettingsStore = defineStore(
       layoutMode: "default",
       routeTransition: "fade",
       sidebarCollapsed: false,
+      closeAction: "hide",
+      rememberCloseChoice: false,
     });
 
     /** 播放器 */

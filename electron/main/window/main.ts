@@ -6,6 +6,8 @@ import { initThumbar } from "@main/services/thumbar";
 import { initTray } from "@main/services/tray";
 import { store } from "@main/store";
 import { handleCacheProtocolOnPartition } from "@main/utils/protocol";
+import { isAppQuitting } from "@main/utils/lifecycle";
+import { broadcast } from "@main/utils/broadcast";
 
 /** 主窗口 session */
 const MAIN_PARTITION = "persist:main";
@@ -26,6 +28,7 @@ export const createMainWindow = (): BrowserWindow => {
     width: saved?.width ?? 1280,
     height: saved?.height ?? 800,
     ...(saved?.x != null && saved?.y != null ? { x: saved.x, y: saved.y } : {}),
+    frame: false,
     webPreferences: {
       partition: MAIN_PARTITION,
     },
@@ -61,9 +64,24 @@ export const createMainWindow = (): BrowserWindow => {
     });
   };
 
-  mainWindow.on("close", saveWindowState);
-  mainWindow.on("maximize", saveWindowState);
-  mainWindow.on("unmaximize", saveWindowState);
+  // 系统级关闭（alt+F4 / 任务栏右键"关闭窗口"）统一隐藏到托盘；
+  // 退出由渲染端自定义按钮或托盘"退出"菜单走 app.quit() 触发 isAppQuitting=true 放行
+  mainWindow.on("close", (event) => {
+    if (isAppQuitting()) {
+      saveWindowState();
+      return;
+    }
+    event.preventDefault();
+    mainWindow?.hide();
+  });
+  mainWindow.on("maximize", () => {
+    saveWindowState();
+    broadcast("window:maximizeChange", true);
+  });
+  mainWindow.on("unmaximize", () => {
+    saveWindowState();
+    broadcast("window:maximizeChange", false);
+  });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
@@ -101,6 +119,27 @@ export const focusMainWindow = (): void => {
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
+};
+
+/** 最小化主窗口 */
+export const minimizeMainWindow = (): void => {
+  getMainWindow()?.minimize();
+};
+
+/** 切换最大化 */
+export const toggleMaximizeMainWindow = (): void => {
+  const win = getMainWindow();
+  if (!win) return;
+  if (win.isMaximized()) win.unmaximize();
+  else win.maximize();
+};
+
+/** 查询是否最大化 */
+export const isMainWindowMaximized = (): boolean => !!getMainWindow()?.isMaximized();
+
+/** 隐藏主窗口 */
+export const hideMainWindow = (): void => {
+  getMainWindow()?.hide();
 };
 
 /**

@@ -2,7 +2,7 @@ import type { DesktopLyricSettings, DynamicIslandSettings, TaskbarLyricSettings 
 
 /** 窗口管理 API */
 export interface WindowApi {
-  /** 切换桌面歌词窗口（开则关、关则开），返回切换后是否打开 */
+  /** 切换桌面歌词窗口 */
   toggleDesktopLyric: () => Promise<boolean>;
   /** 关闭桌面歌词窗口 */
   closeDesktopLyric: () => Promise<void>;
@@ -18,7 +18,7 @@ export interface WindowApi {
   isDynamicIslandOpen: () => Promise<boolean>;
   /** 订阅灵动岛窗口开关状态变化 */
   onDynamicIslandVisibilityChange: (callback: (open: boolean) => void) => () => void;
-  /** 切换任务栏歌词窗口（仅 Windows） */
+  /** 切换任务栏歌词窗口 */
   toggleTaskbarLyric: () => Promise<boolean>;
   /** 关闭任务栏歌词窗口 */
   closeTaskbarLyric: () => Promise<void>;
@@ -26,6 +26,18 @@ export interface WindowApi {
   isTaskbarLyricOpen: () => Promise<boolean>;
   /** 订阅任务栏歌词窗口开关状态变化 */
   onTaskbarLyricVisibilityChange: (callback: (open: boolean) => void) => () => void;
+  /** 最小化主窗口 */
+  minimize: () => void;
+  /** 切换最大化 / 还原 */
+  toggleMaximize: () => void;
+  /** 查询主窗口是否最大化 */
+  isMaximized: () => Promise<boolean>;
+  /** 订阅主窗口最大化状态变化 */
+  onMaximizeChange: (callback: (maximized: boolean) => void) => () => void;
+  /** 隐藏主窗口到托盘 */
+  hide: () => void;
+  /** 退出应用 */
+  quit: () => void;
 }
 
 /** 桌面歌词 API */

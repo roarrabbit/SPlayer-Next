@@ -156,6 +156,7 @@ export interface DesktopLyricWindowState {
   height: number;
   x: number | null;
   y: number | null;
+  visible: boolean;
 }
 
 /** 灵动岛窗口几何 */
@@ -166,6 +167,12 @@ export interface DynamicIslandWindowState {
   x: number | null;
   /** floating: 窗口左上角 y；snapped + 非居中: 当时所在屏 workArea.y（用于找回所在屏） */
   y: number | null;
+  visible: boolean;
+}
+
+/** 任务栏歌词窗口状态 */
+export interface TaskbarLyricWindowState {
+  visible: boolean;
 }
 
 /** 窗口几何状态 */
@@ -173,6 +180,7 @@ export interface WindowStates {
   main: MainWindowState;
   desktopLyric: DesktopLyricWindowState;
   dynamicIsland: DynamicIslandWindowState;
+  taskbarLyric: TaskbarLyricWindowState;
 }
 
 /** 后端配置汇总 */

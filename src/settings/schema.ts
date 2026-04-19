@@ -44,6 +44,22 @@ export const settingsSchema: SettingCategory[] = [
             binding: { store: "settings", path: "system.system.taskbarProgress" },
             defaultValue: true,
           },
+          {
+            key: "closeAction",
+            type: "select",
+            binding: { store: "settings", path: "appearance.closeAction" },
+            options: [
+              { value: "quit", labelKey: "settings.closeAction.quit" },
+              { value: "hide", labelKey: "settings.closeAction.hide" },
+            ],
+            defaultValue: "hide",
+          },
+          {
+            key: "rememberCloseChoice",
+            type: "switch",
+            binding: { store: "settings", path: "appearance.rememberCloseChoice" },
+            defaultValue: false,
+          },
         ],
       },
       {

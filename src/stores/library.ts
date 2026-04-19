@@ -276,6 +276,7 @@ export const useLibraryStore = defineStore("library", () => {
     deleteTracks,
     getArtistAvatar,
     setArtistAvatar,
+    loadArtistAvatars,
     getArtistList,
     getAlbumList,
     getAlbumCollection,

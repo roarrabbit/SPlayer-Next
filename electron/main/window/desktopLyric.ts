@@ -74,6 +74,7 @@ const saveWindowState = (): void => {
   if (!desktopLyricWindow || desktopLyricWindow.isDestroyed()) return;
   const { x, y } = desktopLyricWindow.getBounds();
   store.set("windowStates.desktopLyric", {
+    ...store.get("windowStates.desktopLyric"),
     x,
     y,
     width: cachedSize.width,

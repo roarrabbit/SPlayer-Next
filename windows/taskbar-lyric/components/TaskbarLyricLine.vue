@@ -17,29 +17,39 @@ const plainText = computed(() => props.text ?? props.line?.words.map((w) => w.wo
 
 const wrapperRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
-const wrapperWidth = ref(0);
-const contentWidth = ref(0);
+const overflowPx = ref(0);
+const isOverflow = computed(() => overflowPx.value > 0);
 
-const maxOffset = computed(() => {
-  const diff = contentWidth.value - wrapperWidth.value;
-  return diff > 0 ? diff + 10 : 0;
-});
-const isOverflow = computed(() => maxOffset.value > 0);
-const scrollStyle = computed(() => {
-  if (!isOverflow.value) return {};
-  const duration = 2 + maxOffset.value / 30;
-  const sign = props.anchor === "right" ? "" : "-";
-  return {
-    "--scroll-offset": `${sign}${maxOffset.value}px`,
-    "--scroll-duration": `${duration.toFixed(2)}s`,
-  };
-});
+/** 前 30% 停在开头 */
+const SCROLL_START_AT = 0.3;
+/** 比 endTime 早多少滚到底 */
+const END_MARGIN_MS = 2000;
 
-let resizeObserver: ResizeObserver | null = null;
+const measure = (): void => {
+  const outer = wrapperRef.value;
+  const inner = contentRef.value;
+  if (!outer || !inner) {
+    overflowPx.value = 0;
+    return;
+  }
+  const diff = inner.getBoundingClientRect().width - outer.getBoundingClientRect().width;
+  overflowPx.value = diff > 0.5 ? diff : 0;
+};
 
-const updateMetrics = (): void => {
-  if (wrapperRef.value) wrapperWidth.value = wrapperRef.value.clientWidth;
-  if (contentRef.value) contentWidth.value = contentRef.value.scrollWidth;
+/** 根据进度计算平移量——溢出时始终向左滚（与桌面歌词一致），不做来回 */
+const getScrollTransform = (currentMs: number): string => {
+  const overflow = overflowPx.value;
+  if (overflow <= 0 || !props.line) return "translateX(0)";
+  const { startTime, endTime } = props.line;
+  if (endTime <= startTime) return "translateX(0)";
+  const end = Math.max(startTime + 1, endTime - END_MARGIN_MS);
+  const duration = end - startTime;
+  if (duration <= 0) return "translateX(0)";
+  const progress = Math.max(0, Math.min(1, (currentMs - startTime) / duration));
+  if (progress <= SCROLL_START_AT) return "translateX(0)";
+  const ratio = (progress - SCROLL_START_AT) / (1 - SCROLL_START_AT);
+  const offset = overflow * ratio;
+  return `translateX(-${offset.toFixed(3)}px)`;
 };
 
 const wordRefs: HTMLSpanElement[] = [];
@@ -70,84 +80,81 @@ const setWordRef = (el: Element | { $el?: Element } | null, index: number): void
   }
 };
 
+let resizeObserver: ResizeObserver | null = null;
 let rafId = 0;
+let lastTransform = "";
 let lastWordProgress: string[] = [];
 
 const resetRenderCache = (): void => {
+  lastTransform = "";
   lastWordProgress = [];
   wordRefs.length = 0;
 };
 
 const renderFrame = (): void => {
-  if (!useKaraoke.value || !props.line) {
-    rafId = 0;
-    return;
-  }
   const currentMs = getNowPlayingCurrentMs();
-  for (let i = 0; i < props.line.words.length; i++) {
-    const el = wordRefs[i];
-    if (!el) continue;
-    const progress = getWordProgress(props.line.words[i], currentMs);
-    if (lastWordProgress[i] !== progress) {
-      lastWordProgress[i] = progress;
-      el.style.setProperty("--p", progress);
+
+  if (contentRef.value) {
+    const transform = getScrollTransform(currentMs);
+    if (transform !== lastTransform) {
+      lastTransform = transform;
+      contentRef.value.style.transform = transform;
     }
   }
+
+  if (useKaraoke.value && props.line) {
+    for (let i = 0; i < props.line.words.length; i++) {
+      const el = wordRefs[i];
+      if (!el) continue;
+      const progress = getWordProgress(props.line.words[i], currentMs);
+      if (lastWordProgress[i] !== progress) {
+        lastWordProgress[i] = progress;
+        el.style.setProperty("--p", progress);
+      }
+    }
+  }
+
   rafId = requestAnimationFrame(renderFrame);
 };
 
-const startRenderLoop = (): void => {
-  if (rafId === 0 && useKaraoke.value) {
-    rafId = requestAnimationFrame(renderFrame);
-  }
-};
-
-const stopRenderLoop = (): void => {
-  if (rafId !== 0) {
-    cancelAnimationFrame(rafId);
-    rafId = 0;
-  }
-};
-
-watch(useKaraoke, (enabled) => {
-  resetRenderCache();
-  if (enabled) startRenderLoop();
-  else stopRenderLoop();
-});
 watch(
   () => props.line,
   () => {
     resetRenderCache();
-    nextTick(updateMetrics);
+    nextTick(measure);
   },
 );
 watch(
   () => props.text,
-  () => nextTick(updateMetrics),
+  () => nextTick(measure),
 );
 
 onMounted(() => {
-  resizeObserver = new ResizeObserver(updateMetrics);
+  resizeObserver = new ResizeObserver(measure);
   if (wrapperRef.value) resizeObserver.observe(wrapperRef.value);
   if (contentRef.value) resizeObserver.observe(contentRef.value);
-  updateMetrics();
-  startRenderLoop();
+  measure();
+  rafId = requestAnimationFrame(renderFrame);
 });
 
 onBeforeUnmount(() => {
-  stopRenderLoop();
+  if (rafId !== 0) {
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+  }
   resizeObserver?.disconnect();
+  resizeObserver = null;
 });
 </script>
 
 <template>
-  <div ref="wrapperRef" class="scroll-wrapper" :data-anchor="anchor">
-    <div
-      ref="contentRef"
-      class="scroll-content"
-      :class="{ 'is-scrolling': isOverflow }"
-      :style="scrollStyle"
-    >
+  <div
+    ref="wrapperRef"
+    class="scroll-wrapper"
+    :data-anchor="anchor"
+    :class="{ 'is-overflow': isOverflow }"
+  >
+    <div ref="contentRef" class="scroll-content">
       <template v-if="useKaraoke">
         <span
           v-for="(word, i) in line!.words"
@@ -169,26 +176,13 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   text-align: left;
 }
-.scroll-wrapper[data-anchor="right"] {
+/* 未溢出时根据锚定方向对齐短文本；溢出时强制左对齐，让滚动从头开始 */
+.scroll-wrapper[data-anchor="right"]:not(.is-overflow) {
   text-align: right;
 }
 .scroll-content {
   display: inline-block;
   will-change: transform;
-}
-.is-scrolling {
-  animation: scroll-pingpong var(--scroll-duration) linear infinite alternate;
-  animation-delay: 1.2s;
-}
-@keyframes scroll-pingpong {
-  0%,
-  15% {
-    transform: translateX(0);
-  }
-  85%,
-  100% {
-    transform: translateX(var(--scroll-offset));
-  }
 }
 .tb-word {
   --p: 0%;

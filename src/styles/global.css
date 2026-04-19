@@ -12,6 +12,14 @@ img {
   -webkit-user-drag: none;
 }
 
+/* 无边框窗口拖拽区域控制 */
+.app-drag-region {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
 html,
 body {
   background-color: rgb(var(--s-surface));

@@ -1,7 +1,7 @@
 import { app, Menu, MenuItemConstructorOptions, nativeTheme, Tray } from "electron";
 import type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import { broadcast } from "@main/utils/broadcast";
-import { appName } from "@main/utils/config";
+import { appName, isWin } from "@main/utils/config";
 import { loadIcon, loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
 import { trayLog } from "@main/utils/logger";
@@ -119,7 +119,7 @@ const buildMenu = (): Menu => {
       icon: menuIcon("lyric"),
       click: () => toggleDynamicIslandWindow(),
     },
-    ...(process.platform === "win32"
+    ...(isWin
       ? [
           {
             label: taskbarLyricOpen ? t("closeTaskbarLyric") : t("openTaskbarLyric"),

@@ -269,7 +269,12 @@ export const saveDynamicIslandState = (): void => {
     if (config.snapCentered) {
       const leftX = wa.x + Math.round((wa.width - cachedSize.width) / 2);
       win.setBounds({ x: leftX, y: wa.y, width: cachedSize.width, height: cachedSize.height });
-      store.set("windowStates.dynamicIsland", { mode: "snapped", x: null, y: null });
+      store.set("windowStates.dynamicIsland", {
+        ...store.get("windowStates.dynamicIsland"),
+        mode: "snapped",
+        x: null,
+        y: null,
+      });
     } else {
       // 保留拖到的水平位置；存中心点而非左上角，让后续宽度变化围绕中心点对称伸缩
       const clampedLeftX = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, b.x));
@@ -280,11 +285,21 @@ export const saveDynamicIslandState = (): void => {
         width: cachedSize.width,
         height: cachedSize.height,
       });
-      store.set("windowStates.dynamicIsland", { mode: "snapped", x: centerX, y: wa.y });
+      store.set("windowStates.dynamicIsland", {
+        ...store.get("windowStates.dynamicIsland"),
+        mode: "snapped",
+        x: centerX,
+        y: wa.y,
+      });
     }
     broadcastMode("snapped");
   } else {
-    store.set("windowStates.dynamicIsland", { mode: "floating", x: b.x, y: b.y });
+    store.set("windowStates.dynamicIsland", {
+      ...store.get("windowStates.dynamicIsland"),
+      mode: "floating",
+      x: b.x,
+      y: b.y,
+    });
     broadcastMode("floating");
   }
 };

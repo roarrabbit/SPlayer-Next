@@ -100,7 +100,7 @@ const onKeydown = (event: KeyboardEvent): void => {
         sizeClassMap[mergedSize],
         selected
           ? 'border-primary bg-primary/10'
-          : 'border-outline-variant/70 bg-transparent hover:border-on-surface/35',
+          : 'border-on-surface/35 bg-transparent hover:border-on-surface/55',
       ]"
       @click="handleSelect"
       @keydown="onKeydown"
