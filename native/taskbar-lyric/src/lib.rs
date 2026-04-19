@@ -19,13 +19,14 @@ use napi::{
 };
 use napi_derive::napi;
 
-type LayoutTsfn = ThreadsafeFunction<JsTaskbarLayout, UnknownReturnValue, JsTaskbarLayout, Status, false>;
+type LayoutTsfn =
+    ThreadsafeFunction<JsTaskbarLayout, UnknownReturnValue, JsTaskbarLayout, Status, false>;
 type VoidTsfn = ThreadsafeFunction<(), UnknownReturnValue, (), Status, false>;
 use strategy::{LayoutParams, LegacyStrategy, TaskbarStrategy, Win11Strategy};
 use utils::get_windows_build_number;
 use windows::{
     Win32::{
-        Foundation::{CloseHandle, HANDLE, HWND, WAIT_OBJECT_0},
+        Foundation::{CloseHandle, HANDLE, HWND, RPC_E_CHANGED_MODE, WAIT_OBJECT_0},
         System::{
             Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize},
             Registry::{
@@ -117,8 +118,12 @@ impl From<strategy::TaskbarLayout> for JsTaskbarLayout {
 // --- TaskbarService ---
 
 enum TaskbarCommand {
-    Embed { hwnd_ptr: usize },
-    Update { width: i32 },
+    Embed {
+        hwnd_ptr: usize,
+    },
+    Update {
+        width: i32,
+    },
     /// explorer 重启后重新初始化策略并用最近的 hwnd/width 恢复
     Reinit,
     Stop,
@@ -136,9 +141,7 @@ impl TaskbarService {
         ts_args_type = "callback: (layout: JsTaskbarLayout) => void"
     )]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(
-        callback: Function<JsTaskbarLayout, UnknownReturnValue>,
-    ) -> napi::Result<Self> {
+    pub fn new(callback: Function<JsTaskbarLayout, UnknownReturnValue>) -> napi::Result<Self> {
         let tsfn = callback
             .build_threadsafe_function::<JsTaskbarLayout>()
             .build_callback(|ctx| Ok(ctx.value))?;
@@ -163,9 +166,9 @@ impl TaskbarService {
     /// 更新歌词显示宽度，触发重新计算布局
     #[napi]
     pub fn update(&self, lyric_width: i32) {
-        let _ = self.sender.send(TaskbarCommand::Update {
-            width: lyric_width,
-        });
+        let _ = self
+            .sender
+            .send(TaskbarCommand::Update { width: lyric_width });
     }
 
     /// 通知服务重建策略（explorer.exe 重启时由 JS 层调用）
@@ -181,16 +184,19 @@ impl TaskbarService {
     }
 }
 
-fn worker_loop(
-    rx: &Receiver<TaskbarCommand>,
-    tsfn: &LayoutTsfn,
-) {
-    unsafe {
+fn worker_loop(rx: &Receiver<TaskbarCommand>, tsfn: &LayoutTsfn) {
+    // RPC_E_CHANGED_MODE 表示调用线程已被其它地方初始化为另一种 apartment，
+    // 这种情况下我们允许继续运行，但末尾不能 CoUninitialize（成对关系由最初的 init 持有）
+    let should_uninitialize = unsafe {
         let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
-        if hr.is_err() {
+        if hr.is_ok() {
+            true
+        } else if hr == RPC_E_CHANGED_MODE {
+            false
+        } else {
             return;
         }
-    }
+    };
 
     let mut strategy = create_strategy();
     // 记忆最近的 hwnd/width，explorer 重启后 Reinit 据此恢复
@@ -263,8 +269,10 @@ fn worker_loop(
     if let Some(s) = strategy.as_ref() {
         s.restore();
     }
-    unsafe {
-        CoUninitialize();
+    if should_uninitialize {
+        unsafe {
+            CoUninitialize();
+        }
     }
 }
 
@@ -386,10 +394,7 @@ impl RegistryWatcher {
     /// `Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced`
     #[napi(constructor, ts_args_type = "subKey: string, callback: () => void")]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(
-        sub_key: String,
-        callback: Function<(), UnknownReturnValue>,
-    ) -> napi::Result<Self> {
+    pub fn new(sub_key: String, callback: Function<(), UnknownReturnValue>) -> napi::Result<Self> {
         let tsfn = callback
             .build_threadsafe_function::<()>()
             .build_callback(|_ctx| Ok(()))?;
@@ -499,9 +504,7 @@ pub struct NapiUiaWatcher {
 impl NapiUiaWatcher {
     #[napi(constructor, ts_args_type = "callback: () => void")]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(
-        callback: Function<(), UnknownReturnValue>,
-    ) -> napi::Result<Self> {
+    pub fn new(callback: Function<(), UnknownReturnValue>) -> napi::Result<Self> {
         let tsfn = callback
             .build_threadsafe_function::<()>()
             .build_callback(|_ctx| Ok(()))?;
@@ -531,9 +534,7 @@ pub struct NapiTrayWatcher {
 impl NapiTrayWatcher {
     #[napi(constructor, ts_args_type = "callback: () => void")]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(
-        callback: Function<(), UnknownReturnValue>,
-    ) -> napi::Result<Self> {
+    pub fn new(callback: Function<(), UnknownReturnValue>) -> napi::Result<Self> {
         let tsfn = callback
             .build_threadsafe_function::<()>()
             .build_callback(|_ctx| Ok(()))?;
@@ -563,9 +564,7 @@ pub struct NapiTaskbarCreatedWatcher {
 impl NapiTaskbarCreatedWatcher {
     #[napi(constructor, ts_args_type = "callback: () => void")]
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(
-        callback: Function<(), UnknownReturnValue>,
-    ) -> napi::Result<Self> {
+    pub fn new(callback: Function<(), UnknownReturnValue>) -> napi::Result<Self> {
         let tsfn = callback
             .build_threadsafe_function::<()>()
             .build_callback(|_ctx| Ok(()))?;

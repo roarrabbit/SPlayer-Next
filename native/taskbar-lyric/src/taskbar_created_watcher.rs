@@ -10,7 +10,7 @@ use std::{
 use anyhow::{Result, anyhow};
 use windows::{
     Win32::{
-        Foundation::{HWND, LPARAM, LRESULT, WPARAM},
+        Foundation::{ERROR_CLASS_ALREADY_EXISTS, GetLastError, HWND, LPARAM, LRESULT, WPARAM},
         System::{LibraryLoader::GetModuleHandleW, Threading::GetCurrentThreadId},
         UI::WindowsAndMessaging::{
             CW_USEDEFAULT, CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW,
@@ -77,9 +77,13 @@ impl TaskbarCreatedWatcher {
                 lpszClassName: WINDOW_CLASS,
                 ..Default::default()
             };
+            // 类名全局唯一，同进程中若上一轮异常退出未及时清理会残留
             if RegisterClassExW(&raw const wndclass) == 0 {
-                error!("RegisterClassExW 失败");
-                return;
+                let err = GetLastError();
+                if err != ERROR_CLASS_ALREADY_EXISTS {
+                    error!("RegisterClassExW 失败: {:?}", err);
+                    return;
+                }
             }
 
             let hwnd = CreateWindowExW(

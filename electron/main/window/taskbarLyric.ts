@@ -280,14 +280,13 @@ export const closeTaskbarLyricWindow = (): void => {
   }
 };
 
-/** 切换任务栏歌词窗口显隐，返回切换后是否打开 */
+/** 切换任务栏歌词窗口显隐，返回切换后是否打开（非 Windows 平台或创建失败返回 false） */
 export const toggleTaskbarLyricWindow = (): boolean => {
   if (taskbarLyricWindow && !taskbarLyricWindow.isDestroyed()) {
     closeTaskbarLyricWindow();
     return false;
   }
-  createTaskbarLyricWindow();
-  return true;
+  return createTaskbarLyricWindow() !== null;
 };
 
 /** 触发一次布局重算（配置变更后调用） */

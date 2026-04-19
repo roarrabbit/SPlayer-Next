@@ -10,8 +10,8 @@ use windows::Win32::{
     UI::{
         Accessibility::{HWINEVENTHOOK, SetWinEventHook, UnhookWinEvent},
         WindowsAndMessaging::{
-            EVENT_OBJECT_LOCATIONCHANGE, GetClassNameW, GetMessageW, GetWindowThreadProcessId,
-            MSG, PostThreadMessageW, WINEVENT_OUTOFCONTEXT, WM_QUIT,
+            EVENT_OBJECT_LOCATIONCHANGE, GetClassNameW, GetMessageW, GetWindowThreadProcessId, MSG,
+            PostThreadMessageW, WINEVENT_OUTOFCONTEXT, WM_QUIT,
         },
     },
 };
@@ -108,6 +108,9 @@ impl TrayWatcher {
                 let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
             }
             self.thread_id = None;
+            if let Ok(mut guard) = GLOBAL_CALLBACK.lock() {
+                *guard = None;
+            }
         }
     }
 }

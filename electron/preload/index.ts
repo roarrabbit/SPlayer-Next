@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
+import type { TaskbarLyricSettings } from "@shared/types/settings";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -208,8 +209,8 @@ const api = {
         anchor: "left" | "right";
       }>("taskbarLyric:layout", callback),
     // 订阅任务栏歌词配置变化
-    onConfigChange: (callback: (config: unknown) => void) =>
-      subscribe("taskbarLyric:configChange", callback),
+    onConfigChange: (callback: (config: TaskbarLyricSettings) => void) =>
+      subscribe<TaskbarLyricSettings>("taskbarLyric:configChange", callback),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
