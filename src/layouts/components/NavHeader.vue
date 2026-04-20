@@ -50,7 +50,7 @@ const onMenuSelect = (key: string): void => {
 
 <template>
   <div class="flex items-center flex-1 h-full app-drag-region">
-    <!-- 左侧：容器可拖；按钮本身不可拖（间距、按钮外侧均落入拖拽区） -->
+    <!-- 左侧 -->
     <div class="flex items-center gap-3 shrink-0">
       <SButton
         class="app-no-drag"
@@ -75,7 +75,7 @@ const onMenuSelect = (key: string): void => {
     </div>
     <!-- 中间 -->
     <div class="flex-1 h-full" />
-    <!-- 右侧：容器可拖；按钮本身不可拖 -->
+    <!-- 右侧 -->
     <div class="flex items-center gap-3 shrink-0">
       <SDropdownMenu :items="menuItems" @select="onMenuSelect">
         <template #trigger>

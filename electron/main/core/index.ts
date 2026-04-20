@@ -26,11 +26,7 @@ const configureMemoryOptimizations = (): void => {
   // 禁用不需要的 Chromium 功能
   app.commandLine.appendSwitch(
     "disable-features",
-    [
-      "MediaRouter", // 不需要 Chromecast
-      "TranslateUI", // 不需要翻译
-      "SpareRendererForSitePerProcess", // 不需要备用渲染进程
-    ].join(","),
+    ["MediaRouter", "TranslateUI", "SpareRendererForSitePerProcess"].join(","),
   );
   // 减少渲染进程内存分配器保留
   app.commandLine.appendSwitch("renderer-process-limit", "1");
