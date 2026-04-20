@@ -13,6 +13,7 @@ import { initDatabase, closeDatabase } from "@main/database";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
 import { coreLog, initLogger } from "@main/utils/logger";
 import { store } from "@main/store";
+import { isWin } from "@main/utils/config";
 
 /**
  * 配置 Chromium 启动参数以优化内存占用
@@ -93,7 +94,9 @@ export const initApp = (): void => {
     // 快照歌词相关窗口的打开状态，供下次启动恢复
     store.set("windowStates.desktopLyric.visible", !!getDesktopLyricWindow());
     store.set("windowStates.dynamicIsland.visible", !!getDynamicIslandWindow());
-    store.set("windowStates.taskbarLyric.visible", !!getTaskbarLyricWindow());
+    if (isWin) {
+      store.set("windowStates.taskbarLyric.visible", !!getTaskbarLyricWindow());
+    }
     shutdownMedia();
     closeDatabase();
   });

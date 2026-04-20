@@ -17,6 +17,7 @@ import {
   applyTaskbarLyricLayout,
 } from "@main/window";
 import { broadcast } from "@main/utils/broadcast";
+import { isWin } from "@main/utils/config";
 
 /** 配置写入后的副作用 */
 const applyConfigChange = (keyPath: string, value: unknown): void => {
@@ -53,7 +54,7 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
     case "taskbarLyric.position":
     case "taskbarLyric.autoMaxWidth":
     case "taskbarLyric.maxWidth":
-      applyTaskbarLyricLayout();
+      if (isWin) applyTaskbarLyricLayout();
       break;
   }
   // 桌面歌词配置变更广播到所有窗口
@@ -64,8 +65,8 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
   if (keyPath.startsWith("dynamicIsland.")) {
     broadcast("dynamicIsland:configChange", store.get("dynamicIsland"));
   }
-  // 任务栏歌词配置变更广播到所有窗口
-  if (keyPath.startsWith("taskbarLyric.")) {
+  // 任务栏歌词配置变更广播到所有窗口（仅 Windows）
+  if (isWin && keyPath.startsWith("taskbarLyric.")) {
     broadcast("taskbarLyric:configChange", store.get("taskbarLyric"));
   }
 };

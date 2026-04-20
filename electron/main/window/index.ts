@@ -1,8 +1,8 @@
 import { store } from "@main/store";
+import { isWin } from "@main/utils/config";
 import { createDesktopLyricWindow } from "./desktopLyric";
 import { createDynamicIslandWindow } from "./dynamicIsland";
 import { createTaskbarLyricWindow } from "./taskbarLyric";
-import { isWin } from "@main/utils/config";
 
 export { createWindow } from "./create";
 export {
@@ -50,7 +50,6 @@ export {
 
 /** 恢复歌词相关窗口 */
 export const restoreLyricWindows = (): void => {
-  if (!(store.get("system.rememberWindowState") ?? true)) return;
   if (store.get("windowStates.desktopLyric.visible")) createDesktopLyricWindow();
   if (store.get("windowStates.dynamicIsland.visible")) createDynamicIslandWindow();
   if (isWin && store.get("windowStates.taskbarLyric.visible")) {

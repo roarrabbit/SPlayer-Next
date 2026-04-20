@@ -33,7 +33,7 @@ body {
 
 /* 滚动条 */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {

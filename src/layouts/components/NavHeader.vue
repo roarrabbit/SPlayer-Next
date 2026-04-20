@@ -50,34 +50,55 @@ const onMenuSelect = (key: string): void => {
 
 <template>
   <div class="flex items-center flex-1 h-full app-drag-region">
-    <!-- 左侧：前进后退 -->
-    <div class="flex items-center gap-3 shrink-0 app-no-drag">
-      <SButton variant="tertiary" circle ripple :size="40" @click="router.back()">
+    <!-- 左侧：容器可拖；按钮本身不可拖（间距、按钮外侧均落入拖拽区） -->
+    <div class="flex items-center gap-3 shrink-0">
+      <SButton
+        class="app-no-drag"
+        variant="tertiary"
+        circle
+        :size="40"
+        :icon-size="20"
+        @click="router.back()"
+      >
         <template #icon><IconLucideChevronLeft /></template>
       </SButton>
-      <SButton variant="tertiary" circle ripple :size="40" @click="router.forward()">
+      <SButton
+        class="app-no-drag"
+        variant="tertiary"
+        circle
+        :size="40"
+        :icon-size="20"
+        @click="router.forward()"
+      >
         <template #icon><IconLucideChevronRight /></template>
       </SButton>
     </div>
-    <!-- 中间：弹性填充（继承父级 drag） -->
+    <!-- 中间 -->
     <div class="flex-1 h-full" />
-    <!-- 右侧：菜单 + 窗口控制 -->
-    <div class="flex items-center gap-3 shrink-0 app-no-drag">
+    <!-- 右侧：容器可拖；按钮本身不可拖 -->
+    <div class="flex items-center gap-3 shrink-0">
       <SDropdownMenu :items="menuItems" @select="onMenuSelect">
         <template #trigger>
-          <SButton variant="tertiary" circle ripple :size="40">
+          <SButton class="app-no-drag" variant="tertiary" circle :size="40">
             <template #icon><IconLucideSettings /></template>
           </SButton>
         </template>
       </SDropdownMenu>
       <SDivider vertical />
-      <SButton variant="tertiary" circle ripple :size="40" :icon-size="16" @click="minimize">
+      <SButton
+        class="app-no-drag"
+        variant="tertiary"
+        circle
+        :size="40"
+        :icon-size="16"
+        @click="minimize"
+      >
         <template #icon><IconMinus /></template>
       </SButton>
       <SButton
+        class="app-no-drag"
         variant="tertiary"
         circle
-        ripple
         :size="40"
         :icon-size="16"
         @click="toggleMaximize"
@@ -86,7 +107,7 @@ const onMenuSelect = (key: string): void => {
           <component :is="isMaximized ? IconCopy : IconSquare" />
         </template>
       </SButton>
-      <SButton variant="tertiary" circle ripple :size="40" :icon-size="16" @click="close">
+      <SButton class="app-no-drag" variant="tertiary" circle :size="40" @click="close">
         <template #icon><IconX /></template>
       </SButton>
     </div>
