@@ -64,11 +64,25 @@ export type PluginStatus =
   | { state: "error"; error: { code: string; message: string } }
   | { state: "disabled" };
 
+/** 插件脚本自己上报的更新信息 */
+export interface PluginUpdateInfo {
+  /** 新版本号（若脚本提供） */
+  version?: string;
+  /** 人类可读的更新说明 */
+  log?: string;
+  /** 新版本下载/介绍页链接 */
+  updateUrl?: string;
+  /** 收到更新提示的时间戳（ms） */
+  updatedAt: number;
+}
+
 /** 渲染端看到的插件条目（manifest + 状态） */
 export interface PluginInfo {
   manifest: PluginManifest;
   enabled: boolean;
   status: PluginStatus;
+  /** 脚本上报过"有新版本"时填充，用户更新/卸载后清空 */
+  updateInfo?: PluginUpdateInfo | null;
 }
 
 /* ========== 调用请求 / 响应 ========== */
@@ -229,6 +243,7 @@ export type SandboxOut =
       error?: PluginErrorPayload;
     }
   | { kind: "hostCall"; callId: string; method: HostCallMethod; args: unknown[] }
+  | { kind: "updateAvailable"; info: PluginUpdateInfo }
   | {
       kind: "log";
       level: "debug" | "info" | "warn" | "error";

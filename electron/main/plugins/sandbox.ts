@@ -16,6 +16,7 @@ import type {
   PluginAction,
   PluginErrorPayload,
   PluginManifest,
+  PluginUpdateInfo,
   SandboxIn,
   SandboxOut,
   SourceCapability,
@@ -33,6 +34,8 @@ export interface SandboxEvents {
   onHostCall: (callId: string, method: HostCallMethod, args: unknown[]) => void;
   onLog: (level: "debug" | "info" | "warn" | "error", args: unknown[]) => void;
   onFatal: (error: PluginErrorPayload) => void;
+  /** 脚本上报"有新版本" */
+  onUpdateAvailable: (info: PluginUpdateInfo) => void;
   /** 子进程退出（可能是崩溃或主动 kill）。isCrash=true 表示非主动 kill */
   onExit: (isCrash: boolean, code: number | null) => void;
 }
@@ -238,6 +241,9 @@ export class Sandbox {
         return;
       case "hostCall":
         this.events.onHostCall(msg.callId, msg.method, msg.args);
+        return;
+      case "updateAvailable":
+        this.events.onUpdateAvailable(msg.info);
         return;
       case "log":
         this.events.onLog(msg.level, msg.args);

@@ -192,6 +192,9 @@ const pendingName = computed(() => {
               <STag size="tiny" :type="statusTag(info).type" variant="soft">
                 {{ t(`settings.plugins.status.${statusTag(info).key}`) }}
               </STag>
+              <STag v-if="info.updateInfo" size="tiny" type="warning" variant="soft">
+                {{ t("settings.plugins.updateAvailable") }}
+              </STag>
             </div>
 
             <!-- 简介 -->
@@ -233,6 +236,42 @@ const pendingName = computed(() => {
               class="mt-2 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-500 break-all"
             >
               {{ info.status.error.message }}
+            </div>
+
+            <!-- 更新提示 -->
+            <div
+              v-if="info.updateInfo"
+              class="mt-2 rounded-md bg-amber-500/10 px-3 py-2 flex flex-col gap-1.5"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                  <IconLucideArrowUpCircle class="size-3.5" />
+                  <span>
+                    {{ t("settings.plugins.newVersion") }}
+                    <template v-if="info.updateInfo.version">
+                      v{{ info.updateInfo.version }}
+                    </template>
+                  </span>
+                </div>
+                <SButton
+                  v-if="info.updateInfo.updateUrl"
+                  variant="secondary"
+                  size="tiny"
+                  type="warning"
+                  @click="openExternal(info.updateInfo.updateUrl)"
+                >
+                  <template #icon>
+                    <IconLucideExternalLink class="size-3" />
+                  </template>
+                  {{ t("settings.plugins.openUpdateUrl") }}
+                </SButton>
+              </div>
+              <div
+                v-if="info.updateInfo.log"
+                class="text-xs text-on-surface-variant/80 whitespace-pre-wrap break-words"
+              >
+                {{ info.updateInfo.log }}
+              </div>
             </div>
           </div>
 

@@ -12,7 +12,12 @@ import path from "node:path";
 import { EventEmitter } from "node:events";
 import { app } from "electron";
 import { writeFileSync as atomicWriteSync } from "atomically";
-import type { PluginInfo, PluginManifest, PluginStatus } from "@shared/types/plugin";
+import type {
+  PluginInfo,
+  PluginManifest,
+  PluginStatus,
+  PluginUpdateInfo,
+} from "@shared/types/plugin";
 import { PluginErrorCodes, RESTART_MAX_ATTEMPTS } from "@shared/defaults/plugin-api";
 import { store } from "@main/store";
 import { getLocale } from "@main/utils/i18n";
@@ -59,6 +64,8 @@ interface PluginRuntime {
   sandbox: Sandbox | null;
   source: string;
   restartAttempts: number;
+  /** 脚本上报的"有新版本"信息，null/undefined 表示没提示过 */
+  updateInfo: PluginUpdateInfo | null;
   /** router 注册的 pending 调用 */
   pending: Map<
     string,
@@ -100,6 +107,7 @@ class PluginRegistry extends EventEmitter {
         status: { state: "unloaded" },
         sandbox: null,
         restartAttempts: 0,
+        updateInfo: null,
         pending: new Map(),
       });
     }
@@ -116,6 +124,7 @@ class PluginRegistry extends EventEmitter {
       manifest: rt.manifest,
       enabled: rt.enabled,
       status: rt.status,
+      updateInfo: rt.updateInfo,
     }));
   }
 
@@ -190,11 +199,12 @@ class PluginRegistry extends EventEmitter {
       status: { state: "unloaded" },
       sandbox: null,
       restartAttempts: 0,
+      updateInfo: null,
       pending: new Map(),
     };
     this.runtimes.set(manifest.id, rt);
     await this.start(rt).catch(() => {});
-    return { manifest, enabled: rt.enabled, status: rt.status };
+    return { manifest, enabled: rt.enabled, status: rt.status, updateInfo: rt.updateInfo };
   }
 
   async uninstall(id: string): Promise<void> {
@@ -278,6 +288,11 @@ class PluginRegistry extends EventEmitter {
         onLog: (level, args) => {
           coreLog[level](`[plugin:${rt.manifest.id}]`, ...args);
         },
+        onUpdateAvailable: (info) => {
+          rt.updateInfo = info;
+          // 沿当前状态再广播一次，渲染端就能拿到 updateInfo 字段
+          this.setStatus(rt, rt.status);
+        },
         onFatal: (error) => {
           // 同时记录到主日志，避免错误只在 UI 卡片里可见
           coreLog.error(`[plugin:${rt.manifest.id}] fatal ${error.code}: ${error.message}`);
@@ -349,6 +364,7 @@ class PluginRegistry extends EventEmitter {
       manifest: rt.manifest,
       enabled: rt.enabled,
       status,
+      updateInfo: rt.updateInfo,
     } satisfies PluginInfo);
   }
 

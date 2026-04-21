@@ -9,7 +9,13 @@
 
 import crypto from "node:crypto";
 import zlib from "node:zlib";
-import type { HostApi, PluginAction, PluginQuality, SourceCapability } from "@shared/types/plugin";
+import type {
+  HostApi,
+  PluginAction,
+  PluginQuality,
+  PluginUpdateInfo,
+  SourceCapability,
+} from "@shared/types/plugin";
 
 /**
  * lx 原生音质枚举 → 宿主 PluginQuality 的映射
@@ -137,6 +143,7 @@ const buildLxUtils = (): object => ({
  * @param splayer 宿主 API 实例
  * @param handlers 共享的 action handler 注册表
  * @param onSources 脚本通过 lx.send('inited', {sources}) 注册能力时的回调
+ * @param onUpdateAvailable 脚本通过 lx.send('updateAlert', ...) 上报新版本时的回调
  * @param scriptInfo lx 脚本 currentScriptInfo（主进程解析完头注释后传入）
  */
 export const installLxShim = (
@@ -144,6 +151,7 @@ export const installLxShim = (
   splayer: HostApi,
   handlers: Map<PluginAction, (req: unknown) => Promise<unknown>>,
   onSources: (sources: Record<string, SourceCapability>) => void,
+  onUpdateAvailable: (info: PluginUpdateInfo) => void,
   scriptInfo?: LxCurrentScriptInfo,
 ): void => {
   let requestHandler: LxRequestHandler | null = null;
@@ -279,7 +287,15 @@ export const installLxShim = (
               return;
             }
             updateAlerted = true;
-            splayer.log.info("[lx] updateAlert:", data);
+            // 上报给宿主，由 UI 层展示"有更新"徽章与打开下载链接按钮；
+            // 不再落日志（脚本通常会自己 console.log，重复输出无意义）
+            onUpdateAvailable({
+              log: typeof data?.log === "string" ? (data.log as string) : undefined,
+              updateUrl:
+                typeof data?.updateUrl === "string" ? (data.updateUrl as string) : undefined,
+              version: typeof data?.version === "string" ? (data.version as string) : undefined,
+              updatedAt: Date.now(),
+            });
             resolve();
             return;
           }

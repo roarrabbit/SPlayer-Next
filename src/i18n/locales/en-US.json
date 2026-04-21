@@ -552,6 +552,9 @@
       "uninstallFailed": "Uninstall failed",
       "by": "By",
       "sources": "Sources",
+      "updateAvailable": "Update",
+      "newVersion": "New version available",
+      "openUpdateUrl": "Open update page",
       "status": {
         "ready": "Ready",
         "loading": "Loading",

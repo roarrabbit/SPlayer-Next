@@ -552,6 +552,9 @@
       "uninstallFailed": "卸载失败",
       "by": "作者",
       "sources": "支持源",
+      "updateAvailable": "有更新",
+      "newVersion": "发现新版本",
+      "openUpdateUrl": "查看更新",
       "status": {
         "ready": "已就绪",
         "loading": "加载中",

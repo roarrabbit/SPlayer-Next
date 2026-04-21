@@ -228,6 +228,9 @@ const runScript = (init: Extract<SandboxIn, { kind: "init" }>): void => {
     (sources) => {
       registeredSources = { ...registeredSources, ...sources };
     },
+    (info) => {
+      send({ kind: "updateAvailable", info });
+    },
     {
       name: init.scriptInfo.name,
       description: init.scriptInfo.description,
