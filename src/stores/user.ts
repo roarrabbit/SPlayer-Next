@@ -6,7 +6,7 @@
  * - 启动时通过 `fetchStatus()` 向 Netease 校验 cookie 是否仍有效
  */
 
-import { neteaseCall } from "@/apis/netease";
+import { clearNeteaseSession, neteaseCall } from "@/apis/netease";
 
 /** 用户基础资料（对齐 Netease /login/status 返回的关键字段） */
 export interface UserProfile {
@@ -76,7 +76,7 @@ export const useUserStore = defineStore(
       } catch {
         /* 忽略：即使服务端登出失败也要清本地 */
       }
-      await window.api.netease.clearCookie();
+      await clearNeteaseSession();
       profile.value = null;
     };
 

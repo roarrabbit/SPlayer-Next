@@ -241,12 +241,12 @@ const api = {
     onStatus: (callback: (info: PluginInfo) => void) =>
       subscribe<PluginInfo>("plugin:status", callback),
   },
-  netease: {
-    // 调用任意 Netease 接口；主进程自动注入 cookie
-    call: (name: string, params?: Record<string, unknown>) =>
-      ipcRenderer.invoke("netease:call", name, params ?? {}),
-    // 清空登录 cookie
-    clearCookie: () => ipcRenderer.invoke("netease:clearCookie"),
+  apis: {
+    // 调用任意平台的任意接口
+    call: (platform: string, name: string, params?: Record<string, unknown>) =>
+      ipcRenderer.invoke("apis:call", platform, name, params ?? {}),
+    // 清空指定平台的登录态
+    clearSession: (platform: string) => ipcRenderer.invoke("apis:clearSession", platform),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
