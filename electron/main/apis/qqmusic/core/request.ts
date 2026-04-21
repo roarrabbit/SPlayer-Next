@@ -54,7 +54,8 @@ const ensureSession = (): Promise<void> => {
       };
       const data = await postRaw(body);
       if (data.code === 0 && data.request?.code === 0) {
-        const info = ((data.request.data as { session?: Partial<SessionCache> }) ?? {}).session ?? {};
+        const info =
+          ((data.request.data as { session?: Partial<SessionCache> }) ?? {}).session ?? {};
         session = {
           uid: info.uid,
           sid: info.sid,

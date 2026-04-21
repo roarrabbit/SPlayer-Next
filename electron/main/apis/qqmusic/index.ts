@@ -25,7 +25,10 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 
 const hashParams = (params: unknown): string =>
-  createHash("md5").update(JSON.stringify(params ?? {})).digest("hex").slice(0, 8);
+  createHash("md5")
+    .update(JSON.stringify(params ?? {}))
+    .digest("hex")
+    .slice(0, 8);
 
 const cacheGet = (key: string): unknown => {
   const hit = cache.get(key);

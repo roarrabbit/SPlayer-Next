@@ -30,8 +30,7 @@ const hash = (params: unknown): string =>
     .slice(0, 8);
 
 /** 构造缓存 key */
-export const buildCacheKey = (name: string, params: unknown): string =>
-  `${name}|${hash(params)}`;
+export const buildCacheKey = (name: string, params: unknown): string => `${name}|${hash(params)}`;
 
 /**
  * 获取缓存

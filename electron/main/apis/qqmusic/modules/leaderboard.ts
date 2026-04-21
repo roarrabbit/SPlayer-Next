@@ -28,13 +28,11 @@ const leaderboard: QMModule = async (params) => {
   const { topid, period = "", limit = 50, offset = 0 } = params;
 
   const data = await qmRequest<{
-    data?: {
-      title?: string;
-      titleDetail?: string;
-      updateTime?: string;
-      headPicUrl?: string;
-      songInfoList?: ToplistSong[];
-    };
+    title?: string;
+    titleDetail?: string;
+    updateTime?: string;
+    headPicUrl?: string;
+    songInfoList?: ToplistSong[];
   }>("musicToplist.ToplistInfoServer", "GetDetail", {
     topid,
     num: limit,
@@ -42,8 +40,7 @@ const leaderboard: QMModule = async (params) => {
     period,
   });
 
-  const info = data?.data;
-  const songs = (info?.songInfoList ?? [])
+  const songs = (data?.songInfoList ?? [])
     .map((item) => item.songInfo)
     .filter((song): song is NonNullable<ToplistSong["songInfo"]> => !!song)
     .map((song) => ({
@@ -58,10 +55,10 @@ const leaderboard: QMModule = async (params) => {
 
   return {
     code: 200,
-    title: info?.title ?? "",
-    subTitle: info?.titleDetail ?? "",
-    updateTime: info?.updateTime ?? "",
-    cover: info?.headPicUrl ?? "",
+    title: data?.title ?? "",
+    subTitle: data?.titleDetail ?? "",
+    updateTime: data?.updateTime ?? "",
+    cover: data?.headPicUrl ?? "",
     songs,
   };
 };

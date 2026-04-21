@@ -9,8 +9,7 @@ import type { NeteaseModule } from "../core/types";
 const md5 = (text: string): string => createHash("md5").update(text).digest("hex");
 
 const login: NeteaseModule = async (query, request) => {
-  const password =
-    (query.md5_password as string) || md5((query.password as string) || "");
+  const password = (query.md5_password as string) || md5((query.password as string) || "");
   const data = {
     type: "0",
     https: "true",

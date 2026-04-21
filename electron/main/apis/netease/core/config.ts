@@ -26,7 +26,9 @@ export const API_DOMAIN = "https://interface.music.163.com";
 export const ENCRYPT_RESPONSE = false;
 
 /** 这些业务码视作 HTTP 200 成功（接口层的登录/重定向/限流语义） */
-export const SPECIAL_STATUS_CODES: ReadonlySet<number> = new Set([201, 302, 400, 502, 800, 801, 802, 803]);
+export const SPECIAL_STATUS_CODES: ReadonlySet<number> = new Set([
+  201, 302, 400, 502, 800, 801, 802, 803,
+]);
 
 /** 客户端伪装：不同 os 标识对应的 appver / osver / channel */
 export const OS_MAP = {

@@ -51,5 +51,4 @@ export const netease: NeteaseProxy = new Proxy({} as NeteaseProxy, {
 });
 
 /** 清空登录态 cookie */
-export const clearNeteaseSession = (): Promise<void> =>
-  window.api.apis.clearSession("netease");
+export const clearNeteaseSession = (): Promise<void> => window.api.apis.clearSession("netease");

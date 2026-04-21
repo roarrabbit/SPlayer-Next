@@ -17,7 +17,9 @@ const ID_XOR_KEY = "3go8&$8*3*3h0k(2)2";
 const encodeId = (deviceId: string): string => {
   let xored = "";
   for (let i = 0; i < deviceId.length; i++) {
-    xored += String.fromCharCode(deviceId.charCodeAt(i) ^ ID_XOR_KEY.charCodeAt(i % ID_XOR_KEY.length));
+    xored += String.fromCharCode(
+      deviceId.charCodeAt(i) ^ ID_XOR_KEY.charCodeAt(i % ID_XOR_KEY.length),
+    );
   }
   return createHash("md5").update(xored, "utf8").digest("base64");
 };
