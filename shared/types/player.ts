@@ -1,4 +1,5 @@
 import type { LyricFormat } from "./lyrics";
+import type { Platform } from "./platform";
 
 /** 播放器状态 */
 export type PlayerState = "idle" | "loading" | "playing" | "paused" | "stopped";
@@ -10,7 +11,7 @@ export type RepeatMode = "off" | "list" | "one";
 export type ShuffleMode = "off" | "on";
 
 /** 歌曲来源 */
-export type TrackSource = "local" | "online" | "plugin";
+export type TrackSource = "local" | "online";
 
 /** 歌手 */
 export interface Artist {
@@ -34,31 +35,27 @@ export interface AudioQuality {
   codec: string;
 }
 
-/** 在线匹配信息 */
-export interface OnlineMatch {
-  id: string;
-  artists?: Artist[];
-  album?: Album;
-  cover?: string;
-  coverOriginal?: string;
-  /** 来源插件 ID（source=plugin 时填） */
-  pluginId?: string;
-  /** 插件内部的源名（如 kw/kg/tx） */
-  pluginSource?: string;
-}
-
 /** 歌曲信息 */
 export interface Track {
   id: string;
   source: TrackSource;
+  /** 在线平台 */
+  platform?: Platform;
+  /** 本地路径 */
   path?: string;
+  /** 标题 */
   title: string;
   /** 注释/副标题 */
   comment?: string;
+  /** 歌手 */
   artists: Artist[];
+  /** 专辑 */
   album?: Album;
+  /** 时长（毫秒） */
   duration: number;
+  /** 封面 */
   cover?: string;
+  /** 原始封面 */
   coverOriginal?: string;
   /** 文件大小（字节） */
   fileSize?: number;
@@ -68,11 +65,6 @@ export interface Track {
   ctime?: number;
   /** 音质信息 */
   quality?: AudioQuality;
-  matched?: OnlineMatch;
-  /** 来源插件 ID（source=plugin 时填） */
-  pluginId?: string;
-  /** 插件内部的源名 */
-  pluginSource?: string;
 }
 
 /** 歌曲详细信息 */

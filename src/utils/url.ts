@@ -12,5 +12,5 @@ export const isExternalUrl = (url?: string | null): url is string =>
  */
 export const openExternal = (url?: string | null): void => {
   if (!isExternalUrl(url)) return;
-  window.open(url, "_blank");
+  window.open(url, "_blank", "noopener,noreferrer");
 };

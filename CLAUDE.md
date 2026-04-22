@@ -61,7 +61,7 @@ Two-tier position tracking to separate high-frequency animation from low-frequen
 
 ### Type System
 
-- **`shared/types/player.ts`** — `Track` (playlist-friendly, lightweight), `TrackDetail` (on-demand), `Artist`, `Album`, `AudioQuality`, `OnlineMatch`, `PlayerState`, `PlayerStatus`, `PlayerEvent`, `LoadResult`, `PlayerApi`, `IpcResponse`
+- **`shared/types/player.ts`** — `Track` (playlist-friendly, lightweight), `TrackDetail` (on-demand), `Artist`, `Album`, `AudioQuality`, `PlayerState`, `PlayerStatus`, `PlayerEvent`, `LoadResult`, `PlayerApi`, `IpcResponse`
 - **`shared/types/lyrics.ts`** — `LyricFormat`, `LyricSource`（`"external" | "embedded" | "online"`）, `LyricData`（当前激活歌词描述：source + format + 可选 platform）, `LyricLine`, `LyricWord`, `LyricSpan`
 - **`shared/types/platform.ts`** — `Platform`（`"netease" | "qqmusic" | "kugou"`）
 

@@ -43,6 +43,11 @@ import search_multimatch from "./search_multimatch";
 import search_suggest from "./search_suggest";
 import search_suggest_pc from "./search_suggest_pc";
 
+// 歌词
+import lyric from "./lyric";
+import lyric_new from "./lyric_new";
+import cloud_lyric_get from "./cloud_lyric_get";
+
 export const modules: Record<string, NeteaseModule> = {
   captcha_sent,
   captcha_verify,
@@ -76,4 +81,8 @@ export const modules: Record<string, NeteaseModule> = {
   search_multimatch,
   search_suggest,
   search_suggest_pc,
+
+  lyric,
+  lyric_new,
+  cloud_lyric_get,
 };
