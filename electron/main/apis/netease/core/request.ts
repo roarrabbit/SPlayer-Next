@@ -148,7 +148,7 @@ export const createRequest = async (
   data.e_r = useER;
 
   let url = "";
-  let encryptData: Record<string, string | number | boolean> | unknown = data;
+  let encryptData: Record<string, string | number | boolean> | typeof data;
 
   switch (crypto) {
     case "weapi": {
