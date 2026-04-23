@@ -4,7 +4,8 @@
  * 设计：
  * - 搜索走 songsearch.kugou.com（JSON，无鉴权），透传查询参数
  * - 歌词走 lyrics.kugou.com（JSON，需要 KG-RC/KG-THash/UA 伪装 PC 客户端）
- * - 出错自动重试，最多 3 次；非 200 或 error_code != 0 视为失败
+ * - 成功码约定不统一：songsearch 用 error_code=0，lyrics 用 error_code=200（HTTP 风格）
+ * - 出错自动重试，最多 3 次
  * - 没有加密 body，纯 fetch GET
  */
 
@@ -46,8 +47,9 @@ export const kgRequest = async <T = unknown>(
         continue;
       }
       const body = (await res.json()) as KGRawBody;
+      // 0 = songsearch 风格成功码，200 = lyrics.kugou.com 的 HTTP 风格成功码
       const code = body.error_code ?? body.errcode ?? body.err_code ?? 0;
-      if (code !== 0) {
+      if (code !== 0 && code !== 200) {
         lastError = new Error(`KG API error_code=${code}`);
         continue;
       }

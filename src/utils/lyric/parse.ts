@@ -68,6 +68,9 @@ export const parseLyric = (text: string, format: LyricFormat): LyricLine[] => {
       return parseTTML(text);
     case "qrc":
       return parseQRC(text);
+    case "krc":
+      // KRC 解密后结构与 QRC 同构（`[start,dur]内容(字start,字dur)`），先复用 parseQRC
+      return parseQRC(text);
     case "yrc":
       return parseYRC(text);
     case "lrc":

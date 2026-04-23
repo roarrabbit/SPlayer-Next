@@ -1,7 +1,8 @@
 import type { Platform } from "./platform";
+import type { Track } from "./player";
 
 /** 歌词格式 */
-export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "lrc" | "srt" | "ass";
+export type LyricFormat = "ttml" | "lys" | "yrc" | "qrc" | "krc" | "lrc" | "srt" | "ass";
 
 /** 歌词来源 */
 export type LyricSource = "external" | "embedded" | "online";
@@ -53,4 +54,37 @@ export interface LyricLine {
   isBG: boolean;
   /** 是否为对唱歌词行 */
   isDuet: boolean;
+}
+
+/**
+ * 歌词匹配结果（主进程三端统一返回结构）
+ *
+ * 只携带原生格式文本（yrc / qrc / krc / lrc），不做解析。
+ * 渲染端通过 `parseLyric` + `pairTranslation` 得到最终 `LyricLine[]`。
+ */
+export interface LyricMatchResult {
+  platform: Platform;
+  /** 主歌词格式 */
+  format: LyricFormat;
+  /** 主歌词原始文本 */
+  content: string;
+  /** 翻译原始文本 */
+  translation?: string;
+  translationFormat?: LyricFormat;
+  /** 罗马音原始文本 */
+  romaji?: string;
+  romajiFormat?: LyricFormat;
+}
+
+/** 歌词匹配 IPC 响应 */
+export type LyricMatchResponse =
+  | { ok: true; data: LyricMatchResult | null }
+  | { ok: false; error: string };
+
+/** 渲染端歌词匹配入口 */
+export interface LyricsApi {
+  /** 按 id 直取某平台歌词 */
+  matchById: (platform: Platform, id: string) => Promise<LyricMatchResponse>;
+  /** 按 Track 元数据在某平台模糊搜索歌词 */
+  matchByQuery: (platform: Platform, track: Track) => Promise<LyricMatchResponse>;
 }
