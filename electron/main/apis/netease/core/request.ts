@@ -261,5 +261,5 @@ export const createRequest = async (
 const toBoolean = (val: unknown): boolean => {
   if (typeof val === "boolean") return val;
   if (val === "") return false;
-  return val === "true" || val === "1" || val === 1 || val === true;
+  return val === "true" || val === "1" || val === 1;
 };
