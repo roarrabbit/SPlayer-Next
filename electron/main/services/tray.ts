@@ -119,13 +119,14 @@ const buildMenu = (): Menu => {
       icon: menuIcon("lyric"),
       click: () => toggleDynamicIslandWindow(),
     },
+    // 任务栏歌词
     ...(isWin
       ? [
           {
             label: taskbarLyricOpen ? t("closeTaskbarLyric") : t("openTaskbarLyric"),
             icon: menuIcon("lyric"),
             click: () => toggleTaskbarLyricWindow(),
-          } as MenuItemConstructorOptions,
+          },
         ]
       : []),
     { type: "separator" },
@@ -147,7 +148,6 @@ export const refreshTray = (): void => {
 
 /** 初始化系统托盘 */
 export const initTray = (): void => {
-  const isWin = process.platform === "win32";
   const isMac = process.platform === "darwin";
   let icon: string | Electron.NativeImage;
   if (isWin) {
@@ -214,6 +214,7 @@ export const setTrayDynamicIsland = (open: boolean): void => {
 
 /** 同步任务栏歌词窗口开关状态到托盘 */
 export const setTrayTaskbarLyric = (open: boolean): void => {
+  if (!isWin) return;
   if (taskbarLyricOpen === open) return;
   taskbarLyricOpen = open;
   refreshTray();

@@ -10,9 +10,11 @@ import {
 import { registerIpcHandlers } from "@main/ipc";
 import { init as initMedia, shutdown as shutdownMedia } from "@main/services/media";
 import { initDatabase, closeDatabase } from "@main/database";
+import { pluginRegistry } from "@main/plugins/registry";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
 import { coreLog, initLogger } from "@main/utils/logger";
 import { store } from "@main/store";
+import { isWin } from "@main/utils/config";
 
 /**
  * 配置 Chromium 启动参数以优化内存占用
@@ -25,11 +27,7 @@ const configureMemoryOptimizations = (): void => {
   // 禁用不需要的 Chromium 功能
   app.commandLine.appendSwitch(
     "disable-features",
-    [
-      "MediaRouter", // 不需要 Chromecast
-      "TranslateUI", // 不需要翻译
-      "SpareRendererForSitePerProcess", // 不需要备用渲染进程
-    ].join(","),
+    ["MediaRouter", "TranslateUI", "SpareRendererForSitePerProcess"].join(","),
   );
   // 减少渲染进程内存分配器保留
   app.commandLine.appendSwitch("renderer-process-limit", "1");
@@ -71,6 +69,8 @@ export const initApp = (): void => {
     registerIpcHandlers();
     // 初始化系统媒体控件
     initMedia();
+    // 初始化插件系统（扫描并启动已启用的插件）
+    pluginRegistry.init();
     // 创建主窗口
     createMainWindow();
     // 恢复歌词相关窗口
@@ -93,8 +93,11 @@ export const initApp = (): void => {
     // 快照歌词相关窗口的打开状态，供下次启动恢复
     store.set("windowStates.desktopLyric.visible", !!getDesktopLyricWindow());
     store.set("windowStates.dynamicIsland.visible", !!getDynamicIslandWindow());
-    store.set("windowStates.taskbarLyric.visible", !!getTaskbarLyricWindow());
+    if (isWin) {
+      store.set("windowStates.taskbarLyric.visible", !!getTaskbarLyricWindow());
+    }
     shutdownMedia();
     closeDatabase();
+    void pluginRegistry.shutdown();
   });
 };

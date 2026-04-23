@@ -16,13 +16,14 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "electron/main/index.ts"),
+          // 插件沙箱 worker（utilityProcess 入口）
+          "sandbox.worker": resolve(__dirname, "electron/main/plugins/sandbox.worker.ts"),
         },
       },
     },
     resolve: {
       alias: {
         "@main": resolve(__dirname, "electron/main"),
-        "@server": resolve(__dirname, "electron/server"),
         "@shared": resolve(__dirname, "shared"),
         "@splayer/audio-engine": resolve(__dirname, "native/audio-engine"),
         "@splayer/media-ctrl": resolve(__dirname, "native/media-ctrl"),

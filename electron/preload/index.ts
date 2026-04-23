@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
 import type { TaskbarLyricSettings } from "@shared/types/settings";
+import type { PluginInfo, PluginResolveUrlArgs } from "@shared/types/plugin";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -219,6 +220,33 @@ const api = {
     // 订阅任务栏歌词配置变化
     onConfigChange: (callback: (config: TaskbarLyricSettings) => void) =>
       subscribe<TaskbarLyricSettings>("taskbarLyric:configChange", callback),
+  },
+  plugins: {
+    // 列出所有已安装插件
+    list: () => ipcRenderer.invoke("plugin:list"),
+    // 从指定路径导入插件
+    install: (filePath: string) => ipcRenderer.invoke("plugin:install", filePath),
+    // 弹出原生文件选择框导入插件
+    pickAndInstall: () => ipcRenderer.invoke("plugin:pickAndInstall"),
+    // 从远端 URL 下载并导入
+    installFromUrl: (url: string) => ipcRenderer.invoke("plugin:installFromUrl", url),
+    // 卸载
+    uninstall: (id: string) => ipcRenderer.invoke("plugin:uninstall", id),
+    // 启用/禁用
+    setEnabled: (id: string, enabled: boolean) =>
+      ipcRenderer.invoke("plugin:setEnabled", id, enabled),
+    // 解析播放 URL
+    resolveUrl: (args: PluginResolveUrlArgs) => ipcRenderer.invoke("plugin:resolveUrl", args),
+    // 订阅插件状态变化
+    onStatus: (callback: (info: PluginInfo) => void) =>
+      subscribe<PluginInfo>("plugin:status", callback),
+  },
+  apis: {
+    // 调用任意平台的任意接口
+    call: (platform: string, name: string, params?: Record<string, unknown>) =>
+      ipcRenderer.invoke("apis:call", platform, name, params ?? {}),
+    // 清空指定平台的登录态
+    clearSession: (platform: string) => ipcRenderer.invoke("apis:clearSession", platform),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程

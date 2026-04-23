@@ -4,6 +4,8 @@ import { registerConfigIpc } from "./config";
 import { registerLibraryIpc } from "./library";
 import { registerNowPlayingIpc } from "./nowPlaying";
 import { registerWindowIpc } from "./window";
+import { registerPluginIpc } from "./plugin";
+import { registerApisIpc } from "./apis";
 
 /** 注册所有 IPC 处理 */
 export const registerIpcHandlers = (): void => {
@@ -13,4 +15,6 @@ export const registerIpcHandlers = (): void => {
   registerLibraryIpc();
   registerNowPlayingIpc();
   registerWindowIpc();
+  registerPluginIpc();
+  registerApisIpc();
 };

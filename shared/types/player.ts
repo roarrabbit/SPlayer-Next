@@ -1,4 +1,5 @@
-import type { ExternalLyric } from "./lyrics";
+import type { LyricFormat } from "./lyrics";
+import type { Platform } from "./platform";
 
 /** 播放器状态 */
 export type PlayerState = "idle" | "loading" | "playing" | "paused" | "stopped";
@@ -34,27 +35,27 @@ export interface AudioQuality {
   codec: string;
 }
 
-/** 在线匹配信息 */
-export interface OnlineMatch {
-  id: string;
-  artists?: Artist[];
-  album?: Album;
-  cover?: string;
-  coverOriginal?: string;
-}
-
 /** 歌曲信息 */
 export interface Track {
   id: string;
   source: TrackSource;
+  /** 在线平台 */
+  platform?: Platform;
+  /** 本地路径 */
   path?: string;
+  /** 标题 */
   title: string;
   /** 注释/副标题 */
   comment?: string;
+  /** 歌手 */
   artists: Artist[];
+  /** 专辑 */
   album?: Album;
+  /** 时长（毫秒） */
   duration: number;
+  /** 封面 */
   cover?: string;
+  /** 原始封面 */
   coverOriginal?: string;
   /** 文件大小（字节） */
   fileSize?: number;
@@ -64,14 +65,14 @@ export interface Track {
   ctime?: number;
   /** 音质信息 */
   quality?: AudioQuality;
-  matched?: OnlineMatch;
 }
 
 /** 歌曲详细信息 */
 export interface TrackDetail {
   quality: AudioQuality;
   embeddedLyric?: string;
-  externalLyrics: ExternalLyric[];
+  /** 外部歌词文件列表（同目录下扫描到的所有歌词文件） */
+  externalLyrics: { format: LyricFormat; path: string }[];
 }
 
 /** 播放器加载后返回的完整数据 */

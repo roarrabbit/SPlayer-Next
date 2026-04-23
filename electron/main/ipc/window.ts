@@ -1,5 +1,6 @@
 import { app, ipcMain } from "electron";
 import { store } from "@main/store";
+import { isWin } from "@main/utils/config";
 import {
   toggleDesktopLyricWindow,
   closeDesktopLyricWindow,
@@ -90,14 +91,19 @@ export const registerWindowIpc = (): void => {
     return saved.mode === "floating" ? "floating" : "snapped";
   });
 
-  // 切换任务栏歌词窗口
-  ipcMain.handle("window:toggleTaskbarLyric", () => toggleTaskbarLyricWindow());
-
-  // 关闭任务栏歌词窗口
-  ipcMain.handle("window:closeTaskbarLyric", () => closeTaskbarLyricWindow());
-
-  // 查询任务栏歌词窗口是否打开
-  ipcMain.handle("window:isTaskbarLyricOpen", () => !!getTaskbarLyricWindow());
+  // 任务栏歌词仅在 Windows 注册
+  if (isWin) {
+    // 切换任务栏歌词窗口
+    ipcMain.handle("window:toggleTaskbarLyric", () => toggleTaskbarLyricWindow());
+    // 关闭任务栏歌词窗口
+    ipcMain.handle("window:closeTaskbarLyric", () => closeTaskbarLyricWindow());
+    // 查询任务栏歌词窗口是否打开
+    ipcMain.handle("window:isTaskbarLyricOpen", () => !!getTaskbarLyricWindow());
+  } else {
+    ipcMain.handle("window:toggleTaskbarLyric", () => false);
+    ipcMain.handle("window:closeTaskbarLyric", () => undefined);
+    ipcMain.handle("window:isTaskbarLyricOpen", () => false);
+  }
 
   // 主窗口控制
   ipcMain.on("window:minimize", () => minimizeMainWindow());
