@@ -33,6 +33,7 @@ export const useSettingsStore = defineStore(
 
     /** 歌词 */
     const lyric = reactive<LyricSettings>({
+      lyricSourcePreference: "auto",
       lyricMode: "effects",
       adaptiveFontSize: true,
       fontSize: 48,

@@ -124,6 +124,7 @@
       "language": "Language",
       "playback": "Player",
       "playControl": "Playback Control",
+      "lyricContent": "Lyric Content",
       "lyricGeneral": "Content & Style",
       "effectsDisplay": "Display Effects",
       "effectsSpring": "Spring Animation",
@@ -170,6 +171,15 @@
       "label": "Output Device",
       "description": "Select audio output device",
       "default": "System Default"
+    },
+    "lyricSourcePreference": {
+      "label": "Lyric Source Preference",
+      "description": "Platform priority when matching online lyrics",
+      "auto": "Smart",
+      "qqmusic": "Prefer QM",
+      "kugou": "Prefer KG",
+      "netease": "Prefer NCM",
+      "self": "Follow Self"
     },
     "lyricMode": {
       "label": "Lyric Mode",

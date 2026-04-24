@@ -4,6 +4,14 @@ export type PlayerBgType = "blur" | "solid";
 /** 歌词渲染模式 */
 export type LyricMode = "effects" | "simple";
 
+/**
+ * 歌词来源偏好
+ * - auto：智能选择（按打分结果）
+ * - qqmusic / kugou / netease：优先该平台
+ * - self：跟随歌曲自身来源平台
+ */
+export type LyricSourcePreference = "auto" | "qqmusic" | "kugou" | "netease" | "self";
+
 /** 布局模式 */
 export type LayoutMode = "default" | "sidebar-full" | "floating";
 
@@ -35,6 +43,8 @@ export const SPRING_PRESETS: Record<
 
 /** 歌词设置 */
 export interface LyricSettings {
+  /** 歌词来源偏好 */
+  lyricSourcePreference: LyricSourcePreference;
   /** 歌词渲染模式 */
   lyricMode: LyricMode;
   /** 字号自适应窗口大小 */

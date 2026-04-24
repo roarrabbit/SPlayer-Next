@@ -165,6 +165,24 @@ export const settingsSchema: SettingCategory[] = [
     icon: IconLucideMic2,
     sections: [
       {
+        id: "lyricContent",
+        items: [
+          {
+            key: "lyricSourcePreference",
+            type: "select",
+            binding: { store: "settings", path: "lyric.lyricSourcePreference" },
+            options: [
+              { value: "auto", labelKey: "settings.lyricSourcePreference.auto" },
+              { value: "qqmusic", labelKey: "settings.lyricSourcePreference.qqmusic" },
+              { value: "kugou", labelKey: "settings.lyricSourcePreference.kugou" },
+              { value: "netease", labelKey: "settings.lyricSourcePreference.netease" },
+              { value: "self", labelKey: "settings.lyricSourcePreference.self" },
+            ],
+            defaultValue: "auto",
+          },
+        ],
+      },
+      {
         id: "lyricGeneral",
         items: [
           {
