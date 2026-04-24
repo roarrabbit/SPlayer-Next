@@ -9,6 +9,7 @@
  */
 
 import { callQQMusic } from "@main/apis/qqmusic";
+import { getCachedLyric, setCachedLyric } from "@main/database/lyricCache";
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
@@ -28,6 +29,8 @@ const pickFormatted = (
 
 /** 按 QQMusic song id 直取歌词 */
 export const getByPlatformId = async (id: string): Promise<LyricMatchResult | null> => {
+  const cached = getCachedLyric("qqmusic", id);
+  if (cached) return cached;
   try {
     const body = await callQQMusic("lyric", { id });
     if (body.code !== 200) {
@@ -43,15 +46,17 @@ export const getByPlatformId = async (id: string): Promise<LyricMatchResult | nu
     const trans = body.trans?.trim();
     const roma = body.roma?.trim();
 
-    return {
+    const result: LyricMatchResult = {
       platform: "qqmusic",
       format: main.format,
       content: main.content,
       translation: trans || undefined,
       translationFormat: trans ? "lrc" : undefined,
       romaji: roma || undefined,
-      romajiFormat: roma ? "lrc" : undefined,
+      romajiFormat: roma ? main.format : undefined,
     };
+    setCachedLyric("qqmusic", id, result);
+    return result;
   } catch (err) {
     coreLog.warn(`[lyric:qqmusic] getByPlatformId(${id}) failed:`, err);
     return null;

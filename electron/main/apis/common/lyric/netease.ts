@@ -9,6 +9,7 @@
  */
 
 import { callNetease } from "@main/apis/netease";
+import { getCachedLyric, setCachedLyric } from "@main/database/lyricCache";
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
@@ -31,6 +32,9 @@ const pickFormatted = (
  * @param id 歌曲 id
  */
 export const getByPlatformId = async (id: string): Promise<LyricMatchResult | null> => {
+  // 缓存命中直接返回
+  const cached = getCachedLyric("netease", id);
+  if (cached) return cached;
   try {
     const { status, body } = await callNetease("lyric_new", { id });
     if (status !== 200 || body.code !== 200) return null;
@@ -40,7 +44,7 @@ export const getByPlatformId = async (id: string): Promise<LyricMatchResult | nu
     // 翻译 / 罗马音
     const trans = pickFormatted(body.ytlrc?.lyric, body.tlyric?.lyric);
     const roma = pickFormatted(body.yromalrc?.lyric, body.romalrc?.lyric);
-    return {
+    const result: LyricMatchResult = {
       platform: "netease",
       format: main.format,
       content: main.content,
@@ -49,6 +53,8 @@ export const getByPlatformId = async (id: string): Promise<LyricMatchResult | nu
       romaji: roma?.content,
       romajiFormat: roma?.format,
     };
+    setCachedLyric("netease", id, result);
+    return result;
   } catch (err) {
     coreLog.warn(`[lyric:netease] getByPlatformId(${id}) failed:`, err);
     return null;

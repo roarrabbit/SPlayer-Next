@@ -170,10 +170,27 @@ export const parseLRC = (text: string): LyricLine[] => {
   }
   // 按起始时间排序
   lines.sort((a, b) => a.startTime - b.startTime);
+  // 合并同 startTime 的隔行翻译：第一行为主；第二行为 translation；第三行为 romaji；再多忽略
+  const merged: LyricLine[] = [];
+  for (const line of lines) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.startTime === line.startTime) {
+      const text = line.words
+        .map((w) => w.word)
+        .join("")
+        .trim();
+      if (!text) continue;
+      if (!prev.translatedLyric) prev.translatedLyric = text;
+      else if (!prev.romanLyric) prev.romanLyric = text;
+      continue;
+    }
+    merged.push(line);
+  }
+
   // 反向遍历填充 endTime
   let lastStartTime = MAX_TIME;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
+  for (let i = merged.length - 1; i >= 0; i--) {
+    const line = merged[i];
     // 行级 endTime = 下一行的 startTime
     if (line.endTime <= line.startTime) {
       line.endTime = lastStartTime;
@@ -189,5 +206,5 @@ export const parseLRC = (text: string): LyricLine[] => {
     }
     lastStartTime = line.startTime;
   }
-  return lines;
+  return merged;
 };

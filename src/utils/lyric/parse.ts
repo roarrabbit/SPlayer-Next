@@ -1,13 +1,15 @@
-import type { LyricFormat, LyricLine } from "@shared/types/lyrics";
+import type { LyricFormat, LyricInput, LyricLine } from "@shared/types/lyrics";
 import { parseLRC } from "./parseLRC";
-import { parseQRC, parseYRC } from "./parseTimeline";
+import { parseQRC } from "./parseQRC";
+import { parseYRC } from "./parseYRC";
+import { parseKRC } from "./parseKRC";
 import { parseTTML } from "./parseTTML";
 import { parseLyS } from "./parseLyS";
 import { parseSRT } from "./parseSRT";
 import { parseASS } from "./parseASS";
 
 /** 格式优先级（越靠前越优先） */
-const FORMAT_PRIORITY: LyricFormat[] = ["ttml", "lys", "qrc", "yrc", "lrc", "ass", "srt"];
+const FORMAT_PRIORITY: LyricFormat[] = ["ttml", "lys", "qrc", "krc", "yrc", "lrc", "ass", "srt"];
 
 /**
  * 从外部歌词列表中选出最优格式的索引
@@ -62,15 +64,14 @@ export const detectFormat = (text: string): LyricFormat => {
  * @param format 歌词格式
  * @returns 解析后的歌词行数组
  */
-export const parseLyric = (text: string, format: LyricFormat): LyricLine[] => {
+const parseContent = (text: string, format: LyricFormat): LyricLine[] => {
   switch (format) {
     case "ttml":
       return parseTTML(text);
     case "qrc":
       return parseQRC(text);
     case "krc":
-      // KRC 解密后结构与 QRC 同构（`[start,dur]内容(字start,字dur)`），先复用 parseQRC
-      return parseQRC(text);
+      return parseKRC(text);
     case "yrc":
       return parseYRC(text);
     case "lrc":
@@ -82,6 +83,26 @@ export const parseLyric = (text: string, format: LyricFormat): LyricLine[] => {
     case "ass":
       return parseASS(text);
   }
+};
+
+/**
+ * 解析歌词
+ * @param input 主 + 可选翻译 / 音译
+ * @param format 主歌词格式
+ */
+export const parseLyric = (input: LyricInput, format: LyricFormat): LyricLine[] => {
+  const lines = parseContent(input.content, format);
+  if (input.translation && input.translationFormat) {
+    pairTranslation(
+      lines,
+      parseContent(input.translation, input.translationFormat),
+      "translatedLyric",
+    );
+  }
+  if (input.romaji && input.romajiFormat) {
+    pairTranslation(lines, parseContent(input.romaji, input.romajiFormat), "romanLyric");
+  }
+  return lines;
 };
 
 /**

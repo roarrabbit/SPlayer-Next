@@ -57,15 +57,9 @@ export interface LyricLine {
 }
 
 /**
- * 歌词匹配结果（主进程三端统一返回结构）
- *
- * 只携带原生格式文本（yrc / qrc / krc / lrc），不做解析。
- * 渲染端通过 `parseLyric` + `pairTranslation` 得到最终 `LyricLine[]`。
+ * 歌词原始内容载荷：主 + 可选翻译 / 音译
  */
-export interface LyricMatchResult {
-  platform: Platform;
-  /** 主歌词格式 */
-  format: LyricFormat;
+export interface LyricInput {
   /** 主歌词原始文本 */
   content: string;
   /** 翻译原始文本 */
@@ -74,6 +68,17 @@ export interface LyricMatchResult {
   /** 罗马音原始文本 */
   romaji?: string;
   romajiFormat?: LyricFormat;
+}
+
+/**
+ * 歌词匹配结果
+ * 只携带原生格式文本（yrc / qrc / krc / lrc），不做解析
+ * 渲染端通过 `parseLyric` + `pairTranslation` 得到最终 `LyricLine[]`
+ */
+export interface LyricMatchResult extends LyricInput {
+  platform: Platform;
+  /** 主歌词格式 */
+  format: LyricFormat;
 }
 
 /** 歌词匹配 IPC 响应 */

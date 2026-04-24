@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import * as queue from "@/stores/queue";
 import * as playback from "@/services/playback";
+import * as lyricLoader from "@/services/lyricLoader";
 import { loadAudio } from "@/services/audioLoader";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
@@ -42,7 +43,7 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
       consecutiveFailures = 0;
       const media = useMediaStore();
       media.setTrack(data.track, data.detail);
-      media.loadLyric();
+      lyricLoader.loadForTrack(data.detail);
       extractColorFromUrl(data.track.cover ?? null);
       const dur = data.track.duration;
       status.duration = dur;
@@ -55,6 +56,7 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
       return data.track;
     } else {
       status.state = "idle";
+      lyricLoader.loadForTrack(null);
       if (error) {
         handleError(error);
         // 仅单曲级错误才跳下一首（设备等全局错误跳了也没用）
@@ -89,8 +91,9 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
  */
 const loadTrack = async (track: Track | null): Promise<void> => {
   if (!track?.path) return;
-  // 乐观更新：同步写入 track，UI 立即响应
+  // 乐观更新：同步写入 track，开启歌词加载周期
   useMediaStore().setTrack(track);
+  lyricLoader.beginLoad();
   await load(track.path);
 };
 
@@ -527,6 +530,7 @@ export const initPlayer = async (): Promise<void> => {
     const lastPosition = status.position;
     // 先设置 track 信息（确保播放条显示），再尝试 load
     useMediaStore().setTrack(lastTrack);
+    lyricLoader.beginLoad();
     const result = await load(lastTrack.path, settings.system.player.autoPlay);
     // load 成功且需要恢复进度时 seek
     if (result && settings.system.player.rememberLastTrack && lastPosition > 0) {

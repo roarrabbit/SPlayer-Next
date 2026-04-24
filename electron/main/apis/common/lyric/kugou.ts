@@ -10,6 +10,7 @@
  */
 
 import { callKugou } from "@main/apis/kugou";
+import { getCachedLyric, setCachedLyric } from "@main/database/lyricCache";
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
@@ -37,6 +38,8 @@ const fetchLyric = async (args: {
   /** 毫秒 */
   durationMs?: number;
 }): Promise<LyricMatchResult | null> => {
+  const cached = getCachedLyric("kugou", args.hash);
+  if (cached) return cached;
   try {
     const body = await callKugou("lyric", {
       hash: args.hash,
@@ -56,7 +59,7 @@ const fetchLyric = async (args: {
     const trans = body.trans?.trim();
     const roma = body.roma?.trim();
 
-    return {
+    const result: LyricMatchResult = {
       platform: "kugou",
       format: main.format,
       content: main.content,
@@ -65,6 +68,8 @@ const fetchLyric = async (args: {
       romaji: roma || undefined,
       romajiFormat: roma ? "lrc" : undefined,
     };
+    setCachedLyric("kugou", args.hash, result);
+    return result;
   } catch (err) {
     coreLog.warn(`[lyric:kugou] fetchLyric(${args.hash}) failed:`, err);
     return null;
