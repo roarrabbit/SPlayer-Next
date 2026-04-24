@@ -6,7 +6,9 @@
  */
 
 import { ipcMain } from "electron";
-import * as lyric from "@main/apis/common/lyric";
+import * as netease from "@main/apis/common/lyric/netease";
+import * as qqmusic from "@main/apis/common/lyric/qqmusic";
+import * as kugou from "@main/apis/common/lyric/kugou";
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResponse } from "@shared/types/lyrics";
 import type { Platform } from "@shared/types/platform";
@@ -16,11 +18,11 @@ const resolveById = async (platform: Platform, id: string): Promise<LyricMatchRe
   try {
     switch (platform) {
       case "netease":
-        return { ok: true, data: await lyric.netease.getByPlatformId(id) };
+        return { ok: true, data: await netease.getByPlatformId(id) };
       case "qqmusic":
-        return { ok: true, data: await lyric.qqmusic.getByPlatformId(id) };
+        return { ok: true, data: await qqmusic.getByPlatformId(id) };
       case "kugou":
-        return { ok: true, data: await lyric.kugou.getByPlatformId(id) };
+        return { ok: true, data: await kugou.getByPlatformId(id) };
     }
   } catch (err) {
     coreLog.warn(`[lyrics] matchById(${platform}, ${id}) failed:`, err);
@@ -32,11 +34,11 @@ const resolveByQuery = async (platform: Platform, track: Track): Promise<LyricMa
   try {
     switch (platform) {
       case "netease":
-        return { ok: true, data: await lyric.netease.getByQuery(track) };
+        return { ok: true, data: await netease.getByQuery(track) };
       case "qqmusic":
-        return { ok: true, data: await lyric.qqmusic.getByQuery(track) };
+        return { ok: true, data: await qqmusic.getByQuery(track) };
       case "kugou":
-        return { ok: true, data: await lyric.kugou.getByQuery(track) };
+        return { ok: true, data: await kugou.getByQuery(track) };
     }
   } catch (err) {
     coreLog.warn(`[lyrics] matchByQuery(${platform}, ${track.title}) failed:`, err);

@@ -92,7 +92,7 @@ const alignItems = computed(() => {
       >
         {{ sourceLabel }}
       </span>
-      <SPopover side="top" :side-offset="8" cover>
+      <SPopover side="top" :side-offset="8" cover trigger="hover">
         <template #trigger>
           <span
             v-if="qualityLabel"

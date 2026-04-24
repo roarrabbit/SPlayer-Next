@@ -59,7 +59,7 @@ export const clearKugouCache = (): void => {
  * @param name   见 modules/index.ts（search / lyric）
  * @param params 业务参数；不想命中缓存可传 `timestamp: Date.now()`
  */
-export const callKugou = async (name: string, params: KGParams = {}): Promise<unknown> => {
+export const callKugou = async (name: string, params: KGParams = {}): Promise<any> => {
   const fn = modules[name];
   if (!fn) throw new Error(`unknown kg api: ${name}`);
 

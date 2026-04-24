@@ -90,7 +90,7 @@ const parseSetCookie = (arr: string[]): Record<string, string> => {
 export const callNetease = async (
   name: string,
   params: Record<string, unknown> = {},
-): Promise<{ status: number; body: unknown }> => {
+): Promise<{ status: number; body: any }> => {
   const fn = modules[name];
   if (!fn) throw new Error(`unknown netease api: ${name}`);
 
