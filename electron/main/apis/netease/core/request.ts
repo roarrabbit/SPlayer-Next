@@ -211,7 +211,7 @@ export const createRequest = async (
 
   let res: Response;
   try {
-    res = await fetch(url, { method: "POST", headers, body });
+    res = await fetch(url, { method: "POST", headers, body, signal: AbortSignal.timeout(8000) });
   } catch (err) {
     answer.status = 502;
     answer.body = { code: 502, msg: err instanceof Error ? err.message : String(err) };
