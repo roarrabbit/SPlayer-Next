@@ -188,7 +188,18 @@ const refreshPreference = async (): Promise<void> => {
 
   // 其它情况需要查在线
   const online = await tryOnlineByPreference(token, track, !!localSource);
-  if (online) commit(token, online.source, online.input);
+  if (token !== currentToken) return;
+  if (online) {
+    commit(token, online.source, online.input);
+  } else if (localSource && detail) {
+    // 在线失败：回退到本地
+    const content = await readLocalContent(detail, localSource);
+    if (token !== currentToken) return;
+    commit(token, localSource, content ? { content } : null);
+  } else {
+    // 在线失败 + 无本地：清空旧歌词
+    commit(token, null, null);
+  }
 };
 
 /**
