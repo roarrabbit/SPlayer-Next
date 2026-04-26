@@ -73,6 +73,14 @@ export const initDatabase = (): void => {
       matched_at INTEGER NOT NULL,
       PRIMARY KEY (fingerprint, platform)
     );
+
+    CREATE TABLE IF NOT EXISTS lyric_ttml_cache (
+      platform TEXT NOT NULL,
+      id TEXT NOT NULL,
+      content TEXT,
+      fetched_at INTEGER NOT NULL,
+      PRIMARY KEY (platform, id)
+    );
   `);
   migrate(db);
   libraryLog.info(`数据库已初始化: ${dbPath}`);

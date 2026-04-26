@@ -14,6 +14,7 @@ import { buildFingerprint, getMatchedId, setMatchedId } from "@main/database/lyr
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
+import { prefetchTTML } from "./ttml";
 import { pickBestCandidate, type LyricCandidate } from "./utils";
 
 /** qrc 优先，其次 lrc */
@@ -37,6 +38,10 @@ export const getByPlatformId = async (
   id: string,
   mid?: string,
 ): Promise<LyricMatchResult | null> => {
+  // 立刻预热 TTML 抓取，与本接口的 lyric 调用并行
+  // AMLL DB 里 QM 条目 mid / 数字 id 都可能是 key，依次试
+  prefetchTTML("qqmusic", mid ? [mid, id] : [id]);
+
   const cached = getCachedLyric("qqmusic", id);
   if (cached) return cached;
   try {

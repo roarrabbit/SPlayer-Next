@@ -14,6 +14,7 @@ import { buildFingerprint, getMatchedId, setMatchedId } from "@main/database/lyr
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
+import { prefetchTTML } from "./ttml";
 import { pickBestCandidate, type LyricCandidate } from "./utils";
 
 /** yrc 优先，其次 lrc */
@@ -33,6 +34,8 @@ const pickFormatted = (
  * @param id 歌曲 id
  */
 export const getByPlatformId = async (id: string): Promise<LyricMatchResult | null> => {
+  // 立刻预热 TTML 抓取
+  prefetchTTML("netease", [id]);
   // 缓存命中直接返回
   const cached = getCachedLyric("netease", id);
   if (cached) return cached;
@@ -87,9 +90,7 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
     for (const song of songs) {
       candidates.push({
         name: song.name,
-        artist: (song.artists ?? [])
-          .map((artist: { name: string }) => artist.name)
-          .join(" / "),
+        artist: (song.artists ?? []).map((artist: { name: string }) => artist.name).join(" / "),
         album: song.album?.name,
         duration: song.duration,
         extra: { id: String(song.id) },

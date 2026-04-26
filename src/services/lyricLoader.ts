@@ -3,7 +3,7 @@
  */
 
 import type { Track, TrackDetail } from "@shared/types/player";
-import type { LyricData, LyricInput } from "@shared/types/lyrics";
+import type { LyricData, LyricFormat, LyricInput } from "@shared/types/lyrics";
 import type { Platform } from "@shared/types/platform";
 import { bestExternalIndex, detectFormat } from "@/utils/lyric/parse";
 import { useMediaStore } from "@/stores/media";
@@ -11,7 +11,7 @@ import { useSettingsStore } from "@/stores/settings";
 
 /** 一次在线 fetch 的结果 */
 interface OnlineResult {
-  source: LyricData;
+  source: { source: "online"; format: LyricFormat; platform: Platform };
   input: LyricInput;
 }
 
@@ -76,6 +76,30 @@ const fetchFromPlatform = async (
   };
 };
 
+/** 是否对该平台尝试 TTML 升级 */
+const shouldTryTTML = (platform: Platform): platform is "netease" | "qqmusic" => {
+  if (platform !== "netease" && platform !== "qqmusic") return false;
+  return useSettingsStore().system.lyric.enableOnlineTTMLLyric;
+};
+
+/**
+ * TTML 异步升级
+ * @param token - 竞态 token
+ * @param track - 歌曲信息
+ * @param platform - 平台
+ * @returns 是否成功
+ */
+const tryTTMLOverlay = async (
+  token: number,
+  track: Track,
+  platform: "netease" | "qqmusic",
+): Promise<void> => {
+  const resp = await window.api.lyrics.fetchTTMLOverlay(track, platform);
+  if (token !== currentToken) return;
+  if (!resp.ok || !resp.data) return;
+  commit(token, { source: "online", format: "ttml", platform }, { content: resp.data });
+};
+
 /**
  * 获取在线歌词
  * - self：不走第三方
@@ -128,7 +152,7 @@ export const beginLoad = (): number => {
  * 3. 本地歌曲：本地有先立即 commit 显示；再按偏好查在线，命中热替换
  * 4. 本地 + 在线都无：commit null 收尾 loading
  *
- * @param detail - 歌曲详细信息（null 表示加载失败的收尾调用）
+ * @param detail - 歌曲详细信息
  */
 export const loadForTrack = async (detail: TrackDetail | null): Promise<void> => {
   const token = beginLoad();
@@ -155,6 +179,9 @@ export const loadForTrack = async (detail: TrackDetail | null): Promise<void> =>
   if (token !== currentToken) return;
   if (online) {
     commit(token, online.source, online.input);
+    if (shouldTryTTML(online.source.platform)) {
+      await tryTTMLOverlay(token, track, online.source.platform);
+    }
   } else if (!localSource) {
     commit(token, null, null);
   }
@@ -191,6 +218,9 @@ const refreshPreference = async (): Promise<void> => {
   if (token !== currentToken) return;
   if (online) {
     commit(token, online.source, online.input);
+    if (shouldTryTTML(online.source.platform)) {
+      await tryTTMLOverlay(token, track, online.source.platform);
+    }
   } else if (localSource && detail) {
     // 在线失败：回退到本地
     const content = await readLocalContent(detail, localSource);

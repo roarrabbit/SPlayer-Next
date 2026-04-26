@@ -255,6 +255,9 @@ const api = {
     // 按 Track 元数据在某平台模糊搜索歌词
     matchByQuery: (platform: string, track: unknown) =>
       ipcRenderer.invoke("lyrics:matchByQuery", platform, track),
+    // 获取 AMLL TTML DB 的 TTML
+    fetchTTMLOverlay: (track: unknown, platform: string) =>
+      ipcRenderer.invoke("lyrics:fetchTTMLOverlay", track, platform),
   },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
