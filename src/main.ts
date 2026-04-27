@@ -11,7 +11,6 @@ import i18n from "./i18n";
 import { useThemeStore } from "./stores/theme";
 import { useSettingsStore } from "./stores/settings";
 import { initPlayer } from "./core/player";
-import { initLyricLoader } from "./services/lyricLoader";
 import { vRipple } from "./directives/ripple";
 
 const pinia = createPinia();
@@ -44,6 +43,5 @@ router.isReady().then(() => {
     loading.classList.add("hidden");
     loading.addEventListener("transitionend", () => loading.remove(), { once: true });
   }
-  initLyricLoader();
   initPlayer().catch(console.error);
 });

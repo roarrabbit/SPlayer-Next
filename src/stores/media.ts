@@ -2,8 +2,11 @@ import type { Track, TrackDetail } from "@shared/types/player";
 import type { LyricData, LyricFormat, LyricInput, LyricLine } from "@shared/types/lyrics";
 import { parseLyric } from "@/utils/lyric/parse";
 import { findLyricIndex } from "@shared/utils/lyric";
+import { watchLyricPreference } from "@/services/lyricLoader";
 
 export const useMediaStore = defineStore("media", () => {
+  watchLyricPreference();
+
   /** 当前歌曲轻量信息 */
   const track = shallowRef<Track | null>(null);
 

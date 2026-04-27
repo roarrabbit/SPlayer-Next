@@ -18,9 +18,6 @@ interface OnlineResult {
 /** 竞态 token */
 let currentToken = 0;
 
-/** 偏好 watcher 是否已初始化 */
-let watcherInitialized = false;
-
 /** auto 模式下的平台回落顺序 */
 const AUTO_FALLBACK_ORDER: Platform[] = ["netease", "qqmusic", "kugou"];
 
@@ -233,11 +230,9 @@ const refreshPreference = async (): Promise<void> => {
 };
 
 /**
- * 初始化：监听偏好变化，触发刷新
+ * 监听偏好变化，触发刷新
  */
-export const initLyricLoader = (): void => {
-  if (watcherInitialized) return;
-  watcherInitialized = true;
+export const watchLyricPreference = (): void => {
   const settings = useSettingsStore();
   watch(
     () => settings.lyric.lyricSourcePreference,
