@@ -58,7 +58,7 @@ const lyric: QMModule = async (params) => {
     roma: 1,
     roma_t: 0,
     singerName: b64(artist),
-    songID: id,
+    songID: Number(id),
     songName: b64(name),
     trans: 1,
     trans_t: 0,

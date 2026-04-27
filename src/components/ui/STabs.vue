@@ -201,7 +201,7 @@ const panelTransitionClasses = computed(() => {
       :class="[
         'absolute pointer-events-none transition-[left,width] duration-320 ease-[cubic-bezier(0.4,0,0.2,1)]',
         type === 'segment'
-          ? 'inset-y-1 bg-surface-bright rounded-md border border-solid border-outline-variant/35 shadow-sm'
+          ? 'inset-y-1 bg-surface-bright rounded-md shadow-sm'
           : 'bottom-0.5 h-[3px] bg-primary rounded-full',
       ]"
       :style="indicatorStyle"

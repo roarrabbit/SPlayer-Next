@@ -3,6 +3,10 @@ import { useSettingsStore } from "@/stores/settings";
 import DeviceSelector from "@/components/settings/custom/DeviceSelector.vue";
 import StorageManager from "@/components/settings/custom/StorageManager.vue";
 import PluginManager from "@/components/settings/custom/PluginManager.vue";
+import AmllDbServerConfig from "@/components/settings/custom/AmllDbServerConfig.vue";
+import LyricSourceOrderConfig from "@/components/settings/custom/LyricSourceOrderConfig.vue";
+import LyricFormatOrderConfig from "@/components/settings/custom/LyricFormatOrderConfig.vue";
+import ExcludeLyricsConfig from "@/components/settings/custom/ExcludeLyricsConfig.vue";
 import IconLucideCog from "~icons/lucide/cog";
 import IconLucidePlay from "~icons/lucide/play";
 import IconLucideMic2 from "~icons/lucide/mic-2";
@@ -164,6 +168,67 @@ export const settingsSchema: SettingCategory[] = [
     id: "lyric",
     icon: IconLucideMic2,
     sections: [
+      {
+        id: "lyricContent",
+        items: [
+          {
+            key: "lyricSourcePreference",
+            type: "select",
+            binding: { store: "settings", path: "lyric.lyricSourcePreference" },
+            options: [
+              { value: "auto", labelKey: "settings.lyricSourcePreference.auto" },
+              { value: "qqmusic", labelKey: "settings.lyricSourcePreference.qqmusic" },
+              { value: "kugou", labelKey: "settings.lyricSourcePreference.kugou" },
+              { value: "netease", labelKey: "settings.lyricSourcePreference.netease" },
+              { value: "self", labelKey: "settings.lyricSourcePreference.self" },
+            ],
+            defaultValue: "auto",
+          },
+          {
+            key: "lyricSourceOrder",
+            type: "custom",
+            component: LyricSourceOrderConfig,
+          },
+          {
+            key: "lyricFormatOrder",
+            type: "custom",
+            component: LyricFormatOrderConfig,
+          },
+          {
+            key: "enableOnlineTTMLLyric",
+            type: "switch",
+            binding: { store: "settings", path: "system.lyric.enableOnlineTTMLLyric" },
+            defaultValue: false,
+            tag: { text: "Beta", type: "warning" },
+            children: [
+              {
+                key: "amllDbServer",
+                type: "custom",
+                component: AmllDbServerConfig,
+                binding: { store: "settings", path: "system.lyric.amllDbServer" },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "lyricExclude",
+        items: [
+          {
+            key: "enableExcludeLyrics",
+            type: "switch",
+            binding: { store: "settings", path: "lyric.enableExcludeLyrics" },
+            defaultValue: true,
+            children: [
+              {
+                key: "excludeLyricsRules",
+                type: "custom",
+                component: ExcludeLyricsConfig,
+              },
+            ],
+          },
+        ],
+      },
       {
         id: "lyricGeneral",
         items: [

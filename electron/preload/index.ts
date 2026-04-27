@@ -248,6 +248,17 @@ const api = {
     // 清空指定平台的登录态
     clearSession: (platform: string) => ipcRenderer.invoke("apis:clearSession", platform),
   },
+  lyrics: {
+    // 按 id 直取某平台歌词
+    matchById: (platform: string, id: string) =>
+      ipcRenderer.invoke("lyrics:matchById", platform, id),
+    // 按 Track 元数据在某平台模糊搜索歌词
+    matchByQuery: (platform: string, track: unknown) =>
+      ipcRenderer.invoke("lyrics:matchByQuery", platform, track),
+    // 获取 AMLL TTML DB 的 TTML
+    fetchTTMLOverlay: (track: unknown, platform: string) =>
+      ipcRenderer.invoke("lyrics:fetchTTMLOverlay", track, platform),
+  },
   nowPlaying: {
     // 渲染进程同步当前播放状态到主进程
     update: (payload: unknown) => ipcRenderer.send("nowPlaying:update", payload),

@@ -5,6 +5,7 @@ import { LibraryApi } from "@shared/types/library";
 import { NowPlayingApi } from "@shared/types/nowPlaying";
 import { PluginsApi } from "@shared/types/plugin";
 import { ApisApi } from "@shared/types/apis";
+import { LyricsApi } from "@shared/types/lyrics";
 import {
   WindowApi,
   DesktopLyricApi,
@@ -36,6 +37,7 @@ declare global {
       nowPlaying: NowPlayingApi;
       plugins: PluginsApi;
       apis: ApisApi;
+      lyrics: LyricsApi;
     };
   }
 }

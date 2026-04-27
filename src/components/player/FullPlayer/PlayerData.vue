@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { SSelectOption } from "@/components/ui/SSelect.vue";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
+import { useSettingsStore } from "@/stores/settings";
 import { getQualityLabel, getQualityLevel } from "@/utils/quality";
 import { navigateToAlbum } from "@/utils/navigate";
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -19,6 +23,16 @@ const props = withDefaults(
 
 const media = useMediaStore();
 const status = useStatusStore();
+const settings = useSettingsStore();
+
+/** 歌词来源偏好下拉选项 */
+const lyricSourceOptions = computed<SSelectOption[]>(() => [
+  { value: "auto", label: t("settings.lyricSourcePreference.auto") },
+  { value: "qqmusic", label: t("settings.lyricSourcePreference.qqmusic") },
+  { value: "kugou", label: t("settings.lyricSourcePreference.kugou") },
+  { value: "netease", label: t("settings.lyricSourcePreference.netease") },
+  { value: "self", label: t("settings.lyricSourcePreference.self") },
+]);
 
 /** 跳转到专辑页 */
 const goToAlbum = () => {
@@ -78,7 +92,7 @@ const alignItems = computed(() => {
       >
         {{ sourceLabel }}
       </span>
-      <SPopover side="top" :side-offset="8" cover>
+      <SPopover side="top" :side-offset="8" cover trigger="hover">
         <template #trigger>
           <span
             v-if="qualityLabel"
@@ -123,11 +137,21 @@ const alignItems = computed(() => {
           </div>
         </div>
       </SPopover>
-      <span
-        class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30"
+      <SPopselect
+        v-model="settings.lyric.lyricSourcePreference"
+        :options="lyricSourceOptions"
+        side="top"
+        :side-offset="8"
+        cover
       >
-        {{ lyricLabel }}
-      </span>
+        <template #trigger>
+          <span
+            class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30 cursor-pointer transition-colors hover:border-cover/60"
+          >
+            {{ lyricLabel }}
+          </span>
+        </template>
+      </SPopselect>
     </div>
     <!-- 歌手 -->
     <div

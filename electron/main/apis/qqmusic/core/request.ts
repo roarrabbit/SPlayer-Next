@@ -33,6 +33,7 @@ const postRaw = async (body: unknown): Promise<FcgResponse> => {
     method: "POST",
     headers: QM_HEADERS,
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(8000),
   });
   return (await res.json()) as FcgResponse;
 };

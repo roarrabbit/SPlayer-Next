@@ -22,6 +22,13 @@ export const initDatabase = (): void => {
   fs.mkdirSync(dbDir, { recursive: true });
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
+
+  // lyric_cache 是纯缓存表：如果老 DB 里的 schema 跟当前代码期望的不一致，直接丢重建
+  const cols = db.prepare("PRAGMA table_info(lyric_cache)").all() as { name: string }[];
+  if (cols.length > 0 && !cols.some((c) => c.name === "data")) {
+    db.exec("DROP TABLE lyric_cache");
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS tracks (
       id TEXT PRIMARY KEY,
@@ -48,6 +55,31 @@ export const initDatabase = (): void => {
       platform TEXT PRIMARY KEY,
       cookies TEXT NOT NULL DEFAULT '{}',
       updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS lyric_cache (
+      platform TEXT NOT NULL,
+      platform_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      fetched_at INTEGER NOT NULL,
+      PRIMARY KEY (platform, platform_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS lyric_match_cache (
+      fingerprint TEXT NOT NULL,
+      platform TEXT NOT NULL,
+      platform_id TEXT NOT NULL,
+      extra TEXT,
+      matched_at INTEGER NOT NULL,
+      PRIMARY KEY (fingerprint, platform)
+    );
+
+    CREATE TABLE IF NOT EXISTS lyric_ttml_cache (
+      platform TEXT NOT NULL,
+      id TEXT NOT NULL,
+      content TEXT,
+      fetched_at INTEGER NOT NULL,
+      PRIMARY KEY (platform, id)
     );
   `);
   migrate(db);

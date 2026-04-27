@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AmllDbServerConfig: typeof import('./src/components/settings/custom/AmllDbServerConfig.vue')['default']
     ColorSliderRoot: typeof import('reka-ui')['ColorSliderRoot']
     ColorSliderThumb: typeof import('reka-ui')['ColorSliderThumb']
     ColorSliderTrack: typeof import('reka-ui')['ColorSliderTrack']
@@ -41,6 +42,7 @@ declare module 'vue' {
     DropdownMenuSubTrigger: typeof import('reka-ui')['DropdownMenuSubTrigger']
     DropdownMenuTrigger: typeof import('reka-ui')['DropdownMenuTrigger']
     EffectsLyrics: typeof import('./src/components/player/EffectsLyrics/index.vue')['default']
+    ExcludeLyricsConfig: typeof import('./src/components/settings/custom/ExcludeLyricsConfig.vue')['default']
     FullPlayer: typeof import('./src/components/player/FullPlayer/index.vue')['default']
     IconLucideArrowUpCircle: typeof import('~icons/lucide/arrow-up-circle')['default']
     IconLucideCheck: typeof import('~icons/lucide/check')['default']
@@ -90,6 +92,9 @@ declare module 'vue' {
     IconLucideVolume2: typeof import('~icons/lucide/volume2')['default']
     IconLucideX: typeof import('~icons/lucide/x')['default']
     IconSpLossless: typeof import('~icons/sp/lossless')['default']
+    LyricFormatOrderConfig: typeof import('./src/components/settings/custom/LyricFormatOrderConfig.vue')['default']
+    LyricPreferenceConfig: typeof import('./src/components/settings/custom/LyricPreferenceConfig.vue')['default']
+    LyricSourceOrderConfig: typeof import('./src/components/settings/custom/LyricSourceOrderConfig.vue')['default']
     NavHeader: typeof import('./src/layouts/components/NavHeader.vue')['default']
     PlayerBackground: typeof import('./src/components/player/FullPlayer/PlayerBackground.vue')['default']
     PlayerBar: typeof import('./src/components/player/FullPlayer/PlayerBar.vue')['default']
@@ -105,6 +110,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SButton: typeof import('./src/components/ui/SButton.vue')['default']
+    SCard: typeof import('./src/components/ui/SCard.vue')['default']
     SCheckbox: typeof import('./src/components/ui/SCheckbox.vue')['default']
     SCheckboxGroup: typeof import('./src/components/ui/SCheckboxGroup.vue')['default']
     SColor: typeof import('./src/components/ui/SColor.vue')['default']
@@ -142,6 +148,7 @@ declare module 'vue' {
     SMenu: typeof import('./src/components/ui/SMenu.vue')['default']
     SongList: typeof import('./src/components/list/SongList.vue')['default']
     SPopover: typeof import('./src/components/ui/SPopover.vue')['default']
+    SPopselect: typeof import('./src/components/ui/SPopselect.vue')['default']
     SRadio: typeof import('./src/components/ui/SRadio.vue')['default']
     SRadioGroup: typeof import('./src/components/ui/SRadioGroup.vue')['default']
     SSelect: typeof import('./src/components/ui/SSelect.vue')['default']

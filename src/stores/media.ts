@@ -1,10 +1,13 @@
 import type { Track, TrackDetail } from "@shared/types/player";
-import type { LyricData, LyricFormat, LyricLine } from "@shared/types/lyrics";
-import { bestExternalIndex, detectFormat, parseLyric } from "@/utils/lyric/parse";
+import type { LyricData, LyricFormat, LyricInput, LyricLine } from "@shared/types/lyrics";
 import { findLyricIndex } from "@shared/utils/lyric";
-import { loadLyricContent } from "@/services/lyricLoader";
+import { watchLyricPreference } from "@/services/lyricLoader";
+import { parseLyric } from "@/utils/lyric/parse";
+import { applyLyricExclude } from "@/utils/lyric/lyricStripper";
 
 export const useMediaStore = defineStore("media", () => {
+  watchLyricPreference();
+
   /** 当前歌曲轻量信息 */
   const track = shallowRef<Track | null>(null);
 
@@ -14,23 +17,8 @@ export const useMediaStore = defineStore("media", () => {
   /** 当前选中的歌词数据 */
   const activeLyric = ref<LyricData>(null);
 
-  /** 当前歌词原始内容（按需加载） */
-  const lyricContent = ref<string | null>(null);
-
-  /** 当前歌词格式 */
-  const lyricFormat = computed((): LyricFormat | null => activeLyric.value?.format ?? null);
-
-  /** 当前歌词解析结果 */
-  const parsedLyric = computed((): LyricLine[] => {
-    const content = lyricContent.value;
-    const format = lyricFormat.value;
-    if (!content || !format) return [];
-    try {
-      return parseLyric(content, format);
-    } catch {
-      return [];
-    }
-  });
+  /** 当前歌词原始内容 */
+  const lyricContent = ref<LyricInput | null>(null);
 
   /** 歌词是否正在加载 */
   const lyricLoading = ref(false);
@@ -38,17 +26,11 @@ export const useMediaStore = defineStore("media", () => {
   /** 当前歌词行索引，-1 表示无匹配 */
   const lyricIndex = ref(-1);
 
-  /** 歌词加载竞态 token */
-  let lyricToken = 0;
+  /** 当前歌词格式 */
+  const lyricFormat = computed((): LyricFormat | null => activeLyric.value?.format ?? null);
 
-  /**
-   * 根据播放时间更新歌词行索引
-   * 由 status store 在收到 position 推送时调用
-   * @param time 当前播放时间（毫秒）
-   */
-  const updateLyricIndex = (time: number): void => {
-    lyricIndex.value = findLyricIndex(parsedLyric.value, time, lyricIndex.value);
-  };
+  /** 当前歌词解析结果 */
+  const parsedLyric = shallowRef<LyricLine[]>([]);
 
   /** 同步当前歌词源到主进程 */
   const syncToMain = (): void => {
@@ -67,59 +49,55 @@ export const useMediaStore = defineStore("media", () => {
   };
 
   /**
-   * 设置当前歌曲信息（同步，立即更新 UI）
-   * 传 detail 时同步选择歌词源，但不加载歌词内容
+   * 更新 track / detail
+   * @param newTrack - 新的歌曲信息
+   * @param newDetail - 新的歌曲详细信息
    */
   const setTrack = (newTrack: Track, newDetail?: TrackDetail): void => {
     track.value = newTrack;
-    if (!newDetail) return;
-    detail.value = newDetail;
-
-    // 同步选择歌词源：外置优先
-    const idx = bestExternalIndex(newDetail.externalLyrics);
-    if (idx !== -1) {
-      activeLyric.value = {
-        source: "external",
-        format: newDetail.externalLyrics[idx].format,
-      };
-    } else if (newDetail.embeddedLyric) {
-      activeLyric.value = { source: "embedded", format: detectFormat(newDetail.embeddedLyric) };
-    } else {
-      activeLyric.value = null;
-    }
+    detail.value = newDetail ?? null;
   };
 
-  /** 加载歌词内容 */
-  const loadLyric = async (): Promise<void> => {
-    const token = ++lyricToken;
-    const det = detail.value;
-    const active = activeLyric.value;
-    if (!det || !active) {
-      lyricContent.value = null;
-      lyricLoading.value = false;
-      syncToMain();
-      return;
-    }
+  /** 重置歌词状态 */
+  const resetLyricState = (): void => {
+    activeLyric.value = null;
+    lyricContent.value = null;
+    parsedLyric.value = [];
+    lyricIndex.value = -1;
     lyricLoading.value = true;
-    try {
-      const content = await loadLyricContent(det, active);
-      // 竞态保护：加载期间如果已切歌，丢弃结果
-      if (token !== lyricToken) return;
-      lyricContent.value = content;
-      lyricIndex.value = -1;
-      syncToMain();
-    } finally {
-      if (token === lyricToken) lyricLoading.value = false;
-    }
+    syncToMain();
   };
 
   /**
-   * 手动切换歌词来源并加载内容
-   * @param source 目标歌词数据
+   * 原子写入歌词
+   * @param source - 歌词源
+   * @param input - 主歌词 + 可选翻译 / 音译；传 null 即清空
    */
-  const switchLyric = async (source: LyricData): Promise<void> => {
+  const setLyric = (source: LyricData, input: LyricInput | null): void => {
     activeLyric.value = source;
-    await loadLyric();
+    lyricContent.value = input;
+    if (source && input) {
+      try {
+        const lines = parseLyric(input, source.format);
+        parsedLyric.value = applyLyricExclude(lines, track.value);
+      } catch (e) {
+        console.error("[media] parse lyric failed:", e);
+        parsedLyric.value = [];
+      }
+    } else {
+      parsedLyric.value = [];
+    }
+    lyricIndex.value = -1;
+    lyricLoading.value = false;
+    syncToMain();
+  };
+
+  /**
+   * 根据播放时间更新歌词行索引
+   * @param time - 播放时间
+   */
+  const updateLyricIndex = (time: number): void => {
+    lyricIndex.value = findLyricIndex(parsedLyric.value, time, lyricIndex.value);
   };
 
   /** 清空所有状态 */
@@ -128,6 +106,8 @@ export const useMediaStore = defineStore("media", () => {
     detail.value = null;
     activeLyric.value = null;
     lyricContent.value = null;
+    parsedLyric.value = [];
+    lyricLoading.value = false;
     lyricIndex.value = -1;
     syncToMain();
   };
@@ -136,15 +116,15 @@ export const useMediaStore = defineStore("media", () => {
     track,
     detail,
     activeLyric,
-    lyricFormat,
     lyricContent,
+    lyricFormat,
     parsedLyric,
     lyricLoading,
     lyricIndex,
-    updateLyricIndex,
     setTrack,
-    loadLyric,
-    switchLyric,
+    resetLyricState,
+    setLyric,
+    updateLyricIndex,
     clear,
   };
 });

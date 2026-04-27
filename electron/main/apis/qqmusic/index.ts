@@ -59,7 +59,7 @@ export const clearQQMusicCache = (): void => {
  * @param name  见 modules/index.ts 中的 key（search / song_info / lyric / match / hot_search / leaderboard / song_list）
  * @param params 业务参数；不想命中缓存可传 `timestamp: Date.now()`
  */
-export const callQQMusic = async (name: string, params: QMParams = {}): Promise<unknown> => {
+export const callQQMusic = async (name: string, params: QMParams = {}): Promise<any> => {
   const fn = modules[name];
   if (!fn) throw new Error(`unknown qm api: ${name}`);
 
