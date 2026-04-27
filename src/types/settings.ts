@@ -119,6 +119,10 @@ export interface PlayerSettings {
   followCoverColor: boolean;
   /** 输出设备名称，null 表示跟随系统默认 */
   outputDevice: string | null;
+  /** 是否启用音乐频谱可视化 */
+  enableSpectrum: boolean;
+  /** 频谱单条宽度（px） */
+  spectrumBarWidth: number;
 }
 
 /** 外观设置 */

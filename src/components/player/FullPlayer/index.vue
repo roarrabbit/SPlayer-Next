@@ -103,6 +103,8 @@ const onSeekDragEnd = (value: number): void => {
       >
         <!-- 背景 -->
         <PlayerBackground />
+        <!-- 底部频谱 -->
+        <BottomSpectrum v-if="isExpanded && settings.player.enableSpectrum" :show="isPlaying" />
         <!-- 左侧：封面 + 歌曲信息 -->
         <div
           class="absolute top-14 left-0 bottom-20 w-[45%] flex items-center justify-center px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"

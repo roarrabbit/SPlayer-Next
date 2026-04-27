@@ -33,6 +33,8 @@ export const useSettingsStore = defineStore(
       autoCenterCover: true,
       followCoverColor: true,
       outputDevice: null,
+      enableSpectrum: false,
+      spectrumBarWidth: 4,
     });
 
     /** 歌词 */

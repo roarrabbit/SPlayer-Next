@@ -456,6 +456,9 @@ const handleEvent = async (event: PlayerEvent): Promise<void> => {
       useMediaStore().updateLyricIndex(adjusted);
       break;
     }
+    case "fftData":
+      status.fftData = event.data;
+      break;
     case "ended": {
       if (endedGuard) return;
       endedGuard = true;

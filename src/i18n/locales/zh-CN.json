@@ -137,6 +137,7 @@
       "layout": "布局",
       "media": "媒体控制",
       "device": "输出设备",
+      "musicSpectrum": "音乐频谱",
       "discord": "Discord RPC",
       "systemConfig": "系统配置",
       "reset": "重置",
@@ -172,6 +173,14 @@
       "label": "输出设备",
       "description": "选择音频输出设备",
       "default": "系统默认"
+    },
+    "enableSpectrum": {
+      "label": "启用音乐频谱",
+      "description": "实时频谱分析会持续占用一定的 CPU，性能敏感设备建议关闭"
+    },
+    "spectrumBarWidth": {
+      "label": "频谱条宽度",
+      "description": "数值越小柱条越细越密"
     },
     "lyricSourcePreference": {
       "label": "歌词来源偏好",

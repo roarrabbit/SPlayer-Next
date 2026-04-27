@@ -137,6 +137,7 @@
       "layout": "Layout",
       "media": "Media Controls",
       "device": "Output Device",
+      "musicSpectrum": "Music Spectrum",
       "discord": "Discord RPC",
       "systemConfig": "System",
       "reset": "Reset",
@@ -172,6 +173,14 @@
       "label": "Output Device",
       "description": "Select audio output device",
       "default": "System Default"
+    },
+    "enableSpectrum": {
+      "label": "Enable Spectrum",
+      "description": "Real-time spectrum analysis adds some CPU load — consider disabling on lower-power devices"
+    },
+    "spectrumBarWidth": {
+      "label": "Bar Width",
+      "description": "Smaller values give thinner, denser bars"
     },
     "lyricSourcePreference": {
       "label": "Lyric Source Preference",
