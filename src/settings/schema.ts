@@ -6,6 +6,7 @@ import PluginManager from "@/components/settings/custom/PluginManager.vue";
 import AmllDbServerConfig from "@/components/settings/custom/AmllDbServerConfig.vue";
 import LyricSourceOrderConfig from "@/components/settings/custom/LyricSourceOrderConfig.vue";
 import LyricFormatOrderConfig from "@/components/settings/custom/LyricFormatOrderConfig.vue";
+import ExcludeLyricsConfig from "@/components/settings/custom/ExcludeLyricsConfig.vue";
 import IconLucideCog from "~icons/lucide/cog";
 import IconLucidePlay from "~icons/lucide/play";
 import IconLucideMic2 from "~icons/lucide/mic-2";
@@ -205,6 +206,24 @@ export const settingsSchema: SettingCategory[] = [
                 type: "custom",
                 component: AmllDbServerConfig,
                 binding: { store: "settings", path: "system.lyric.amllDbServer" },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "lyricExclude",
+        items: [
+          {
+            key: "enableExcludeLyrics",
+            type: "switch",
+            binding: { store: "settings", path: "lyric.enableExcludeLyrics" },
+            defaultValue: true,
+            children: [
+              {
+                key: "excludeLyricsRules",
+                type: "custom",
+                component: ExcludeLyricsConfig,
               },
             ],
           },

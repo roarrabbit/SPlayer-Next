@@ -58,6 +58,9 @@ export const useSettingsStore = defineStore(
       alignPosition: 0.35,
       wordFadeWidth: 0.5,
       inactiveAlpha: 0.2,
+      enableExcludeLyrics: true,
+      excludeLyricsUserKeywords: [],
+      excludeLyricsUserRegexes: [],
     });
 
     /** 系统配置 - 传递主进程 */

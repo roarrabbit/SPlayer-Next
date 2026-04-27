@@ -1,8 +1,9 @@
 import type { Track, TrackDetail } from "@shared/types/player";
 import type { LyricData, LyricFormat, LyricInput, LyricLine } from "@shared/types/lyrics";
-import { parseLyric } from "@/utils/lyric/parse";
 import { findLyricIndex } from "@shared/utils/lyric";
 import { watchLyricPreference } from "@/services/lyricLoader";
+import { parseLyric } from "@/utils/lyric/parse";
+import { applyLyricExclude } from "@/utils/lyric/lyricStripper";
 
 export const useMediaStore = defineStore("media", () => {
   watchLyricPreference();
@@ -29,16 +30,7 @@ export const useMediaStore = defineStore("media", () => {
   const lyricFormat = computed((): LyricFormat | null => activeLyric.value?.format ?? null);
 
   /** 当前歌词解析结果 */
-  const parsedLyric = computed((): LyricLine[] => {
-    const input = lyricContent.value;
-    const format = lyricFormat.value;
-    if (!input || !format) return [];
-    try {
-      return parseLyric(input, format);
-    } catch {
-      return [];
-    }
-  });
+  const parsedLyric = shallowRef<LyricLine[]>([]);
 
   /** 同步当前歌词源到主进程 */
   const syncToMain = (): void => {
@@ -70,6 +62,7 @@ export const useMediaStore = defineStore("media", () => {
   const resetLyricState = (): void => {
     activeLyric.value = null;
     lyricContent.value = null;
+    parsedLyric.value = [];
     lyricIndex.value = -1;
     lyricLoading.value = true;
     syncToMain();
@@ -83,6 +76,17 @@ export const useMediaStore = defineStore("media", () => {
   const setLyric = (source: LyricData, input: LyricInput | null): void => {
     activeLyric.value = source;
     lyricContent.value = input;
+    if (source && input) {
+      try {
+        const lines = parseLyric(input, source.format);
+        parsedLyric.value = applyLyricExclude(lines, track.value);
+      } catch (e) {
+        console.error("[media] parse lyric failed:", e);
+        parsedLyric.value = [];
+      }
+    } else {
+      parsedLyric.value = [];
+    }
     lyricIndex.value = -1;
     lyricLoading.value = false;
     syncToMain();
@@ -102,6 +106,7 @@ export const useMediaStore = defineStore("media", () => {
     detail.value = null;
     activeLyric.value = null;
     lyricContent.value = null;
+    parsedLyric.value = [];
     lyricLoading.value = false;
     lyricIndex.value = -1;
     syncToMain();

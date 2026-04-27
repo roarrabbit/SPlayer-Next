@@ -125,6 +125,7 @@
       "playback": "Player",
       "playControl": "Playback Control",
       "lyricContent": "Lyric Content",
+      "lyricExclude": "Metadata Stripping",
       "lyricGeneral": "Content & Style",
       "effectsDisplay": "Display Effects",
       "effectsSpring": "Spring Animation",
@@ -207,6 +208,28 @@
       "placeholders": "%p is the platform path, %s is the song ID",
       "docsHint": "More info at",
       "invalid": "Invalid URL — required placeholders missing"
+    },
+    "enableExcludeLyrics": {
+      "label": "Enable Lyric Exclusion",
+      "description": "Strip metadata lines (e.g. lyricist, composer, arranger, producer) from the head and tail of the lyrics"
+    },
+    "excludeLyricsRules": {
+      "label": "Custom Rules",
+      "description": "Append keywords and regex patterns on top of the built-in defaults",
+      "button": "Manage",
+      "hint": "User rules are merged with the built-in defaults",
+      "tabKeywords": "Keywords",
+      "tabRegexes": "Regex Patterns",
+      "keywordHint": "Keyword filter — matches the content before the colon",
+      "keywordPlaceholder": "Enter keyword",
+      "regexHint": "JavaScript regex — compiled with the case-insensitive flag",
+      "regexPlaceholder": "Enter regex pattern",
+      "add": "Add",
+      "remove": "Remove",
+      "empty": "No rules configured",
+      "clear": "Clear current list",
+      "duplicate": "Rule already exists",
+      "invalidRegex": "Invalid regex pattern"
     },
     "lyricMode": {
       "label": "Lyric Mode",

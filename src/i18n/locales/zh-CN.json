@@ -125,6 +125,7 @@
       "playback": "播放器",
       "playControl": "播放控制",
       "lyricContent": "歌词内容",
+      "lyricExclude": "歌词排除",
       "lyricGeneral": "内容样式",
       "effectsDisplay": "显示效果",
       "effectsSpring": "弹簧动画",
@@ -207,6 +208,28 @@
       "placeholders": "%p 为平台目录，%s 为歌曲 ID",
       "docsHint": "更多信息可前往",
       "invalid": "请输入正确的网址，需包含指定的占位符"
+    },
+    "enableExcludeLyrics": {
+      "label": "启用歌词排除",
+      "description": "自动清理歌词头尾的元数据行（如词、曲、编曲、制作人等）"
+    },
+    "excludeLyricsRules": {
+      "label": "自定义规则",
+      "description": "在内置默认规则之外追加关键词与正则表达式",
+      "button": "管理",
+      "hint": "用户规则会与内置规则合并使用",
+      "tabKeywords": "关键词",
+      "tabRegexes": "正则表达式",
+      "keywordHint": "元数据关键词过滤，匹配冒号前的内容",
+      "keywordPlaceholder": "输入关键词",
+      "regexHint": "支持 JavaScript 正则表达式，编译时忽略大小写",
+      "regexPlaceholder": "输入正则字符串",
+      "add": "添加",
+      "remove": "移除",
+      "empty": "尚未配置任何规则",
+      "clear": "清空当前列表",
+      "duplicate": "已存在该规则",
+      "invalidRegex": "无效的正则表达式"
     },
     "lyricMode": {
       "label": "歌词模式",

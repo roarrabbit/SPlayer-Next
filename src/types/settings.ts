@@ -101,6 +101,12 @@ export interface LyricSettings {
   wordFadeWidth: number;
   /** 非激活行透明度 */
   inactiveAlpha: number;
+  /** 启用歌词排除 */
+  enableExcludeLyrics: boolean;
+  /** 用户自定义关键词 */
+  excludeLyricsUserKeywords: string[];
+  /** 用户自定义正则 */
+  excludeLyricsUserRegexes: string[];
 }
 
 /** 播放器设置 */

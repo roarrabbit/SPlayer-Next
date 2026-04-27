@@ -1,25 +1,42 @@
 <script setup lang="ts">
+import SButton from "./SButton.vue";
+import IconLucideX from "~icons/lucide/x";
+
 export interface STagProps {
   /** 颜色类型 */
   type?: "default" | "primary" | "cover" | "info" | "success" | "warning" | "error";
   /** 变体：soft 软底、filled 纯色、outline 描边 */
   variant?: "soft" | "filled" | "outline";
   /** 尺寸 */
-  size?: "tiny" | "small" | "medium";
+  size?: "tiny" | "small" | "medium" | "large";
   /** 胶囊形 */
   round?: boolean;
+  /** 是否显示右侧 × 关闭按钮 */
+  closable?: boolean;
 }
 
 const props = withDefaults(defineProps<STagProps>(), {
   type: "primary",
   variant: "soft",
-  size: "small",
+  size: "medium",
 });
 
-const sizePresets: Record<NonNullable<STagProps["size"]>, string> = {
-  tiny: "h-4 px-1 text-[10px]",
-  small: "h-5 px-1.5 text-xs",
-  medium: "h-6 px-2 text-sm",
+defineEmits<{ close: [] }>();
+
+type Size = NonNullable<STagProps["size"]>;
+
+const sizePresets: Record<Size, { base: string; closable: string }> = {
+  tiny: { base: "h-4 px-1 text-[10px]", closable: "h-4 pl-1 pr-0.5 gap-0.5 text-[10px]" },
+  small: { base: "h-5 px-1.5 text-xs", closable: "h-5 pl-1.5 pr-0.5 gap-1 text-xs" },
+  medium: { base: "h-6 px-2 text-sm", closable: "h-6 pl-2 pr-1 gap-1 text-sm" },
+  large: { base: "h-7 px-2.5 text-sm", closable: "h-7 pl-2.5 pr-1 gap-1.5 text-sm" },
+};
+
+const closeBtnSize: Record<Size, { btn: number; icon: number }> = {
+  tiny: { btn: 12, icon: 8 },
+  small: { btn: 14, icon: 10 },
+  medium: { btn: 16, icon: 11 },
+  large: { btn: 20, icon: 13 },
 };
 
 const variantStyles = {
@@ -52,8 +69,11 @@ const variantStyles = {
   },
 };
 
-const sizeClass = computed(() => sizePresets[props.size]);
+const sizeClass = computed(() =>
+  props.closable ? sizePresets[props.size].closable : sizePresets[props.size].base,
+);
 const variantClass = computed(() => variantStyles[props.variant][props.type]);
+const closeBtn = computed(() => closeBtnSize[props.size]);
 </script>
 
 <template>
@@ -62,5 +82,16 @@ const variantClass = computed(() => variantStyles[props.variant][props.type]);
     :class="[round ? 'rounded-full' : 'rounded-md', sizeClass, variantClass]"
   >
     <slot />
+    <SButton
+      v-if="closable"
+      :type="type"
+      variant="ghost"
+      circle
+      :size="closeBtn.btn"
+      :icon-size="closeBtn.icon"
+      @click.stop="$emit('close')"
+    >
+      <template #icon><IconLucideX /></template>
+    </SButton>
   </span>
 </template>
