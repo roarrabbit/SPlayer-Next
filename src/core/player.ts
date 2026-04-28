@@ -197,14 +197,15 @@ export const setVolume = async (vol: number): Promise<void> => {
 
 /**
  * 设置播放速度
- * @param v - 速度（0.5 ~ 2.0），引擎侧自动 clamp
+ * @param v - 速度（0.5 ~ 2.0）
  */
 export const setSpeed = async (v: number): Promise<void> => {
-  const result = await window.api.player.setSpeed(v);
+  const safe = Number.isFinite(v) ? Math.max(0.5, Math.min(2.0, v)) : 1.0;
+  const result = await window.api.player.setSpeed(safe);
   if (result.success) {
-    useStatusStore().speed = v;
-    // 同步给 playback 时间源，让墙钟插值正确换算到源时间（影响歌词高亮）
-    playback.setSpeed(v);
+    useStatusStore().speed = safe;
+    // 同步给 playback 时间源，让墙钟插值正确换算到源时间
+    playback.setSpeed(safe);
   }
 };
 
@@ -212,8 +213,9 @@ export const setSpeed = async (v: number): Promise<void> => {
  * 设置音调偏移（半音 -12 ~ 12）
  */
 export const setPitch = async (n: number): Promise<void> => {
-  const result = await window.api.player.setPitch(n);
-  if (result.success) useStatusStore().pitch = n;
+  const safe = Number.isFinite(n) ? Math.max(-12, Math.min(12, Math.round(n))) : 0;
+  const result = await window.api.player.setPitch(safe);
+  if (result.success) useStatusStore().pitch = safe;
 };
 
 /**

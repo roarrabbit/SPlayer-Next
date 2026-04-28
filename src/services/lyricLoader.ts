@@ -153,8 +153,7 @@ const commitLocal = (token: number, local: LocalLyric): void => {
 };
 
 /**
- * 提交在线歌词；若解析后为空且本地可用则回退本地，
- * 否则按需触发 TTML 升级
+ * 提交在线歌词；解析后为空时优先回退本地，本地也无再按需 TTML 升级
  */
 const applyOnline = async (
   token: number,
@@ -165,8 +164,10 @@ const applyOnline = async (
   commit(token, online.source, online.input);
   if (token !== currentToken) return;
   if (useMediaStore().parsedLyric.length === 0) {
-    if (fallbackLocal) commitLocal(token, fallbackLocal);
-    return;
+    if (fallbackLocal) {
+      commitLocal(token, fallbackLocal);
+      return;
+    }
   }
   if (shouldTryTTML(online.source.platform, online.source.format)) {
     await tryTTMLOverlay(token, track, online.source.platform);

@@ -66,9 +66,11 @@ impl StretchProcessor {
         }
     }
 
-    /// 设置播放速度，自动 clamp 到 [0.5, 2.0]
+    /// 设置播放速度，自动 clamp 到 [0.5, 2.0]。
+    /// 非有限值（NaN/±Inf）降级为 1.0，避免 NaN 经 log2/process 传播导致整段静音
     pub(crate) fn set_speed(&mut self, speed: f32) {
-        self.speed = speed.clamp(0.5, 2.0);
+        let v = if speed.is_finite() { speed } else { 1.0 };
+        self.speed = v.clamp(0.5, 2.0);
         // sync=OFF 时 transpose 跟着 speed 变
         if !self.pitch_sync {
             self.sync_transpose_to_stretch();

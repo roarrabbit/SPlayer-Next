@@ -132,10 +132,12 @@ impl Equalizer {
         self.enabled
     }
 
-    /// 更新所有频段增益（dB），长度不等于 EQ_BAND_COUNT 时按短端截取
+    /// 更新所有频段增益（dB），长度不等于 EQ_BAND_COUNT 时按短端截取。
+    /// 非有限值（NaN/±Inf）按 0dB 处理，避免污染 biquad 系数 → 样本变 NaN → 硬件毛刺
     pub fn set_band_gains(&mut self, gains_db: &[f32]) {
         for (i, gain) in gains_db.iter().take(EQ_BAND_COUNT).enumerate() {
-            self.band_gains_db[i] = gain.clamp(-BAND_GAIN_LIMIT_DB, BAND_GAIN_LIMIT_DB);
+            let v = if gain.is_finite() { *gain } else { 0.0 };
+            self.band_gains_db[i] = v.clamp(-BAND_GAIN_LIMIT_DB, BAND_GAIN_LIMIT_DB);
         }
         self.recompute_coefficients();
     }
@@ -144,8 +146,10 @@ impl Equalizer {
         self.band_gains_db
     }
 
+    /// 非有限值按 0dB 处理（同 set_band_gains），避免 NaN 污染 preamp_linear
     pub fn set_preamp_db(&mut self, db: f32) {
-        let clamped = db.clamp(-PREAMP_LIMIT_DB, PREAMP_LIMIT_DB);
+        let v = if db.is_finite() { db } else { 0.0 };
+        let clamped = v.clamp(-PREAMP_LIMIT_DB, PREAMP_LIMIT_DB);
         self.preamp_linear = db_to_linear(clamped);
     }
 

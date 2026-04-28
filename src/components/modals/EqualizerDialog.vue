@@ -53,8 +53,8 @@ const presetOptions = computed(() =>
 const FREQUENCIES = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 const FREQ_LABELS = FREQUENCIES.map((f) => (f >= 1000 ? `${f / 1000}k` : `${f}`));
 
-const BAND_MIN = -12;
-const BAND_MAX = 12;
+const BAND_MIN = -15;
+const BAND_MAX = 15;
 const PREAMP_MIN = -12;
 const PREAMP_MAX = 12;
 
@@ -85,7 +85,6 @@ const applyPreset = (key: EqualizerPreset): void => {
   }
   const bands = [...EQ_PRESETS[key]];
   localBands.value = bands;
-  window.api.player.setEqualizerBands(bands).catch(() => {});
   settings.setSystem("player.equalizer.bands", bands);
   settings.setSystem("player.equalizer.preset", key);
 };
@@ -97,7 +96,6 @@ const onBandChange = (index: number, value: number): void => {
 const onBandCommit = (): void => {
   const bands = [...localBands.value];
   const matched = matchPreset(bands);
-  window.api.player.setEqualizerBands(bands).catch(() => {});
   settings.setSystem("player.equalizer.bands", bands);
   settings.setSystem("player.equalizer.preset", matched);
 };
@@ -107,7 +105,6 @@ const onPreampChange = (value: number): void => {
 };
 
 const onPreampCommit = (): void => {
-  window.api.player.setPreampGain(localPreamp.value).catch(() => {});
   settings.setSystem("player.equalizer.preamp", localPreamp.value);
 };
 
@@ -116,7 +113,6 @@ const formatDb = (value: number): string => `${value > 0 ? "+" : ""}${value}dB`;
 const handleReset = (): void => {
   applyPreset("flat");
   localPreamp.value = 0;
-  window.api.player.setPreampGain(0).catch(() => {});
   settings.setSystem("player.equalizer.preamp", 0);
 };
 </script>

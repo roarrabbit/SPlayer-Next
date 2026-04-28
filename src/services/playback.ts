@@ -108,12 +108,11 @@ export const setSpeed = (value: number): void => {
   speed = value;
 };
 
-/** 重置所有状态 */
+/** 重置位置/时长/播放标志 */
 export const reset = (): void => {
   currentTimeMs = 0;
   totalDurationMs = 0;
   lastSyncAt = 0;
   playing = false;
   seeking = false;
-  speed = 1.0;
 };
