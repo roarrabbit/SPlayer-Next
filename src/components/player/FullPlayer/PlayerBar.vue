@@ -61,6 +61,7 @@ const onSeekDragEnd = (value: number): void => {
         :step="100"
         :track-height="3"
         :thumb-size="12"
+        :always-show-thumb="false"
         @drag-end="onSeekDragEnd"
       >
         <template #popover="{ value }">{{ formatTime(value) }}</template>
