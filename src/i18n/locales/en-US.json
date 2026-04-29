@@ -589,9 +589,9 @@
     "layoutMode": {
       "label": "Layout Mode",
       "description": "Application layout style",
-      "default": "Default",
-      "sidebarFull": "Full Sidebar",
-      "floating": "Floating Player Bar"
+      "default": "Classic",
+      "sidebarFull": "Immersive Sidebar",
+      "floating": "Dynamic Floating"
     },
     "routeTransition": {
       "label": "Page Transition",

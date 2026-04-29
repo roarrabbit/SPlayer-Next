@@ -589,9 +589,9 @@
     "layoutMode": {
       "label": "布局模式",
       "description": "应用的整体布局方式",
-      "default": "默认",
-      "sidebarFull": "侧边栏全高",
-      "floating": "悬浮播放栏"
+      "default": "经典布局",
+      "sidebarFull": "沉浸侧栏",
+      "floating": "灵动悬浮"
     },
     "routeTransition": {
       "label": "页面切换动效",

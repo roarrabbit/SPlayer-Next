@@ -19,10 +19,17 @@ const routeTransitionName = computed(() => {
   return transition === "none" ? "" : `route-${transition}`;
 });
 
-/** 侧边栏底部间距 */
-const sidebarClass = computed(() =>
-  showPlayerBar.value && appearance.layoutMode === "default" ? "mb-20" : "",
-);
+/** 侧边栏样式 */
+const sidebarClass = computed(() => {
+  const classes: string[] = [];
+  if (appearance.layoutMode === "floating") {
+    classes.push("ml-3 mt-3 mb-3 rounded-xl border border-solid border-primary/10");
+  } else {
+    classes.push("border-r border-r-solid border-r-primary/10");
+    if (showPlayerBar.value && appearance.layoutMode === "default") classes.push("mb-20");
+  }
+  return classes.join(" ");
+});
 
 /** 主界面底部边距 */
 const mainMarginClass = computed(() =>
@@ -63,7 +70,7 @@ const playerBarInnerClass = computed(() => {
   >
     <!-- 侧边栏 -->
     <aside
-      class="shrink-0 border-r border-r-solid border-r-primary/10 bg-surface-panel overflow-y-auto z-10 transition-[width,margin] duration-300"
+      class="shrink-0 bg-surface-panel overflow-y-auto z-10 transition-[width,margin] duration-300"
       :class="[appearance.sidebarCollapsed ? 'w-16' : 'w-60', sidebarClass]"
     >
       <SideBar />
