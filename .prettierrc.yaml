@@ -4,3 +4,5 @@ printWidth: 100
 tabWidth: 2
 trailingComma: "all"
 endOfLine: "lf"
+# 不按 inline 元素的空白敏感处理
+htmlWhitespaceSensitivity: "ignore"

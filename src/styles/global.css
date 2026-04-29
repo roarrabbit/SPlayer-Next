@@ -8,6 +8,14 @@
   outline: none;
 }
 
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
 a,
 img {
   -webkit-user-drag: none;

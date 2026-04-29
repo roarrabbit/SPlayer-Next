@@ -188,13 +188,6 @@ const onPointerUp = (): void => {
     :style="{
       '--s-slider-progress': progressPercent,
       '--s-slider-thumb-half': `${thumbSize / 2}px`,
-      ...(cover
-        ? {
-            '--s-slider-track-bg': 'rgb(var(--s-cover) / 0.25)',
-            '--s-slider-fill-bg': 'rgb(var(--s-cover))',
-            '--s-slider-thumb-bg': 'rgb(var(--s-cover))',
-          }
-        : {}),
     }"
     @mouseenter="isHovering = true"
     @mouseleave="isHovering = false"
@@ -204,7 +197,7 @@ const onPointerUp = (): void => {
       v-if="!vertical"
       ref="trackRef"
       class="s-slider-hitbox relative flex items-center"
-      :style="{ height: `${Math.max(thumbSize, 20)}px` }"
+      :style="{ height: `${thumbSize}px` }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -212,49 +205,44 @@ const onPointerUp = (): void => {
     >
       <div
         class="s-slider-track absolute left-0 right-0 rounded-full"
-        :style="{
-          height: `${trackHeight}px`,
-          background: 'var(--s-slider-track-bg, rgb(var(--s-on-surface) / 0.12))',
-        }"
+        :class="cover ? 'bg-cover/25' : 'bg-on-surface/12'"
+        :style="{ height: `${trackHeight}px` }"
       />
       <!-- 中心刻度线（仅 centerFill 模式） -->
       <div
         v-if="centerFill"
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        :style="{
-          width: '2px',
-          height: `${trackHeight + 6}px`,
-          background: 'rgb(var(--s-on-surface) / 0.2)',
-        }"
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 rounded-full bg-on-surface/20"
+        :style="{ height: `${trackHeight + 6}px` }"
       />
       <!-- 填充：从左侧 / 中点 -->
       <div
         class="s-slider-fill absolute rounded-full"
+        :class="cover ? 'bg-cover/100' : 'bg-primary'"
         :style="
           centerFill
             ? {
                 height: `${trackHeight}px`,
                 left: centerFillStyle.start,
                 width: centerFillStyle.length,
-                background: 'var(--s-slider-fill-bg, rgb(var(--s-primary)))',
               }
             : {
                 height: `${trackHeight}px`,
                 left: '0',
                 width: 'var(--s-slider-progress)',
-                background: 'var(--s-slider-fill-bg, rgb(var(--s-primary)))',
               }
         "
       />
       <div
         class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150"
-        :class="thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'"
+        :class="[
+          thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
+          cover ? 'bg-cover/100' : 'bg-primary',
+        ]"
         :style="{
           width: `${thumbSize}px`,
           height: `${thumbSize}px`,
           left: 'clamp(calc(var(--s-slider-thumb-half) - 2px), var(--s-slider-progress), calc(100% - var(--s-slider-thumb-half) + 2px))',
           translate: '-50% 0',
-          background: 'var(--s-slider-thumb-bg, rgb(var(--s-primary)))',
         }"
         @mouseenter="isThumbHovering = true"
         @mouseleave="isThumbHovering = false"
@@ -266,7 +254,7 @@ const onPointerUp = (): void => {
       v-else
       ref="trackRef"
       class="s-slider-hitbox relative flex justify-center h-full touch-none"
-      :style="{ width: `${Math.max(thumbSize, 20)}px` }"
+      :style="{ width: `${thumbSize}px` }"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -274,50 +262,45 @@ const onPointerUp = (): void => {
     >
       <div
         class="s-slider-track absolute top-0 bottom-0 rounded-full"
-        :style="{
-          width: `${trackHeight}px`,
-          background: 'var(--s-slider-track-bg, rgb(var(--s-on-surface) / 0.12))',
-        }"
+        :class="cover ? 'bg-cover/25' : 'bg-on-surface/12'"
+        :style="{ width: `${trackHeight}px` }"
       />
       <!-- 中心刻度线（仅 centerFill 模式） -->
       <div
         v-if="centerFill"
-        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        :style="{
-          height: '2px',
-          width: `${trackHeight + 6}px`,
-          background: 'rgb(var(--s-on-surface) / 0.2)',
-        }"
+        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-0.5 rounded-full bg-on-surface/20"
+        :style="{ width: `${trackHeight + 6}px` }"
       />
       <!-- 填充：从底部 / 中点向上 -->
       <div
         class="s-slider-fill absolute rounded-full"
+        :class="cover ? 'bg-cover/100' : 'bg-primary'"
         :style="
           centerFill
             ? {
                 width: `${trackHeight}px`,
                 bottom: centerFillStyle.start,
                 height: centerFillStyle.length,
-                background: 'var(--s-slider-fill-bg, rgb(var(--s-primary)))',
               }
             : {
                 width: `${trackHeight}px`,
                 bottom: '0',
                 height: 'var(--s-slider-progress)',
-                background: 'var(--s-slider-fill-bg, rgb(var(--s-primary)))',
               }
         "
       />
       <div
         class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150"
-        :class="thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'"
+        :class="[
+          thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
+          cover ? 'bg-cover/100' : 'bg-primary',
+        ]"
         :style="{
           width: `${thumbSize}px`,
           height: `${thumbSize}px`,
           bottom:
             'clamp(calc(var(--s-slider-thumb-half) - 2px), var(--s-slider-progress), calc(100% - var(--s-slider-thumb-half) + 2px))',
           translate: '0 50%',
-          background: 'var(--s-slider-thumb-bg, rgb(var(--s-primary)))',
         }"
         @mouseenter="isThumbHovering = true"
         @mouseleave="isThumbHovering = false"
@@ -360,12 +343,7 @@ const onPointerUp = (): void => {
       }"
     >
       <div
-        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border border-solid"
-        :style="{
-          background: 'var(--s-slider-pop-bg, rgb(var(--s-surface-bright)))',
-          color: 'var(--s-slider-pop-text, rgb(var(--s-on-surface)))',
-          borderColor: 'var(--s-slider-pop-border, rgb(var(--s-outline-variant) / 0.3))',
-        }"
+        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border border-solid bg-surface-bright text-on-surface border-outline-variant/30"
       >
         <slot name="popover" :value="displayValue" />
       </div>
@@ -386,12 +364,7 @@ const onPointerUp = (): void => {
       }"
     >
       <div
-        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border border-solid"
-        :style="{
-          background: 'var(--s-slider-pop-bg, rgb(var(--s-surface-bright)))',
-          color: 'var(--s-slider-pop-text, rgb(var(--s-on-surface)))',
-          borderColor: 'var(--s-slider-pop-border, rgb(var(--s-outline-variant) / 0.3))',
-        }"
+        class="s-slider-popover-content rounded-lg px-2 py-1 text-xs font-medium shadow-lg whitespace-nowrap border border-solid bg-surface-bright text-on-surface border-outline-variant/30"
       >
         <slot name="popover" :value="displayValue" />
       </div>

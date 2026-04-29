@@ -52,7 +52,7 @@ const variantStyles = {
   filled: {
     default: "bg-on-surface text-surface",
     primary: "bg-primary text-on-primary",
-    cover: "bg-cover text-white",
+    cover: "bg-cover/100 text-white",
     info: "bg-blue-500 text-white",
     success: "bg-green-600 text-white",
     warning: "bg-amber-500 text-white",

@@ -37,23 +37,28 @@ watch(
 </script>
 
 <template>
-  <div class="s-img">
+  <div class="relative overflow-hidden">
     <!-- 占位图：封面加载完后淡出移除 -->
     <Transition name="fade">
-      <img v-if="!isLoaded" :src="fallback" :alt="alt" class="s-img-loading" />
+      <img
+        v-if="!isLoaded"
+        :src="fallback"
+        :alt="alt"
+        class="absolute w-full h-full object-cover z-0"
+      />
     </Transition>
     <!-- 封面：Transition 控制外层 div 的交叉淡入淡出，img 的 opacity 由 @load 单独控制 -->
     <Transition
-      enter-active-class="s-img-transition"
-      leave-active-class="s-img-transition"
-      enter-from-class="s-img-hidden"
-      leave-to-class="s-img-hidden"
+      enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-200"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
     >
-      <div v-if="src" :key="src" class="s-img-wrapper">
+      <div v-if="src" :key="src" class="absolute inset-0 z-1">
         <img
           :src="src"
           :alt="alt"
-          class="s-img-cover"
+          class="w-full h-full object-cover opacity-0 transition-opacity duration-200"
           decoding="async"
           loading="lazy"
           @load="onLoad"
@@ -63,40 +68,3 @@ watch(
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.s-img {
-  position: relative;
-  overflow: hidden;
-}
-
-.s-img-loading {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-}
-
-.s-img-wrapper {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-.s-img-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.s-img-transition {
-  transition: opacity 0.2s;
-}
-
-.s-img-hidden {
-  opacity: 0;
-}
-</style>

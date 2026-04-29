@@ -161,8 +161,9 @@ onBeforeUnmount(() => {
           :key="i"
           :ref="(el) => setWordRef(el, i)"
           class="tb-word"
-          >{{ word.word }}</span
         >
+          {{ word.word }}
+        </span>
       </template>
       <span v-else>{{ plainText }}</span>
     </div>

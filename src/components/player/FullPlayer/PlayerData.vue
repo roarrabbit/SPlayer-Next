@@ -123,16 +123,16 @@ const alignItems = computed(() => {
             </div>
             <div class="flex justify-between">
               <span class="text-cover/40">声道</span>
-              <span
-                >{{
+              <span>
+                {{
                   media.detail.quality.channels === 2
                     ? "立体声"
                     : media.detail.quality.channels === 1
                       ? "单声道"
                       : "多声道"
                 }}
-                · {{ media.detail.quality.channels }} 声道</span
-              >
+                · {{ media.detail.quality.channels }} 声道
+              </span>
             </div>
           </div>
         </div>
@@ -164,7 +164,7 @@ const alignItems = computed(() => {
           <span class="cursor-pointer transition-colors hover:text-cover">
             {{ artist.name }}
           </span>
-          <span v-if="index < media.track.artists.length - 1"> / </span>
+          <span v-if="index < media.track.artists.length - 1">/</span>
         </template>
       </span>
     </div>

@@ -44,9 +44,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="s-marquee">
+  <div ref="containerRef" class="overflow-hidden w-full">
     <div
-      class="s-marquee-track"
+      class="inline-flex whitespace-nowrap min-w-full will-change-transform"
       :class="isOverflowing && 's-marquee-scrolling'"
       :style="{
         '--marquee-duration': animDuration,
@@ -54,34 +54,24 @@ onUnmounted(() => {
         '--marquee-gap': `${gap}px`,
       }"
     >
-      <span ref="textRef" class="s-marquee-text"><slot /></span>
-      <span v-if="isOverflowing" class="s-marquee-text s-marquee-clone" aria-hidden="true"
-        ><slot
-      /></span>
+      <span ref="textRef" class="inline-flex items-center whitespace-nowrap shrink-0">
+        <slot />
+      </span>
+      <span
+        v-if="isOverflowing"
+        class="inline-flex items-center whitespace-nowrap shrink-0 pl-[var(--marquee-gap,50px)]"
+        aria-hidden="true"
+      >
+        <slot />
+      </span>
     </div>
   </div>
 </template>
 
 <style>
-.s-marquee {
-  overflow: hidden;
-  width: 100%;
-}
-.s-marquee-track {
-  display: inline-flex;
-  white-space: nowrap;
-  min-width: 100%;
-  will-change: transform;
-}
-.s-marquee-text {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.s-marquee-clone {
-  padding-left: var(--marquee-gap, 50px);
-}
+/* 动画属性依赖运行时 CSS 变量（duration/delay/gap），@keyframes 内部又有 calc(var(...))
+   组合后既无法直接用 UnoCSS 的 animate-* 工具类，把变量写进 uno.config.ts 又会污染全局配置
+   保留这一段 <style>，作为组件局部动画定义 */
 .s-marquee-scrolling {
   animation: s-marquee-scroll var(--marquee-duration, 10s) linear var(--marquee-delay, 2s) infinite;
 }

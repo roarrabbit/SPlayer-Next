@@ -26,7 +26,7 @@ withDefaults(
     side: "top",
     align: "center",
     sideOffset: 6,
-    delay: 200,
+    delay: 0,
     disabled: false,
   },
 );

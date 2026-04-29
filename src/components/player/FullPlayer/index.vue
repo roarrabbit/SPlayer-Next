@@ -152,12 +152,7 @@ onBeforeUnmount(() => clearTimeout(idleTimer));
         v-show="isExpanded"
         class="fixed inset-0 z-200 bg-surface overflow-hidden text-cover"
         :class="immersive ? 'cursor-none' : ''"
-        style="
-          --lp-color: rgb(var(--s-cover));
-          --s-slider-track-bg: rgb(var(--s-cover) / 0.25);
-          --s-slider-fill-bg: rgb(var(--s-cover));
-          --s-slider-thumb-bg: rgb(var(--s-cover));
-        "
+        style="--lp-color: rgb(var(--s-cover))"
         @mouseenter="onPlayerMouseEnter"
         @mouseleave="onPlayerMouseLeave"
       >
@@ -325,6 +320,7 @@ onBeforeUnmount(() => clearTimeout(idleTimer));
                 :max="duration"
                 :step="100"
                 :always-show-thumb="false"
+                cover
                 class="flex-1"
                 @drag-end="onSeekDragEnd"
               />

@@ -105,9 +105,9 @@ const onCancel = (): void => {
       <div class="flex items-center justify-between">
         <div class="flex flex-col">
           <span class="text-sm text-on-surface">{{ t("autoClose.waitSongEnd") }}</span>
-          <span class="text-xs text-on-surface-variant/70">{{
-            t("autoClose.waitSongEndTip")
-          }}</span>
+          <span class="text-xs text-on-surface-variant/70">
+            {{ t("autoClose.waitSongEndTip") }}
+          </span>
         </div>
         <SSwitch v-model:model-value="localWaitSongEnd" />
       </div>

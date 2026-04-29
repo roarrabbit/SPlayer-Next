@@ -96,8 +96,8 @@ const runMatch = async (): Promise<void> => {
       <div v-if="media.track" class="text-xs text-on-surface-variant">
         当前：{{ media.track.title }} —
         {{ media.track.artists.map((a) => a.name).join(" / ") }}
-        <span v-if="media.track.album?.name"> · {{ media.track.album.name }}</span>
-        <span v-if="media.track.duration"> · {{ Math.round(media.track.duration / 1000) }}s </span>
+        <span v-if="media.track.album?.name">· {{ media.track.album.name }}</span>
+        <span v-if="media.track.duration">· {{ Math.round(media.track.duration / 1000) }}s</span>
       </div>
       <div v-else class="text-xs text-on-surface-variant/60">暂无播放曲目</div>
 

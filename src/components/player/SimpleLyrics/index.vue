@@ -182,8 +182,9 @@ onUnmounted(() => {
           :key="wi"
           class="simple-lyrics-word"
           :style="i === activeIndex ? { '--p': `${wordPercent(word, i)}%` } : undefined"
-          >{{ word.word }}</span
         >
+          {{ word.word }}
+        </span>
       </div>
       <!-- 翻译 -->
       <div v-if="line.translatedLyric" class="simple-lyrics-sub">

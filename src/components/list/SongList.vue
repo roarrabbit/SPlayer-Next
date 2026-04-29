@@ -495,9 +495,9 @@ defineExpose({
           <template #icon>
             <IconLucideListMinus class="size-3.5" />
           </template>
-          <span class="hidden @[640px]/batch:inline">{{
-            t("collection.removeFrom", { type: batch.collectionTypeLabel.value })
-          }}</span>
+          <span class="hidden @[640px]/batch:inline">
+            {{ t("collection.removeFrom", { type: batch.collectionTypeLabel.value }) }}
+          </span>
         </SButton>
         <SButton
           v-if="source === 'local'"

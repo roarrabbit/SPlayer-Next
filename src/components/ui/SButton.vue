@@ -103,7 +103,7 @@ const variantStyles = {
       "bg-on-surface text-surface not-disabled:hover:bg-on-surface/90 not-disabled:active:bg-on-surface/80",
     primary:
       "bg-primary text-on-primary not-disabled:hover:bg-primary/90 not-disabled:active:bg-primary/80",
-    cover: "bg-cover text-white not-disabled:hover:bg-cover/90 not-disabled:active:bg-cover/80",
+    cover: "bg-cover/100 text-white not-disabled:hover:bg-cover/90 not-disabled:active:bg-cover/80",
     info: "bg-blue-500 text-white not-disabled:hover:bg-blue-500/90 not-disabled:active:bg-blue-500/80",
     success:
       "bg-green-600 text-white not-disabled:hover:bg-green-600/90 not-disabled:active:bg-green-600/80",

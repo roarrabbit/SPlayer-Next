@@ -201,7 +201,7 @@ const panelTransitionClasses = computed(() => {
       :class="[
         'absolute pointer-events-none transition-[left,width] duration-320 ease-[cubic-bezier(0.4,0,0.2,1)]',
         type === 'segment'
-          ? 'inset-y-1 bg-surface-bright rounded-md shadow-sm'
+          ? 'inset-y-1 bg-surface-panel rounded-md shadow-sm'
           : 'bottom-0.5 h-[3px] bg-primary rounded-full',
       ]"
       :style="indicatorStyle"
@@ -225,7 +225,11 @@ const panelTransitionClasses = computed(() => {
               line: 'text-primary font-medium',
               segment: 'text-on-surface font-medium',
             }[type]
-          : 'text-on-surface-variant hover:text-on-surface',
+          : {
+              bar: 'text-on-surface-variant',
+              line: 'text-on-surface-variant',
+              segment: 'text-on-surface',
+            }[type],
       ]"
       @click="select(tab)"
     >

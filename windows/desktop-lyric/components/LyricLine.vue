@@ -177,8 +177,9 @@ onBeforeUnmount(() => {
               :key="i"
               :ref="(el) => setWordRef(el, i)"
               class="dl-word"
-              >{{ word.word }}</span
             >
+              {{ word.word }}
+            </span>
           </template>
           <span v-else class="dl-static" :class="{ 'is-unplayed': isNext }">
             {{ line.words.map((w) => w.word).join("") }}

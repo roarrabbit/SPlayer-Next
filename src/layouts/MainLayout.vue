@@ -20,29 +20,37 @@ const routeTransitionName = computed(() => {
 });
 
 /** 侧边栏底部间距 */
-const sidebarClass = computed(() => {
-  if (showPlayerBar.value && appearance.layoutMode === "default") return "mb-20";
-  return "";
-});
+const sidebarClass = computed(() =>
+  showPlayerBar.value && appearance.layoutMode === "default" ? "mb-20" : "",
+);
 
-/** 右侧区域底部间距 */
-const mainMarginClass = computed(() => {
-  if (!showPlayerBar.value) return "";
-  if (appearance.layoutMode === "floating") return "mb-24";
-  return "mb-20";
-});
+/** 主界面底部边距 */
+const mainMarginClass = computed(() =>
+  showPlayerBar.value && appearance.layoutMode !== "floating" ? "mb-20" : "",
+);
 
-/** 播放栏样式 */
-const playerBarClass = computed(() => {
-  const base =
-    "fixed bottom-0 h-20 bg-surface-panel z-50 overflow-visible transition-[left] duration-300";
+/** 外层播放条样式 */
+const playerBarWrapperClass = computed(() => {
+  const base = "fixed bottom-0 z-50 transition-[left] duration-300 pointer-events-none";
+  const sidebarLeft = appearance.sidebarCollapsed ? "left-16" : "left-60";
   switch (appearance.layoutMode) {
     case "sidebar-full":
-      return `${base} ${appearance.sidebarCollapsed ? "left-16" : "left-60"} right-0 border-t border-t-solid border-t-primary/10`;
+      return `${base} ${sidebarLeft} right-0`;
     case "floating":
-      return `${base} left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl rounded-2xl mb-2 shadow-lg border border-solid border-primary/10`;
+      return `${base} ${sidebarLeft} right-0 px-4 pb-6`;
     default:
-      return `${base} left-0 right-0 border-t border-t-solid border-t-primary/10`;
+      return `${base} left-0 right-0`;
+  }
+});
+
+/** 内层播放条样式 */
+const playerBarInnerClass = computed(() => {
+  const base = "pointer-events-auto";
+  switch (appearance.layoutMode) {
+    case "floating":
+      return `${base} mx-auto max-w-4xl bg-surface-panel/80 backdrop-blur-2xl backdrop-saturate-150 rounded-full shadow-xl border border-solid border-primary/10`;
+    default:
+      return `${base} h-20 bg-surface-panel border-t border-t-solid border-t-primary/10`;
   }
 });
 </script>
@@ -85,9 +93,11 @@ const playerBarClass = computed(() => {
       enter-from-class="translate-y-full"
       leave-to-class="translate-y-full"
     >
-      <footer v-if="showPlayerBar" :class="playerBarClass">
-        <PlayerBar />
-      </footer>
+      <div v-if="showPlayerBar" :class="playerBarWrapperClass">
+        <footer :class="playerBarInnerClass">
+          <PlayerBar />
+        </footer>
+      </div>
     </Transition>
   </div>
   <!-- Toast -->

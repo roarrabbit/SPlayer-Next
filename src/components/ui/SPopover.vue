@@ -29,8 +29,8 @@ const props = withDefaults(defineProps<SPopoverProps>(), {
   align: "center",
   sideOffset: 6,
   trigger: "click",
-  openDelay: 200,
-  closeDelay: 150,
+  openDelay: 0,
+  closeDelay: 100,
   arrow: false,
   cover: false,
   block: false,
@@ -94,6 +94,24 @@ const handleBlur = (): void => {
 };
 
 onUnmounted(clearTimers);
+
+// hover 桥：用伪元素把弹层命中区延伸到「朝向触发器」的那一侧，覆盖 sideOffset 间隙
+// data-side 由 reka-ui 在 PopoverContent 上自动设置，表示弹层相对触发器的位置
+const bridgeClasses = computed(() =>
+  props.trigger === "hover"
+    ? [
+        `before:content-[''] before:absolute`,
+        // 弹层在触发器上方 → 桥铺在弹层底部
+        "data-[side=top]:before:inset-x-0 data-[side=top]:before:top-full data-[side=top]:before:h-3",
+        // 弹层在触发器下方 → 桥铺在弹层顶部
+        "data-[side=bottom]:before:inset-x-0 data-[side=bottom]:before:bottom-full data-[side=bottom]:before:h-3",
+        // 弹层在触发器左侧 → 桥铺在弹层右侧
+        "data-[side=left]:before:inset-y-0 data-[side=left]:before:left-full data-[side=left]:before:w-3",
+        // 弹层在触发器右侧 → 桥铺在弹层左侧
+        "data-[side=right]:before:inset-y-0 data-[side=right]:before:right-full data-[side=right]:before:w-3",
+      ]
+    : null,
+);
 </script>
 
 <template>
@@ -121,6 +139,7 @@ onUnmounted(clearTimers);
           cover
             ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border border-solid border-white/10 text-cover'
             : 'bg-surface-bright text-on-surface',
+          bridgeClasses,
           contentClass,
         ]"
         @pointerenter="handlePointerEnter"

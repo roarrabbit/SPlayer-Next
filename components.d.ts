@@ -106,7 +106,8 @@ declare module 'vue' {
     LyricSourceOrderConfig: typeof import('./src/components/settings/custom/LyricSourceOrderConfig.vue')['default']
     NavHeader: typeof import('./src/layouts/components/NavHeader.vue')['default']
     PlayerBackground: typeof import('./src/components/player/FullPlayer/PlayerBackground.vue')['default']
-    PlayerBar: typeof import('./src/components/player/FullPlayer/PlayerBar.vue')['default']
+    PlayerBar: typeof import('./src/components/player/PlayerBar.vue')['default']
+    PlayerControls: typeof import('./src/components/player/PlayerControls.vue')['default']
     PlayerCover: typeof import('./src/components/player/FullPlayer/PlayerCover.vue')['default']
     PlayerData: typeof import('./src/components/player/FullPlayer/PlayerData.vue')['default']
     PlaylistPanel: typeof import('./src/components/list/PlaylistPanel.vue')['default']
@@ -172,7 +173,8 @@ declare module 'vue' {
     SVirtualList: typeof import('./src/components/ui/SVirtualList.vue')['default']
     SwitchRoot: typeof import('reka-ui')['SwitchRoot']
     SwitchThumb: typeof import('reka-ui')['SwitchThumb']
-    Toolbar: typeof import('./src/components/player/FullPlayer/Toolbar.vue')['default']
+    Toolbar: typeof import('./src/components/player/Toolbar.vue')['default']
+    TrackInfo: typeof import('./src/components/player/TrackInfo.vue')['default']
     Versions: typeof import('./src/components/Versions.vue')['default']
   }
 }

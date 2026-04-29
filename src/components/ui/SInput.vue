@@ -47,8 +47,8 @@ const handleClear = () => {
       sizeClasses,
       round ? 'rounded-full' : 'rounded-lg',
       isFocused
-        ? 'bg-on-surface/12 border-primary ring-2 ring-primary/25'
-        : 'bg-on-surface/5 border-primary/15 hover:bg-on-surface/8',
+        ? 'bg-on-surface/8 border-primary ring-2 ring-primary/20'
+        : 'bg-on-surface/3 border-on-surface/15 hover:bg-on-surface/10 hover:border-on-surface/25',
       disabled ? 'opacity-50 cursor-not-allowed' : '',
     ]"
   >
