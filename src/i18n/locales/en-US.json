@@ -171,6 +171,7 @@
       "lyric": "Lyrics",
       "externalLyric": "External Lyrics",
       "appearance": "Appearance",
+      "hotkeys": "Hotkeys",
       "services": "Services",
       "plugins": "Plugin Manager"
     },
@@ -191,6 +192,7 @@
       "layout": "Layout",
       "media": "Media Controls",
       "device": "Output Device",
+      "hotkeys": "Hotkeys",
       "musicSpectrum": "Music Spectrum",
       "discord": "Discord RPC",
       "systemConfig": "System",
@@ -297,6 +299,31 @@
       "clear": "Clear current list",
       "duplicate": "Rule already exists",
       "invalidRegex": "Invalid regex pattern"
+    },
+    "hotkeys": {
+      "globalEnabled": "Enable global shortcuts",
+      "globalEnabledHint": "Fire even when the app is not focused. May conflict with the OS or other apps.",
+      "tipRecording": "Click an input to record; press Backspace to clear; Esc to cancel",
+      "colAction": "Action",
+      "colInApp": "In-App",
+      "colGlobal": "Global",
+      "unbound": "Unbound",
+      "recording": "Press a combination…",
+      "resetRow": "Reset to default",
+      "resetAll": "Reset all",
+      "duplicateWith": "Conflicts with \"{action}\"",
+      "osOccupied": "Already taken by the OS or another app",
+      "actions": {
+        "togglePlay": "Play / Pause",
+        "next": "Next track",
+        "prev": "Previous track",
+        "seekForward": "Seek forward 5s",
+        "seekBack": "Seek back 5s",
+        "volumeUp": "Volume up",
+        "volumeDown": "Volume down",
+        "cycleRepeat": "Cycle repeat mode",
+        "toggleShuffle": "Toggle shuffle"
+      }
     },
     "autoCenterCover": {
       "label": "Auto Center Cover",

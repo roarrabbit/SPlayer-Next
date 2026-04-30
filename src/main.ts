@@ -10,7 +10,9 @@ import i18n from "./i18n";
 
 import { useThemeStore } from "./stores/theme";
 import { useSettingsStore } from "./stores/settings";
+import { useHotkeyStore } from "./stores/hotkey";
 import { initPlayer } from "./core/player";
+import { installHotkeyManager } from "./core/hotkey/manager";
 import { vRipple } from "./directives/ripple";
 
 const pinia = createPinia();
@@ -36,7 +38,11 @@ watch(
 );
 
 // 初始化程序
-router.isReady().then(() => {
+router.isReady().then(async () => {
+  // 快捷键 store 必须在 mount 前完成 init（manager 启动时要读 bindings）
+  await useHotkeyStore().init();
+  installHotkeyManager();
+
   app.mount("#app");
   const loading = document.getElementById("app-loading");
   if (loading) {
