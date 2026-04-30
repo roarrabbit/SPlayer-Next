@@ -94,13 +94,10 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
 ];
 
 /** 默认绑定表（HotkeyBindingsMap） */
-export const defaultHotkeyBindings: HotkeyBindingsMap = HOTKEY_ACTIONS.reduce(
-  (acc, meta) => {
-    acc[meta.id] = { ...meta.defaultBinding };
-    return acc;
-  },
-  {} as HotkeyBindingsMap,
-);
+export const defaultHotkeyBindings: HotkeyBindingsMap = HOTKEY_ACTIONS.reduce((acc, meta) => {
+  acc[meta.id] = { ...meta.defaultBinding };
+  return acc;
+}, {} as HotkeyBindingsMap);
 
 /** 默认完整配置 */
 export const defaultHotkeyConfig: HotkeyConfig = {

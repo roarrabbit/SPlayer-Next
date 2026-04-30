@@ -93,12 +93,12 @@ const keyToCode = (token: string): string => {
  * @param accel 加速键字符串，如 "CommandOrControl+Shift+R"
  * @param isMac 当前平台是否为 macOS（用于展开 CommandOrControl）
  */
-export const parseAccelerator = (
-  accel: string,
-  isMac: boolean,
-): ParsedAccelerator | null => {
+export const parseAccelerator = (accel: string, isMac: boolean): ParsedAccelerator | null => {
   if (!accel) return null;
-  const tokens = accel.split("+").map((t) => t.trim()).filter(Boolean);
+  const tokens = accel
+    .split("+")
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (tokens.length === 0) return null;
 
   const result: ParsedAccelerator = {
@@ -153,7 +153,10 @@ export const parseAccelerator = (
  */
 export const normalizeAccelerator = (accel: string): string => {
   if (!accel) return "";
-  const tokens = accel.split("+").map((t) => t.trim()).filter(Boolean);
+  const tokens = accel
+    .split("+")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const mods = { cmdOrCtrl: false, cmd: false, ctrl: false, alt: false, shift: false };
   let key = "";
   for (const t of tokens) {
@@ -194,11 +197,7 @@ export const matchParsed = (event: KeyboardEvent, parsed: ParsedAccelerator): bo
  * @param accel 加速键字符串
  * @param isMac 当前平台是否 macOS
  */
-export const matchEvent = (
-  event: KeyboardEvent,
-  accel: string,
-  isMac: boolean,
-): boolean => {
+export const matchEvent = (event: KeyboardEvent, accel: string, isMac: boolean): boolean => {
   const parsed = parseAccelerator(accel, isMac);
   if (!parsed) return false;
   return matchParsed(event, parsed);
@@ -211,7 +210,10 @@ export const matchEvent = (
  */
 export const formatAccelerator = (accel: string | null, isMac: boolean): string => {
   if (!accel) return "";
-  const tokens = accel.split("+").map((t) => t.trim()).filter(Boolean);
+  const tokens = accel
+    .split("+")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const out: string[] = [];
   for (const t of tokens) {
     const lower = t.toLowerCase();
@@ -247,12 +249,9 @@ export const formatAccelerator = (accel: string | null, isMac: boolean): string 
  * @param isMac 平台
  * @returns null 表示当前事件不构成有效组合（如只按了 modifier 单键）
  */
-export const eventToAccelerator = (
-  event: KeyboardEvent,
-  isMac: boolean,
-): string | null => {
+export const eventToAccelerator = (event: KeyboardEvent, isMac: boolean): string | null => {
   // modifier 单按视为未完成
-  const isModifierKey = (
+  const isModifierKey =
     event.code === "ControlLeft" ||
     event.code === "ControlRight" ||
     event.code === "ShiftLeft" ||
@@ -262,8 +261,7 @@ export const eventToAccelerator = (
     event.code === "MetaLeft" ||
     event.code === "MetaRight" ||
     event.code === "OSLeft" ||
-    event.code === "OSRight"
-  );
+    event.code === "OSRight";
   if (isModifierKey) return null;
 
   // 按 code 反向算 token

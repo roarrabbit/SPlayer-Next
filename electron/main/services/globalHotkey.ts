@@ -121,13 +121,9 @@ export const getConflicts = (): HotkeyConflict[] => [...conflicts];
 export const getHotkeyConfig = (): HotkeyConfig => readConfig();
 
 /** 写入某动作的绑定 */
-export const setBinding = (
-  id: HotkeyActionId,
-  binding: HotkeyBinding,
-): HotkeyConfig => {
+export const setBinding = (id: HotkeyActionId, binding: HotkeyBinding): HotkeyConfig => {
   const config = readConfig();
-  const norm = (s: string | null): string | null =>
-    s ? normalizeAccelerator(s) || null : null;
+  const norm = (s: string | null): string | null => (s ? normalizeAccelerator(s) || null : null);
   config.bindings[id] = { inApp: norm(binding.inApp), global: norm(binding.global) };
   return writeConfig(config);
 };

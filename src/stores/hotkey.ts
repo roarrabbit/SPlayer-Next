@@ -39,10 +39,7 @@ export const useHotkeyStore = defineStore("hotkey", () => {
   };
 
   /** 单项更新；返回最新全量 */
-  const updateBinding = async (
-    id: HotkeyActionId,
-    binding: HotkeyBinding,
-  ): Promise<void> => {
+  const updateBinding = async (id: HotkeyActionId, binding: HotkeyBinding): Promise<void> => {
     applyConfig(await window.api.hotkey.set(id, binding));
   };
 

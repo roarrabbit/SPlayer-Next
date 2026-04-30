@@ -51,5 +51,10 @@ export const buildRegistry = (): void => {
 /** 派发某动作 */
 export const dispatch = (id: HotkeyActionId): void => {
   const fn = handlers.get(id);
-  if (fn) fn();
+  if (!fn) return;
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[hotkey] dispatch ${id} failed`, err);
+  }
 };

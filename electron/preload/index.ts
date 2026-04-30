@@ -2,11 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
 import type { TaskbarLyricSettings } from "@shared/types/settings";
 import type { PluginInfo, PluginResolveUrlArgs } from "@shared/types/plugin";
-import type {
-  HotkeyActionId,
-  HotkeyBinding,
-  HotkeyConflict,
-} from "@shared/types/hotkey";
+import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -302,8 +298,7 @@ const api = {
     set: (id: HotkeyActionId, binding: HotkeyBinding) =>
       ipcRenderer.invoke("hotkey:set", id, binding),
     reset: (id?: HotkeyActionId) => ipcRenderer.invoke("hotkey:reset", id),
-    setGlobalEnabled: (enabled: boolean) =>
-      ipcRenderer.invoke("hotkey:setGlobalEnabled", enabled),
+    setGlobalEnabled: (enabled: boolean) => ipcRenderer.invoke("hotkey:setGlobalEnabled", enabled),
     probe: (accelerator: string) => ipcRenderer.invoke("hotkey:probe", accelerator),
     getConflicts: () => ipcRenderer.invoke("hotkey:getConflicts"),
     onTrigger: (callback: (id: HotkeyActionId) => void) =>
