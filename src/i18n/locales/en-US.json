@@ -316,7 +316,10 @@
       "confirmResetTitle": "Reset to defaults?",
       "confirmResetDesc": "All shortcuts will be reset and any customizations will be overwritten!",
       "duplicateWith": "Conflicts with \"{action}\"",
+      "crossScopeWith": "Same as the in-app binding of \"{action}\"; will fire twice",
       "osOccupied": "Already taken by the OS or another app",
+      "osDuplicate": "Already used by another global shortcut",
+      "invalid": "Invalid key combination",
       "groups": {
         "player": "Playback",
         "window": "Windows",

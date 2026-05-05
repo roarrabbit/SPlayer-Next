@@ -190,18 +190,6 @@ export const matchParsed = (event: KeyboardEvent, parsed: ParsedAccelerator): bo
 };
 
 /**
- * 把 KeyboardEvent 与 Accelerator 比较
- * @param event 浏览器键盘事件
- * @param accel 加速键字符串
- * @param isMac 当前平台是否 macOS
- */
-export const matchEvent = (event: KeyboardEvent, accel: string, isMac: boolean): boolean => {
-  const parsed = parseAccelerator(accel, isMac);
-  if (!parsed) return false;
-  return matchParsed(event, parsed);
-};
-
-/**
  * 把 Accelerator 渲染为人类可读字符串
  * @param accel Accelerator 字符串
  * @param isMac 当前平台是否 macOS（决定符号样式）

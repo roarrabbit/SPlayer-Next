@@ -16,11 +16,10 @@ import { coreLog } from "@main/utils/logger";
 import type {
   HotkeyActionId,
   HotkeyBinding,
-  HotkeyBindingsMap,
   HotkeyConfig,
   HotkeyConflict,
 } from "@shared/types/hotkey";
-import { defaultHotkeyConfig } from "@shared/defaults/hotkeys";
+import { defaultHotkeyConfig, HOTKEY_ACTIONS } from "@shared/defaults/hotkeys";
 import { normalizeAccelerator } from "@shared/utils/accelerator";
 
 let conflicts: HotkeyConflict[] = [];
@@ -122,9 +121,16 @@ export const getHotkeyConfig = (): HotkeyConfig => readConfig();
 
 /** 写入某动作的绑定 */
 export const setBinding = (id: HotkeyActionId, binding: HotkeyBinding): HotkeyConfig => {
+  const meta = HOTKEY_ACTIONS.find((m) => m.id === id);
+  if (!meta) {
+    coreLog.warn(`[hotkey] setBinding: unknown action id ${id}, ignored`);
+    return readConfig();
+  }
   const config = readConfig();
   const norm = (s: string | null): string | null => (s ? normalizeAccelerator(s) || null : null);
-  config.bindings[id] = { inApp: norm(binding.inApp), global: norm(binding.global) };
+  // 不允许全局的动作强制清空 global 字段，防止 IPC 越权
+  const global = meta.allowGlobal ? norm(binding.global) : null;
+  config.bindings[id] = { inApp: norm(binding.inApp), global };
   return writeConfig(config);
 };
 
@@ -176,6 +182,3 @@ export const probeAccelerator = (accelerator: string): boolean => {
 app.on("will-quit", () => {
   cleanupGlobalHotkey();
 });
-
-/** 兼容外部调用：取 bindings（对应旧 API） */
-export const getAllBindings = (): HotkeyBindingsMap => readConfig().bindings;

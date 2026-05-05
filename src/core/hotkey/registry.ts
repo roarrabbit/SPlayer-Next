@@ -13,7 +13,7 @@ const VOLUME_STEP = 0.05;
 /** 快进/快退步长（毫秒） */
 const SEEK_STEP_MS = 5000;
 
-const handlers = new Map<HotkeyActionId, () => void>();
+const handlers = new Map<HotkeyActionId, () => void | Promise<void>>();
 
 /** 填充 handler 表 */
 export const buildRegistry = (): void => {
@@ -80,11 +80,5 @@ export const buildRegistry = (): void => {
 
 /** 派发某动作 */
 export const dispatch = (id: HotkeyActionId): void => {
-  const fn = handlers.get(id);
-  if (!fn) return;
-  try {
-    fn();
-  } catch (err) {
-    console.error(`[hotkey] dispatch ${id} failed`, err);
-  }
+  handlers.get(id)?.();
 };

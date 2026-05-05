@@ -15,7 +15,7 @@
  * - 失焦：自动取消
  */
 
-import { eventToAccelerator, formatAccelerator } from "@shared/utils/accelerator";
+import { eventToAccelerator } from "@shared/utils/accelerator";
 
 interface UseHotkeyRecorderOptions {
   /** 平台（用于显示 + accelerator 反推） */
@@ -113,14 +113,10 @@ export const useHotkeyRecorder = (options: UseHotkeyRecorderOptions) => {
     onCancel?.();
   };
 
-  /** 拼显示用文案 */
-  const previewOf = (accel: string | null): string => formatAccelerator(accel, isMac);
-
   return {
     isRecording,
     current,
     start,
     cancel,
-    previewOf,
   };
 };

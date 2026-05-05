@@ -78,16 +78,37 @@ export const useHotkeyStore = defineStore("hotkey", () => {
     return null;
   };
 
+  /**
+   * 检测 global accelerator 与"其他动作"既有绑定的冲突
+   * - 与另一动作 global 重复：主进程注册时会被静默跳过
+   * - 与另一动作 inApp 重复：应用聚焦时该 inApp 会被 OS 拦截而 shadow，用户会困惑
+   * 同动作自身 inApp == 新 global 不算冲突（OS 拦截后只触发一次，无副作用）
+   */
+  const findGlobalConflict = (
+    accelerator: string,
+    excludeId?: HotkeyActionId,
+  ): { id: HotkeyActionId; scope: "inApp" | "global" } | null => {
+    const ids = Object.keys(bindings.value) as HotkeyActionId[];
+    for (const id of ids) {
+      if (id === excludeId) continue;
+      const b = bindings.value[id];
+      if (!b) continue;
+      if (b.global === accelerator) return { id, scope: "global" };
+      if (b.inApp === accelerator) return { id, scope: "inApp" };
+    }
+    return null;
+  };
+
   return {
     bindings,
     globalEnabled,
     conflicts,
-    initialized,
     init,
     updateBinding,
     resetBinding,
     setGlobalEnabled,
     probe,
     findInAppDuplicate,
+    findGlobalConflict,
   };
 });

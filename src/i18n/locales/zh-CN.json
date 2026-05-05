@@ -316,7 +316,10 @@
       "confirmResetTitle": "确认恢复默认？",
       "confirmResetDesc": "所有快捷键将被重置，已自定义的绑定会被覆盖！",
       "duplicateWith": "与「{action}」冲突",
+      "crossScopeWith": "与「{action}」的应用内绑定相同，会重复触发",
       "osOccupied": "该组合键已被系统或其他应用占用",
+      "osDuplicate": "已被另一全局快捷键占用",
+      "invalid": "组合键无效",
       "groups": {
         "player": "播放控制",
         "window": "窗口",

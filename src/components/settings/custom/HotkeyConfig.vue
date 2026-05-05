@@ -35,7 +35,7 @@ const recordingTarget = ref<{ id: HotkeyActionId; scope: Scope } | null>(null);
 const errorFor = ref<{
   id: HotkeyActionId;
   scope: Scope;
-  kind: "duplicate" | "osOccupied";
+  kind: "duplicate" | "crossScope" | "osOccupied";
   conflictWith?: HotkeyActionId;
 } | null>(null);
 
@@ -59,7 +59,7 @@ const recorder = useHotkeyRecorder({
     const target = recordingTarget.value;
     if (!target) return;
     recordingTarget.value = null;
-    /** 检查是否与应用内其他动作冲突 */
+    /** 冲突检测：in-app 仅查同 scope 重复；global 同时查跨 scope 与 OS 占用 */
     if (target.scope === "inApp") {
       const dup = hotkey.findInAppDuplicate(accel, target.id);
       if (dup) {
@@ -68,6 +68,22 @@ const recorder = useHotkeyRecorder({
         return;
       }
     } else {
+      const conflict = hotkey.findGlobalConflict(accel, target.id);
+      if (conflict) {
+        const kind = conflict.scope === "global" ? "duplicate" : "crossScope";
+        errorFor.value = {
+          id: target.id,
+          scope: "global",
+          kind,
+          conflictWith: conflict.id,
+        };
+        const msgKey =
+          kind === "crossScope"
+            ? "settings.hotkeys.crossScopeWith"
+            : "settings.hotkeys.duplicateWith";
+        toast.error(t(msgKey, { action: labelOf(conflict.id) }));
+        return;
+      }
       const ok = await hotkey.probe(accel);
       if (!ok) {
         errorFor.value = { id: target.id, scope: "global", kind: "osOccupied" };
@@ -159,15 +175,22 @@ const placeholderOf = (id: HotkeyActionId, scope: Scope): string => {
   return t("settings.hotkeys.unbound");
 };
 
-/** 检查全局是否被占用 */
-const isGlobalOsOccupied = (id: HotkeyActionId): boolean =>
-  hotkey.conflicts.some((c) => c.id === id && c.scope === "global" && c.reason === "os-occupied");
+/** 取主进程上报的 global 冲突项（os-occupied / duplicate / invalid 都算） */
+const findRuntimeGlobalConflict = (id: HotkeyActionId) =>
+  hotkey.conflicts.find((c) => c.id === id && c.scope === "global");
 
 /** 检查状态 */
 const statusOf = (id: HotkeyActionId, scope: Scope): "default" | "error" => {
   if (errorFor.value && errorFor.value.id === id && errorFor.value.scope === scope) return "error";
-  if (scope === "global" && hotkey.globalEnabled && isGlobalOsOccupied(id)) return "error";
+  if (scope === "global" && hotkey.globalEnabled && findRuntimeGlobalConflict(id)) return "error";
   return "default";
+};
+
+/** 把冲突 reason 翻成可读文案 */
+const conflictReasonText = (reason: "os-occupied" | "duplicate" | "invalid"): string => {
+  if (reason === "duplicate") return t("settings.hotkeys.osDuplicate");
+  if (reason === "invalid") return t("settings.hotkeys.invalid");
+  return t("settings.hotkeys.osOccupied");
 };
 
 /** 获取错误标题 */
@@ -175,10 +198,14 @@ const errorTitleOf = (id: HotkeyActionId, scope: Scope): string => {
   const err = errorFor.value;
   if (err && err.id === id && err.scope === scope) {
     if (err.kind === "osOccupied") return t("settings.hotkeys.osOccupied");
+    if (err.kind === "crossScope") {
+      return t("settings.hotkeys.crossScopeWith", { action: labelOf(err.conflictWith!) });
+    }
     return t("settings.hotkeys.duplicateWith", { action: labelOf(err.conflictWith!) });
   }
-  if (scope === "global" && hotkey.globalEnabled && isGlobalOsOccupied(id)) {
-    return t("settings.hotkeys.osOccupied");
+  if (scope === "global" && hotkey.globalEnabled) {
+    const runtime = findRuntimeGlobalConflict(id);
+    if (runtime) return conflictReasonText(runtime.reason);
   }
   return "";
 };
@@ -232,7 +259,7 @@ const errorTitleOf = (id: HotkeyActionId, scope: Scope): string => {
               :model-value="valueOf(action.id, 'inApp')"
               :placeholder="placeholderOf(action.id, 'inApp')"
               :status="statusOf(action.id, 'inApp')"
-              @focus="startRecord(action.id, 'inApp')"
+              @click="startRecord(action.id, 'inApp')"
               @blur="stopRecord"
             />
           </div>
@@ -244,7 +271,7 @@ const errorTitleOf = (id: HotkeyActionId, scope: Scope): string => {
               :model-value="valueOf(action.id, 'global')"
               :placeholder="placeholderOf(action.id, 'global')"
               :status="statusOf(action.id, 'global')"
-              @focus="startRecord(action.id, 'global')"
+              @click="startRecord(action.id, 'global')"
               @blur="stopRecord"
             />
           </div>
