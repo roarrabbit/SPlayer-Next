@@ -70,6 +70,8 @@ export interface LyricSettings {
   fontSize: number;
   /** 歌词字重（100~900） */
   fontWeight: number;
+  /** 歌词字体 */
+  fontFamily: string;
   /** 是否显示翻译歌词 */
   showTranslation: boolean;
   /** 是否显示音译歌词 */
@@ -136,4 +138,6 @@ export interface AppearanceSettings {
   closeAction: "quit" | "hide";
   /** 记忆关闭选择 */
   rememberCloseChoice: boolean;
+  /** 全局字体 */
+  fontFamily: string;
 }

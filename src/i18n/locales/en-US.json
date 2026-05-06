@@ -2,6 +2,7 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "apply": "Apply",
     "close": "Close",
     "save": "Save",
     "reset": "Reset",
@@ -191,6 +192,7 @@
       "taskbarLyric": "Taskbar Lyric",
       "theme": "Theme",
       "layout": "Layout",
+      "font": "Fonts",
       "media": "Media Controls",
       "device": "Output Device",
       "hotkeys": "Hotkeys",
@@ -648,6 +650,36 @@
     "sidebarCollapsed": {
       "label": "Collapse Sidebar",
       "description": "Collapse the sidebar to icon-only mode"
+    },
+    "fontConfig": {
+      "label": "Font Settings",
+      "description": "Configure fonts for the app, lyrics, and external lyric windows",
+      "button": "Configure",
+      "title": "Font Settings",
+      "loading": "Loading system fonts",
+      "placeholder": "Enter a font name",
+      "useSystem": "System default",
+      "useGlobal": "Follow global",
+      "customLabel": "Custom font",
+      "modeLabel": "Input method",
+      "modeHint": "All fields below use this method",
+      "modeSelect": "Pick a font",
+      "modeCustom": "Custom font",
+      "resetRow": "Reset to default",
+      "fieldLabel": "{name} font",
+      "fieldDescription": "Applied to {name}",
+      "groups": {
+        "general": "General",
+        "appLyric": "Lyric Font",
+        "externalLyric": "External Lyric Windows"
+      },
+      "fields": {
+        "global": "global",
+        "lyric": "lyrics",
+        "desktopLyric": "desktop lyric",
+        "dynamicIsland": "dynamic island lyric",
+        "taskbarLyric": "taskbar lyric"
+      }
     },
     "systemMediaControls": {
       "label": "System Media Controls",

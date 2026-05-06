@@ -38,6 +38,9 @@ importers:
       electron-updater:
         specifier: ^6.8.3
         version: 6.8.3
+      font-list:
+        specifier: ^2.0.2
+        version: 2.0.2
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
@@ -48,8 +51,8 @@ importers:
         specifier: ^4.7.1
         version: 4.7.1(pinia@3.0.4(typescript@5.9.3)(vue@3.5.32(typescript@5.9.3)))
       reka-ui:
-        specifier: ^2.9.5
-        version: 2.9.5(vue@3.5.32(typescript@5.9.3))
+        specifier: ^2.9.7
+        version: 2.9.7(vue@3.5.32(typescript@5.9.3))
       sortablejs:
         specifier: ^1.15.7
         version: 1.15.7
@@ -2598,6 +2601,9 @@ packages:
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
 
+  font-list@2.0.2:
+    resolution: {integrity: sha512-kNG2sY5+Nh5bbWL9kgAi+k8tuXfZ3m+6fjNGF4iUITTyex2S6wITREgr9ZqY1xw2+mFM6Bi5NPEPpRB6jLLOnw==}
+
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
@@ -3360,8 +3366,8 @@ packages:
     resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
     hasBin: true
 
-  reka-ui@2.9.5:
-    resolution: {integrity: sha512-6cZGIMgEeslpFLJ7IihaCSMPp1cJgl2eDkZ2vBMdl+HPUVBaV/iDPMWu3abT2KUkj1lir+oyHq5KelOTT9OheQ==}
+  reka-ui@2.9.7:
+    resolution: {integrity: sha512-aX7foYYR20v4+majO58OJJdBNfLMm0eJb448l9N4JVy8JB7GXOr4H/S4a+J1pkcoxZH8Cb7YHpJ855+miAm7sA==}
     peerDependencies:
       vue: '>= 3.4.0'
 
@@ -6412,6 +6418,8 @@ snapshots:
 
   flatted@3.4.2: {}
 
+  font-list@2.0.2: {}
+
   foreground-child@3.3.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -7208,7 +7216,7 @@ snapshots:
 
   regexp-tree@0.1.27: {}
 
-  reka-ui@2.9.5(vue@3.5.32(typescript@5.9.3)):
+  reka-ui@2.9.7(vue@3.5.32(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@floating-ui/vue': 1.1.11(vue@3.5.32(typescript@5.9.3))

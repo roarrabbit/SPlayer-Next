@@ -54,10 +54,11 @@
     "colord": "^2.9.3",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.3",
+    "font-list": "^2.0.2",
     "localforage": "^1.10.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "reka-ui": "^2.9.5",
+    "reka-ui": "^2.9.7",
     "sortablejs": "^1.15.7",
     "vue-i18n": "^11.3.2",
     "vue-router": "^5.0.4"

@@ -29,6 +29,7 @@ declare global {
         onOpenSettings: (
           callback: (payload: { category?: string; highlight?: string }) => void,
         ) => () => void;
+        listFonts: () => Promise<string[]>;
       };
       library: LibraryApi;
       window: WindowApi;

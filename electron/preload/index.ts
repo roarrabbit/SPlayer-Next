@@ -99,6 +99,8 @@ const api = {
     // 主窗口监听"打开设置"事件
     onOpenSettings: (callback: (payload: { category?: string; highlight?: string }) => void) =>
       subscribe<{ category?: string; highlight?: string }>("system:openSettings", callback),
+    // 获取系统已安装字体
+    listFonts: () => ipcRenderer.invoke("system:listFonts"),
   },
   library: {
     // 开始扫描（默认增量）

@@ -20,6 +20,7 @@ const config = reactive<TaskbarLyricSettings>({
   showCover: true,
   wordByWord: true,
   fontSize: 14,
+  fontFamily: "",
 });
 
 const anchor = ref<"left" | "right">("left");
@@ -95,7 +96,10 @@ const items = computed<RenderItem[]>(() => {
   return list;
 });
 
-const rootStyle = computed(() => ({ "--tbl-font-size": `${config.fontSize}px` }));
+const rootStyle = computed(() => ({
+  "--tbl-font-size": `${config.fontSize}px`,
+  fontFamily: config.fontFamily || undefined,
+}));
 
 const handlePrev = (): void => window.api.player.dispatch("prev");
 const handleNext = (): void => window.api.player.dispatch("next");

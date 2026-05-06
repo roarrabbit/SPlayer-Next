@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import type { StyleValue } from "vue";
+
 export interface SSelectOption {
   value: string | number | boolean;
   label: string;
+  /** 单条选项的内联样式 */
+  style?: StyleValue;
 }
 
 export interface SSelectProps {
@@ -38,7 +42,7 @@ const handleChange = (val: string) => {
     @update:model-value="handleChange"
   >
     <SelectTrigger
-      class="flex w-full items-center justify-between gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border border-solid border-on-surface/20 rounded-lg cursor-pointer outline-none focus-visible:outline-none transition-[border-color,box-shadow] duration-250 hover:border-on-surface/50 data-[state=open]:border-primary data-[state=open]:shadow-[0_0_0_2px_rgb(var(--s-primary)/0.25)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+      class="flex w-full items-center justify-between gap-2 h-8.5 px-3 text-sm text-on-surface bg-surface-bright/40 border border-solid border-on-surface/20 rounded-lg cursor-pointer outline-none focus-visible:outline-none transition-[border-color,box-shadow,opacity] duration-250 hover:border-on-surface/50 data-[state=open]:border-primary data-[state=open]:shadow-[0_0_0_2px_rgb(var(--s-primary)/0.25)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
     >
       <SelectValue class="min-w-0 truncate">
         <span class="truncate">{{ selectedLabel }}</span>
@@ -60,6 +64,7 @@ const handleChange = (val: string) => {
             :key="String(opt.value)"
             :value="String(opt.value)"
             :title="opt.label"
+            :style="opt.style"
             class="relative flex items-center h-8.5 px-3 pr-8 text-sm rounded-md cursor-pointer outline-none focus-visible:outline-none transition-[background-color,color] duration-200 data-[highlighted]:bg-on-surface/8"
             :class="opt.value === modelValue ? 'text-primary' : 'text-on-surface'"
           >
