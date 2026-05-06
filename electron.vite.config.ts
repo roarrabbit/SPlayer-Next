@@ -8,6 +8,7 @@ import IconsResolver from "unplugin-icons/resolver";
 import { FileSystemIconLoader } from "unplugin-icons/loaders";
 import RekaResolver from "reka-ui/resolver";
 import Components from "unplugin-vue-components/vite";
+import pkg from "./package.json" with { type: "json" };
 
 export default defineConfig({
   main: {
@@ -42,6 +43,12 @@ export default defineConfig({
   },
   renderer: {
     root: ".",
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+      __APP_REPO_URL__: JSON.stringify(pkg.repository.url),
+      __APP_REPO_NAME__: JSON.stringify(pkg.productName),
+      __APP_AUTHOR__: JSON.stringify(pkg.author.name),
+    },
     server: {
       port: 14558,
       watch: {

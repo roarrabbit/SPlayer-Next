@@ -164,6 +164,7 @@
   },
   "settings": {
     "title": "设置",
+    "subtitle": "调整您的专属配置",
     "search": "搜索设置项...",
     "group": {
       "general": "常规设置",

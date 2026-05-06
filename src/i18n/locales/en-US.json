@@ -164,6 +164,7 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "Tailor your experience",
     "search": "Search settings...",
     "group": {
       "general": "General",

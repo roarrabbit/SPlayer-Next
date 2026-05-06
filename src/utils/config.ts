@@ -12,3 +12,12 @@ export const isMac = userAgent.includes("Macintosh");
 export const isLinux = userAgent.includes("Linux");
 /** 是否为 Electron 环境 */
 export const isElectron = userAgent.includes("Electron") || typeof window?.electron !== "undefined";
+
+/** 应用版本号 */
+export const APP_VERSION = __APP_VERSION__;
+/** 仓库地址 */
+export const REPO_URL = __APP_REPO_URL__;
+/** 项目名称 */
+export const REPO_NAME = __APP_REPO_NAME__;
+/** 版权署名 */
+export const COPYRIGHT_HOLDER = __APP_AUTHOR__;

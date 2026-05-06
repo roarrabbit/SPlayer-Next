@@ -1,12 +1,31 @@
 {
   "name": "splayer-next",
+  "productName": "SPlayer Next",
   "version": "1.0.0",
-  "description": "An Electron application with Vue and TypeScript",
+  "description": "A modern cross-platform music player built with Electron, Vue 3, and TypeScript",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": {
+    "name": "imsyy",
+    "email": "imsyy1024@gmail.com",
+    "url": "https://imsyy.top"
+  },
+  "homepage": "https://splayer.imsyy.top",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SPlayer-Dev/SPlayer-Next"
+  },
+  "bugs": {
+    "url": "https://github.com/SPlayer-Dev/SPlayer-Next/issues"
+  },
+  "license": "AGPL-3.0",
+  "license-file": "LICENSE",
+  "engines": {
+    "node": ">=22",
+    "npm": ">=11",
+    "pnpm": ">=10"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

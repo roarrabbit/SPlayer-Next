@@ -2,10 +2,12 @@
 import { settingsSchema } from "@/settings/schema";
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import { useSettingsStore } from "@/stores/settings";
+import { openExternal } from "@/utils/url";
+import { REPO_URL, REPO_NAME, APP_VERSION } from "@/utils/config";
 
 const { initialCategory, initialHighlight } = useSettingsDialog();
 
-// 打开设置时从主进程同步后端配置
+// 同步后端配置
 useSettingsStore().syncSystem();
 const { t } = useI18n();
 
@@ -16,7 +18,7 @@ const isSearchActive = ref(false);
 
 const activeCategory = computed(() => settingsSchema.find((c) => c.id === activeId.value));
 
-/** 计算每个 section 的全局起始索引（标题 + items 累加） */
+/** 计算每个 section 的全局起始索引 */
 const sectionStartIndices = computed(() => {
   const indices: number[] = [];
   let idx = 0;
@@ -60,8 +62,8 @@ onMounted(() => {
   <div class="flex h-full overflow-hidden">
     <!-- 左侧 -->
     <div class="w-70 shrink-0 flex flex-col bg-surface-panel p-5">
-      <h2 class="text-lg font-bold mb-0.5 px-1">{{ t("settings.title") }}</h2>
-      <p class="text-xs text-on-surface-variant/50 mb-5 px-1">SPlayer</p>
+      <h2 class="text-2xl font-bold mb-1 px-1">{{ t("settings.title") }}</h2>
+      <p class="text-sm text-on-surface-variant/80 mb-5 px-1">{{ t("settings.subtitle") }}</p>
 
       <!-- 搜索 -->
       <SettingsSearch
@@ -72,7 +74,7 @@ onMounted(() => {
 
       <!-- 菜单 -->
       <Transition name="fade">
-        <div v-show="!isSearchActive" class="flex-1 min-h-0 overflow-y-auto">
+        <div v-show="!isSearchActive" class="flex-1 min-h-0 overflow-y-auto -mr-5 pr-5">
           <SettingsMenu
             :categories="settingsSchema"
             :active-id="activeId"
@@ -80,6 +82,15 @@ onMounted(() => {
           />
         </div>
       </Transition>
+
+      <!-- 底部 -->
+      <div class="shrink-0 mt-4 px-1 flex items-center gap-1">
+        <SButton variant="text" size="tiny" @click="openExternal(REPO_URL)">
+          <template #icon><IconLucideGithub /></template>
+          {{ REPO_NAME }}
+        </SButton>
+        <STag size="tiny">v{{ APP_VERSION }}</STag>
+      </div>
     </div>
 
     <!-- 右侧 -->
