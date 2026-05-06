@@ -98,7 +98,7 @@ const items = computed<RenderItem[]>(() => {
 
 const rootStyle = computed(() => ({
   "--tbl-font-size": `${config.fontSize}px`,
-  fontFamily: config.fontFamily ? `'${config.fontFamily}'` : undefined,
+  fontFamily: config.fontFamily || undefined,
 }));
 
 const handlePrev = (): void => window.api.player.dispatch("prev");

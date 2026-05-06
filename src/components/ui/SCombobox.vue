@@ -59,9 +59,14 @@ const selectedValues = computed<SComboboxValue[]>(() => {
   return Array.isArray(props.modelValue) ? props.modelValue : [props.modelValue];
 });
 
+/** O(1) 查找：避免 selectedOptions 每次 O(N*M) */
+const optionMap = computed(
+  () => new Map<SComboboxValue, SComboboxOption>(props.options.map((o) => [o.value, o])),
+);
+
 const selectedOptions = computed(() =>
   selectedValues.value
-    .map((v) => props.options.find((o) => o.value === v))
+    .map((v) => optionMap.value.get(v))
     .filter((o): o is SComboboxOption => !!o),
 );
 
