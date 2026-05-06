@@ -53,8 +53,9 @@ const mode = ref<"snapped" | "floating">("snapped");
 /* 文本测量：优先使用 config.fontFamily，确保与渲染一致 */
 const measureCtx = document.createElement("canvas").getContext("2d")!;
 const measureTextWidth = (text: string, sizePx: number = fontSize.value): number => {
-  const family =
-    config.fontFamily || getComputedStyle(document.documentElement).fontFamily;
+  const family = config.fontFamily
+    ? `'${config.fontFamily}'`
+    : getComputedStyle(document.documentElement).fontFamily;
   measureCtx.font = `${config.fontWeight} ${sizePx}px ${family}`;
   return Math.ceil(measureCtx.measureText(text).width);
 };
@@ -235,7 +236,7 @@ const rootStyle = computed(() => ({
   "--di-cover": `${coverSize.value}px`,
   "--di-cover-radius": `${coverRadius.value}px`,
   "--di-snap-radius": `${snapRadius.value}px`,
-  fontFamily: config.fontFamily || undefined,
+  fontFamily: config.fontFamily ? `'${config.fontFamily}'` : undefined,
 }));
 
 /* 取消订阅 */

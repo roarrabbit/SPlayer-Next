@@ -117,7 +117,7 @@ const rootStyle = computed(() => ({
   "--dl-mask": config.backgroundMaskColor,
   // 行位置 / 字号 / 颜色的过渡时长，关动画时置 0 让所有后代 transition 变瞬时
   "--dl-anim": config.animation ? "0.6s" : "0s",
-  fontFamily: config.fontFamily || undefined,
+  fontFamily: config.fontFamily ? `'${config.fontFamily}'` : undefined,
 }));
 
 /** 常驻信息文字对齐 */

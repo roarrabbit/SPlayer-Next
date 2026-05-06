@@ -660,7 +660,6 @@
       "placeholder": "输入字体名称",
       "useSystem": "系统默认",
       "useGlobal": "跟随全局",
-      "customLabel": "自定义字体",
       "modeLabel": "设置方式",
       "modeHint": "下方所有字段统一使用该方式",
       "modeSelect": "单独选择",
@@ -668,6 +667,7 @@
       "resetRow": "恢复默认",
       "fieldLabel": "{name}字体",
       "fieldDescription": "应用于{name}",
+      "previewSample": "AaBb 0123 你好世界 こんにちは 안녕하세요",
       "groups": {
         "general": "通用字体",
         "appLyric": "歌词字体",

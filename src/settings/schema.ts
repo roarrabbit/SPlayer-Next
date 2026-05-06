@@ -134,6 +134,16 @@ export const settingsSchema: SettingCategory[] = [
         ],
       },
       {
+        id: "font",
+        items: [
+          {
+            key: "fontConfig",
+            type: "custom",
+            component: FontConfig,
+          },
+        ],
+      },
+      {
         id: "layout",
         items: [
           {
@@ -164,16 +174,6 @@ export const settingsSchema: SettingCategory[] = [
             type: "switch",
             binding: { store: "settings", path: "appearance.sidebarCollapsed" },
             defaultValue: false,
-          },
-        ],
-      },
-      {
-        id: "font",
-        items: [
-          {
-            key: "fontConfig",
-            type: "custom",
-            component: FontConfig,
           },
         ],
       },

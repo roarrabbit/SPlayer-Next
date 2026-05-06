@@ -10,11 +10,10 @@ const settings = useSettingsStore();
 const { families: fonts, loading: loadingFonts, ensureLoaded } = useSystemFonts();
 
 const DEFAULT_OPTION_VALUE = "__default_font__";
-const CUSTOM_OPTION_VALUE = "__custom_font__";
 
 type FontDraftKey = "global" | "lyric" | "desktopLyric" | "dynamicIsland" | "taskbarLyric";
-type FontMode = "select" | "custom";
 type FontGroup = "general" | "appLyric" | "externalLyric";
+type FontMode = "select" | "custom";
 
 interface FontDraft {
   global: string;
@@ -26,7 +25,6 @@ interface FontDraft {
 
 interface FontTarget {
   key: FontDraftKey;
-  group: FontGroup;
   label: string;
   description: string;
   defaultLabel: string;
@@ -35,7 +33,6 @@ interface FontTarget {
 interface FontOption {
   value: string;
   label: string;
-  style?: { fontFamily: string };
 }
 
 const open = ref(false);
@@ -58,23 +55,24 @@ const TARGET_DEFS: Array<{ key: FontDraftKey; group: FontGroup }> = [
   { key: "taskbarLyric", group: "externalLyric" },
 ];
 
+const GROUP_ORDER: FontGroup[] = ["general", "appLyric", "externalLyric"];
+
 /** 分组目标 */
 const groupedTargets = computed<Array<{ group: FontGroup; items: FontTarget[] }>>(() => {
-  const items: FontTarget[] = TARGET_DEFS.map(({ key, group }) => {
+  const buildTarget = (key: FontDraftKey): FontTarget => {
     const name = t(`settings.fontConfig.fields.${key}`);
     return {
       key,
-      group,
       label: t("settings.fontConfig.fieldLabel", { name }),
       description: t("settings.fontConfig.fieldDescription", { name }),
       defaultLabel:
         key === "lyric" ? t("settings.fontConfig.useGlobal") : t("settings.fontConfig.useSystem"),
     };
-  });
-  const groups: FontGroup[] = ["general", "appLyric", "externalLyric"];
-  return groups
-    .map((g) => ({ group: g, items: items.filter((it) => it.group === g) }))
-    .filter((g) => g.items.length > 0);
+  };
+  return GROUP_ORDER.map((group) => ({
+    group,
+    items: TARGET_DEFS.filter((d) => d.group === group).map((d) => buildTarget(d.key)),
+  })).filter((g) => g.items.length > 0);
 });
 
 /** 设置方式选项 */
@@ -83,24 +81,26 @@ const modeOptions = computed<FontOption[]>(() => [
   { value: "custom", label: t("settings.fontConfig.modeCustom") },
 ]);
 
-/** 获取字体选项 */
-const getOptions = (target: FontTarget): FontOption[] => {
-  const list: FontOption[] = [
-    { value: DEFAULT_OPTION_VALUE, label: target.defaultLabel },
-    { value: CUSTOM_OPTION_VALUE, label: t("settings.fontConfig.customLabel") },
-  ];
-  for (const font of fonts.value) {
-    list.push({ value: font, label: font, style: { fontFamily: font } });
+/** 系统字体下拉项 */
+const fontOptions = computed<FontOption[]>(() =>
+  fonts.value.map((font) => ({ value: font, label: font })),
+);
+
+/** 各字段的下拉选项 */
+const optionsByKey = computed<Record<FontDraftKey, FontOption[]>>(() => {
+  const base = fontOptions.value;
+  const map = {} as Record<FontDraftKey, FontOption[]>;
+  for (const g of groupedTargets.value) {
+    for (const target of g.items) {
+      map[target.key] = [{ value: DEFAULT_OPTION_VALUE, label: target.defaultLabel }, ...base];
+    }
   }
-  return list;
-};
+  return map;
+});
 
 /** 获取选择值 */
-const getSelectValue = (value: string): string => {
-  if (!value) return DEFAULT_OPTION_VALUE;
-  if (fonts.value.includes(value)) return value;
-  return CUSTOM_OPTION_VALUE;
-};
+const getSelectValue = (value: string): string =>
+  !value || !fonts.value.includes(value) ? DEFAULT_OPTION_VALUE : value;
 
 /** 同步字体配置 */
 const syncDraft = (): void => {
@@ -120,16 +120,7 @@ watch(open, (value) => {
 
 /** 选择字体 */
 const handleSelect = (key: FontDraftKey, value: string | number | boolean): void => {
-  if (value === DEFAULT_OPTION_VALUE) {
-    draft[key] = "";
-    return;
-  }
-  // 切换自定义输入模式
-  if (value === CUSTOM_OPTION_VALUE) {
-    mode.value = "custom";
-    return;
-  }
-  draft[key] = String(value);
+  draft[key] = value === DEFAULT_OPTION_VALUE ? "" : String(value);
 };
 
 /** 手动输入字体 */
@@ -137,7 +128,7 @@ const handleManualInput = (key: FontDraftKey, value: string): void => {
   draft[key] = value.trim();
 };
 
-/** 重置字体配置 */
+/** 重置字段 */
 const handleResetField = (key: FontDraftKey): void => {
   draft[key] = "";
 };
@@ -147,8 +138,8 @@ const updateMode = (value: string | number | boolean): void => {
   mode.value = value === "custom" ? "custom" : "select";
 };
 
-/** 提交字体配置 */
-const commitDraft = async (): Promise<void> => {
+/** 保存字体配置 */
+const handleSave = async (): Promise<void> => {
   settings.appearance.fontFamily = draft.global;
   settings.lyric.fontFamily = draft.lyric;
   await Promise.all([
@@ -156,16 +147,6 @@ const commitDraft = async (): Promise<void> => {
     settings.setSystem("dynamicIsland.fontFamily", draft.dynamicIsland),
     settings.setSystem("taskbarLyric.fontFamily", draft.taskbarLyric),
   ]);
-};
-
-/** 应用字体配置 */
-const handleApply = async (): Promise<void> => {
-  await commitDraft();
-};
-
-/** 保存字体配置 */
-const handleSave = async (): Promise<void> => {
-  await commitDraft();
   open.value = false;
 };
 </script>
@@ -180,7 +161,7 @@ const handleSave = async (): Promise<void> => {
     :description="t('settings.fontConfig.description')"
     width="620px"
   >
-    <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-3">
       <!-- 设置方式 -->
       <div
         class="flex items-center gap-3 rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5"
@@ -198,57 +179,66 @@ const handleSave = async (): Promise<void> => {
 
       <!-- 各分组 -->
       <div v-for="g in groupedTargets" :key="g.group" class="flex flex-col gap-2.5">
-        <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface px-1">
-          <span class="w-0.75 h-3.5 rounded-full bg-primary" />
+        <h4 class="flex items-center gap-2 text-base text-on-surface px-1">
+          <span class="w-1 h-4 rounded-full bg-primary" />
           {{ t(`settings.fontConfig.groups.${g.group}`) }}
         </h4>
         <div
           v-for="target in g.items"
           :key="target.key"
-          class="flex items-center gap-3 rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5"
+          class="rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5"
         >
-          <div class="min-w-0 flex-1">
-            <div class="text-base">{{ target.label }}</div>
-            <div class="text-sm text-on-surface-variant/70 mt-0.5">
-              {{ target.description }}
+          <div class="flex items-center gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="text-base">{{ target.label }}</div>
+              <div class="text-sm text-on-surface-variant/70 mt-0.5">
+                {{ target.description }}
+              </div>
             </div>
+            <div class="shrink-0 w-50 flex justify-end">
+              <SSelect
+                v-if="mode === 'select'"
+                class="w-full"
+                :model-value="getSelectValue(draft[target.key])"
+                :options="optionsByKey[target.key]"
+                :disabled="loadingFonts"
+                :placeholder="loadingFonts ? t('settings.fontConfig.loading') : target.defaultLabel"
+                @update:model-value="handleSelect(target.key, $event)"
+              />
+              <SInput
+                v-else
+                class="w-full"
+                :model-value="draft[target.key]"
+                :placeholder="t('settings.fontConfig.placeholder')"
+                clearable
+                @update:model-value="handleManualInput(target.key, $event)"
+              />
+            </div>
+            <SButton
+              variant="ghost"
+              circle
+              size="small"
+              :disabled="!draft[target.key]"
+              :title="t('settings.fontConfig.resetRow')"
+              @click="handleResetField(target.key)"
+            >
+              <template #icon><IconLucideRotateCcw /></template>
+            </SButton>
           </div>
-          <div class="shrink-0 w-50 flex justify-end">
-            <SSelect
-              v-if="mode === 'select'"
-              class="w-full"
-              :model-value="getSelectValue(draft[target.key])"
-              :options="getOptions(target)"
-              :disabled="loadingFonts"
-              :placeholder="loadingFonts ? t('settings.fontConfig.loading') : target.defaultLabel"
-              @update:model-value="handleSelect(target.key, $event)"
-            />
-            <SInput
-              v-else
-              class="w-full"
-              :model-value="draft[target.key]"
-              :placeholder="t('settings.fontConfig.placeholder')"
-              clearable
-              @update:model-value="handleManualInput(target.key, $event)"
-            />
-          </div>
-          <SButton
-            variant="ghost"
-            circle
-            size="small"
-            :disabled="!draft[target.key]"
-            :title="t('settings.fontConfig.resetRow')"
-            @click="handleResetField(target.key)"
+          <!-- 预览 -->
+          <div
+            v-if="draft[target.key]"
+            class="mt-2.5 px-3 py-2 rounded-lg bg-surface-bright/40 text-sm text-on-surface truncate"
+            :style="{ fontFamily: `'${draft[target.key]}'` }"
           >
-            <template #icon><IconLucideRotateCcw /></template>
-          </SButton>
+            {{ t("settings.fontConfig.previewSample") }}
+          </div>
         </div>
       </div>
     </div>
 
     <template #footer="{ close }">
       <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>
-      <SButton variant="secondary" @click="handleApply">{{ t("common.apply") }}</SButton>
       <SButton type="primary" @click="handleSave">{{ t("common.save") }}</SButton>
     </template>
   </SDialog>

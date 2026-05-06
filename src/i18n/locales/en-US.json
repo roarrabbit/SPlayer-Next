@@ -660,7 +660,6 @@
       "placeholder": "Enter a font name",
       "useSystem": "System default",
       "useGlobal": "Follow global",
-      "customLabel": "Custom font",
       "modeLabel": "Input method",
       "modeHint": "All fields below use this method",
       "modeSelect": "Pick a font",
@@ -668,6 +667,7 @@
       "resetRow": "Reset to default",
       "fieldLabel": "{name} font",
       "fieldDescription": "Applied to {name}",
+      "previewSample": "AaBb 0123 你好世界 こんにちは 안녕하세요",
       "groups": {
         "general": "General",
         "appLyric": "Lyric Font",
