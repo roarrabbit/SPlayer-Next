@@ -65,9 +65,7 @@ const optionMap = computed(
 );
 
 const selectedOptions = computed(() =>
-  selectedValues.value
-    .map((v) => optionMap.value.get(v))
-    .filter((o): o is SComboboxOption => !!o),
+  selectedValues.value.map((v) => optionMap.value.get(v)).filter((o): o is SComboboxOption => !!o),
 );
 
 const visibleTags = computed(() => selectedOptions.value.slice(0, props.maxTagCount));
