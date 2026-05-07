@@ -66,26 +66,22 @@ const setOpen = (val: boolean): void => {
           cover ? 'bg-black/50' : 'bg-black/40',
         ]"
       />
-
-      <!-- 内容面板 -->
       <DialogContent
         :style="contentStyle"
         :class="[
           'fixed top-1/2 left-1/2 z-300 -translate-x-1/2 -translate-y-1/2',
           'rounded-xl shadow-xl overflow-hidden',
+          'flex flex-col',
           'data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
           'focus:outline-none',
-          height === 'auto' ? 'overflow-y-auto px-5 py-4' : 'flex flex-col',
           cover
             ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border border-solid border-white/10 text-cover'
             : 'bg-surface-alt border border-solid border-outline-variant/30 text-on-surface',
         ]"
       >
         <!-- 标题 + 描述 -->
-        <div v-if="title" class="mb-3 pr-6">
-          <DialogTitle class="text-lg font-semibold">
-            {{ title }}
-          </DialogTitle>
+        <div v-if="title" class="shrink-0 px-5 pt-4 pb-3 pr-12">
+          <DialogTitle class="text-lg font-semibold">{{ title }}</DialogTitle>
           <DialogDescription
             v-if="description"
             :class="['text-xs mt-1', cover ? 'text-cover/50' : 'text-on-surface/50']"
@@ -100,11 +96,21 @@ const setOpen = (val: boolean): void => {
           <DialogDescription class="sr-only" />
         </template>
         <!-- 内容 -->
-        <div :class="[height === 'auto' ? 'text-sm' : 'flex-1 min-h-0 text-sm']">
+        <div
+          class="flex-1 min-h-0 overflow-y-auto text-sm"
+          :class="[
+            height === 'auto' && 'px-5',
+            height === 'auto' && !title && 'pt-4',
+            height === 'auto' && !$slots.footer && 'pb-4',
+          ]"
+        >
           <slot />
         </div>
         <!-- 底部操作 -->
-        <div v-if="$slots.footer" class="mt-3 flex items-center justify-end gap-2">
+        <div
+          v-if="$slots.footer"
+          class="shrink-0 px-5 pt-3 pb-4 flex items-center justify-end gap-2"
+        >
           <slot name="footer" :close="() => setOpen(false)" />
         </div>
         <!-- 关闭按钮 -->

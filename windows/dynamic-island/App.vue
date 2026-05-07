@@ -11,6 +11,7 @@ import { useDragWindow } from "./composables/useDragWindow";
 const config = reactive<DynamicIslandSettings>({
   scale: 1,
   fontWeight: 500,
+  fontFamily: "",
   wordByWord: true,
   playedColor: "rgba(255, 255, 255, 1)",
   unplayedColor: "rgba(255, 255, 255, 0.5)",
@@ -49,10 +50,10 @@ const { onRootPointerDown } = useDragWindow();
 /* 窗口模式 */
 const mode = ref<"snapped" | "floating">("snapped");
 
-/* 文本测量 */
+/* 文本测量：优先使用 config.fontFamily，确保与渲染一致 */
 const measureCtx = document.createElement("canvas").getContext("2d")!;
 const measureTextWidth = (text: string, sizePx: number = fontSize.value): number => {
-  const family = getComputedStyle(document.documentElement).fontFamily;
+  const family = config.fontFamily || getComputedStyle(document.documentElement).fontFamily;
   measureCtx.font = `${config.fontWeight} ${sizePx}px ${family}`;
   return Math.ceil(measureCtx.measureText(text).width);
 };
@@ -233,6 +234,7 @@ const rootStyle = computed(() => ({
   "--di-cover": `${coverSize.value}px`,
   "--di-cover-radius": `${coverRadius.value}px`,
   "--di-snap-radius": `${snapRadius.value}px`,
+  fontFamily: config.fontFamily || undefined,
 }));
 
 /* 取消订阅 */

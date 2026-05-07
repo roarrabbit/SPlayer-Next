@@ -25,6 +25,7 @@ export const useSettingsStore = defineStore(
       sidebarCollapsed: false,
       closeAction: "hide",
       rememberCloseChoice: false,
+      fontFamily: "",
     });
 
     /** 播放器 */
@@ -47,6 +48,7 @@ export const useSettingsStore = defineStore(
       adaptiveFontSize: true,
       fontSize: 48,
       fontWeight: 700,
+      fontFamily: "",
       showTranslation: true,
       showRomanization: true,
       enableWordHighlight: true,

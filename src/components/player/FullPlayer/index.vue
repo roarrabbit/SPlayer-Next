@@ -225,6 +225,7 @@ onBeforeUnmount(() => clearTimeout(idleTimer));
                 ? `calc(${settings.lyric.fontSize} / 1080 * 100vh)`
                 : `${settings.lyric.fontSize}px`,
               fontWeight: String(settings.lyric.fontWeight),
+              fontFamily: settings.lyric.fontFamily || undefined,
             }"
           >
             <Lyrics

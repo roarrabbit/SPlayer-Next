@@ -9,6 +9,7 @@ import LyricSourceOrderConfig from "@/components/settings/custom/LyricSourceOrde
 import LyricFormatOrderConfig from "@/components/settings/custom/LyricFormatOrderConfig.vue";
 import ExcludeLyricsConfig from "@/components/settings/custom/ExcludeLyricsConfig.vue";
 import HotkeyConfig from "@/components/settings/custom/HotkeyConfig.vue";
+import FontConfig from "@/components/settings/custom/FontConfig.vue";
 import IconLucideCog from "~icons/lucide/cog";
 import IconLucidePlay from "~icons/lucide/play";
 import IconLucideMic2 from "~icons/lucide/mic-2";
@@ -118,7 +119,7 @@ export const settingsSchema: SettingCategory[] = [
                 key: "customColor",
                 type: "color",
                 binding: { store: "theme", path: "customColor" },
-                defaultValue: "#6750a4",
+                defaultValue: "#fe7971",
                 showAlpha: false,
                 colorFormat: "hex",
               },
@@ -129,6 +130,16 @@ export const settingsSchema: SettingCategory[] = [
             type: "switch",
             binding: { store: "theme", path: "globalTint" },
             defaultValue: false,
+          },
+        ],
+      },
+      {
+        id: "font",
+        items: [
+          {
+            key: "fontConfig",
+            type: "custom",
+            component: FontConfig,
           },
         ],
       },

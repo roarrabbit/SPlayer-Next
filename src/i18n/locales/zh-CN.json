@@ -2,6 +2,7 @@
   "common": {
     "confirm": "确认",
     "cancel": "取消",
+    "apply": "应用",
     "close": "关闭",
     "save": "保存",
     "reset": "重置",
@@ -191,6 +192,7 @@
       "taskbarLyric": "任务栏歌词",
       "theme": "主题与风格",
       "layout": "布局",
+      "font": "字体",
       "media": "媒体控制",
       "device": "输出设备",
       "hotkeys": "快捷键",
@@ -648,6 +650,34 @@
     "sidebarCollapsed": {
       "label": "折叠侧边栏",
       "description": "将侧边栏折叠为图标模式"
+    },
+    "fontConfig": {
+      "label": "字体配置",
+      "description": "统一配置应用、歌词和外部歌词窗口的字体",
+      "button": "配置",
+      "title": "字体配置",
+      "loading": "正在加载系统字体",
+      "placeholder": "输入字体名称",
+      "useSystem": "系统默认",
+      "useGlobal": "跟随全局",
+      "modeLabel": "设置方式",
+      "modeHint": "下方所有字段统一使用该方式",
+      "modeSelect": "手动选择",
+      "modeCustom": "自定义字体",
+      "resetRow": "恢复默认",
+      "fieldLabel": "{name}字体",
+      "groups": {
+        "general": "通用字体",
+        "appLyric": "歌词字体",
+        "externalLyric": "外部歌词字体"
+      },
+      "fields": {
+        "global": "全局",
+        "lyric": "歌词",
+        "desktopLyric": "桌面歌词",
+        "dynamicIsland": "灵动岛歌词",
+        "taskbarLyric": "任务栏歌词"
+      }
     },
     "systemMediaControls": {
       "label": "系统媒体控制",

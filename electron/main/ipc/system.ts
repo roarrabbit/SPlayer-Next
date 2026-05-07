@@ -1,4 +1,5 @@
 import { ipcMain, shell } from "electron";
+import { getFonts } from "font-list";
 import type { LocaleCode } from "@shared/types/settings";
 import { setLocale } from "@main/utils/i18n";
 import { systemLog } from "@main/utils/logger";
@@ -41,5 +42,18 @@ export const registerSystemIpc = (): void => {
   ipcMain.handle("system:openSettings", (_event, category?: string, highlight?: string) => {
     focusMainWindow();
     getMainWindow()?.webContents.send("system:openSettings", { category, highlight });
+  });
+
+  // 获取系统已安装字体
+  let fontsCache: Promise<string[]> | null = null;
+  ipcMain.handle("system:listFonts", (): Promise<string[]> => {
+    if (!fontsCache) {
+      fontsCache = getFonts({ disableQuoting: true }).catch((err) => {
+        systemLog.error("[system] listFonts failed", err);
+        fontsCache = null;
+        return [];
+      });
+    }
+    return fontsCache;
   });
 };

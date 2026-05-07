@@ -41,6 +41,7 @@ export const defaultSystemConfig: SystemConfig = {
   desktopLyric: {
     fontSize: 24,
     fontWeight: 600,
+    fontFamily: "",
     showTranslation: true,
     doubleLine: true,
     align: "center",
@@ -60,6 +61,7 @@ export const defaultSystemConfig: SystemConfig = {
   dynamicIsland: {
     scale: 1,
     fontWeight: 500,
+    fontFamily: "",
     wordByWord: true,
     playedColor: "rgba(255, 255, 255, 1)",
     unplayedColor: "rgba(255, 255, 255, 0.5)",
@@ -80,6 +82,7 @@ export const defaultSystemConfig: SystemConfig = {
     showCover: true,
     wordByWord: true,
     fontSize: 14,
+    fontFamily: "",
   },
   lyric: {
     enableOnlineTTMLLyric: false,

@@ -4,3 +4,14 @@
   font-weight: normal;
   font-style: normal;
 }
+
+/**
+ * 默认字体栈
+ */
+:root {
+  --app-font:
+    -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Noto Sans", "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei",
+    "Source Han Sans CN", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+}
