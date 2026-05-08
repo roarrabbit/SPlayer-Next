@@ -1,17 +1,17 @@
 import { getPlayer } from "./engine";
-import { broadcast } from "@main/utils/broadcast";
+import { sendToMain } from "@main/utils/broadcast";
 import { playerLog } from "@main/utils/logger";
 
-let pollingStarted = false;
+/** 设备轮询定时器句柄，null 表示未启动 */
+let pollingTimer: NodeJS.Timeout | null = null;
 /** undefined = 尚未初始化，null = 无设备，string = 设备名 */
 let lastDefaultDevice: string | null | undefined = undefined;
 
 /** 启动设备轮询，检测默认音频设备变化并自动重建输出 */
 export const startDevicePolling = (): void => {
-  if (pollingStarted) return;
-  pollingStarted = true;
+  if (pollingTimer !== null) return;
 
-  setInterval(() => {
+  pollingTimer = setInterval(() => {
     try {
       const current = getPlayer().getDefaultDeviceName() ?? null;
 
@@ -35,10 +35,18 @@ export const startDevicePolling = (): void => {
         }
       }
 
-      broadcast("player:event", {
+      sendToMain("player:event", {
         type: "deviceChanged",
         data: { defaultDevice: current },
       });
     } catch {}
   }, 3000);
+};
+
+/** 停止设备轮询 */
+export const stopDevicePolling = (): void => {
+  if (pollingTimer === null) return;
+  clearInterval(pollingTimer);
+  pollingTimer = null;
+  lastDefaultDevice = undefined;
 };

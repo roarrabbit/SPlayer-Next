@@ -1,5 +1,4 @@
 import { loadNativeModule } from "@main/utils/nativeLoader";
-import { broadcast } from "@main/utils/broadcast";
 import { mediaLog, nativeLogsDir } from "@main/utils/logger";
 import { isDev } from "@main/utils/config";
 import { store } from "@main/store";
@@ -57,7 +56,6 @@ export const init = (): void => {
     mc.initialize();
     mc.onEvent((event) => {
       eventHandler?.(event);
-      broadcast("media:event", event);
     });
     const mediaConfig = store.get("media");
     if (mediaConfig.systemMediaControls) {

@@ -1,6 +1,6 @@
 import { app, Menu, MenuItemConstructorOptions, nativeTheme, Tray } from "electron";
 import type { RepeatMode, ShuffleMode } from "@shared/types/player";
-import { broadcast } from "@main/utils/broadcast";
+import { sendToMain } from "@main/utils/broadcast";
 import { appName, isWin } from "@main/utils/config";
 import { loadIcon, loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
@@ -48,17 +48,17 @@ const buildMenu = (): Menu => {
     {
       label: t("prev"),
       icon: menuIcon("prev"),
-      click: () => broadcast("player:event", { type: "prev" }),
+      click: () => sendToMain("player:event", { type: "prev" }),
     },
     {
       label: playState === "paused" ? t("play") : t("pause"),
       icon: menuIcon(playState === "paused" ? "play" : "pause"),
-      click: () => broadcast("player:event", { type: playState === "paused" ? "play" : "pause" }),
+      click: () => sendToMain("player:event", { type: playState === "paused" ? "play" : "pause" }),
     },
     {
       label: t("next"),
       icon: menuIcon("next"),
-      click: () => broadcast("player:event", { type: "next" }),
+      click: () => sendToMain("player:event", { type: "next" }),
     },
     { type: "separator" },
     {
@@ -70,14 +70,14 @@ const buildMenu = (): Menu => {
           icon: menuIcon("shuffle"),
           type: "radio",
           checked: shuffleMode === "on",
-          click: () => broadcast("player:event", { type: "setShuffle", data: { mode: "on" } }),
+          click: () => sendToMain("player:event", { type: "setShuffle", data: { mode: "on" } }),
         },
         {
           label: t("sequential"),
           icon: menuIcon("shuffle"),
           type: "radio",
           checked: shuffleMode === "off",
-          click: () => broadcast("player:event", { type: "setShuffle", data: { mode: "off" } }),
+          click: () => sendToMain("player:event", { type: "setShuffle", data: { mode: "off" } }),
         },
       ],
     },
@@ -90,21 +90,21 @@ const buildMenu = (): Menu => {
           icon: menuIcon("repeat"),
           type: "radio",
           checked: repeatMode === "list",
-          click: () => broadcast("player:event", { type: "setRepeat", data: { mode: "list" } }),
+          click: () => sendToMain("player:event", { type: "setRepeat", data: { mode: "list" } }),
         },
         {
           label: t("repeatOne"),
           icon: menuIcon("repeat-once"),
           type: "radio",
           checked: repeatMode === "one",
-          click: () => broadcast("player:event", { type: "setRepeat", data: { mode: "one" } }),
+          click: () => sendToMain("player:event", { type: "setRepeat", data: { mode: "one" } }),
         },
         {
           label: t("repeatOff"),
           icon: menuIcon("repeat"),
           type: "radio",
           checked: repeatMode === "off",
-          click: () => broadcast("player:event", { type: "setRepeat", data: { mode: "off" } }),
+          click: () => sendToMain("player:event", { type: "setRepeat", data: { mode: "off" } }),
         },
       ],
     },

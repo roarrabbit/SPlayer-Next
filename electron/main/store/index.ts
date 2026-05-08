@@ -22,16 +22,38 @@ const readFile = (): Record<string, unknown> => {
   }
 };
 
-/**
- * 将配置写入磁盘
- * @param config 配置对象
- */
-const flush = (config: SystemConfig): void => {
+/** 防抖窗口 */
+const FLUSH_DEBOUNCE_MS = 200;
+let flushTimer: NodeJS.Timeout | null = null;
+
+/** 同步写盘的内部实现 */
+const writeNow = (config: SystemConfig): void => {
   try {
     const dir = path.dirname(configPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     atomicWriteSync(configPath, JSON.stringify(config, null, 2));
   } catch {}
+};
+
+/** 立即写盘 */
+const flushImmediate = (config: SystemConfig): void => {
+  if (flushTimer !== null) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  writeNow(config);
+};
+
+/**
+ * 将配置写入磁盘
+ * @param config 配置对象
+ */
+const flush = (config: SystemConfig): void => {
+  if (flushTimer !== null) clearTimeout(flushTimer);
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    writeNow(config);
+  }, FLUSH_DEBOUNCE_MS);
 };
 
 /**
@@ -54,12 +76,17 @@ const init = (): SystemConfig => {
     (data as unknown as Record<string, unknown>)[META_KEY] = currentVersion;
   }
 
-  flush(data);
+  // 初始化立即落盘
+  flushImmediate(data);
   return data;
 };
 
 /** 配置存储 */
 let data: SystemConfig = init();
+
+app.on("before-quit", () => {
+  flushImmediate(data);
+});
 
 /** 配置存储 */
 export const store = {

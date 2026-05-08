@@ -58,15 +58,21 @@ export const useWindowControls = () => {
     choice.value === "hide" ? hide() : quit();
   };
 
+  let offMax: (() => void) | null = null;
+  let offFs: (() => void) | null = null;
+
   onMounted(() => {
     window.api.window.isMaximized().then((m) => (isMaximized.value = m));
     window.api.window.isFullscreen().then((f) => (isFullscreen.value = f));
-    const offMax = window.api.window.onMaximizeChange((m) => (isMaximized.value = m));
-    const offFs = window.api.window.onFullscreenChange((f) => (isFullscreen.value = f));
-    onBeforeUnmount(() => {
-      offMax();
-      offFs();
-    });
+    offMax = window.api.window.onMaximizeChange((m) => (isMaximized.value = m));
+    offFs = window.api.window.onFullscreenChange((f) => (isFullscreen.value = f));
+  });
+
+  onBeforeUnmount(() => {
+    offMax?.();
+    offFs?.();
+    offMax = null;
+    offFs = null;
   });
 
   return {

@@ -575,8 +575,6 @@ export const initPlayer = async (): Promise<void> => {
   // 先订阅事件，确保 load 触发播放后 position 事件能被接收
   if (unsubscribe) unsubscribe();
   unsubscribe = window.api.player.onEvent(handleEvent);
-  // 恢复定时关闭倒计时（如果上次会话设了，且 endTime 仍在未来）
-  autoClose.restoreOnInit();
   const lastTrack = status.currentTrack;
   if (lastTrack?.path) {
     const lastPosition = status.position;

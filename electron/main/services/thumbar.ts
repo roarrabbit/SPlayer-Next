@@ -1,5 +1,5 @@
 import { BrowserWindow, nativeTheme, ThumbarButton } from "electron";
-import { broadcast } from "@main/utils/broadcast";
+import { sendToMain } from "@main/utils/broadcast";
 import { loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
 import { thumbarLog } from "@main/utils/logger";
@@ -29,22 +29,22 @@ class ThumbarImpl implements Thumbar {
     this.prev = {
       tooltip: t("prev"),
       icon: thumbarIcon("prev"),
-      click: () => broadcast("player:event", { type: "prev" }),
+      click: () => sendToMain("player:event", { type: "prev" }),
     };
     this.next = {
       tooltip: t("next"),
       icon: thumbarIcon("next"),
-      click: () => broadcast("player:event", { type: "next" }),
+      click: () => sendToMain("player:event", { type: "next" }),
     };
     this.play = {
       tooltip: t("play"),
       icon: thumbarIcon("play"),
-      click: () => broadcast("player:event", { type: "play" }),
+      click: () => sendToMain("player:event", { type: "play" }),
     };
     this.pause = {
       tooltip: t("pause"),
       icon: thumbarIcon("pause"),
-      click: () => broadcast("player:event", { type: "pause" }),
+      click: () => sendToMain("player:event", { type: "pause" }),
     };
     // 初始化工具栏
     this.updateThumbar(false);

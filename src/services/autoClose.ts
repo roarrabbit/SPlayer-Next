@@ -4,8 +4,6 @@
  * 用户设定 N 分钟后停止播放。两种模式：
  * - 立即停：到点直接 pause()
  * - 等本曲结束：到点把 waitSongEnd 标记置位，下次 ended 事件触发时再 pause()
- *
- * endTime 用绝对 Unix ms 时间戳（非剩余时长），应用重启 / 系统休眠唤醒后能续算
  */
 
 import { useStatusStore } from "@/stores/status";
@@ -87,20 +85,3 @@ export const onTrackEnded = (): boolean => {
   return true;
 };
 
-/**
- * 应用启动时调用：如果持久化的 endTime 仍在未来，续算倒计时；
- * 否则直接清掉过期状态。
- */
-export const restoreOnInit = (): void => {
-  const status = useStatusStore();
-  const { autoClose } = status;
-  if (!autoClose.enable || autoClose.endTime <= 0) return;
-  if (autoClose.endTime <= Date.now()) {
-    // 上次会话期间已经超时但应用没在运行；按"已超时"清理，但不主动 pause
-    cancel();
-    return;
-  }
-  autoClose.remainTime = Math.ceil((autoClose.endTime - Date.now()) / 1000);
-  stopTick();
-  tickHandle = setInterval(tick, 1000);
-};

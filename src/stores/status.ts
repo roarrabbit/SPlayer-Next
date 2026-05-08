@@ -98,15 +98,7 @@ export const useStatusStore = defineStore(
   {
     persist: {
       storage: localStorage,
-      pick: [
-        "playIndex",
-        "repeatMode",
-        "shuffleMode",
-        "volume",
-        "position",
-        "duration",
-        "autoClose",
-      ],
+      pick: ["playIndex", "repeatMode", "shuffleMode", "volume"],
     },
   },
 );

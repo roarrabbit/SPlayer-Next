@@ -35,13 +35,11 @@ export const useMediaStore = defineStore("media", () => {
   /** 同步当前歌词源到主进程 */
   const syncToMain = (): void => {
     try {
-      const payload = JSON.parse(
-        JSON.stringify({
-          track: track.value,
-          lyric: parsedLyric.value,
-          source: activeLyric.value,
-        }),
-      );
+      const payload = {
+        track: track.value ? toRaw(track.value) : null,
+        lyric: toRaw(parsedLyric.value),
+        source: activeLyric.value ? toRaw(activeLyric.value) : null,
+      };
       window.api.nowPlaying.update(payload);
     } catch (error) {
       console.error("[media] syncToMain failed", error);

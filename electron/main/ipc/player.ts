@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { ipcMain, powerMonitor } from "electron";
-import { broadcast } from "@main/utils/broadcast";
+import { app, ipcMain, powerMonitor } from "electron";
+import { sendToMain } from "@main/utils/broadcast";
 import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";
 import * as mediaService from "@main/services/media";
 import * as nowPlaying from "@main/services/nowPlaying";
 import { getPlayer, resetPlayer, onPlayerCreated } from "@main/services/engine";
-import { startDevicePolling } from "@main/services/device";
+import { startDevicePolling, stopDevicePolling } from "@main/services/device";
 import { getThumbar } from "@main/services/thumbar";
 import { setTraySongName, setTrayPlayState, setTrayPlayMode } from "@main/services/tray";
 import { getMainWindow, setTaskbarProgress } from "@main/window";
@@ -53,7 +53,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           setTaskbarProgress(-1);
         }
         nowPlaying.onPlayStateChange(state === "playing");
-        broadcast("player:event", {
+        sendToMain("player:event", {
           type: "status",
           data: {
             state,
@@ -66,7 +66,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "ended": {
-        broadcast("player:event", { type: "ended" });
+        sendToMain("player:event", { type: "ended" });
         mediaService.setPlayState({ status: "Paused" });
         setTaskbarProgress(-1);
         break;
@@ -74,7 +74,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
       case "position": {
         const posMs = toMs(event.position ?? 0);
         const durMs = toMs(event.duration ?? 0);
-        broadcast("player:event", {
+        sendToMain("player:event", {
           type: "position",
           data: { position: posMs, duration: durMs },
         });
@@ -84,7 +84,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "fftData": {
-        broadcast("player:event", {
+        sendToMain("player:event", {
           type: "fftData",
           data: event.fftData ?? [],
         });
@@ -103,7 +103,7 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:load", (_event, source: string, autoPlay = true) => {
     try {
       const inst = getPlayer();
-      broadcast("player:event", {
+      sendToMain("player:event", {
         type: "status",
         data: {
           state: "loading",
@@ -432,7 +432,7 @@ export const registerPlayerIpc = (): void => {
 
   // 转发渲染端发起的播放控制
   ipcMain.on("player:dispatch", (_event, type: string) => {
-    broadcast("player:event", { type });
+    sendToMain("player:event", { type });
   });
 
   // 系统媒体事件处理
@@ -465,10 +465,10 @@ export const registerPlayerIpc = (): void => {
           }
           break;
         case "NextTrack":
-          broadcast("player:event", { type: "next" });
+          sendToMain("player:event", { type: "next" });
           break;
         case "PrevTrack":
-          broadcast("player:event", { type: "prev" });
+          sendToMain("player:event", { type: "prev" });
           break;
       }
     } catch {}
@@ -493,10 +493,13 @@ export const registerPlayerIpc = (): void => {
     // 全部重试失败，销毁损坏的实例
     playerLog.error("重建音频输出全部失败，销毁播放器实例");
     resetPlayer();
-    broadcast("player:event", {
+    stopDevicePolling();
+    sendToMain("player:event", {
       type: "status",
       data: { state: "stopped", position: 0, duration: 0, volume: 1, isFinished: false },
     });
   };
   powerMonitor.on("resume", resumeHandler);
+  // 退出前停止设备轮询
+  app.on("before-quit", stopDevicePolling);
 };
