@@ -61,8 +61,10 @@ html[data-appearance-style="image"] .glass-panel {
   background-color: rgb(var(--s-surface-bright) / 0.22);
 }
 
-/* 默认布局播放栏 */
-html[data-appearance-style="image"] footer.bg-surface-panel {
+/* 播放栏 */
+html[data-appearance-style="image"] footer.bg-surface-panel,
+html[data-appearance-style="image"] footer.glass-panel {
+  background-color: rgb(var(--s-surface-bright) / 0.7);
   backdrop-filter: blur(16px) saturate(1.4);
 }
 
