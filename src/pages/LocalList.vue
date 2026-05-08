@@ -119,12 +119,14 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex-1 min-h-0 overflow-y-auto px-5 pb-6">
+    <div class="flex-1 min-h-0">
       <CoverList
         v-if="items.length > 0"
         :items="items"
         :type="config.coverType"
         :min-size="config.minSize"
+        :padding-x="20"
+        :padding-bottom="24"
         @click="handleClick"
       />
       <div v-else class="h-full flex items-center justify-center">

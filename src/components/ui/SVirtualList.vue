@@ -1,6 +1,8 @@
 <script setup lang="ts" generic="T">
 export interface SVirtualListExposed {
   wrapperRef: HTMLElement | null;
+  /** 实际滚动容器 */
+  scrollRef: HTMLElement | null;
   contentRef: HTMLElement | null;
   actualStartIndex: number;
   scrollTo: (top: number, behavior?: ScrollBehavior) => void;
@@ -19,6 +21,8 @@ export interface SVirtualListProps<T> {
   itemFixed?: boolean;
   /** 容器高度，支持 CSS 值 */
   height?: number | string;
+  /** 顶部内边距（px） */
+  paddingTop?: number;
   /** 底部内边距（px） */
   paddingBottom?: number;
   /** 上下额外渲染的缓冲项数 */
@@ -32,6 +36,7 @@ export interface SVirtualListProps<T> {
 const props = withDefaults(defineProps<SVirtualListProps<T>>(), {
   itemFixed: false,
   height: "100%",
+  paddingTop: 0,
   paddingBottom: 0,
   bufferSize: 5,
   getItemKey: (_item: T, index: number) => index,
@@ -89,11 +94,11 @@ const updateTops = (fromIndex = 0): void => {
 
 const totalHeight = computed(() => {
   if (props.itemFixed) {
-    return props.items.length * props.itemHeight + props.paddingBottom;
+    return props.items.length * props.itemHeight + props.paddingTop + props.paddingBottom;
   }
-  if (itemTops.value.length === 0) return props.paddingBottom;
+  if (itemTops.value.length === 0) return props.paddingTop + props.paddingBottom;
   const last = itemTops.value.length - 1;
-  return itemTops.value[last] + itemHeights.value[last] + props.paddingBottom;
+  return itemTops.value[last] + itemHeights.value[last] + props.paddingTop + props.paddingBottom;
 });
 
 const actualStartIndex = ref(0);
@@ -109,11 +114,14 @@ const calculateVisibleRange = (currentScrollTop: number): void => {
   const vHeight = viewportHeight.value;
   if (!vHeight) return;
 
+  // 扣掉顶部 padding 后再换算项索引（itemTops 不含 paddingTop 偏移）
+  const effectiveScroll = Math.max(0, currentScrollTop - props.paddingTop);
+
   let startIndex = 0;
   let endIndex = 0;
 
   if (props.itemFixed) {
-    startIndex = Math.floor(currentScrollTop / props.itemHeight);
+    startIndex = Math.floor(effectiveScroll / props.itemHeight);
     endIndex = startIndex + Math.ceil(vHeight / props.itemHeight);
   } else {
     const tops = itemTops.value;
@@ -124,7 +132,7 @@ const calculateVisibleRange = (currentScrollTop: number): void => {
     let hi = len - 1;
     while (lo <= hi) {
       const mid = (lo + hi) >>> 1;
-      if (tops[mid] + heights[mid] > currentScrollTop) {
+      if (tops[mid] + heights[mid] > effectiveScroll) {
         startIndex = mid;
         hi = mid - 1;
       } else {
@@ -132,7 +140,7 @@ const calculateVisibleRange = (currentScrollTop: number): void => {
       }
     }
 
-    const viewportBottom = currentScrollTop + vHeight;
+    const viewportBottom = effectiveScroll + vHeight;
     lo = startIndex;
     hi = len - 1;
     endIndex = startIndex;
@@ -207,29 +215,28 @@ const handleScroll = (event: Event): void => {
   }
 };
 
-/** 获取指定索引项的顶部偏移 */
+/** 获取指定索引项的顶部偏移（含 paddingTop） */
 const getItemTop = (index: number): number => {
-  if (props.itemFixed) return index * props.itemHeight;
-  return itemTops.value[index] || 0;
+  if (props.itemFixed) return index * props.itemHeight + props.paddingTop;
+  return (itemTops.value[index] || 0) + props.paddingTop;
 };
 
 /** 根据 Y 轴偏移量计算放置位置（供拖拽排序使用） */
 const getDropInfoByOffset = (offsetY: number): { index: number; position: "top" | "bottom" } => {
   const len = props.items.length;
   if (len === 0) return { index: 0, position: "top" };
-
+  // 扣掉 paddingTop，落到 itemTops 坐标系
+  const adjusted = offsetY - props.paddingTop;
   if (props.itemFixed) {
-    const index = Math.floor(offsetY / props.itemHeight);
-    const remainder = offsetY % props.itemHeight;
+    const index = Math.floor(adjusted / props.itemHeight);
+    const remainder = ((adjusted % props.itemHeight) + props.itemHeight) % props.itemHeight;
     const position = remainder < props.itemHeight / 2 ? "top" : "bottom";
     return { index: Math.max(0, Math.min(index, len - 1)), position };
   }
-
   const tops = itemTops.value;
   const heights = itemHeights.value;
-
-  if (offsetY <= 0) return { index: 0, position: "top" };
-  if (offsetY >= tops[len - 1] + heights[len - 1]) return { index: len - 1, position: "bottom" };
+  if (adjusted <= 0) return { index: 0, position: "top" };
+  if (adjusted >= tops[len - 1] + heights[len - 1]) return { index: len - 1, position: "bottom" };
 
   let low = 0;
   let high = len - 1;
@@ -237,10 +244,10 @@ const getDropInfoByOffset = (offsetY: number): { index: number; position: "top" 
     const mid = (low + high) >>> 1;
     const top = tops[mid];
     const bottom = top + heights[mid];
-    if (offsetY >= top && offsetY < bottom) {
-      const position = offsetY - top < heights[mid] / 2 ? "top" : "bottom";
+    if (adjusted >= top && adjusted < bottom) {
+      const position = adjusted - top < heights[mid] / 2 ? "top" : "bottom";
       return { index: mid, position };
-    } else if (offsetY < top) {
+    } else if (adjusted < top) {
       high = mid - 1;
     } else {
       low = mid + 1;
@@ -260,10 +267,10 @@ const scrollToIndex = (index: number, behavior: ScrollBehavior = "auto"): void =
   const targetIndex = Math.max(0, Math.min(index, props.items.length - 1));
   let top = 0;
   if (props.itemFixed) {
-    top = targetIndex * props.itemHeight;
+    top = targetIndex * props.itemHeight + props.paddingTop;
   } else {
     if (itemTops.value.length <= targetIndex) initializeHeights();
-    top = itemTops.value[targetIndex] || 0;
+    top = (itemTops.value[targetIndex] || 0) + props.paddingTop;
   }
   scrollToPosition(top, behavior);
 };
@@ -337,6 +344,7 @@ onUnmounted(() => {
 
 defineExpose({
   wrapperRef,
+  scrollRef,
   contentRef,
   actualStartIndex,
   scrollTo: scrollToPosition,

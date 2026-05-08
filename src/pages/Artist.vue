@@ -231,12 +231,13 @@ const albumItems = computed<CoverItem[]>(() => {
             />
           </div>
           <!-- 专辑网格 -->
-          <div
-            v-else-if="activeTab === 'albums'"
-            key="albums"
-            class="flex-1 min-h-0 overflow-y-auto px-5 pt-3 pb-6"
-          >
-            <CoverList :items="albumItems" @click="(item) => navigateToAlbum(item.title)" />
+          <div v-else-if="activeTab === 'albums'" key="albums" class="flex-1 min-h-0">
+            <CoverList
+              :items="albumItems"
+              :padding-x="20"
+              :padding-bottom="24"
+              @click="(item) => navigateToAlbum(item.title)"
+            />
           </div>
         </Transition>
       </div>
