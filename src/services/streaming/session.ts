@@ -214,13 +214,7 @@ export const notifyProgress = (positionMs: number, isPaused: boolean): void => {
   const cfg = cfgFor(activeSession.serverId);
   if (!cfg) return;
   lastProgressAt = now;
-  void reportProgress(
-    cfg,
-    activeSession.originalId,
-    activeSession.sessionId,
-    positionMs,
-    isPaused,
-  );
+  void reportProgress(cfg, activeSession.originalId, activeSession.sessionId, positionMs, isPaused);
 };
 
 /**
@@ -233,11 +227,5 @@ export const notifyStateChanged = (positionMs: number, isPaused: boolean): void 
   const cfg = cfgFor(activeSession.serverId);
   if (!cfg) return;
   lastProgressAt = Date.now();
-  void reportProgress(
-    cfg,
-    activeSession.originalId,
-    activeSession.sessionId,
-    positionMs,
-    isPaused,
-  );
+  void reportProgress(cfg, activeSession.originalId, activeSession.sessionId, positionMs, isPaused);
 };
