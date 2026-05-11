@@ -11,19 +11,40 @@ export type RepeatMode = "off" | "list" | "one";
 export type ShuffleMode = "off" | "on";
 
 /** 歌曲来源 */
-export type TrackSource = "local" | "online";
+export type TrackSource = "local" | "online" | "streaming";
 
 /** 歌手 */
 export interface Artist {
   id?: string;
   name: string;
   avatar?: string;
+  /** 名下专辑数 */
+  albumCount?: number;
 }
 
 /** 专辑 */
 export interface Album {
   id?: string;
   name: string;
+  /** 封面 URL */
+  cover?: string;
+  /** 专辑歌手字符串 */
+  artist?: string;
+  /** 曲目数 */
+  trackCount?: number;
+  /** 发行年份 */
+  year?: number;
+}
+
+/** 歌单 */
+export interface Playlist {
+  id?: string;
+  name: string;
+  cover?: string;
+  description?: string;
+  trackCount?: number;
+  /** 创建者 */
+  owner?: string;
 }
 
 /** 音质信息 */
@@ -43,6 +64,10 @@ export interface Track {
   platform?: Platform;
   /** 本地路径 */
   path?: string;
+  /** 流媒体服务器实例 ID（仅 source==='streaming'） */
+  serverId?: string;
+  /** 流媒体服务器原生 ID（仅 source==='streaming'） */
+  originalId?: string;
   /** 标题 */
   title: string;
   /** 注释/副标题 */
@@ -75,10 +100,32 @@ export interface TrackDetail {
   externalLyrics: { format: LyricFormat; path: string }[];
 }
 
+/** 播放器加载后从音频流提取出的可覆盖元数据 */
+export interface MediaInfo {
+  /** 时长（毫秒） */
+  duration: number;
+  /** 缩略封面（cache:// URL 或 base64） */
+  cover?: string;
+  /** 音质信息 */
+  quality?: AudioQuality;
+}
+
 /** 播放器加载后返回的完整数据 */
 export interface LoadResult {
-  track: Track;
   detail: TrackDetail;
+  /** 引擎从音频流提取的元数据，用于 enrich 渲染层已持有的 Track */
+  mediaInfo: MediaInfo;
+}
+
+/** player:load 的可选参数 */
+export interface LoadOptions {
+  /** 是否自动播放，默认 true */
+  autoPlay?: boolean;
+  /**
+   * 渲染层下发的权威 Track 元数据，用于 SMTC/托盘/窗口标题。
+   * streaming/online 源应当下发；本地源缺省时主进程回退到引擎解析的 tag。
+   */
+  meta?: Track;
 }
 
 /** 播放器状态快照 */
@@ -121,8 +168,8 @@ export interface IpcResponse<T = void> {
 
 /** 播放器 API */
 export interface PlayerApi {
-  /** 加载音频（本地路径或网络地址） */
-  load: (source: string, autoPlay?: boolean) => Promise<IpcResponse<LoadResult>>;
+  /** 加载音频（本地路径或网络地址）。可选下发权威 meta 用于 SMTC/托盘 */
+  load: (source: string, options?: LoadOptions) => Promise<IpcResponse<LoadResult>>;
   /** 恢复播放 */
   play: () => Promise<IpcResponse>;
   /** 暂停播放 */

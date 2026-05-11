@@ -179,6 +179,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
 
 const emit = defineEmits<{
   scroll: [event: Event];
+  reachBottom: [];
   change: [];
 }>();
 
@@ -217,6 +218,7 @@ defineExpose({
         item-fixed
         height="100%"
         @scroll="(event: Event) => emit('scroll', event)"
+        @reach-bottom="emit('reachBottom')"
       >
         <!-- 搜索无结果 -->
         <template v-if="searchQuery && sortedItems.length === 0" #empty>
@@ -465,7 +467,7 @@ defineExpose({
                         v-for="(artist, i) in item.artists"
                         :key="artist.id ?? i"
                         class="cursor-pointer transition-opacity hover:opacity-70"
-                        @click.stop="navigateToArtist(artist.name)"
+                        @click.stop="navigateToArtist(artist.name, { source, artistId: artist.id })"
                       >
                         {{ artist.name }}
                         <span v-if="i < item.artists.length - 1" class="mx-0.5 opacity-50">/</span>
@@ -482,7 +484,7 @@ defineExpose({
                 v-if="showAlbum"
                 class="flex-1 min-w-0 truncate text-sm cursor-pointer transition-opacity hover:opacity-70"
                 :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
-                @click.stop="navigateToAlbum(item.album?.name)"
+                @click.stop="navigateToAlbum(item.album?.name, { source, albumId: item.album?.id })"
               >
                 {{ item.album?.name }}
               </div>
@@ -504,6 +506,16 @@ defineExpose({
               </div>
             </div>
           </div>
+        </template>
+        <template #footer>
+          <slot name="footer">
+            <div
+              v-if="sortedItems.length > 0"
+              class="py-3 text-center text-xs text-on-surface-variant/40"
+            >
+              {{ t("common.noMore") }}
+            </div>
+          </slot>
         </template>
       </SVirtualList>
     </SContextMenu>

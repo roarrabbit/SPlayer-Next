@@ -3,6 +3,8 @@ import { electronAPI } from "@electron-toolkit/preload";
 import type { TaskbarLyricSettings } from "@shared/types/settings";
 import type { PluginInfo, PluginResolveUrlArgs } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
+import type { LoadOptions } from "@shared/types/player";
+import type { StreamingServerConfig } from "@shared/types/streaming";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -21,7 +23,8 @@ const api = {
   },
   player: {
     // 加载音频（本地路径或网络地址）
-    load: (source: string, autoPlay = true) => ipcRenderer.invoke("player:load", source, autoPlay),
+    load: (source: string, options?: LoadOptions) =>
+      ipcRenderer.invoke("player:load", source, options ?? {}),
     // 恢复播放
     play: () => ipcRenderer.invoke("player:play"),
     // 暂停播放
@@ -101,6 +104,8 @@ const api = {
       subscribe<{ category?: string; highlight?: string }>("system:openSettings", callback),
     // 获取系统已安装字体
     listFonts: () => ipcRenderer.invoke("system:listFonts"),
+    // 拉远端字节回渲染层
+    fetchRemoteBytes: (url: string) => ipcRenderer.invoke("system:fetchRemoteBytes", url),
   },
   library: {
     // 开始扫描（默认增量）
@@ -301,6 +306,15 @@ const api = {
       ipcRenderer.invoke("theme:pickBackgroundImage"),
     // 清空已缓存的背景图
     clearBackgroundImages: (): Promise<void> => ipcRenderer.invoke("theme:clearBackgroundImages"),
+  },
+  streaming: {
+    // 加载服务器配置（密码已解密）
+    loadServers: () => ipcRenderer.invoke("streaming:loadServers"),
+    // 持久化服务器配置（密码经 safeStorage 加密）
+    saveServers: (payload: {
+      servers: StreamingServerConfig[];
+      activeServerId: string | null;
+    }): Promise<void> => ipcRenderer.invoke("streaming:saveServers", payload),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),

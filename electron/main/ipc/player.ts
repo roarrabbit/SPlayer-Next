@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { app, ipcMain, powerMonitor } from "electron";
 import { sendToMain } from "@main/utils/broadcast";
@@ -6,6 +5,7 @@ import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";
 import * as mediaService from "@main/services/media";
 import * as nowPlaying from "@main/services/nowPlaying";
+import { fetchBytes } from "@main/utils/fetchBytes";
 import { getPlayer, resetPlayer, onPlayerCreated } from "@main/services/engine";
 import { startDevicePolling, stopDevicePolling } from "@main/services/device";
 import { getThumbar } from "@main/services/thumbar";
@@ -16,7 +16,7 @@ import { appName } from "@main/utils/config";
 import { parseArtists, parseAlbum, formatArtists } from "@main/utils/metadata";
 import { playerLog } from "@main/utils/logger";
 import { ErrorCode } from "@shared/types/errors";
-import type { RepeatMode, ShuffleMode } from "@shared/types/player";
+import type { LoadOptions, RepeatMode, ShuffleMode } from "@shared/types/player";
 import type { MediaEvent } from "@main/services/media";
 import { JsPlayerEvent } from "@splayer/audio-engine";
 
@@ -109,13 +109,20 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
   });
 };
 
+/** 每次 player:load 自增 */
+let loadSeq = 0;
+
 /** 播放器相关 IPC */
 export const registerPlayerIpc = (): void => {
   // 注册实例创建/重建时的回调
   onPlayerCreated(registerNativeEvents);
   onPlayerCreated(() => startDevicePolling());
   // 加载音频文件
-  ipcMain.handle("player:load", (_event, source: string, autoPlay = true) => {
+  ipcMain.handle("player:load", async (_event, source: string, options: LoadOptions = {}) => {
+    const autoPlay = options.autoPlay ?? true;
+    const authoritative = options.meta ?? null;
+    const isStreaming = authoritative?.source === "streaming";
+    const seq = ++loadSeq;
     try {
       const inst = getPlayer();
       sendToMain("player:event", {
@@ -128,55 +135,77 @@ export const registerPlayerIpc = (): void => {
           isFinished: false,
         },
       });
-      const meta = inst.load(source, autoPlay);
-      // 提前解析元数据
-      const artists = parseArtists(meta.artist ?? "");
-      const artistStr = formatArtists(artists);
-      const trackTitle = meta.title || source.split(/[/\\]/).pop() || source;
-      const trackAlbum = parseAlbum(meta.album ?? "");
+      // 写一次 SMTC/托盘/标题
+      const applyDisplay = (
+        title: string,
+        artist: string,
+        album: string,
+        coverData: Buffer | undefined,
+        durationMs: number,
+      ): void => {
+        const header = artist ? `${title} - ${artist}` : title || appName;
+        mediaService.setMetadata({ title, artist, album, coverData, durationMs });
+        mediaService.setPlayState({ status: autoPlay ? "Playing" : "Paused" });
+        getMainWindow()?.setTitle(header);
+        setTraySongName(header);
+        setTrayPlayState(autoPlay ? "playing" : "paused");
+      };
+      // 流媒体乐观更新
+      if (authoritative) {
+        applyDisplay(
+          authoritative.title || source.split(/[/\\]/).pop() || source,
+          formatArtists(authoritative.artists ?? []),
+          authoritative.album?.name ?? "",
+          undefined,
+          authoritative.duration ?? 0,
+        );
+      }
+      const meta = await inst.load(source, autoPlay);
       const durationMs = toMs(meta.duration);
-      const trackId = createHash("sha256").update(source).digest("hex").slice(0, 16);
-      // 高清封面更新系统媒体控件
-      const coverData = inst.getCoverRaw() ?? undefined;
-      mediaService.setMetadata({
-        title: trackTitle,
-        artist: artistStr,
-        album: trackAlbum?.name ?? "",
-        coverData,
-        durationMs,
-      });
-      const playState = autoPlay ? "Playing" : "Paused";
-      mediaService.setPlayState({ status: playState });
-      // 更新窗口标题和托盘
-      const displayTitle = artistStr ? `${trackTitle} - ${artistStr}` : trackTitle || appName;
-      getMainWindow()?.setTitle(displayTitle);
-      setTraySongName(displayTitle);
-      setTrayPlayState(autoPlay ? "playing" : "paused");
+      const fallbackTitle = meta.title || source.split(/[/\\]/).pop() || source;
+      const displayTitle = authoritative?.title ?? fallbackTitle;
+      const displayArtist = authoritative
+        ? formatArtists(authoritative.artists ?? [])
+        : formatArtists(parseArtists(meta.artist ?? ""));
+      const displayAlbum = authoritative?.album?.name ?? parseAlbum(meta.album ?? "")?.name ?? "";
+      // 本地封面
+      const localCover = isStreaming ? null : (inst.getCoverRaw() ?? null);
+      applyDisplay(displayTitle, displayArtist, displayAlbum, localCover ?? undefined, durationMs);
+      // 流媒体高清封面
+      if (isStreaming && authoritative?.cover && /^https?:\/\//i.test(authoritative.cover)) {
+        const coverUrl = authoritative.cover;
+        void fetchBytes(coverUrl).then((buf) => {
+          if (!buf) return;
+          if (seq !== loadSeq) return;
+          mediaService.setMetadata({
+            title: displayTitle,
+            artist: displayArtist,
+            album: displayAlbum,
+            coverData: buf,
+            durationMs,
+          });
+        });
+      }
+      const quality = {
+        sampleRate: meta.originalSampleRate,
+        channels: meta.channels,
+        bitsPerSample: meta.bitsPerSample,
+        bitRate: meta.bitRate,
+        codec: meta.codec,
+      };
       const data = {
-        track: {
-          id: trackId,
-          source: "local",
-          path: source,
-          title: trackTitle,
-          comment: meta.comment ?? undefined,
-          artists,
-          album: trackAlbum,
-          duration: durationMs,
-          cover: toCacheUrl(meta.cover),
-        },
         detail: {
-          quality: {
-            sampleRate: meta.originalSampleRate,
-            channels: meta.channels,
-            bitsPerSample: meta.bitsPerSample,
-            bitRate: meta.bitRate,
-            codec: meta.codec,
-          },
+          quality,
           embeddedLyric: meta.embeddedLyric,
           externalLyrics: meta.externalLyrics,
         },
+        mediaInfo: {
+          duration: durationMs,
+          cover: isStreaming ? undefined : toCacheUrl(meta.cover),
+          quality,
+        },
       };
-      playerLog.debug(`加载成功: ${trackTitle}`);
+      playerLog.debug(`加载成功: ${displayTitle}`);
       return { success: true, data };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -222,10 +251,10 @@ export const registerPlayerIpc = (): void => {
   });
 
   // 跳转到指定播放位置
-  ipcMain.handle("player:seek", (_event, positionMs: number) => {
+  ipcMain.handle("player:seek", async (_event, positionMs: number) => {
     try {
       const positionSecs = positionMs / 1000;
-      getPlayer().seek(positionSecs);
+      await getPlayer().seek(positionSecs);
       mediaService.setTimeline({
         currentMs: positionMs,
         totalMs: toMs(getPlayer().getDuration()),
@@ -466,11 +495,13 @@ export const registerPlayerIpc = (): void => {
           break;
         case "Seek":
           if (event.positionMs != null) {
-            inst.seek(event.positionMs / 1000);
-            mediaService.setTimeline({
-              currentMs: event.positionMs,
-              totalMs: toMs(inst.getDuration()),
-              seeked: true,
+            const targetMs = event.positionMs;
+            void inst.seek(targetMs / 1000).then(() => {
+              mediaService.setTimeline({
+                currentMs: targetMs,
+                totalMs: toMs(inst.getDuration()),
+                seeked: true,
+              });
             });
           }
           break;

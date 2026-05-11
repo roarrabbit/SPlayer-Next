@@ -8,6 +8,7 @@ import type { Platform } from "@shared/types/platform";
 import { bestExternalIndex, detectFormat } from "@/utils/lyric/parse";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
+import { useStreamingStore } from "@/stores/streaming";
 import { DEFAULT_LYRIC_FORMAT_ORDER, DEFAULT_LYRIC_SOURCE_ORDER } from "@/types/settings";
 
 /** 一次在线 fetch 的结果 */
@@ -259,6 +260,30 @@ export const loadForTrack = async (detail: TrackDetail | null): Promise<void> =>
       commit(token, null, null);
       return;
     }
+    // 流媒体服务器
+    if (track.source === "streaming") {
+      const text = await useStreamingStore().getLyrics(track);
+      if (token !== currentToken) return;
+      const embeddedFallback = detail?.embeddedLyric
+        ? {
+            source: { source: "embedded" as const, format: detectFormat(detail.embeddedLyric) },
+            content: detail.embeddedLyric,
+          }
+        : null;
+      if (text && text.trim()) {
+        // 服务器可能给行级 LRC，也可能给逐字（ttml/yrc/qrc 等）或纯文本（Jellyfin 非同步）
+        commit(token, { source: "external", format: detectFormat(text) }, { content: text });
+        if (token !== currentToken) return;
+        // 解析后无有效行（如 Jellyfin 纯文本被 parseLRC 丢弃）→ 回退 embedded
+        if (useMediaStore().parsedLyric.length > 0) return;
+      }
+      if (embeddedFallback) {
+        commit(token, embeddedFallback.source, { content: embeddedFallback.content });
+      } else {
+        commit(token, null, null);
+      }
+      return;
+    }
     // 本地文件
     const local = detail ? await readLocal(detail) : null;
     if (token !== currentToken) return;
@@ -287,7 +312,7 @@ const refreshPreference = async (): Promise<void> => {
   const token = currentToken;
   const media = useMediaStore();
   const track = media.track;
-  if (!track || track.source === "online") return;
+  if (!track || track.source === "online" || track.source === "streaming") return;
 
   const detail = media.detail;
   const local = detail ? await readLocal(detail) : null;

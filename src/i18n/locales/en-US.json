@@ -9,11 +9,14 @@
     "search": "Search",
     "loading": "Loading",
     "noData": "No data",
+    "noMore": "No more ~",
     "success": "Success",
     "error": "Error",
     "playAll": "Play All",
     "totalSongs": "{count} songs",
-    "totalAlbums": "{count} albums"
+    "totalAlbums": "{count} albums",
+    "totalArtists": "{count} artists",
+    "totalPlaylists": "{count} playlists"
   },
   "equalizer": {
     "title": "Equalizer",
@@ -70,10 +73,71 @@
   "nav": {
     "home": "Home",
     "library": "Library",
+    "streaming": "Streaming",
     "settings": "Settings",
     "reload": "Reload",
     "devtools": "Developer Tools",
     "globalSettings": "Global Settings"
+  },
+  "streaming": {
+    "hint": "Connect to a streaming platform",
+    "hintDetail": "Server credentials are encrypted by the OS and stored locally; nothing is uploaded",
+    "errorCode": {
+      "auth": "Authentication failed",
+      "network": "Network error",
+      "protocol": "Protocol error",
+      "unknown": "Unknown error"
+    },
+    "tabs": {
+      "songs": "Songs",
+      "albums": "Albums",
+      "artists": "Artists",
+      "playlists": "Playlists"
+    },
+    "empty": {
+      "noServer": "No streaming server configured",
+      "addHint": "Click the button at the top right to add one",
+      "goToSettings": "Go to settings",
+      "notConnected": "Not connected to any server",
+      "noResults": "No results"
+    },
+    "server": {
+      "type": "Server type",
+      "name": "Server name",
+      "namePlaceholder": "Friendly name for this server",
+      "url": "Server URL",
+      "username": "Username",
+      "password": "Password",
+      "test": "Test connection",
+      "testOk": "Connection succeeded",
+      "testFail": "Connection failed",
+      "add": "Add server",
+      "added": "Server added",
+      "edit": "Edit server",
+      "updated": "Server updated",
+      "delete": "Delete",
+      "removed": "Server removed",
+      "deleteConfirmTitle": "Delete server",
+      "deleteConfirm": "Delete server \"{name}\"? This cannot be undone.",
+      "connect": "Connect",
+      "connected": "Connected",
+      "connectFailed": "Connection failed",
+      "disconnect": "Disconnect",
+      "disconnected": "Disconnected",
+      "active": "Active",
+      "lastConnected": "Last connected",
+      "errors": {
+        "nameEmpty": "Please enter a server name",
+        "urlInvalid": "Please enter a valid URL (http:// or https://)",
+        "usernameEmpty": "Please enter a username",
+        "passwordEmpty": "Please enter a password"
+      }
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "search": "Search",
+      "settings": "Streaming settings"
+    }
   },
   "player": {
     "play": "Play",
@@ -131,6 +195,17 @@
       "fileConfirm": "Permanently delete {count} files from disk? This cannot be undone"
     }
   },
+  "quality": {
+    "details": "Audio Quality",
+    "codec": "Codec",
+    "sampleRate": "Sample Rate",
+    "bitDepth": "Bit Depth",
+    "bitRate": "Bit Rate",
+    "channels": "Channels",
+    "stereo": "Stereo",
+    "mono": "Mono",
+    "multiChannel": "Multi-channel"
+  },
   "playlist": {
     "title": "Playlist",
     "empty": "Playlist is empty",
@@ -175,6 +250,7 @@
       "appearance": "Appearance",
       "hotkeys": "Hotkey Settings",
       "services": "Services",
+      "mediaSource": "Media Sources",
       "plugins": "Plugin Manager"
     },
     "section": {
@@ -201,7 +277,8 @@
       "discord": "Discord RPC",
       "systemConfig": "System",
       "reset": "Reset",
-      "pluginsList": "Installed Plugins"
+      "pluginsList": "Installed Plugins",
+      "streaming": "Streaming"
     },
     "language": {
       "label": "Language",
@@ -731,6 +808,10 @@
     "taskbarProgress": {
       "label": "Taskbar Progress",
       "description": "Show playback progress on the taskbar icon"
+    },
+    "streamingEnabled": {
+      "label": "Enable streaming",
+      "description": "When disabled, the streaming entry is hidden from the sidebar"
     },
     "closeAction": {
       "label": "Close Button Action",

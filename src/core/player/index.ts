@@ -1,14 +1,16 @@
-import type { PlayerEvent, Track } from "@shared/types/player";
+import type { Track } from "@shared/types/player";
+import { handleEvent } from "./events";
 import type { RepeatMode, ShuffleMode } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
+import { useStreamingStore } from "@/stores/streaming";
 import * as queue from "@/stores/queue";
 import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyricLoader";
-import * as autoClose from "@/services/autoClose";
 import * as abLoop from "@/services/abLoop";
-import { loadAudio } from "@/services/audioLoader";
+import * as session from "@/services/streaming/session";
+import { resolveTrackSource } from "@/services/audioSource";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
 
@@ -24,10 +26,15 @@ const SKIP_ON_ERROR_DELAY_MS = 1000;
 /**
  * 加载音频源
  * @param source - 音频文件路径或网络地址
- * @param autoPlay - 是否自动播放，默认 true，false 时加载后暂停
+ * @param autoPlay - 是否自动播放
+ * @param meta - 渲染层下发给主进程的权威 Track（用于 SMTC/托盘）
  * @returns 加载成功返回 Track，失败返回 null
  */
-export const load = async (source: string, autoPlay = true): Promise<Track | null> => {
+export const load = async (
+  source: string,
+  autoPlay = true,
+  meta?: Track,
+): Promise<Track | null> => {
   const status = useStatusStore();
   const token = ++loadToken;
   status.trackLoading = true;
@@ -39,32 +46,48 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
   // 不提前重置，保持播放状态
   const wasPlaying = status.isPlaying;
   status.state = wasPlaying ? "playing" : "loading";
+  // 立即重置进度
+  const initialDuration = meta?.duration ?? 0;
+  status.position = 0;
+  status.duration = initialDuration;
+  playback.setCurrentTime(0, { force: true });
+  playback.setDuration(initialDuration);
+  // 非本地并行歌词与取色
+  const isOnline = meta?.source !== "local";
+  if (isOnline) {
+    void lyricLoader.loadForTrack(null);
+    extractColorFromUrl(meta?.coverOriginal ?? meta?.cover ?? null);
+  }
   try {
-    const { data, error } = await loadAudio(source, autoPlay);
+    const result = await window.api.player.load(source, { autoPlay, meta });
     // 竞态保护
     if (token !== loadToken) return null;
-    if (data) {
+    if (result.success && result.data) {
+      const { detail, mediaInfo } = result.data;
       consecutiveFailures = 0;
       const media = useMediaStore();
-      media.setTrack(data.track, data.detail);
-      lyricLoader.loadForTrack(data.detail);
-      extractColorFromUrl(data.track.cover ?? null);
-      const dur = data.track.duration;
+      // 把引擎提取的 mediaInfo 与已有 Track 合并；身份字段保留
+      media.enrichTrack(mediaInfo, detail);
+      const enriched = media.track;
+      // 避免重复请求
+      if (!isOnline) {
+        lyricLoader.loadForTrack(detail);
+        extractColorFromUrl(enriched?.cover ?? null);
+      }
+      const dur = enriched?.duration ?? mediaInfo.duration;
       status.duration = dur;
-      status.position = 0;
       status.state = autoPlay ? "playing" : "paused";
       status.currentSource = source;
       playback.setDuration(dur);
-      playback.setCurrentTime(0, { force: true });
       playback.setPlaying(autoPlay);
-      return data.track;
+      return enriched;
     } else {
       status.state = "idle";
       lyricLoader.loadForTrack(null);
-      if (error) {
-        handleError(error);
-        // 仅单曲级错误才跳下一首（设备等全局错误跳了也没用）
-        if (isSkippableError(error)) {
+      if (result.error) {
+        handleError(result.error);
+        // 仅单曲级错误才跳下一首
+        if (isSkippableError(result.error)) {
           consecutiveFailures++;
           const reachedHardLimit = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
           const reachedQueueEnd = consecutiveFailures >= queue.queueLength.value;
@@ -73,7 +96,6 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
             consecutiveFailures = 0;
             await onQueueEnded();
           } else {
-            // 节流：给主进程/文件系统喘息时间，也避免日志刷屏
             setTimeout(() => {
               // 期间用户可能已手动操作，token 变化则放弃
               if (token === loadToken) nextTrack();
@@ -91,14 +113,20 @@ export const load = async (source: string, autoPlay = true): Promise<Track | nul
 /**
  * 加载指定 Track 到播放器
  * 乐观更新：立即显示歌曲信息，快速切歌时只有最后一次 load 生效
- * @param track - 要播放的 Track，为 null 或无 path 时忽略
+ * @param track - 要播放的 Track，为 null 时忽略
  */
 const loadTrack = async (track: Track | null): Promise<void> => {
-  if (!track?.path) return;
+  if (!track) return;
+  const source = await resolveTrackSource(track);
+  if (!source) return;
   // 乐观更新：同步写入 track，开启歌词加载周期
   useMediaStore().setTrack(track);
   lyricLoader.beginLoad();
-  await load(track.path);
+  // 通知流媒体 PlayState：给上一首发 Stopped、给新一首发 Playing
+  // 上一首位置取当前 status.position（旧值，切歌前的最后位置）
+  session.notifyTrackChanged(track, useStatusStore().position);
+  // meta 随 load 一起下发：SMTC/托盘/标题用 track 上的权威字段
+  await load(source, true, track);
 };
 
 /** 恢复播放 */
@@ -143,6 +171,8 @@ export const stop = async (): Promise<void> => {
   const result = await window.api.player.stop();
   if (result.success) {
     const status = useStatusStore();
+    // 上报 Stopped 给流媒体服务器
+    session.notifyTrackChanged(null, status.position);
     status.state = "stopped";
     status.position = 0;
     playback.reset();
@@ -155,8 +185,12 @@ export const stop = async (): Promise<void> => {
  */
 let seekTarget: number | null = null;
 
-/** 判断后端推送的 position 是否已到达 seek 目标附近 */
-const hasReachedSeekTarget = (position: number): boolean => {
+/**
+ * 判断后端推送的 position 是否已到达 seek 目标附近
+ * @param position - 后端推送的播放位置（毫秒）
+ * @returns 是否已到达 seek 目标
+ */
+export const hasReachedSeekTarget = (position: number): boolean => {
   if (seekTarget === null) return true;
   // 容差：后端推送的位置在 seek 目标 ±1s 内视为已到达
   if (Math.abs(position - seekTarget) < 1000) {
@@ -166,6 +200,9 @@ const hasReachedSeekTarget = (position: number): boolean => {
   }
   return false;
 };
+
+/** 当前是否正在 seek */
+export const isSeeking = (): boolean => seekTarget !== null;
 
 /**
  * 跳转到指定播放位置
@@ -312,6 +349,8 @@ const onQueueEnded = async (): Promise<void> => {
   // 通知主进程停止音频引擎
   await window.api.player.stop();
   const status = useStatusStore();
+  // Jellyfin/Emby 上报 Stopped，释放 server 端会话
+  session.notifyTrackChanged(null, status.position);
   status.state = "stopped";
   status.position = status.duration;
 };
@@ -453,92 +492,6 @@ export const moveInQueue = (fromIndex: number, toIndex: number): void => {
   }
 };
 
-/** 防止 onTrackEnded 重入 */
-let endedGuard = false;
-
-/**
- * 处理主进程推送的播放事件
- * @param event - 播放事件
- */
-const handleEvent = async (event: PlayerEvent): Promise<void> => {
-  const status = useStatusStore();
-  switch (event.type) {
-    case "status":
-      // 歌曲加载中或 loading 事件不更新 UI，保持当前封面/进度/播放状态平滑过渡
-      if (event.data.state === "loading" || status.trackLoading) break;
-      status.state = event.data.state;
-      // seek 期间不从 status 事件更新 position，避免回跳
-      // position 的更新统一由 position 事件负责
-      if (seekTarget === null) {
-        status.position = playback.setCurrentTime(event.data.position);
-      }
-      status.duration = event.data.duration;
-      status.volume = event.data.volume;
-      playback.setDuration(event.data.duration);
-      playback.setPlaying(event.data.state === "playing");
-      break;
-    case "position": {
-      // 歌曲加载中不更新进度
-      if (status.trackLoading) break;
-      // seek 后丢弃旧位置，直到后端推送的位置到达 seek 目标附近
-      if (!hasReachedSeekTarget(event.data.position)) break;
-      const adjusted = playback.setCurrentTime(event.data.position);
-      status.position = adjusted;
-      if (event.data.duration > 0) {
-        status.duration = event.data.duration;
-        playback.setDuration(event.data.duration);
-      }
-      // 用修正后的位置同步歌词索引，避免与显示进度不一致
-      useMediaStore().updateLyricIndex(adjusted);
-      // AB 循环：到达 B 点 seek 回 A
-      abLoop.checkLoop(adjusted);
-      break;
-    }
-    case "fftData":
-      status.fftData = event.data;
-      break;
-    case "ended": {
-      if (endedGuard) return;
-      endedGuard = true;
-      try {
-        // 定时关闭"等本曲结束"模式：到点了就在这里 pause，吃掉本次 ended，不进入下一曲
-        if (autoClose.onTrackEnded()) break;
-        // 单曲循环：seek 回开头继续播放（复用 FFmpeg 上下文，不重建）
-        if (status.repeatMode === "one") {
-          await seek(0);
-          await play();
-        } else {
-          await nextTrack();
-        }
-      } finally {
-        endedGuard = false;
-      }
-      break;
-    }
-    case "play":
-      await play();
-      break;
-    case "pause":
-      await pause();
-      break;
-    case "next":
-      await nextTrack();
-      break;
-    case "prev":
-      await prevTrack();
-      break;
-    case "setShuffle":
-      setShuffleMode(event.data.mode);
-      break;
-    case "setRepeat":
-      setRepeatMode(event.data.mode);
-      break;
-    case "deviceChanged":
-      refreshDevices();
-      break;
-  }
-};
-
 let unsubscribe: (() => void) | null = null;
 let initialized = false;
 
@@ -550,6 +503,8 @@ export const initPlayer = async (): Promise<void> => {
   // 先从主进程同步后端配置，确保 system 设置可用
   const settings = useSettingsStore();
   await settings.syncSystem();
+  // 流媒体 store 必须在恢复队列前就绪，否则队列里的 streaming track 拿不到 cfg
+  await useStreamingStore().init();
   await queue.restoreQueue();
   const status = useStatusStore();
   // 恢复上次的音量和播放模式到主进程
@@ -576,15 +531,19 @@ export const initPlayer = async (): Promise<void> => {
   if (unsubscribe) unsubscribe();
   unsubscribe = window.api.player.onEvent(handleEvent);
   const lastTrack = status.currentTrack;
-  if (lastTrack?.path) {
+  if (lastTrack) {
     const lastPosition = status.position;
-    // 先设置 track 信息（确保播放条显示），再尝试 load
+    // 先设置 track 信息（确保播放条显示），再尝试解析 source 并 load
     useMediaStore().setTrack(lastTrack);
-    lyricLoader.beginLoad();
-    const result = await load(lastTrack.path, settings.system.player.autoPlay);
-    // load 成功且需要恢复进度时 seek
-    if (result && settings.system.player.rememberLastTrack && lastPosition > 0) {
-      await seek(lastPosition);
+    const source = await resolveTrackSource(lastTrack);
+    if (source) {
+      lyricLoader.beginLoad();
+      const result = await load(source, settings.system.player.autoPlay, lastTrack);
+      if (result && settings.system.player.rememberLastTrack && lastPosition > 0) {
+        await seek(lastPosition);
+      }
+    } else {
+      status.state = "idle";
     }
   } else {
     status.state = "idle";
