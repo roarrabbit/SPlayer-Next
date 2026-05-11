@@ -118,7 +118,8 @@ impl Drop for AudioOutput {
     }
 }
 
-/// 在调用线程构建 cpal/rodio 输出流
+/// 构建 cpal/rodio 输出流；**仅在 `audio-output-owner` 线程内调用**，
+/// 保证 `OutputStream` 的创建、持有和 drop 都发生在同一线程上
 fn build_output_stream(device_name: Option<&str>) -> Result<(OutputStream, OutputStreamHandle)> {
     match device_name {
         Some(name) => {

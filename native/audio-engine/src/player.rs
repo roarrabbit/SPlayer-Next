@@ -175,16 +175,19 @@ fn join_with_timeout(handle: JoinHandle<()>, timeout_ms: u64) {
 }
 
 impl InnerPlayer {
-    /// 确保音频输出已就绪，未初始化或设备丢失时重新打开；返回当前输出
+    /// 未初始化时通过 `AudioOutput::new` 懒构造音频输出，返回当前输出。
+    /// 设备失效时的重建由 `reinit_output` 显式处理，不在此函数内自动恢复。
     fn ensure_output(&mut self) -> Result<&AudioOutput> {
         if self.output.is_none() {
             self.output = Some(AudioOutput::new(self.selected_device_name.as_deref())?);
         }
-        // 上面分支若进入则 output 必为 Some；否则原本就是 Some
-        // 写成 match 而非 unwrap：让借用检查通过且无 panic 路径
+        // None 分支不可达：上面分支若进入则 output 已被赋为 Some，否则进入这里之前就是 Some
+        // 仍写成 match：在 NLL 限制下既能让借用检查通过，又规避非测试代码 unwrap/expect
         match self.output {
             Some(ref output) => Ok(output),
-            None => Err(anyhow::anyhow!("audio output not initialized")),
+            None => Err(anyhow::anyhow!(
+                "ensure_output post-condition violated: output should be Some"
+            )),
         }
     }
 
@@ -401,9 +404,11 @@ impl InnerPlayer {
         self.fft_enabled.load(Ordering::Relaxed)
     }
 
-    /// 重新初始化音频输出设备（系统休眠唤醒后调用，恢复失效的 OutputStream 句柄）
+    /// 重新初始化音频输出设备（系统休眠唤醒、设备热拔插等场景调用）
     ///
-    /// 保存当前播放状态（来源、位置、音量），重建音频输出后自动恢复：
+    /// 通过赋值新的 `AudioOutput` 触发旧 `AudioOutput` 的 `Drop`：旧 owner 线程
+    /// 退出 + 旧 `cpal::Stream` 在该线程内释放，再创建新 `AudioOutput`（新 owner 线程）。
+    /// 保存当前播放状态（来源、位置、音量），重建后自动恢复：
     /// - Playing → seek 到原位置继续播放
     /// - Paused  → seek 到原位置并暂停
     /// - 其他状态 → 仅重建输出，不恢复播放
