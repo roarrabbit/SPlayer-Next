@@ -36,8 +36,13 @@ export const resolveTrackSource = async (
   // 流媒体
   if (track.source === "streaming") {
     try {
-      const streamUrl = await useStreamingStore().getStreamUrl(track);
-      if (cacheEnabled) void window.api.cache.song.fetch(cacheKey!, "streaming", streamUrl);
+      const store = useStreamingStore();
+      const streamUrl = await store.getStreamUrl(track);
+      if (cacheEnabled) {
+        // 缓存下载用独立 PlaySessionId，避免与播放流并发触发 Jellyfin/Emby 同会话冲突
+        const cacheUrl = await store.getStreamUrl(track, { playSessionId: crypto.randomUUID() });
+        void window.api.cache.song.fetch(cacheKey!, "streaming", cacheUrl);
+      }
       return { source: streamUrl, fromCache: false };
     } catch (err) {
       handleError(err instanceof Error ? err.message : String(err));

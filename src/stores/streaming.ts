@@ -520,8 +520,9 @@ export const useStreamingStore = defineStore("streaming", () => {
    * 取流播放 URL
    * 非激活服务器静默重连
    * @param track - source="streaming" 的 Track（必须带 serverId/originalId）
+   * @param opts.playSessionId - 覆盖默认 PlaySessionId；用于背景缓存下载与播放流并发时区分会话
    */
-  const getStreamUrl = async (track: Track): Promise<string> => {
+  const getStreamUrl = async (track: Track, opts?: { playSessionId?: string }): Promise<string> => {
     const cfg = findCfgForTrack(track);
     const isActive = cfg.id === activeServerId.value;
     const needsConnect = isActive
@@ -532,7 +533,7 @@ export const useStreamingStore = defineStore("streaming", () => {
       if (!result.ok) throw new Error(isActive ? result.error : `${cfg.name}: ${result.error}`);
     }
     const fresh = servers.value.find((s) => s.id === cfg.id) ?? cfg;
-    const sessionId = session.sessionIdForTrack(track.id);
+    const sessionId = opts?.playSessionId ?? session.sessionIdForTrack(track.id);
     return withAutoReauthFor(fresh, (c) => client.getStreamUrl(c, track.originalId!, sessionId));
   };
 
