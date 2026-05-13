@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Track, TrackSource } from "@shared/types/player";
+import type { Artist, Track, TrackSource } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
@@ -76,7 +76,21 @@ const textCollator = new Intl.Collator(undefined, {
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
 
+/** 专辑是否可跳转*/
+const isAlbumLinkable = (item: Track): boolean => {
+  if (!item.album?.name) return false;
+  return props.source === "streaming" ? !!item.album.id : true;
+};
+
+/** 歌手是否可跳转*/
+const isArtistLinkable = (artist: Artist): boolean => {
+  if (!artist.name) return false;
+  return props.source === "streaming" ? !!artist.id : true;
+};
+
+/** 排序字段 */
 type SortField = "none" | "title" | "artist" | "album" | "duration" | "size" | "mtime" | "ctime";
+/** 排序方向 */
 type SortOrder = "asc" | "desc";
 
 /** 排序字段 */
@@ -469,8 +483,16 @@ defineExpose({
                       <span
                         v-for="(artist, i) in item.artists"
                         :key="artist.id ?? i"
-                        class="cursor-pointer transition-opacity hover:opacity-70"
-                        @click.stop="navigateToArtist(artist.name, { source, artistId: artist.id })"
+                        class="transition-opacity"
+                        :class="
+                          isArtistLinkable(artist)
+                            ? 'cursor-pointer hover:opacity-70'
+                            : 'opacity-50'
+                        "
+                        @click.stop="
+                          isArtistLinkable(artist) &&
+                          navigateToArtist(artist.name, { source, artistId: artist.id })
+                        "
                       >
                         {{ artist.name }}
                         <span v-if="i < item.artists.length - 1" class="mx-0.5 opacity-50">/</span>
@@ -485,11 +507,17 @@ defineExpose({
               <!-- 专辑 -->
               <div
                 v-if="showAlbum"
-                class="flex-1 min-w-0 truncate text-sm cursor-pointer transition-opacity hover:opacity-70"
-                :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
-                @click.stop="navigateToAlbum(item.album?.name, { source, albumId: item.album?.id })"
+                class="flex-1 min-w-0 truncate text-sm transition-opacity"
+                :class="[
+                  playingId === item.id ? 'text-primary/70' : 'text-on-surface',
+                  isAlbumLinkable(item) ? 'cursor-pointer hover:opacity-70' : 'opacity-50',
+                ]"
+                @click.stop="
+                  isAlbumLinkable(item) &&
+                  navigateToAlbum(item.album?.name, { source, albumId: item.album?.id })
+                "
               >
-                {{ item.album?.name }}
+                {{ item.album?.name || t("collection.unknownAlbum") }}
               </div>
               <!-- 时长 -->
               <div
