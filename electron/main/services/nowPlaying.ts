@@ -91,8 +91,9 @@ const LYRIC_OFFSET_LIMIT_MS = 60_000;
  */
 export const setLyricOffset = (trackId: string, offsetMs: number): void => {
   if (!trackId) return;
-  const truncated = Math.trunc(offsetMs);
-  const value = Math.max(-LYRIC_OFFSET_LIMIT_MS, Math.min(LYRIC_OFFSET_LIMIT_MS, truncated));
+  // IPC 进来可能是 NaN/Infinity，会污染所有下游时间叠加计算，统一视为清除
+  const normalized = Number.isFinite(offsetMs) ? Math.trunc(offsetMs) : 0;
+  const value = Math.max(-LYRIC_OFFSET_LIMIT_MS, Math.min(LYRIC_OFFSET_LIMIT_MS, normalized));
   const map = { ...(store.get("player.lyricOffsets") ?? {}) };
   if (value === 0) delete map[trackId];
   else map[trackId] = value;

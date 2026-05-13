@@ -1,7 +1,7 @@
 import { dialog, ipcMain } from "electron";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { existsSync, statSync, readdirSync } from "node:fs";
+import { existsSync, type Dirent } from "node:fs";
 import { store } from "@main/store";
 import {
   defaultAppCacheDir,
@@ -47,20 +47,24 @@ export interface CacheStat {
  * @param dir - 目录路径
  * @returns 占用字节数
  */
-const dirSize = (dir: string): number => {
-  if (!existsSync(dir)) return 0;
-  let total = 0;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    try {
-      if (entry.isDirectory()) {
-        total += dirSize(full);
-      } else if (entry.isFile()) {
-        total += statSync(full).size;
-      }
-    } catch {}
+const dirSize = async (dir: string): Promise<number> => {
+  let entries: Dirent[];
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return 0;
   }
-  return total;
+  const sizes = await Promise.all(
+    entries.map(async (entry) => {
+      const full = path.join(dir, entry.name);
+      try {
+        if (entry.isDirectory()) return await dirSize(full);
+        if (entry.isFile()) return (await fs.stat(full)).size;
+      } catch {}
+      return 0;
+    }),
+  );
+  return sizes.reduce((sum, item) => sum + item, 0);
 };
 
 /**
@@ -114,7 +118,7 @@ const categoryHandlers: Record<
   {
     kind: CacheKind;
     path: () => string;
-    size: () => number;
+    size: () => number | Promise<number>;
     clear: () => void | Promise<void>;
   }
 > = {
@@ -174,13 +178,16 @@ const idsByKind = (kind: CacheKind): CacheCategory[] =>
 
 /** 注册缓存相关 IPC */
 export const registerCacheIpc = (): void => {
-  ipcMain.handle("cache:getStats", (): CacheStat[] => {
-    return (Object.keys(categoryHandlers) as CacheCategory[]).map((id) => ({
-      id,
-      kind: categoryHandlers[id].kind,
-      path: categoryHandlers[id].path(),
-      size: categoryHandlers[id].size(),
-    }));
+  ipcMain.handle("cache:getStats", async (): Promise<CacheStat[]> => {
+    const ids = Object.keys(categoryHandlers) as CacheCategory[];
+    return Promise.all(
+      ids.map(async (id) => ({
+        id,
+        kind: categoryHandlers[id].kind,
+        path: categoryHandlers[id].path(),
+        size: await categoryHandlers[id].size(),
+      })),
+    );
   });
 
   ipcMain.handle("cache:clear", async (_event, id: CacheCategory): Promise<void> => {
