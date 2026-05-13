@@ -76,16 +76,21 @@ const textCollator = new Intl.Collator(undefined, {
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
 
-/** 专辑是否可跳转*/
+/** 非本地源需要真实 id */
+const needsRealId = computed(
+  () => props.source === "streaming" || props.source === "online",
+);
+
+/** 专辑是否可跳转 */
 const isAlbumLinkable = (item: Track): boolean => {
   if (!item.album?.name) return false;
-  return props.source === "streaming" ? !!item.album.id : true;
+  return needsRealId.value ? !!item.album.id : true;
 };
 
-/** 歌手是否可跳转*/
+/** 歌手是否可跳转 */
 const isArtistLinkable = (artist: Artist): boolean => {
   if (!artist.name) return false;
-  return props.source === "streaming" ? !!artist.id : true;
+  return needsRealId.value ? !!artist.id : true;
 };
 
 /** 排序字段 */
@@ -480,23 +485,23 @@ defineExpose({
                       {{ getQualityLevel(item.quality) === "hi-res" ? "HR" : "SQ" }}
                     </span>
                     <span class="truncate">
-                      <span
-                        v-for="(artist, i) in item.artists"
-                        :key="artist.id ?? i"
-                        class="transition-opacity"
-                        :class="
-                          isArtistLinkable(artist)
-                            ? 'cursor-pointer hover:opacity-70'
-                            : 'opacity-50'
-                        "
-                        @click.stop="
-                          isArtistLinkable(artist) &&
-                          navigateToArtist(artist.name, { source, artistId: artist.id })
-                        "
-                      >
-                        {{ artist.name }}
+                      <template v-for="(artist, i) in item.artists" :key="artist.id ?? i">
+                        <span
+                          class="transition-opacity"
+                          :class="
+                            isArtistLinkable(artist)
+                              ? 'cursor-pointer hover:opacity-70'
+                              : 'opacity-50'
+                          "
+                          @click.stop="
+                            isArtistLinkable(artist) &&
+                            navigateToArtist(artist.name, { source, artistId: artist.id })
+                          "
+                        >
+                          {{ artist.name }}
+                        </span>
                         <span v-if="i < item.artists.length - 1" class="mx-0.5 opacity-50">/</span>
-                      </span>
+                      </template>
                       <span v-if="!item.artists?.length" class="opacity-50">
                         {{ t("playlist.unknownArtist") }}
                       </span>

@@ -3,7 +3,8 @@
  *
  * 与 netease 不同之处：
  * - 无账号体系、无 cookie、无加密 body，纯 fetch GET
- * - 搜索走 songsearch.kugou.com；歌词走 lyrics.kugou.com（需 KG-RC/KG-THash/UA 伪装）
+ * - 搜索主走 mobilecdn.kugou.com（响应里有封面），失败兜底 songsearch.kugou.com（无封面）
+ * - 歌词走 lyrics.kugou.com（需 KG-RC/KG-THash/UA 伪装 PC 客户端）
  * - 歌词是 hash + 歌名 + 时长 三元组匹配（KG 特有，不能只凭 ID）
  *
  * 统一入口：callKugou(name, params)
@@ -68,6 +69,14 @@ export const callKugou = async (name: string, params: KGParams = {}): Promise<an
   if (hit !== undefined) return hit;
 
   const value = await fn(params);
-  cacheSet(key, value);
+  // 空结果不缓存，避免一次失败被钉死 2 分钟
+  if (!isEmptyResult(value)) cacheSet(key, value);
   return value;
+};
+
+const isEmptyResult = (value: unknown): boolean => {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  if (Array.isArray(v.songs) && v.songs.length === 0) return true;
+  return false;
 };

@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { Track } from "@shared/types/player";
+import { ALL_PLATFORMS, PLATFORM_SHORT_NAME, type Platform } from "@shared/types/platform";
 import type { CoverItem } from "@/types/artist";
 import { searchSongs, searchAlbums, searchArtists, searchPlaylists } from "@/apis/search";
 import SongList from "@/components/list/SongList.vue";
 import CoverList from "@/components/list/CoverList.vue";
+import { useStatusStore } from "@/stores/status";
 
 const { t } = useI18n();
 const route = useRoute();
+const status = useStatusStore();
 
 type TabKey = "songs" | "albums" | "artists" | "playlists";
 
@@ -27,9 +30,12 @@ const tabs = computed(() => [
   { key: "playlists", label: t("search.tabs.playlists") },
 ]);
 
+const platformTabs = ALL_PLATFORMS.map((key) => ({ key, label: PLATFORM_SHORT_NAME[key] }));
+
 interface TabState<T> {
   items: T[];
   total: number;
+  hasMore: boolean;
   loaded: boolean;
   loading: boolean;
   loadingMore: boolean;
@@ -38,6 +44,7 @@ interface TabState<T> {
 const createState = <T,>(): TabState<T> => ({
   items: [],
   total: 0,
+  hasMore: false,
   loaded: false,
   loading: false,
   loadingMore: false,
@@ -65,7 +72,7 @@ const fetchTab = async (tab: TabKey, append: boolean): Promise<void> => {
   if (!keyword.value) return;
   const state = states[tab];
   if (append) {
-    if (!state.loaded || state.loadingMore || state.items.length >= state.total) return;
+    if (!state.loaded || state.loadingMore || !state.hasMore) return;
     state.loadingMore = true;
   } else {
     if (state.loading) return;
@@ -75,7 +82,7 @@ const fetchTab = async (tab: TabKey, append: boolean): Promise<void> => {
   try {
     const offset = append ? state.items.length : 0;
     const result = await (fetchers[tab] as typeof searchSongs)(
-      "netease",
+      status.searchPlatform,
       keyword.value,
       offset,
       PAGE_SIZE,
@@ -86,6 +93,7 @@ const fetchTab = async (tab: TabKey, append: boolean): Promise<void> => {
       state.items = result.items as never;
     }
     state.total = result.total;
+    state.hasMore = result.hasMore;
     state.loaded = true;
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
@@ -95,21 +103,35 @@ const fetchTab = async (tab: TabKey, append: boolean): Promise<void> => {
   }
 };
 
-/** 关键词变化：重置所有 tab 状态并拉当前 tab */
+const resetStates = (): void => {
+  (Object.keys(states) as TabKey[]).forEach((tab) => {
+    states[tab].items = [];
+    states[tab].total = 0;
+    states[tab].hasMore = false;
+    states[tab].loaded = false;
+    states[tab].loading = false;
+    states[tab].loadingMore = false;
+  });
+  error.value = "";
+};
+
+/** 关键词变化：清空状态并拉当前 tab */
 watch(
   keyword,
   () => {
-    (Object.keys(states) as TabKey[]).forEach((tab) => {
-      states[tab].items = [];
-      states[tab].total = 0;
-      states[tab].loaded = false;
-      states[tab].loading = false;
-      states[tab].loadingMore = false;
-    });
-    error.value = "";
+    resetStates();
     if (keyword.value) fetchTab(activeTab.value, false);
   },
   { immediate: true },
+);
+
+/** 平台切换：清空状态并按当前关键词重拉 */
+watch(
+  () => status.searchPlatform,
+  () => {
+    resetStates();
+    if (keyword.value) fetchTab(activeTab.value, false);
+  },
 );
 
 /** 切换 tab：未拉过则按需请求 */
@@ -119,6 +141,10 @@ watch(activeTab, (tab) => {
 
 const onTabSwitch = (key: string): void => {
   activeTab.value = key as TabKey;
+};
+
+const onPlatformSwitch = (key: string): void => {
+  status.searchPlatform = key as Platform;
 };
 
 /** 滚动触底加载下一页 */
@@ -131,95 +157,112 @@ const isInitialLoading = computed(() => {
   const state = states[activeTab.value];
   return state.loading && !state.loaded;
 });
+
+/** 当前 tab 已加载且为空 */
+const isEmptyResult = computed(() => {
+  const state = states[activeTab.value];
+  return state.loaded && state.items.length === 0;
+});
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <!-- 顶栏 -->
     <div class="shrink-0 px-5 pb-2">
-      <h1 class="mt-2 mb-4 truncate">
-        <span class="text-3xl font-bold text-on-surface">
-          {{ keyword || t("search.title") }}
-        </span>
-        <span v-if="keyword" class="ml-2 text-lg text-on-surface-variant/60">
-          {{ t("search.titleSuffix") }}
-        </span>
-      </h1>
+      <div class="mt-2 mb-4 flex items-end justify-between gap-4">
+        <h1 class="truncate min-w-0">
+          <span class="text-3xl font-bold text-on-surface">
+            {{ keyword || t("search.title") }}
+          </span>
+          <span v-if="keyword" class="ml-2 text-lg text-on-surface-variant/60">
+            {{ t("search.titleSuffix") }}
+          </span>
+        </h1>
+        <!-- 平台切换：胶囊 segment -->
+        <div
+          class="shrink-0 inline-flex items-center gap-0.5 p-1 rounded-full bg-on-surface/5 border border-solid border-outline-variant/20"
+        >
+          <SButton
+            v-for="p in platformTabs"
+            :key="p.key"
+            :variant="status.searchPlatform === p.key ? 'secondary' : 'ghost'"
+            :type="status.searchPlatform === p.key ? 'primary' : 'default'"
+            size="small"
+            round
+            strong
+            ripple
+            @click="onPlatformSwitch(p.key)"
+          >
+            {{ p.label }}
+          </SButton>
+        </div>
+      </div>
       <STabs :model-value="activeTab" :tabs="tabs" @update:model-value="onTabSwitch" />
     </div>
-
     <!-- 空关键词 -->
-    <div v-if="!keyword" class="flex-1 flex items-center justify-center text-on-surface-variant/50">
-      <div class="text-center">
-        <IconLucideSearch class="size-12 mx-auto mb-3 opacity-30" />
+    <div v-if="!keyword" class="flex-1 flex items-center justify-center">
+      <div class="text-center text-on-surface-variant/60">
+        <IconLucideSearch class="size-14 mx-auto mb-4 opacity-30" />
         <div class="text-sm">{{ t("search.emptyKeyword") }}</div>
       </div>
     </div>
     <!-- 错误态 -->
-    <div v-else-if="error" class="flex-1 flex items-center justify-center text-red-500/80 px-6">
-      <div class="text-sm break-all text-center">{{ error }}</div>
+    <div v-else-if="error" class="flex-1 flex items-center justify-center px-6">
+      <div class="text-center text-red-500/85">
+        <IconLucideTriangleAlert class="size-14 mx-auto mb-4 opacity-50" />
+        <div class="text-sm font-medium mb-1">{{ t("search.errorTitle") }}</div>
+        <div class="text-xs opacity-80 break-all max-w-xs">{{ error }}</div>
+      </div>
     </div>
     <!-- 首次加载 -->
-    <div
-      v-else-if="isInitialLoading"
-      class="flex-1 flex items-center justify-center text-on-surface-variant/50"
-    >
-      <div class="text-sm">{{ t("common.loading") }}</div>
+    <div v-else-if="isInitialLoading" class="flex-1 flex items-center justify-center">
+      <div class="text-center text-on-surface-variant/60">
+        <SLoading class="text-4xl text-primary/70 mb-4 mx-auto block" />
+        <div class="text-sm">{{ t("common.loading") }}</div>
+      </div>
+    </div>
+    <!-- 无结果 -->
+    <div v-else-if="isEmptyResult" class="flex-1 flex items-center justify-center">
+      <div class="text-center text-on-surface-variant/60">
+        <IconLucideSearchX class="size-14 mx-auto mb-4 opacity-30" />
+        <div class="text-sm mb-1">{{ t("search.noResults") }}</div>
+        <div class="text-xs opacity-70">{{ t("search.noResultsHint") }}</div>
+      </div>
     </div>
     <!-- 各 tab 内容 -->
     <div v-else class="flex-1 min-h-0">
-      <template v-if="activeTab === 'songs'">
-        <SongList
-          v-if="states.songs.items.length > 0"
-          :items="states.songs.items"
-          source="online"
-          :show-size="false"
-          @reach-bottom="onReachBottom('songs')"
-        />
-        <div v-else class="h-full flex items-center justify-center text-on-surface-variant/50">
-          <div class="text-sm">{{ t("search.noResults") }}</div>
-        </div>
-      </template>
-      <template v-else-if="activeTab === 'albums'">
-        <CoverList
-          v-if="states.albums.items.length > 0"
-          :items="states.albums.items"
-          :padding-x="20"
-          :padding-top="8"
-          :padding-bottom="20"
-          @reach-bottom="onReachBottom('albums')"
-        />
-        <div v-else class="h-full flex items-center justify-center text-on-surface-variant/50">
-          <div class="text-sm">{{ t("search.noResults") }}</div>
-        </div>
-      </template>
-      <template v-else-if="activeTab === 'artists'">
-        <CoverList
-          v-if="states.artists.items.length > 0"
-          :items="states.artists.items"
-          type="artist"
-          :padding-x="20"
-          :padding-top="8"
-          :padding-bottom="20"
-          @reach-bottom="onReachBottom('artists')"
-        />
-        <div v-else class="h-full flex items-center justify-center text-on-surface-variant/50">
-          <div class="text-sm">{{ t("search.noResults") }}</div>
-        </div>
-      </template>
-      <template v-else>
-        <CoverList
-          v-if="states.playlists.items.length > 0"
-          :items="states.playlists.items"
-          :padding-x="20"
-          :padding-top="8"
-          :padding-bottom="20"
-          @reach-bottom="onReachBottom('playlists')"
-        />
-        <div v-else class="h-full flex items-center justify-center text-on-surface-variant/50">
-          <div class="text-sm">{{ t("search.noResults") }}</div>
-        </div>
-      </template>
+      <SongList
+        v-if="activeTab === 'songs'"
+        :items="states.songs.items"
+        source="online"
+        :show-size="false"
+        @reach-bottom="onReachBottom('songs')"
+      />
+      <CoverList
+        v-else-if="activeTab === 'albums'"
+        :items="states.albums.items"
+        :padding-x="20"
+        :padding-top="8"
+        :padding-bottom="20"
+        @reach-bottom="onReachBottom('albums')"
+      />
+      <CoverList
+        v-else-if="activeTab === 'artists'"
+        :items="states.artists.items"
+        type="artist"
+        :padding-x="20"
+        :padding-top="8"
+        :padding-bottom="20"
+        @reach-bottom="onReachBottom('artists')"
+      />
+      <CoverList
+        v-else
+        :items="states.playlists.items"
+        :padding-x="20"
+        :padding-top="8"
+        :padding-bottom="20"
+        @reach-bottom="onReachBottom('playlists')"
+      />
     </div>
   </div>
 </template>

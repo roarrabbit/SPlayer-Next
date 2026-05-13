@@ -1,4 +1,5 @@
 import type { PlayerState, AudioDevice, RepeatMode, ShuffleMode } from "@shared/types/player";
+import type { Platform } from "@shared/types/platform";
 export type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import * as queue from "./queue";
 
@@ -53,8 +54,10 @@ export const useStatusStore = defineStore(
       pointA: null as number | null,
       pointB: null as number | null,
     });
-    /** 当前曲目歌词偏移（ms，正值为歌词提前）；主进程为权威源，本地仅做镜像 */
+    /** 当前曲目歌词偏移（ms，正值为歌词提前） */
     const lyricOffsetMs = ref(0);
+    /** 搜索页选中的平台 */
+    const searchPlatform = ref<Platform>("netease");
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */
@@ -95,13 +98,14 @@ export const useStatusStore = defineStore(
       autoClose,
       abLoop,
       lyricOffsetMs,
+      searchPlatform,
       currentTrack,
     };
   },
   {
     persist: {
       storage: localStorage,
-      pick: ["playIndex", "repeatMode", "shuffleMode", "volume", "position"],
+      pick: ["playIndex", "repeatMode", "shuffleMode", "volume", "position", "searchPlatform"],
     },
   },
 );

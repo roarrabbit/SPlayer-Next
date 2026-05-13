@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Platform } from "@shared/types/platform";
+import { PLATFORM_SHORT_NAME, type Platform } from "@shared/types/platform";
 import { useSortable } from "@vueuse/integrations/useSortable";
 import { DEFAULT_LYRIC_SOURCE_ORDER } from "@/types/settings";
 import { useSettingsStore } from "@/stores/settings";
@@ -25,12 +25,7 @@ useSortable(listEl, list, {
   fallbackClass: "sortable-ghost",
 });
 
-const labelOf = (v: Platform): string =>
-  ({
-    netease: t("settings.lyricSourcePreference.netease"),
-    qqmusic: t("settings.lyricSourcePreference.qqmusic"),
-    kugou: t("settings.lyricSourcePreference.kugou"),
-  })[v] ?? v;
+const labelOf = (v: Platform): string => PLATFORM_SHORT_NAME[v] ?? v;
 
 const handleConfirm = () => {
   settings.lyric.lyricSourceOrder = [...list.value];

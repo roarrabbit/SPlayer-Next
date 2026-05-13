@@ -2,7 +2,10 @@
  * KG API 通用常量
  */
 
-/** 搜索接口（WebFilter 平台，无需鉴权） */
+/** 主搜索（带封面）：mobilecdn 的 /api/v3/search/song，公网无鉴权，响应里 trans_param.union_cover 就是封面 URL 模板 */
+export const KG_MOBILECDN_URL = "http://mobilecdn.kugou.com/api/v3/search/song";
+
+/** 兜底搜索：老的 songsearch，无封面，但不依赖任何 KG 服务可达性变化 */
 export const KG_SEARCH_URL = "https://songsearch.kugou.com/song_search_v2";
 
 /** 歌词搜索/下载接口（走 lyrics.kugou.com 的 expand_search 通道） */

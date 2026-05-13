@@ -91,6 +91,8 @@
     "titleSuffix": "的搜索结果",
     "emptyKeyword": "请输入关键词开始搜索",
     "noResults": "没有找到匹配内容",
+    "noResultsHint": "换个关键词或切换音源试试",
+    "errorTitle": "搜索失败",
     "tabs": {
       "songs": "单曲",
       "albums": "专辑",

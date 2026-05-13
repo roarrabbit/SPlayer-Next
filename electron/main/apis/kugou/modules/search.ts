@@ -1,21 +1,166 @@
 /**
  * 搜索歌曲（KG）
- * endpoint: https://songsearch.kugou.com/song_search_v2
+ *
+ * 主路径：mobilecdn.kugou.com/api/v3/search/song
+ *   公网无鉴权 GET，响应字段是小写，含 trans_param.union_cover（封面 URL，带 `{size}` 占位）
+ *   tramhao/termusic、zonemeen/musicn、UnblockNeteaseMusic 等多个开源项目都在用
+ * 兜底：songsearch.kugou.com/song_search_v2（无封面，PascalCase 字段）
  *
  * params:
  * - keywords  关键词（必填）
  * - page      页码，默认 1
  * - limit     每页数，默认 30
  *
- * 返回字段遵循 qqmusic.search 的结构（duration 为毫秒），并额外带上
- * KG 特有的 hash / audioId / 多品质 sizes&hashes，播放/歌词都要用
+ * 返回结构沿用 qqmusic.search（duration 为毫秒），并带 KG 特有的 hash + 多品质 sizes/hashes
  */
 
-import { KG_SEARCH_URL, decodeName, formatSingerName } from "../core/config";
+import { KG_MOBILECDN_URL, KG_SEARCH_URL, decodeName, formatSingerName } from "../core/config";
 import { kgRequest } from "../core/request";
+import { coreLog } from "@main/utils/logger";
 import type { KGModule } from "../core/types";
 
-interface KGSearchSong {
+type Quality = "128k" | "320k" | "flac" | "flac24bit";
+
+interface NormalizedSong {
+  id: string;
+  audioId: number;
+  hash: string;
+  name: string;
+  artist: string;
+  album: string;
+  albumId: string | number;
+  cover?: string;
+  /** 秒 */
+  interval: number;
+  /** 毫秒 */
+  duration: number;
+  qualities: Quality[];
+  hashes: Partial<Record<Quality, string>>;
+  sizes: Partial<Record<Quality, number>>;
+}
+
+/** trans_param.union_cover 含 `{size}` 占位，统一替成 300 */
+const fillCover = (url: string | undefined, size = 300): string | undefined => {
+  if (!url) return undefined;
+  return url.replace(/\{size\}/g, String(size));
+};
+
+/** 主路径 mobilecdn 返回的字段都是小写蛇形 */
+interface MobileSong {
+  hash?: string;
+  audio_id?: number;
+  songname?: string;
+  filename?: string;
+  singername?: string;
+  album_id?: string | number;
+  album_name?: string;
+  duration?: number;
+  filesize?: number;
+  "320hash"?: string;
+  "320filesize"?: number;
+  sqhash?: string;
+  sqfilesize?: number;
+  /** Hi-Res 字段名不同版本不一，两种都收 */
+  hires_hash?: string;
+  hires_filesize?: number;
+  reshash?: string;
+  resfilesize?: number;
+  /** 翻唱/不同版本聚合 */
+  group?: MobileSong[];
+  trans_param?: { union_cover?: string };
+}
+
+interface MobileResp {
+  status?: number;
+  error_code?: number;
+  data?: {
+    total?: number;
+    info?: MobileSong[];
+  };
+}
+
+/** singername 是 "A、B" / "A,B" 形式的字符串，规范成 "A / B" */
+const formatMobileArtist = (name: string | undefined): string => {
+  if (!name) return "";
+  return decodeName(name)
+    .split(/、|,|;|\//)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(" / ");
+};
+
+const normalizeFromMobile = (raw: MobileSong): NormalizedSong => {
+  const sizes: Partial<Record<Quality, number>> = {};
+  const hashes: Partial<Record<Quality, string>> = {};
+
+  if (raw.filesize && raw.hash) {
+    sizes["128k"] = raw.filesize;
+    hashes["128k"] = raw.hash;
+  }
+  if (raw["320filesize"] && raw["320hash"]) {
+    sizes["320k"] = raw["320filesize"];
+    hashes["320k"] = raw["320hash"];
+  }
+  if (raw.sqfilesize && raw.sqhash) {
+    sizes.flac = raw.sqfilesize;
+    hashes.flac = raw.sqhash;
+  }
+  const hrSize = raw.hires_filesize ?? raw.resfilesize;
+  const hrHash = raw.hires_hash ?? raw.reshash;
+  if (hrSize && hrHash) {
+    sizes.flac24bit = hrSize;
+    hashes.flac24bit = hrHash;
+  }
+
+  const interval = raw.duration ?? 0;
+  return {
+    id: String(raw.audio_id ?? ""),
+    audioId: raw.audio_id ?? 0,
+    hash: raw.hash ?? "",
+    name: decodeName(raw.songname || raw.filename || ""),
+    artist: formatMobileArtist(raw.singername),
+    album: decodeName(raw.album_name ?? ""),
+    albumId: raw.album_id ?? "",
+    cover: fillCover(raw.trans_param?.union_cover),
+    interval,
+    duration: interval * 1000,
+    qualities: Object.keys(hashes) as Quality[],
+    hashes,
+    sizes,
+  };
+};
+
+const searchSongsMobile = async (keywords: string, page: number, limit: number) => {
+  const url =
+    `${KG_MOBILECDN_URL}?keyword=${encodeURIComponent(keywords)}` +
+    `&page=${page}&pagesize=${limit}&format=json&showtype=1`;
+
+  const body = await kgRequest<MobileResp>(url);
+  const raw = body.data?.info ?? [];
+
+  const songs: NormalizedSong[] = [];
+  const seen = new Set<string>();
+  const push = (item: MobileSong) => {
+    const key = `${item.audio_id ?? ""}_${item.hash ?? ""}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    songs.push(normalizeFromMobile(item));
+  };
+  for (const item of raw) {
+    push(item);
+    for (const sub of item.group ?? []) push(sub);
+  }
+
+  return {
+    code: 200,
+    total: body.data?.total ?? songs.length,
+    songs,
+  };
+};
+
+// ── 兜底：旧 songsearch（无封面，PascalCase 字段） ─────────────────────────────
+
+interface LegacySong {
   Audioid: number;
   SongName: string;
   Singers?: Array<{ name?: string }>;
@@ -30,21 +175,19 @@ interface KGSearchSong {
   SQFileSize?: number;
   ResFileHash?: string;
   ResFileSize?: number;
-  Grp?: KGSearchSong[];
+  Grp?: LegacySong[];
 }
 
-interface KGSearchResp {
+interface LegacyResp {
   status?: number;
   error_code?: number;
   data?: {
     total?: number;
-    lists?: KGSearchSong[];
+    lists?: LegacySong[];
   };
 }
 
-type Quality = "128k" | "320k" | "flac" | "flac24bit";
-
-const normalizeSong = (raw: KGSearchSong) => {
+const normalizeFromLegacy = (raw: LegacySong): NormalizedSong => {
   const sizes: Partial<Record<Quality, number>> = {};
   const hashes: Partial<Record<Quality, string>> = {};
 
@@ -73,14 +216,40 @@ const normalizeSong = (raw: KGSearchSong) => {
     artist: formatSingerName(raw.Singers),
     album: decodeName(raw.AlbumName ?? ""),
     albumId: raw.AlbumID ?? "",
-    /** 秒 */
+    cover: undefined,
     interval: raw.Duration,
-    /** 毫秒，与其它源对齐 */
     duration: raw.Duration * 1000,
-    /** 支持的品质列表（从高到低） */
     qualities: Object.keys(hashes) as Quality[],
     hashes,
     sizes,
+  };
+};
+
+const searchSongsLegacy = async (keywords: string, page: number, limit: number) => {
+  const url =
+    `${KG_SEARCH_URL}?keyword=${encodeURIComponent(keywords)}` +
+    `&page=${page}&pagesize=${limit}` +
+    `&userid=0&clientver=&platform=WebFilter&filter=2&iscorrection=1&privilege_filter=0&area_code=1`;
+
+  const body = await kgRequest<LegacyResp>(url);
+  const raw = body.data?.lists ?? [];
+  const songs: NormalizedSong[] = [];
+  const seen = new Set<string>();
+  const push = (item: LegacySong) => {
+    const key = `${item.Audioid}_${item.FileHash}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    songs.push(normalizeFromLegacy(item));
+  };
+  for (const item of raw) {
+    push(item);
+    for (const sub of item.Grp ?? []) push(sub);
+  }
+
+  return {
+    code: 200,
+    total: body.data?.total ?? songs.length,
+    songs,
   };
 };
 
@@ -99,36 +268,15 @@ const search: KGModule = async (params) => {
     return { code: 400, total: 0, songs: [], message: "keywords required" };
   }
 
-  const url =
-    `${KG_SEARCH_URL}?keyword=${encodeURIComponent(keywords)}` +
-    `&page=${page}&pagesize=${limit}` +
-    `&userid=0&clientver=&platform=WebFilter&filter=2&iscorrection=1&privilege_filter=0&area_code=1`;
-
-  const body = await kgRequest<KGSearchResp>(url);
-
-  const raw = body.data?.lists ?? [];
-  const songs: ReturnType<typeof normalizeSong>[] = [];
-  // 去重键：audioId + hash（同一首歌不同品质会出现多条）
-  const seen = new Set<string>();
-
-  const push = (item: KGSearchSong) => {
-    const key = `${item.Audioid}_${item.FileHash}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    songs.push(normalizeSong(item));
-  };
-
-  for (const item of raw) {
-    push(item);
-    // Grp 里是翻唱/不同版本，一并展开
-    for (const sub of item.Grp ?? []) push(sub);
+  // mobilecdn 抛错或空结果都兜底到 songsearch
+  try {
+    const result = await searchSongsMobile(keywords, page, limit);
+    if (result.songs.length > 0) return result;
+    coreLog.warn("[kg] mobilecdn returned 0, fallback to songsearch");
+  } catch (err) {
+    coreLog.warn("[kg] mobilecdn failed, fallback to songsearch:", err);
   }
-
-  return {
-    code: 200,
-    total: body.data?.total ?? songs.length,
-    songs,
-  };
+  return await searchSongsLegacy(keywords, page, limit);
 };
 
 export default search;
