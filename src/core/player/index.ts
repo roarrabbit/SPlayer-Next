@@ -5,6 +5,7 @@ import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { useStreamingStore } from "@/stores/streaming";
+import { usePluginsStore } from "@/stores/plugins";
 import * as queue from "@/stores/queue";
 import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyricLoader";
@@ -520,6 +521,8 @@ export const initPlayer = async (): Promise<void> => {
   await settings.syncSystem();
   // 流媒体 store 必须在恢复队列前就绪，否则队列里的 streaming track 拿不到 cfg
   await useStreamingStore().init();
+  // 插件 store 同理：在线歌曲 URL 兜底走插件，列表必须在 loadTrack 前就绪
+  void usePluginsStore().load();
   await queue.restoreQueue();
   const status = useStatusStore();
   // 恢复上次的音量和播放模式到主进程

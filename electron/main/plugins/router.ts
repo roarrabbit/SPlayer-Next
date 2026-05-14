@@ -11,10 +11,10 @@ import type {
   MusicUrlRes,
   PluginAction,
   PluginResolveUrlArgs,
-  SourceCapability,
 } from "@shared/types/plugin";
 import { ACTION_TIMEOUTS, PluginErrorCodes } from "@shared/defaults/plugin-api";
 import { pluginRegistry, type PluginRuntime } from "./registry";
+import { pluginLog } from "@main/utils/logger";
 
 let reqSeq = 0;
 const nextRequestId = (): string => `r${Date.now().toString(36)}-${++reqSeq}`;
@@ -53,25 +53,6 @@ const callOn = <T>(
   });
 };
 
-/** 判断某插件的指定源是否支持该动作 */
-const supportsAction = (
-  rt: PluginRuntime,
-  source: string | undefined,
-  action: PluginAction,
-): { ok: boolean; source?: string } => {
-  if (rt.status.state !== "ready") return { ok: false };
-  const sources = rt.status.sources;
-  if (source) {
-    const cap: SourceCapability | undefined = sources[source];
-    if (!cap) return { ok: false };
-    return { ok: cap.actions.includes(action), source };
-  }
-  for (const [key, cap] of Object.entries(sources)) {
-    if (cap.actions.includes(action)) return { ok: true, source: key };
-  }
-  return { ok: false };
-};
-
 export const resolveUrl = async (args: PluginResolveUrlArgs): Promise<MusicUrlRes> => {
   const rt = pluginRegistry.getRuntime(args.pluginId);
   if (!rt) {
@@ -79,17 +60,21 @@ export const resolveUrl = async (args: PluginResolveUrlArgs): Promise<MusicUrlRe
       code: PluginErrorCodes.NOT_FOUND,
     });
   }
-  const check = supportsAction(rt, args.source, "musicUrl");
-  if (!check.ok) {
-    throw Object.assign(
-      new Error(`plugin ${args.pluginId} does not support musicUrl on source ${args.source}`),
-      { code: PluginErrorCodes.ACTION_UNSUPPORTED },
-    );
+  if (rt.status.state !== "ready") {
+    throw Object.assign(new Error(`plugin ${args.pluginId} not ready`), {
+      code: PluginErrorCodes.NOT_READY,
+    });
   }
+  // 不卡 inited 声明，调到 sandbox 让脚本自己判 source；handler 没注册时 sandbox 端回 ACTION_UNREGISTERED
   const params: MusicUrlReq = {
-    source: check.source!,
+    source: args.source ?? "",
     quality: args.quality ?? "hq",
     musicInfo: args.musicInfo,
   };
-  return callOn<MusicUrlRes>(rt, "musicUrl", params, ACTION_TIMEOUTS.musicUrl);
+  try {
+    return await callOn<MusicUrlRes>(rt, "musicUrl", params, ACTION_TIMEOUTS.musicUrl);
+  } catch (err) {
+    pluginLog.warn("resolveUrl rejected", args.pluginId, (err as Error)?.message);
+    throw err;
+  }
 };
