@@ -824,8 +824,11 @@ impl InnerPlayer {
     }
 
     /// 停止播放并释放资源
+    /// 显式停止：清掉 current_source，避免后续 play() 在 Stopped 态下用残留源复活上一首
+    /// （`stop_internal` 是内部过渡用，不清；load() 会立即用新源覆盖）
     pub fn stop(&mut self) {
         self.stop_internal();
+        self.current_source = None;
         self.state = PlayerState::Stopped;
         self.emit(PlayerEvent::StateChanged {
             state: PlayerState::Stopped,

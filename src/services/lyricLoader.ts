@@ -73,15 +73,18 @@ const fetchFromPlatform = async (
 
 /**
  * 是否对该平台尝试 TTML 升级
- * 条件：① 平台支持 TTML（netease/qqmusic）② 总开关已开 ③ 格式优先级里 ttml 排在主格式之前
+ * @param platform - 平台
+ * @param mainFormat - 主格式
  */
 const shouldTryTTML = (
   platform: Platform,
   mainFormat: LyricFormat,
 ): platform is "netease" | "qqmusic" => {
   if (platform !== "netease" && platform !== "qqmusic") return false;
-  if (!useSettingsStore().system.lyric.enableOnlineTTMLLyric) return false;
-  const order = useSettingsStore().lyric.lyricFormatOrder ?? DEFAULT_LYRIC_FORMAT_ORDER;
+  const settings = useSettingsStore();
+  if (!settings.system.lyric.enableOnlineTTMLLyric) return false;
+  if (settings.lyric.lyricSourcePreference === "self") return false;
+  const order = settings.lyric.lyricFormatOrder ?? DEFAULT_LYRIC_FORMAT_ORDER;
   const ttmlIdx = order.indexOf("ttml");
   if (ttmlIdx === -1) return false;
   const mainIdx = order.indexOf(mainFormat);
@@ -151,10 +154,15 @@ const tryTTMLOverlay = async (
 
 /**
  * 获取在线歌词
- * - self：不走第三方
+ * - self：本地歌曲不走第三方；在线歌曲查自家平台
  * - auto + 已有本地：默认不走；smartPreferOnline 开启时按格式优先级筛选可升级平台
- * - auto + 无本地：按音源顺序试；smart 开启时跳过 lrc 找带时间戳的格式，全是 lrc 则兜底返第一个
+ * - auto + 无本地：默认首个命中即返回；smartPreferOnline 开启时按 lyricFormatOrder 跨平台取格式最优
  * - 指定平台：查该平台
+ * @param token - 竞态 token
+ * @param track - 歌曲信息
+ * @param hasLocal - 是否有本地歌词
+ * @param localFormat - 本地歌词格式
+ * @returns 在线歌词结果
  */
 const tryOnlineByPreference = async (
   token: number,
@@ -164,31 +172,50 @@ const tryOnlineByPreference = async (
 ): Promise<OnlineResult | null> => {
   const settings = useSettingsStore();
   const preference = settings.lyric.lyricSourcePreference;
-  if (preference === "self") return null;
+  if (preference === "self") {
+    // 在线歌曲
+    if (track.source === "online" && track.platform) {
+      return fetchFromPlatform(track.platform, track);
+    }
+    return null;
+  }
   if (preference === "auto") {
     const order = settings.lyric.lyricSourceOrder ?? DEFAULT_LYRIC_SOURCE_ORDER;
+    const formatOrder = settings.lyric.lyricFormatOrder ?? DEFAULT_LYRIC_FORMAT_ORDER;
     let candidates: Platform[] = [...order];
     if (hasLocal) {
       if (!settings.lyric.smartPreferOnline || !localFormat) return null;
-      const formatOrder = settings.lyric.lyricFormatOrder ?? DEFAULT_LYRIC_FORMAT_ORDER;
       candidates = order.filter((p) => platformCanUpgrade(p, localFormat, formatOrder));
       if (candidates.length === 0) return null;
     }
-    let lrcFallback: OnlineResult | null = null;
+    // smart + 无本地：按音源顺序遍历，挑 lyricFormatOrder 中优先级最高的结果
+    if (!hasLocal && settings.lyric.smartPreferOnline) {
+      let best: OnlineResult | null = null;
+      let bestRank = Infinity;
+      for (const platform of candidates) {
+        const result = await fetchFromPlatform(platform, track);
+        if (token !== currentToken) return null;
+        if (!result) continue;
+        const idx = formatOrder.indexOf(result.source.format);
+        const rank = idx === -1 ? Infinity : idx;
+        if (rank < bestRank) {
+          best = result;
+          bestRank = rank;
+          // 已经是最高优先级，后续平台无需再试
+          if (rank === 0) break;
+        }
+      }
+      return best;
+    }
+    // 其它：按音源顺序首个有效即返回
     for (const platform of candidates) {
       const result = await fetchFromPlatform(platform, track);
       if (token !== currentToken) return null;
       if (!result) continue;
-      // smart + 有本地：实际拿到的结果必须真的优于本地才接受，否则继续试下一个平台
       if (hasLocal && localFormat && !isOnlineResultUpgrade(result, localFormat)) continue;
-      // smart + 无本地：lrc 不够，记下兜底继续找带时间戳的
-      if (!hasLocal && settings.lyric.smartPreferOnline && result.source.format === "lrc") {
-        lrcFallback ??= result;
-        continue;
-      }
       return result;
     }
-    return lrcFallback;
+    return null;
   }
   return fetchFromPlatform(preference, track);
 };

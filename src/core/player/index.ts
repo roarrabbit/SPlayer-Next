@@ -13,8 +13,10 @@ import { resolveTrackSource } from "@/services/audioSource";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
 
-/** 竞态 token */
+/** 引擎 load 竞态 token */
 let loadToken = 0;
+/** loadTrack 竞态 token */
+let trackToken = 0;
 /** 连续加载失败计数，成功时重置 */
 let consecutiveFailures = 0;
 /** 连续失败硬上限 */
@@ -23,17 +25,36 @@ const MAX_CONSECUTIVE_FAILURES = 5;
 const SKIP_ON_ERROR_DELAY_MS = 1000;
 
 /**
+ * 单曲级失败兜底
+ * 达到连续失败上限 / 队列长度则交 onQueueEnded 停下
+ * @param myToken - 调用方进入失败路径时的 token 快照
+ * @param getCurrentToken - 取该 token 的最新值，setTimeout 触发时再次比对
+ */
+const skipOnFailure = async (myToken: number, getCurrentToken: () => number): Promise<void> => {
+  consecutiveFailures++;
+  if (
+    consecutiveFailures >= MAX_CONSECUTIVE_FAILURES ||
+    consecutiveFailures >= queue.queueLength.value
+  ) {
+    consecutiveFailures = 0;
+    await onQueueEnded();
+    return;
+  }
+  setTimeout(() => {
+    if (myToken === getCurrentToken()) nextTrack();
+  }, SKIP_ON_ERROR_DELAY_MS);
+};
+
+/** load() 的结果；失败时附带错误码，跳曲决策交给调用方 */
+export type LoadOutcome = { ok: true; track: Track | null } | { ok: false; error?: string };
+
+/**
  * 加载音频源
  * @param source - 音频文件路径或网络地址
  * @param autoPlay - 是否自动播放
  * @param meta - 渲染层下发给主进程的权威 Track（用于 SMTC/托盘）
- * @returns 加载成功返回 Track，失败返回 null
  */
-export const load = async (
-  source: string,
-  autoPlay = true,
-  meta?: Track,
-): Promise<Track | null> => {
+export const load = async (source: string, autoPlay = true, meta?: Track): Promise<LoadOutcome> => {
   const status = useStatusStore();
   const token = ++loadToken;
   status.trackLoading = true;
@@ -60,7 +81,7 @@ export const load = async (
   try {
     const result = await window.api.player.load(source, { autoPlay, meta });
     // 竞态保护
-    if (token !== loadToken) return null;
+    if (token !== loadToken) return { ok: false };
     if (result.success && result.data) {
       const { detail, mediaInfo } = result.data;
       consecutiveFailures = 0;
@@ -79,31 +100,12 @@ export const load = async (
       status.currentSource = source;
       playback.setDuration(dur);
       playback.setPlaying(autoPlay);
-      return enriched;
-    } else {
-      status.state = "idle";
-      lyricLoader.loadForTrack(null);
-      if (result.error) {
-        handleError(result.error);
-        // 仅单曲级错误才跳下一首
-        if (isSkippableError(result.error)) {
-          consecutiveFailures++;
-          const reachedHardLimit = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
-          const reachedQueueEnd = consecutiveFailures >= queue.queueLength.value;
-          if (reachedHardLimit || reachedQueueEnd) {
-            // 达到上限，停止自动跳曲，等待用户介入
-            consecutiveFailures = 0;
-            await onQueueEnded();
-          } else {
-            setTimeout(() => {
-              // 期间用户可能已手动操作，token 变化则放弃
-              if (token === loadToken) nextTrack();
-            }, SKIP_ON_ERROR_DELAY_MS);
-          }
-        }
-      }
-      return null;
+      return { ok: true, track: enriched };
     }
+    status.state = "idle";
+    lyricLoader.loadForTrack(null);
+    if (result.error) handleError(result.error);
+    return { ok: false, error: result.error };
   } finally {
     if (token === loadToken) status.trackLoading = false;
   }
@@ -116,13 +118,33 @@ export const load = async (
  */
 const loadTrack = async (track: Track | null): Promise<void> => {
   if (!track) return;
-  const resolved = await resolveTrackSource(track);
-  if (!resolved) return;
-  // 乐观更新：同步写入 track，开启歌词加载周期
-  useMediaStore().setTrack(track);
+  const myToken = ++trackToken;
+  // 乐观更新
+  const media = useMediaStore();
+  media.setTrack(track);
   lyricLoader.beginLoad();
-  // meta 随 load 一起下发：SMTC/托盘/标题用 track 上的权威字段
-  await load(resolved.source, true, track);
+  const resolved = await resolveTrackSource(track);
+  // 期间有新点击，让位给最新的 loadTrack
+  if (myToken !== trackToken) return;
+  // 是否可跳曲
+  let shouldSkip = false;
+  // URL 解析失败
+  if (!resolved) {
+    const status = useStatusStore();
+    status.currentSource = null;
+    status.state = "idle";
+    void window.api.player.stop();
+    media.setLyric(null, null);
+    shouldSkip = true;
+  } else {
+    const result = await load(resolved.source, true, track);
+    if (myToken !== trackToken) return;
+    // 引擎失败且属单曲级错误才跳
+    if (!result.ok && result.error && isSkippableError(result.error)) {
+      shouldSkip = true;
+    }
+  }
+  if (shouldSkip) await skipOnFailure(myToken, () => trackToken);
 };
 
 /** 恢复播放 */
@@ -458,7 +480,8 @@ export const insertToQueue = (item: Track, afterIndex?: number): number => {
 export const playNow = async (item: Track): Promise<void> => {
   const status = useStatusStore();
   const media = useMediaStore();
-  if (media.track?.id === item.id) {
+  // 同一首歌且已成功加载
+  if (media.track?.id === item.id && status.currentSource) {
     if (!status.isPlaying) play();
     return;
   }
@@ -487,7 +510,7 @@ export const moveInQueue = (fromIndex: number, toIndex: number): void => {
 let unsubscribe: (() => void) | null = null;
 let initialized = false;
 
-/** 初始化播放器：恢复队列、加载上次歌曲（含歌词）、seek 到上次位置、暂停等待 */
+/** 初始化播放器 */
 export const initPlayer = async (): Promise<void> => {
   if (initialized) return;
   initialized = true;
@@ -528,16 +551,22 @@ export const initPlayer = async (): Promise<void> => {
     status.lyricOffsetMs = offsetMs;
     media.updateLyricIndex(playback.getCurrentTime() + offsetMs);
   });
+  // 获取歌曲偏移
+  try {
+    const snap = await window.api.nowPlaying.requestSnapshot();
+    status.lyricOffsetMs = snap.lyricOffsetMs;
+  } catch (error) {
+    console.error("[player] requestSnapshot failed", error);
+  }
   const lastTrack = status.currentTrack;
   if (lastTrack) {
     const lastPosition = status.position;
-    // 先设置 track 信息（确保播放条显示），再尝试解析 source 并 load
     useMediaStore().setTrack(lastTrack);
     const resolved = await resolveTrackSource(lastTrack);
     if (resolved) {
       lyricLoader.beginLoad();
       const result = await load(resolved.source, settings.system.player.autoPlay, lastTrack);
-      if (result && settings.system.player.rememberLastTrack && lastPosition > 0) {
+      if (result.ok && settings.system.player.rememberLastTrack && lastPosition > 0) {
         await seek(lastPosition);
       }
     } else {
