@@ -358,6 +358,12 @@ const api = {
       activeServerId: string | null;
     }): Promise<void> => ipcRenderer.invoke("streaming:saveServers", payload),
   },
+  externalApi: {
+    // 重启外部 API 服务
+    restart: () => ipcRenderer.invoke("externalApi:restart"),
+    // 查询当前运行状态
+    getStatus: () => ipcRenderer.invoke("externalApi:getStatus"),
+  },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),
     set: (id: HotkeyActionId, binding: HotkeyBinding) =>

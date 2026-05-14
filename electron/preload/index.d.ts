@@ -1,6 +1,6 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
 import { PlayerApi, TrackSource } from "@shared/types/player";
-import { ConfigApi, LocaleCode } from "@shared/types/settings";
+import { ConfigApi, ExternalApiStatus, LocaleCode } from "@shared/types/settings";
 import { LibraryApi } from "@shared/types/library";
 import { NowPlayingApi } from "@shared/types/nowPlaying";
 import { PluginsApi } from "@shared/types/plugin";
@@ -67,6 +67,10 @@ declare global {
       };
       hotkey: HotkeyApi;
       streaming: StreamingApi;
+      externalApi: {
+        restart: () => Promise<ExternalApiStatus>;
+        getStatus: () => Promise<ExternalApiStatus>;
+      };
     };
   }
 }

@@ -301,6 +301,7 @@
       "hotkeys": "快捷键",
       "musicSpectrum": "音乐频谱",
       "discord": "Discord RPC",
+      "externalApi": "外部 API",
       "systemConfig": "系统配置",
       "pluginsList": "已安装插件",
       "streaming": "流媒体管理",
@@ -842,6 +843,30 @@
     "streamingEnabled": {
       "label": "启用流媒体",
       "description": "关闭后将隐藏侧边栏的流媒体入口"
+    },
+    "externalApiEnabled": {
+      "label": "允许外部控制",
+      "description": "允许外部应用通过 API 控制播放器"
+    },
+    "externalApiWs": {
+      "label": "启用 WebSocket",
+      "description": "外部应用可订阅播放事件并发送控制指令"
+    },
+    "externalApiPort": {
+      "label": "监听端口",
+      "description": "外部 API 服务监听的端口（1024–65535）"
+    },
+    "externalApiPanel": {
+      "label": "",
+      "description": ""
+    },
+    "externalApi": {
+      "restart": "重启服务",
+      "restartHint": "修改端口后需重启服务",
+      "restarted": "服务已重启",
+      "portInUse": "端口 {port} 已被占用，请换一个",
+      "pendingChange": "待重启",
+      "pendingChangeHint": "配置端口 {configured}，当前监听 {running}"
     },
     "closeAction": {
       "label": "关闭按钮行为",

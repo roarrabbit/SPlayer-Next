@@ -35,13 +35,22 @@ let currentLyricOffsetMs = 0;
 /** 内部事件总线 */
 const emitter = new EventEmitter<NowPlayingEvents>();
 
-/** 从存储中读取指定曲目的偏移；缺省视为 0 */
+/**
+ * 从存储中读取指定曲目的偏移
+ * @param trackId - 曲目 ID
+ * @returns 偏移值（毫秒），缺省视为 0
+ */
 const readOffset = (trackId: string | null | undefined): number => {
   if (!trackId) return 0;
   return store.get("player.lyricOffsets")?.[trackId] ?? 0;
 };
 
-/** 渲染进程同步当前播放状态 */
+/**
+ * 同步当前播放状态
+ * @param track - 当前曲目
+ * @param lyric - 当前歌词
+ * @param source - 当前歌词源
+ */
 export const update = (track: Track | null, lyric: LyricLine[], source: LyricData): void => {
   const trackChanged = (currentTrack?.id ?? null) !== (track?.id ?? null);
   currentTrack = track;
@@ -59,7 +68,11 @@ export const update = (track: Track | null, lyric: LyricLine[], source: LyricDat
   emitter.emit("lyric-change", snapshot());
 };
 
-/** 主进程 position 事件入口（原生 5Hz） */
+/**
+ * 同步播放位置
+ * @param positionMs - 播放位置（毫秒）
+ * @param isPlaying - 是否处于播放态
+ */
 export const onPosition = (positionMs: number, isPlaying: boolean): void => {
   lastPosition = positionMs;
   playing = isPlaying;
@@ -70,7 +83,10 @@ export const onPosition = (positionMs: number, isPlaying: boolean): void => {
   });
 };
 
-/** 播放状态变化时立即同步一次 */
+/**
+ * 同步播放状态
+ * @param isPlaying - 是否处于播放态
+ */
 export const onPlayStateChange = (isPlaying: boolean): void => {
   playing = isPlaying;
   emitter.emit("position-sync", {
@@ -80,7 +96,10 @@ export const onPlayStateChange = (isPlaying: boolean): void => {
   });
 };
 
-/** 单曲偏移的合理上限（毫秒）；超过视为误输入，clamp 防止极端值 */
+/**
+ * 单曲偏移的合理上限（毫秒）
+ * 超过视为误输入，clamp 防止极端值
+ */
 const LYRIC_OFFSET_LIMIT_MS = 60_000;
 
 /**
@@ -105,7 +124,7 @@ export const setLyricOffset = (trackId: string, offsetMs: number): void => {
   }
 };
 
-/** 窗口启动对齐：拉取当前完整状态 */
+/** 拉取当前完整状态 */
 export const snapshot = (): NowPlayingSnapshot => ({
   track: currentTrack,
   lyric: currentLyric,

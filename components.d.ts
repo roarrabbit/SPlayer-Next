@@ -58,6 +58,7 @@ declare module 'vue' {
     DropdownMenuTrigger: typeof import('reka-ui')['DropdownMenuTrigger']
     EqualizerDialog: typeof import('./src/components/modals/EqualizerDialog.vue')['default']
     ExcludeLyricsConfig: typeof import('./src/components/settings/custom/ExcludeLyricsConfig.vue')['default']
+    ExternalApiPanel: typeof import('./src/components/settings/custom/ExternalApiPanel.vue')['default']
     FileCacheManager: typeof import('./src/components/settings/custom/FileCacheManager.vue')['default']
     FontConfig: typeof import('./src/components/settings/custom/FontConfig.vue')['default']
     FullPlayer: typeof import('./src/components/player/FullPlayer/index.vue')['default']

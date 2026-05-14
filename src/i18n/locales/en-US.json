@@ -301,6 +301,7 @@
       "hotkeys": "Hotkeys",
       "musicSpectrum": "Music Spectrum",
       "discord": "Discord RPC",
+      "externalApi": "External API",
       "systemConfig": "System",
       "pluginsList": "Installed Plugins",
       "streaming": "Streaming",
@@ -842,6 +843,30 @@
     "streamingEnabled": {
       "label": "Enable streaming",
       "description": "When disabled, the streaming entry is hidden from the sidebar"
+    },
+    "externalApiEnabled": {
+      "label": "Allow external control",
+      "description": "Let external apps control the player via the API"
+    },
+    "externalApiWs": {
+      "label": "Enable WebSocket",
+      "description": "External apps can subscribe to events and send commands"
+    },
+    "externalApiPort": {
+      "label": "Listen port",
+      "description": "TCP port for the external API (1024–65535)"
+    },
+    "externalApiPanel": {
+      "label": "",
+      "description": ""
+    },
+    "externalApi": {
+      "restart": "Restart server",
+      "restartHint": "Restart required after changing port",
+      "restarted": "Server restarted",
+      "portInUse": "Port {port} is already in use, pick another",
+      "pendingChange": "Pending restart",
+      "pendingChangeHint": "Configured {configured}, running {running}"
     },
     "closeAction": {
       "label": "Close Button Action",

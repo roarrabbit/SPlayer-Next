@@ -185,6 +185,26 @@ export interface StreamingSettings {
   enabled: boolean;
 }
 
+/** 外部 API 服务配置 */
+export interface ExternalApiSettings {
+  /** 总开关 */
+  enabled: boolean;
+  /** WebSocket 子开关 */
+  wsEnabled: boolean;
+  /** 监听端口 */
+  port: number;
+}
+
+/** 外部 API 服务运行时状态 */
+export interface ExternalApiStatus {
+  /** 是否正在监听 */
+  listening: boolean;
+  /** 实际监听端口 */
+  port: number | null;
+  /** 上次启动失败的错误 */
+  error: { code: string; message: string } | null;
+}
+
 /** 在线歌词服务配置 */
 export interface OnlineLyricSettings {
   /** 启用在线 TTML 歌词 */
@@ -279,6 +299,8 @@ export interface SystemConfig {
   cache: CacheSettings;
   /** 流媒体总开关 */
   streaming: StreamingSettings;
+  /** 外部 API 服务（HTTP + WS） */
+  externalApi: ExternalApiSettings;
   /** 系统配置 */
   system: {
     /** 记忆窗口状态 */
