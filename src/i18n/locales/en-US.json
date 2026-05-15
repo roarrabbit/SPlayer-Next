@@ -83,7 +83,9 @@
     "searchEmpty": "Start typing to search",
     "searchGoto": "Search for \"{keyword}\"",
     "searchSection": {
-      "quick": "Quick"
+      "quick": "Quick",
+      "history": "Recent searches",
+      "hot": "Trending"
     }
   },
   "search": {

@@ -56,6 +56,14 @@ export interface AudioQuality {
   codec: string;
 }
 
+/**
+ * 付费等级
+ * - 0: 免费
+ * - 1: VIP
+ * - 2: 需购买（数字专辑等）
+ */
+export type TrackFee = 0 | 1 | 2;
+
 /** 歌曲信息 */
 export interface Track {
   /** 平台 id */
@@ -94,6 +102,8 @@ export interface Track {
   ctime?: number;
   /** 音质信息 */
   quality?: AudioQuality;
+  /** 付费等级 */
+  fee?: TrackFee;
 }
 
 /** 歌曲详细信息 */

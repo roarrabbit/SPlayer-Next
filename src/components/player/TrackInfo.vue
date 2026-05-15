@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { Artist } from "@shared/types/player";
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
+import { navigateToArtist } from "@/utils/navigate";
 
 withDefaults(
   defineProps<{
@@ -22,6 +24,14 @@ const currentLyricText = computed(() => {
   const text = line.words.map((w) => w.word).join("");
   return line.translatedLyric ? `${text}（${line.translatedLyric}）` : text;
 });
+
+/** 歌手是否可跳转：非本地需有真实 id */
+const isArtistLinkable = (artist: Artist): boolean => {
+  if (!artist.name) return false;
+  const source = media.track?.source;
+  if (source === "streaming" || source === "online") return !!artist.id;
+  return true;
+};
 </script>
 
 <template>
@@ -68,14 +78,25 @@ const currentLyricText = computed(() => {
             :class="compact ? 'text-xs leading-tight mt-0.5' : 'text-sm mt-1'"
           >
             <template v-if="media.track.artists.length">
-              <span
-                v-for="(artist, i) in media.track.artists"
-                :key="artist.id ?? i"
-                class="cursor-pointer transition-colors hover:text-primary"
-              >
-                {{ artist.name }}
-                <span v-if="i < media.track.artists.length - 1" class="mx-1 opacity-60">/</span>
-              </span>
+              <template v-for="(artist, i) in media.track.artists" :key="artist.id ?? i">
+                <span
+                  :class="
+                    isArtistLinkable(artist)
+                      ? 'cursor-pointer transition-opacity hover:opacity-70'
+                      : ''
+                  "
+                  @click.stop="
+                    isArtistLinkable(artist) &&
+                    navigateToArtist(artist.name, {
+                      source: media.track?.source,
+                      artistId: artist.id,
+                    })
+                  "
+                >
+                  {{ artist.name }}
+                </span>
+                <span v-if="i < media.track.artists.length - 1" class="mx-0.5 opacity-50">/</span>
+              </template>
             </template>
             <span v-else class="opacity-50">{{ $t("playlist.unknownArtist") }}</span>
           </div>

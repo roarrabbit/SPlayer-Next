@@ -351,6 +351,22 @@ export const nextTrack = async (): Promise<void> => {
   await loadTrack(status.currentTrack);
 };
 
+/**
+ * 跳到队列指定位置并播放
+ * 同一首则不重新加载，仅在暂停时恢复播放
+ * @param index - 队列位置
+ */
+export const playAtIndex = async (index: number): Promise<void> => {
+  const status = useStatusStore();
+  if (index < 0 || index >= queue.queueLength.value) return;
+  if (index === status.playIndex) {
+    if (!status.isPlaying && useMediaStore().track) play();
+    return;
+  }
+  status.playIndex = index;
+  await loadTrack(status.currentTrack);
+};
+
 /** 播放上一首，首位时回绕到末尾 */
 export const prevTrack = async (): Promise<void> => {
   const status = useStatusStore();

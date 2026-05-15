@@ -2,7 +2,7 @@ import type { Track } from "@shared/types/player";
 import { useStreamingStore } from "@/stores/streaming";
 import { useSettingsStore } from "@/stores/settings";
 import { usePluginsStore } from "@/stores/plugins";
-import { resolveNeteaseUrl } from "@/apis/url/netease";
+import { resolveNeteaseUrl } from "@/apis/song/netease";
 import { ErrorCode } from "@shared/types/errors";
 import { handleError } from "@/utils/errors";
 

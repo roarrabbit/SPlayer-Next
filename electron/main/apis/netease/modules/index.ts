@@ -49,6 +49,7 @@ import lyric_new from "./lyric_new";
 import cloud_lyric_get from "./cloud_lyric_get";
 
 // 播放
+import song_detail from "./song_detail";
 import song_url from "./song_url";
 
 export const modules: Record<string, NeteaseModule> = {
@@ -89,5 +90,6 @@ export const modules: Record<string, NeteaseModule> = {
   lyric_new,
   cloud_lyric_get,
 
+  song_detail,
   song_url,
 };

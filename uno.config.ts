@@ -25,6 +25,10 @@ export default defineConfig({
           "{ from { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }",
         "dialog-out":
           "{ from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } }",
+        "dialog-in-top":
+          "{ from { opacity: 0; transform: translateX(-50%) scale(0.96) } to { opacity: 1; transform: translateX(-50%) scale(1) } }",
+        "dialog-out-top":
+          "{ from { opacity: 1; transform: translateX(-50%) scale(1) } to { opacity: 0; transform: translateX(-50%) scale(0.96) } }",
         "panel-in":
           "{ from { opacity: 0; transform: scale(0.97) } to { opacity: 1; transform: scale(1) } }",
         "panel-out":
@@ -54,6 +58,8 @@ export default defineConfig({
         "overlay-out": "150ms",
         "dialog-in": "200ms",
         "dialog-out": "150ms",
+        "dialog-in-top": "200ms",
+        "dialog-out-top": "150ms",
         "panel-in": "250ms",
         "panel-out": "150ms",
         "select-in": "150ms",
@@ -73,6 +79,8 @@ export default defineConfig({
         "overlay-out": "ease-in",
         "dialog-in": "cubic-bezier(0.16, 1, 0.3, 1)",
         "dialog-out": "ease-in",
+        "dialog-in-top": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "dialog-out-top": "ease-in",
         "panel-in": "cubic-bezier(0.16, 1, 0.3, 1)",
         "panel-out": "ease-in",
         "select-in": "cubic-bezier(0.16, 1, 0.3, 1)",

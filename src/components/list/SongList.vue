@@ -464,12 +464,12 @@ defineExpose({
                     </span>
                     <span
                       v-if="item.comment"
-                      class="text-xs shrink-0 max-w-40 truncate"
+                      class="flex-1 min-w-0 text-base truncate"
                       :class="
                         playingId === item.id ? 'text-primary/60' : 'text-on-surface-variant/60'
                       "
                     >
-                      {{ item.comment }}
+                      ({{ item.comment }})
                     </span>
                   </div>
                   <div
@@ -478,9 +478,21 @@ defineExpose({
                   >
                     <span
                       v-if="isLosslessQuality(item.quality)"
-                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-[#D4A44A] border-[#D4A44A]/40"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-amber-400 border-amber-400/40"
                     >
                       {{ getQualityLevel(item.quality) === "hi-res" ? "HR" : "SQ" }}
+                    </span>
+                    <span
+                      v-if="item.fee === 1"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-red-400 border-red-400/40"
+                    >
+                      VIP
+                    </span>
+                    <span
+                      v-else-if="item.fee === 2"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-red-400 border-red-400/40"
+                    >
+                      EP
                     </span>
                     <span class="truncate">
                       <template v-for="(artist, i) in item.artists" :key="artist.id ?? i">

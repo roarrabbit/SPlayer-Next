@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { Artist } from "@shared/types/player";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { getQualityLabel, getQualityLevel } from "@/utils/quality";
-import { navigateToAlbum } from "@/utils/navigate";
+import { navigateToAlbum, navigateToArtist } from "@/utils/navigate";
 
 const { t } = useI18n();
 
@@ -34,8 +35,34 @@ const lyricSourceOptions = computed<SSelectOption[]>(() => [
   { value: "self", label: t("settings.lyricSourcePreference.self") },
 ]);
 
+/** 非本地源需要真实 id 才能跳转 */
+const needsRealId = computed(
+  () => media.track?.source === "streaming" || media.track?.source === "online",
+);
+
+/** 歌手是否可跳转 */
+const isArtistLinkable = (artist: Artist): boolean => {
+  if (!artist.name) return false;
+  return needsRealId.value ? !!artist.id : true;
+};
+
+/** 专辑是否可跳转 */
+const isAlbumLinkable = computed((): boolean => {
+  const album = media.track?.album;
+  if (!album?.name) return false;
+  return needsRealId.value ? !!album.id : true;
+});
+
+/** 跳转到歌手页 */
+const goToArtist = (artist: Artist): void => {
+  if (!isArtistLinkable(artist)) return;
+  status.isExpanded = false;
+  navigateToArtist(artist.name, { source: media.track?.source, artistId: artist.id });
+};
+
 /** 跳转到专辑页 */
-const goToAlbum = () => {
+const goToAlbum = (): void => {
+  if (!isAlbumLinkable.value) return;
   const track = media.track;
   if (!track?.album?.name) return;
   status.isExpanded = false;
@@ -170,20 +197,29 @@ const alignItems = computed(() => {
       <IconLucideMic class="shrink-0 translate-y-px text-cover/40" />
       <span class="truncate">
         <template v-if="media.track.artists.length">
-          <template v-for="(artist, index) in media.track.artists" :key="index">
-            <span class="cursor-pointer transition-colors hover:text-cover">
+          <template v-for="(artist, index) in media.track.artists" :key="artist.id ?? index">
+            <span
+              :class="
+                isArtistLinkable(artist) ? 'cursor-pointer transition-colors hover:text-cover' : ''
+              "
+              @click="goToArtist(artist)"
+            >
               {{ artist.name }}
             </span>
-            <span v-if="index < media.track.artists.length - 1">/</span>
+            <span v-if="index < media.track.artists.length - 1" class="mx-0.5 opacity-50">/</span>
           </template>
         </template>
-        <span v-else class="opacity-60">{{ t("playlist.unknownArtist") }}</span>
+        <span v-else class="opacity-50">{{ t("playlist.unknownArtist") }}</span>
       </span>
     </div>
     <!-- 专辑 -->
     <div v-if="albumText" class="max-w-full flex items-center gap-1.5 text-[1.2em] text-cover/60">
       <IconLucideDisc3 class="shrink-0 translate-y-px text-cover/40" />
-      <span class="truncate cursor-pointer transition-colors hover:text-cover" @click="goToAlbum">
+      <span
+        class="truncate"
+        :class="isAlbumLinkable ? 'cursor-pointer transition-colors hover:text-cover' : ''"
+        @click="goToAlbum"
+      >
         {{ albumText }}
       </span>
     </div>

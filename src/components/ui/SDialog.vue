@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CSSProperties } from "vue";
+
 export interface SDialogProps {
   /** 控制打开状态（v-model:open） */
   open?: boolean;
@@ -16,6 +18,10 @@ export interface SDialogProps {
   width?: string;
   /** 高度，支持 CSS 值（默认 auto，受 max-h 限制） */
   height?: string;
+  /** 距视口顶部偏移 */
+  top?: string;
+  /** 内容区自定义样式 */
+  contentStyle?: string | CSSProperties;
 }
 
 const props = withDefaults(defineProps<SDialogProps>(), {
@@ -26,10 +32,11 @@ const props = withDefaults(defineProps<SDialogProps>(), {
   height: "auto",
 });
 
-const contentStyle = computed(() => ({
+const containerStyle = computed(() => ({
   width: props.width,
   height: props.height === "auto" ? undefined : props.height,
   maxHeight: props.height === "auto" ? "85vh" : undefined,
+  top: props.top,
 }));
 
 const emit = defineEmits<{
@@ -67,12 +74,15 @@ const setOpen = (val: boolean): void => {
         ]"
       />
       <DialogContent
-        :style="contentStyle"
+        :style="containerStyle"
         :class="[
-          'fixed top-1/2 left-1/2 z-300 -translate-x-1/2 -translate-y-1/2',
+          'fixed left-1/2 z-300 -translate-x-1/2',
+          top ? '' : 'top-1/2 -translate-y-1/2',
           'rounded-xl shadow-xl overflow-hidden',
           'flex flex-col',
-          'data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
+          top
+            ? 'data-[state=open]:animate-dialog-in-top data-[state=closed]:animate-dialog-out-top'
+            : 'data-[state=open]:animate-dialog-in data-[state=closed]:animate-dialog-out',
           'focus:outline-none',
           cover
             ? 'bg-black/55 backdrop-blur-xl backdrop-saturate-160 border border-solid border-white/10 text-cover'
@@ -103,6 +113,7 @@ const setOpen = (val: boolean): void => {
             height === 'auto' && !title && 'pt-4',
             height === 'auto' && !$slots.footer && 'pb-4',
           ]"
+          :style="contentStyle"
         >
           <slot />
         </div>
