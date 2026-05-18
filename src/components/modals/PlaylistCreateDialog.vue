@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ContentScope } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
@@ -6,7 +7,7 @@ import { toast } from "@/composables/useToast";
 const props = defineProps<{
   open: boolean;
   /** 本地 / 在线 */
-  mode: "local" | "online";
+  mode: ContentScope;
 }>();
 const emit = defineEmits<{
   "update:open": [value: boolean];
@@ -41,13 +42,16 @@ const handleConfirm = async (): Promise<void> => {
     const id =
       props.mode === "local"
         ? (await playlistStore.create(value)).id
-        : (await userStore.createPlaylist(value, privacy.value))?.id;
+        : (await userStore.createPlaylist(value, privacy.value)).id;
     if (!id) {
       toast.error(t("liked.toast.failed"));
       return;
     }
     emit("created", id);
     emit("update:open", false);
+  } catch (err) {
+    const message = err instanceof Error && err.message ? err.message : t("liked.toast.failed");
+    toast.error(message);
   } finally {
     submitting.value = false;
   }
@@ -65,12 +69,12 @@ const handleConfirm = async (): Promise<void> => {
       <SInput
         v-model="name"
         :placeholder="t('collection.playlist')"
-        clearable
         :disabled="submitting"
+        clearable
         @keyup.enter="handleConfirm"
       />
-      <div v-if="mode === 'online'" class="flex items-center justify-between">
-        <span class="text-sm text-on-surface">{{ t("collection.privacy.private") }}</span>
+      <div v-if="mode === 'online'" class="flex items-center gap-2">
+        <span class="text-on-surface">{{ t("collection.privacy.private") }}</span>
         <SSwitch
           :model-value="privacy === 10"
           :disabled="submitting"
@@ -82,12 +86,7 @@ const handleConfirm = async (): Promise<void> => {
       <SButton variant="tertiary" :disabled="submitting" @click="close">
         {{ t("common.cancel") }}
       </SButton>
-      <SButton
-        type="primary"
-        :disabled="!name.trim()"
-        :loading="submitting"
-        @click="handleConfirm"
-      >
+      <SButton type="primary" :disabled="!name.trim()" :loading="submitting" @click="handleConfirm">
         {{ t("common.confirm") }}
       </SButton>
     </template>

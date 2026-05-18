@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SMenuItem } from "@/components/ui/SMenu.vue";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
+import type { ContentScope } from "@/types/collection";
 import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { usePlaylistStore } from "@/stores/playlist";
@@ -33,7 +34,7 @@ const sourceOptions = computed<SSelectOption[]>(() => [
 ]);
 
 const createDialogOpen = ref(false);
-const createMode = ref<"local" | "online">("local");
+const createMode = ref<ContentScope>("local");
 
 const handleCreate = (): void => {
   createMode.value = status.myPlaylistSource;
@@ -57,7 +58,7 @@ const renderMyHeader = () =>
         options: sourceOptions.value,
         side: "bottom",
         align: "start",
-        "onUpdate:modelValue": (v) => (status.myPlaylistSource = v as "local" | "online"),
+        "onUpdate:modelValue": (v) => (status.myPlaylistSource = v as ContentScope),
       },
       {
         trigger: () =>

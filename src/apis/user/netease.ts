@@ -9,6 +9,23 @@ const PAGE_SIZE = 50;
 /** song_detail 单批上限，500 在 URL 长度与延迟之间比较折中 */
 const SONG_DETAIL_BATCH = 500;
 
+interface NeteaseError {
+  code?: number;
+  message?: string;
+  msg?: string;
+}
+
+/**
+ * 校验网易云接口响应：code !== 200 时抛 Error，message 取自 body.message / body.msg
+ */
+const ensureOk = <T>(body: T): T => {
+  const meta = body as NeteaseError | null | undefined;
+  if (!meta || meta.code !== 200) {
+    throw new Error(meta?.message ?? meta?.msg ?? "");
+  }
+  return body;
+};
+
 /**
  * 通用分页直到拉完
  * @param fetcher 第 N 页拉取函数（offset/limit），返回 `{ data, hasMore }`
@@ -38,8 +55,6 @@ export interface FetchPlaylistOptions {
   onBatch?: (batch: Track[]) => void;
   /** 中断信号 */
   signal?: AbortSignal;
-  /** 绕过请求响应缓存 */
-  fresh?: boolean;
 }
 
 /**
@@ -56,9 +71,7 @@ export const fetchPlaylist = async (
   options: FetchPlaylistOptions = {},
 ): Promise<void> => {
   if (options.signal?.aborted) return;
-  const params: Record<string, unknown> = { id: playlistId };
-  if (options.fresh) params.timestamp = Date.now();
-  const body = await neteaseApi.playlist_detail(params);
+  const body = await neteaseApi.playlist_detail({ id: playlistId });
   if (options.signal?.aborted) return;
   const raw = body?.playlist;
   if (!raw) return;
@@ -119,23 +132,18 @@ export const fetchUserArtists = (): Promise<Artist[]> =>
   }, toArtist);
 
 /** 切换红心 */
-export const toggleLikeSong = async (trackId: string, like: boolean): Promise<boolean> => {
-  const body = await neteaseApi.like({ id: trackId, like });
-  return body?.code === 200;
+export const toggleLikeSong = async (trackId: string, like: boolean): Promise<void> => {
+  ensureOk(await neteaseApi.like({ id: trackId, like }));
 };
 
 /**
  * 新建歌单
  * @param name 歌单名
  * @param privacy 0 公开 / 10 私密
- * @returns 新建的歌单元数据；失败返回 null
+ * @returns 新建的歌单元数据
  */
-export const createPlaylist = async (
-  name: string,
-  privacy: 0 | 10 = 0,
-): Promise<Playlist | null> => {
-  const body = await neteaseApi.playlist_create({ name, privacy });
-  if (body?.code !== 200 || !body.playlist) return null;
+export const createPlaylist = async (name: string, privacy: 0 | 10 = 0): Promise<Playlist> => {
+  const body = ensureOk(await neteaseApi.playlist_create({ name, privacy }));
   return toPlaylist(body.playlist);
 };
 
@@ -143,9 +151,8 @@ export const createPlaylist = async (
  * 删除歌单
  * @param id 歌单 id
  */
-export const deletePlaylist = async (id: string): Promise<boolean> => {
-  const body = await neteaseApi.playlist_delete({ id });
-  return body?.code === 200;
+export const deletePlaylist = async (id: string): Promise<void> => {
+  ensureOk(await neteaseApi.playlist_delete({ id }));
 };
 
 /**
@@ -153,9 +160,8 @@ export const deletePlaylist = async (id: string): Promise<boolean> => {
  * @param id 歌单 id
  * @param name 新名称
  */
-export const updatePlaylistName = async (id: string, name: string): Promise<boolean> => {
-  const body = await neteaseApi.playlist_name_update({ id, name });
-  return body?.code === 200;
+export const updatePlaylistName = async (id: string, name: string): Promise<void> => {
+  ensureOk(await neteaseApi.playlist_name_update({ id, name }));
 };
 
 /**
@@ -163,25 +169,25 @@ export const updatePlaylistName = async (id: string, name: string): Promise<bool
  * @param id 歌单 id
  * @param desc 新描述（空字符串清空）
  */
-export const updatePlaylistDesc = async (id: string, desc: string): Promise<boolean> => {
-  const body = await neteaseApi.playlist_desc_update({ id, desc });
-  return body?.code === 200;
+export const updatePlaylistDesc = async (id: string, desc: string): Promise<void> => {
+  ensureOk(await neteaseApi.playlist_desc_update({ id, desc }));
 };
 
 /**
  * 把曲目加入歌单
  * @param playlistId 歌单 id
  * @param trackIds 曲目 id 列表
- * @returns 实际加入条数；失败返回 0
+ * @returns 实际加入条数
  */
 export const addToPlaylist = async (playlistId: string, trackIds: string[]): Promise<number> => {
   if (trackIds.length === 0) return 0;
-  const body = await neteaseApi.playlist_tracks({
-    op: "add",
-    pid: playlistId,
-    tracks: trackIds.join(","),
-  });
-  if (body?.code !== 200) return 0;
+  const body = ensureOk(
+    await neteaseApi.playlist_tracks({
+      op: "add",
+      pid: playlistId,
+      tracks: trackIds.join(","),
+    }),
+  );
   return typeof body.count === "number" ? body.count : trackIds.length;
 };
 
@@ -190,17 +196,15 @@ export const addToPlaylist = async (playlistId: string, trackIds: string[]): Pro
  * @param playlistId 歌单 id
  * @param trackIds 曲目 id 列表
  */
-export const removeFromPlaylist = async (
-  playlistId: string,
-  trackIds: string[],
-): Promise<boolean> => {
-  if (trackIds.length === 0) return false;
-  const body = await neteaseApi.playlist_tracks({
-    op: "del",
-    pid: playlistId,
-    tracks: trackIds.join(","),
-  });
-  return body?.code === 200;
+export const removeFromPlaylist = async (playlistId: string, trackIds: string[]): Promise<void> => {
+  if (trackIds.length === 0) return;
+  ensureOk(
+    await neteaseApi.playlist_tracks({
+      op: "del",
+      pid: playlistId,
+      tracks: trackIds.join(","),
+    }),
+  );
 };
 
 /**
@@ -208,18 +212,16 @@ export const removeFromPlaylist = async (
  * @param id 歌单 id
  * @param subscribe true 订阅 / false 取消
  */
-export const subscribePlaylist = async (id: string, subscribe: boolean): Promise<boolean> => {
-  const body = await neteaseApi.playlist_subscribe({ id, t: subscribe ? 1 : 2 });
-  return body?.code === 200;
+export const subscribePlaylist = async (id: string, subscribe: boolean): Promise<void> => {
+  ensureOk(await neteaseApi.playlist_subscribe({ id, t: subscribe ? 1 : 2 }));
 };
 
 /**
  * 重排自建歌单顺序
  * @param ids 期望顺序的歌单 id 数组
  */
-export const reorderPlaylists = async (ids: string[]): Promise<boolean> => {
-  const body = await neteaseApi.playlist_order_update({ ids: JSON.stringify(ids) });
-  return body?.code === 200;
+export const reorderPlaylists = async (ids: string[]): Promise<void> => {
+  ensureOk(await neteaseApi.playlist_order_update({ ids: JSON.stringify(ids) }));
 };
 
 /** 用户等级 */

@@ -1,5 +1,6 @@
 import type { PlayerState, AudioDevice, RepeatMode, ShuffleMode } from "@shared/types/player";
 import type { Platform } from "@shared/types/platform";
+import type { ContentScope } from "@/types/collection";
 export type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import * as queue from "./queue";
 
@@ -59,9 +60,9 @@ export const useStatusStore = defineStore(
     /** 搜索页选中的平台 */
     const searchPlatform = ref<Platform>("netease");
     /** 侧栏「我的歌单」当前展示来源 */
-    const myPlaylistSource = ref<"local" | "online">("local");
+    const myPlaylistSource = ref<ContentScope>("local");
     /** 「我喜欢的音乐」页当前 tab */
-    const likedPageTab = ref<"local" | "online">("local");
+    const likedPageTab = ref<ContentScope>("local");
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */

@@ -83,10 +83,7 @@ export const useUserStore = defineStore(
     /** 「我喜欢的音乐」歌单 id */
     const likedPlaylistId = computed<string | null>(() => playlists.value[0]?.id ?? null);
 
-    /**
-     * 自建歌单
-     * NCM /user/playlist 返回数组前 createdPlaylistCount 条为自建，其后为收藏
-     */
+    /** 自建歌单 */
     const createdPlaylists = computed<Playlist[]>(() => {
       const n = subcount.value.createdPlaylistCount || 0;
       if (n <= 0) return playlists.value.slice(0, 1);
@@ -138,7 +135,6 @@ export const useUserStore = defineStore(
         const accumulated: Track[] = [];
         await fetchPlaylist(playlistId, {
           signal: controller.signal,
-          fresh: true,
           onBatch: (batch) => {
             if (controller.signal.aborted) return;
             accumulated.push(...batch);
@@ -252,8 +248,7 @@ export const useUserStore = defineStore(
       else next.add(trackId);
       likedSongIds.value = next;
       try {
-        const ok = await toggleLikeSong(trackId, !wasLiked);
-        if (!ok) throw new Error("like api returned non-200");
+        await toggleLikeSong(trackId, !wasLiked);
         cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, [...next]).catch(() => {});
         return true;
       } catch (err) {
@@ -282,46 +277,40 @@ export const useUserStore = defineStore(
      * @param name 歌单名称
      * @param privacy 歌单隐私设置，0 为公开，10 为私密
      */
-    const createPlaylist = async (name: string, privacy: 0 | 10 = 0): Promise<Playlist | null> => {
+    const createPlaylist = async (name: string, privacy: 0 | 10 = 0): Promise<Playlist> => {
       const created = await apiCreatePlaylist(name, privacy);
-      if (!created?.id) return null;
       await refreshPlaylists();
       return created;
     };
 
-    /** 
+    /**
      * 删除自建歌单
      * @param id 歌单 ID
-     * @returns 是否删除成功
      */
-    const deletePlaylist = async (id: string): Promise<boolean> => {
-      const ok = await apiDeletePlaylist(id);
-      if (ok) await refreshPlaylists();
-      return ok;
+    const deletePlaylist = async (id: string): Promise<void> => {
+      await apiDeletePlaylist(id);
+      await refreshPlaylists();
     };
 
-    /** 
+    /**
      * 改歌单名/描述
      * @param id 歌单 ID
      * @param data 包含要更新的名称和描述
-     * @returns 是否更新成功
      */
     const updatePlaylist = async (
       id: string,
       data: { name?: string; description?: string },
-    ): Promise<boolean> => {
-      const tasks: Promise<boolean>[] = [];
+    ): Promise<void> => {
+      const tasks: Promise<void>[] = [];
       if (typeof data.name === "string") tasks.push(updatePlaylistName(id, data.name));
       if (typeof data.description === "string")
         tasks.push(updatePlaylistDesc(id, data.description));
-      if (tasks.length === 0) return true;
-      const results = await Promise.all(tasks);
-      if (!results.every(Boolean)) return false;
+      if (tasks.length === 0) return;
+      await Promise.all(tasks);
       await refreshPlaylists();
-      return true;
     };
 
-    /** 
+    /**
      * 加歌到歌单
      * @param playlistId 歌单 ID
      * @param trackIds 曲目 ID 列表
@@ -336,20 +325,20 @@ export const useUserStore = defineStore(
         likedSongIds.value = next;
         cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, [...next]).catch(() => {});
       }
+      await refreshPlaylists();
       return count;
     };
 
-    /** 从歌单移除曲目
+    /**
+     * 从歌单移除曲目
      * @param playlistId 歌单 ID
      * @param trackIds 曲目 ID 列表
-     * @returns 是否移除成功
      */
     const removeTracksFromPlaylist = async (
       playlistId: string,
       trackIds: string[],
-    ): Promise<boolean> => {
-      const ok = await removeFromPlaylist(playlistId, trackIds);
-      if (!ok) return false;
+    ): Promise<void> => {
+      await removeFromPlaylist(playlistId, trackIds);
       if (playlistId === likedPlaylistId.value) {
         const removeSet = new Set(trackIds);
         const next = new Set(likedSongIds.value);
@@ -360,17 +349,16 @@ export const useUserStore = defineStore(
           (track) => !removeSet.has(track.id),
         );
       }
-      return true;
+      await refreshPlaylists();
     };
 
     /** 订阅 / 取消订阅他人歌单 */
     const togglePlaylistSubscribe = async (
       playlistId: string,
       subscribe: boolean,
-    ): Promise<boolean> => {
-      const ok = await subscribePlaylist(playlistId, subscribe);
-      if (ok) await refreshPlaylists();
-      return ok;
+    ): Promise<void> => {
+      await subscribePlaylist(playlistId, subscribe);
+      await refreshPlaylists();
     };
 
     /** 同步用户内容 */

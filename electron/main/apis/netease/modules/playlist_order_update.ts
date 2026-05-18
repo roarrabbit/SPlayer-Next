@@ -12,7 +12,7 @@ import type { NeteaseModule } from "../core/types";
 
 const playlistOrderUpdate: NeteaseModule = (query, request) => {
   const data = { ids: query.ids };
-  return request("/api/playlist/order/update", data, createOption(query, "eapi"));
+  return request("/api/playlist/order/update", data, createOption(query, "weapi"));
 };
 
 export default playlistOrderUpdate;

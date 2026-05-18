@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Artist, Track, TrackSource } from "@shared/types/player";
-import type { CollectionType } from "@/types/collection";
+import type { CollectionType, ContentScope } from "@/types/collection";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
@@ -17,6 +17,7 @@ import * as player from "@/core/player";
 import IconArrowUpDown from "~icons/lucide/arrow-up-down";
 import IconArrowUpAz from "~icons/lucide/arrow-up-az";
 import IconLucideListEnd from "~icons/lucide/list-end";
+import IconLucideListPlus from "~icons/lucide/list-plus";
 import IconLucideListMinus from "~icons/lucide/list-minus";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
 import IconLucideArrowLeftRight from "~icons/lucide/arrow-left-right";
@@ -201,20 +202,21 @@ const batch = useMultiSelect(sortedItems, {
   source: computed(() => props.source),
   collectionType: computed(() => props.collectionType),
   collectionId: computed(() => props.collectionId),
-  onChanged: () => emit("change"),
+  onChanged: (removedIds) => emit("change", removedIds),
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
-/** 添加到歌单弹窗：mode 跟随被操作曲目的 source（仅 local / netease 走得通） */
+/** 添加到歌单相关 */
 const pickerOpen = ref(false);
 const pickerTracks = shallowRef<Track[]>([]);
-const pickerMode = ref<"local" | "online">("local");
+const pickerMode = computed<ContentScope>(() => (props.source === "netease" ? "online" : "local"));
+
+/**
+ * 打开添加到歌单
+ * @param tracks 添加的歌曲
+ */
 const openPicker = (tracks: Track[]): void => {
-  if (tracks.length === 0) return;
-  const source = tracks[0].source;
-  if (source !== "local" && source !== "netease") return;
   pickerTracks.value = tracks;
-  pickerMode.value = source === "netease" ? "online" : "local";
   pickerOpen.value = true;
 };
 
@@ -230,7 +232,7 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
 const emit = defineEmits<{
   scroll: [event: Event];
   reachBottom: [];
-  change: [];
+  change: [removedIds: string[]];
 }>();
 
 onActivated(batch.exit);
@@ -321,6 +323,16 @@ defineExpose({
               >
                 <template #icon><IconLucideListEnd class="size-3.5" /></template>
                 <span>{{ t("songList.batch.addToQueue") }}</span>
+              </SButton>
+              <SButton
+                v-if="source === 'local' || source === 'netease'"
+                variant="ghost"
+                size="small"
+                :disabled="batch.selectedCount.value === 0"
+                @click="openPicker(batch.selectedItems.value)"
+              >
+                <template #icon><IconLucideListPlus class="size-3.5" /></template>
+                <span>{{ t("collection.addTo", { type: t("collection.playlist") }) }}</span>
               </SButton>
               <SButton
                 v-if="batch.canRemove.value"

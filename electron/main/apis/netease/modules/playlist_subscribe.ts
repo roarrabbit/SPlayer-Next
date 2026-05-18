@@ -14,7 +14,7 @@ import type { NeteaseModule } from "../core/types";
 const playlistSubscribe: NeteaseModule = (query, request) => {
   const action = query.t === 2 ? "unsubscribe" : "subscribe";
   const data = { id: query.id };
-  return request(`/api/playlist/${action}`, data, createOption(query, "weapi"));
+  return request(`/api/playlist/${action}`, data, createOption(query, "eapi"));
 };
 
 export default playlistSubscribe;

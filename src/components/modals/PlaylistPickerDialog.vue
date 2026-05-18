@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Track } from "@shared/types/player";
+import type { ContentScope } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
@@ -9,7 +10,7 @@ import IconLucidePlus from "~icons/lucide/plus";
 const props = defineProps<{
   open: boolean;
   /** 本地 / 在线 */
-  mode: "local" | "online";
+  mode: ContentScope;
   /** 要加入的曲目 */
   tracks: Track[];
 }>();
@@ -39,8 +40,7 @@ const entries = computed<PickerEntry[]>(() => {
   // 跳过"我喜欢"，红心按钮负责那条路径
   return userStore.createdPlaylists
     .filter(
-      (pl): pl is typeof pl & { id: string } =>
-        !!pl.id && pl.id !== userStore.likedPlaylistId,
+      (pl): pl is typeof pl & { id: string } => !!pl.id && pl.id !== userStore.likedPlaylistId,
     )
     .map((pl) => ({
       id: pl.id,
@@ -57,17 +57,22 @@ const handlePick = async (playlistId: string): Promise<void> => {
   if (submitting.value) return;
   submitting.value = true;
   try {
-    let success = false;
+    let count = 0;
     if (props.mode === "local") {
-      const count = await playlistStore.addTracks(playlistId, props.tracks);
-      success = count > 0;
+      count = await playlistStore.addTracks(playlistId, props.tracks);
     } else {
       const ids = props.tracks.map((track) => track.id);
-      const count = await userStore.addTracksToPlaylist(playlistId, ids);
-      success = count > 0;
+      count = await userStore.addTracksToPlaylist(playlistId, ids);
     }
-    toast[success ? "success" : "error"](t(success ? "liked.toast.added" : "liked.toast.failed"));
-    if (success) emit("update:open", false);
+    if (count > 0) {
+      toast.success(t("liked.toast.added"));
+      emit("update:open", false);
+    } else {
+      toast.error(t("liked.toast.failed"));
+    }
+  } catch (err) {
+    const message = err instanceof Error && err.message ? err.message : t("liked.toast.failed");
+    toast.error(message);
   } finally {
     submitting.value = false;
   }

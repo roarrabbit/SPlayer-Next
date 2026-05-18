@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Track } from "@shared/types/player";
+import type { ContentScope } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { useLibraryStore } from "@/stores/library";
 import { useUserStore } from "@/stores/user";
@@ -18,7 +19,7 @@ const status = useStatusStore();
 /** 当前 tab */
 const tab = computed({
   get: () => status.likedPageTab,
-  set: (v: "local" | "online") => (status.likedPageTab = v),
+  set: (v: ContentScope) => (status.likedPageTab = v),
 });
 
 const tabs = computed(() => [

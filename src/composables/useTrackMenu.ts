@@ -29,12 +29,14 @@ export interface TrackMenuOptions {
  */
 export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOptions = {}) => {
   const { t } = useI18n();
-
-  // 本地操作（资源管理器 / 复制路径 / 删除文件）按右键的那首歌判断；
-  // playlist 是列表语境，沿用集合级
+  // 可本地操作
   const isLocal = computed(() => track.value?.source === "local");
   const isPlaylist = options.collectionType === "playlist";
-
+  // 是否添加到歌单
+  const canAddToPlaylist = computed(() => {
+    const source = track.value?.source;
+    return source === "local" || source === "netease";
+  });
   // 菜单项
   const items = computed<DropdownMenuItem[]>(() => [
     { key: "play", label: t("songList.context.play"), icon: markRaw(IconPlay) },
@@ -44,7 +46,7 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
       label: t("collection.addTo", { type: t("collection.playlist") }),
       icon: markRaw(IconListPlus),
       separator: true,
-      show: !!options.onAddToPlaylist,
+      show: canAddToPlaylist.value,
     },
     {
       key: "showInExplorer",

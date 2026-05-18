@@ -31,7 +31,7 @@ const SESSION_MUTATING: ReadonlySet<string> = new Set([
   "register_anonimous",
 ]);
 
-/** 写类接口：每次都必须打到服务端，不要走 2 分钟响应缓存 */
+/** 不采用缓存的实时接口 */
 const NON_CACHEABLE: ReadonlySet<string> = new Set([
   "like",
   "playlist_create",
@@ -41,9 +41,12 @@ const NON_CACHEABLE: ReadonlySet<string> = new Set([
   "playlist_name_update",
   "playlist_desc_update",
   "playlist_order_update",
+  "playlist_detail",
+  "user_playlist",
+  "user_subcount",
 ]);
 
-/** 内存缓存：避免每次调用都走 SELECT（SQLite 仅在首次 load 时读一次） */
+/** 内存缓存 */
 let sessionCache: Record<string, string> | null = null;
 
 const loadSession = (): Record<string, string> => {
@@ -108,7 +111,7 @@ export const callNetease = async (
 
   const session = loadSession();
 
-  // 读缓存；调用方如不想命中，按原项目惯例在 params 里带 `timestamp: Date.now()` 即可
+  // 读缓存
   const cacheable = !NON_CACHEABLE.has(name);
   const cacheKey = cacheable ? buildCacheKey(name, params) : "";
   if (cacheable) {

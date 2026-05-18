@@ -4,6 +4,7 @@ import type { CollectionType } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useLibraryStore } from "@/stores/library";
 import { useUserStore } from "@/stores/user";
+import { toast } from "@/composables/useToast";
 import * as player from "@/core/player";
 
 export interface MultiSelectOptions {
@@ -13,8 +14,11 @@ export interface MultiSelectOptions {
   collectionType: Ref<CollectionType | undefined>;
   /** 集合 ID */
   collectionId: Ref<string | undefined>;
-  /** 删除/移除完成后的回调 */
-  onChanged?: () => void;
+  /**
+   * 删除/移除完成后的回调
+   * @param removedIds 成功删除的曲目 id 列表
+   */
+  onChanged?: (removedIds: string[]) => void;
 }
 
 /**
@@ -103,25 +107,25 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
 
   const confirmDelete = async (): Promise<void> => {
     const tracks = pendingDeleteTracks.value;
-    if (pendingDeleteAction.value === "file") {
-      const paths = tracks.map((t) => t.path).filter((p): p is string => !!p);
-      if (paths.length > 0) await libraryStore.deleteTracks(paths);
-    } else if (options.collectionId.value) {
-      if (options.source.value === "local") {
-        await playlistStore.removeTracks(
-          options.collectionId.value,
-          tracks.map((track) => track.id),
-        );
-      } else if (options.source.value === "netease") {
-        await userStore.removeTracksFromPlaylist(
-          options.collectionId.value,
-          tracks.map((track) => track.id),
-        );
+    const ids = tracks.map((track) => track.id);
+    try {
+      if (pendingDeleteAction.value === "file") {
+        const paths = tracks.map((t) => t.path).filter((p): p is string => !!p);
+        if (paths.length > 0) await libraryStore.deleteTracks(paths);
+      } else if (options.collectionId.value) {
+        if (options.source.value === "local") {
+          await playlistStore.removeTracks(options.collectionId.value, ids);
+        } else if (options.source.value === "netease") {
+          await userStore.removeTracksFromPlaylist(options.collectionId.value, ids);
+        }
       }
+      deleteConfirmOpen.value = false;
+      exit();
+      options.onChanged?.(ids);
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : t("liked.toast.failed");
+      toast.error(message);
     }
-    deleteConfirmOpen.value = false;
-    exit();
-    options.onChanged?.();
   };
 
   const cancelDelete = (): void => {

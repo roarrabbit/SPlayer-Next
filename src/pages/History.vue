@@ -3,7 +3,6 @@ import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { useHistoryStore } from "@/stores/history";
 import SongList from "@/components/list/SongList.vue";
 import * as player from "@/core/player";
-import IconLucideListChecks from "~icons/lucide/list-checks";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
 
 const { t } = useI18n();
@@ -16,31 +15,19 @@ const handlePlayAll = (): void => {
   player.playFrom(history.tracks, 0);
 };
 
-const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
-
 const clearConfirmOpen = ref(false);
 
 /** 更多菜单 */
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
   {
-    key: "batch",
-    label: t("songList.batch.manage"),
-    icon: markRaw(IconLucideListChecks),
-  },
-  {
     key: "clear",
     label: t("history.clear"),
     icon: markRaw(IconLucideTrash2),
-    separator: true,
   },
 ]);
 
 const handleMoreMenu = (key: string): void => {
-  if (key === "batch") {
-    songListRef.value?.enterBatch();
-  } else if (key === "clear") {
-    clearConfirmOpen.value = true;
-  }
+  if (key === "clear") clearConfirmOpen.value = true;
 };
 
 const handleClear = (): void => {
@@ -112,7 +99,6 @@ onMounted(() => {
     <Transition name="fade" mode="out-in" :duration="150">
       <div v-if="history.tracks.length > 0" key="list" class="flex-1 min-h-0">
         <SongList
-          ref="songListRef"
           :items="history.tracks"
           :search-query="searchQuery"
           :show-size="false"
