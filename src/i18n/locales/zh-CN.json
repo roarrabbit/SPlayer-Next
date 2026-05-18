@@ -77,6 +77,7 @@
     "home": "首页",
     "library": "音乐库",
     "liked": "我喜欢的音乐",
+    "history": "播放历史",
     "streaming": "流媒体",
     "settings": "设置",
     "reload": "热重载",
@@ -294,6 +295,13 @@
       "unsupported": "该来源暂不支持喜欢",
       "failed": "操作失败，请稍后重试"
     }
+  },
+  "history": {
+    "title": "播放历史",
+    "empty": "还没有播放记录，先去随便听点什么吧",
+    "clear": "清空历史",
+    "clearConfirmTitle": "清空播放历史",
+    "clearConfirmContent": "确认清空全部播放历史吗？此操作不可撤销！"
   },
   "library": {
     "title": "音乐库",

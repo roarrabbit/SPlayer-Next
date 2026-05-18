@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import type { Track, TrackSource } from "@shared/types/player";
+import type { Track } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { usePlaylistStore } from "@/stores/playlist";
@@ -15,8 +15,6 @@ import IconTrash2 from "~icons/lucide/trash-2";
 import IconListMinus from "~icons/lucide/list-minus";
 
 export interface TrackMenuOptions {
-  /** 列表来源 */
-  source?: TrackSource;
   /** 集合类型（仅 playlist 启用"从XX移除"） */
   collectionType?: CollectionType;
   /** 从集合移除回调 */
@@ -34,8 +32,9 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
   const { t } = useI18n();
   const playlistStore = usePlaylistStore();
 
-  // 状态判断
-  const isLocal = options.source === "local";
+  // 本地操作（资源管理器 / 复制路径 / 删除文件）按右键的那首歌判断；
+  // playlist 是列表语境，沿用集合级
+  const isLocal = computed(() => track.value?.source === "local");
   const isPlaylist = options.collectionType === "playlist";
 
   // 菜单项
@@ -70,13 +69,13 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
       label: t("songList.context.showInExplorer"),
       icon: markRaw(IconFolderOpen),
       separator: true,
-      show: isLocal,
+      show: isLocal.value,
     },
     {
       key: "copyPath",
       label: t("songList.context.copyPath"),
       icon: markRaw(IconCopy),
-      show: isLocal,
+      show: isLocal.value,
     },
     {
       key: "removeFromCollection",
@@ -90,7 +89,7 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
       label: t("songList.context.deleteFile"),
       icon: markRaw(IconTrash2),
       separator: !isPlaylist,
-      show: isLocal,
+      show: isLocal.value,
     },
   ]);
 

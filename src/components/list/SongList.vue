@@ -86,19 +86,28 @@ const textCollator = new Intl.Collator(undefined, {
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
 
-/** 非本地源需要真实 id */
-const needsRealId = computed(() => props.source !== undefined && props.source !== "local");
-
-/** 专辑是否可跳转 */
+/** 专辑是否可跳转：本地不要求 id，其他源需要 album.id */
 const isAlbumLinkable = (item: Track): boolean => {
   if (!item.album?.name) return false;
-  return needsRealId.value ? !!item.album.id : true;
+  return item.source === "local" || !!item.album.id;
 };
 
-/** 歌手是否可跳转 */
-const isArtistLinkable = (artist: Artist): boolean => {
+/** 歌手是否可跳转：本地不要求 id，其他源需要 artist.id */
+const isArtistLinkable = (item: Track, artist: Artist): boolean => {
   if (!artist.name) return false;
-  return needsRealId.value ? !!artist.id : true;
+  return item.source === "local" || !!artist.id;
+};
+
+/** 跳转到歌手页 */
+const goArtist = (item: Track, artist: Artist): void => {
+  if (!isArtistLinkable(item, artist)) return;
+  navigateToArtist(artist.name, { source: item.source, artistId: artist.id });
+};
+
+/** 跳转到专辑页 */
+const goAlbum = (item: Track): void => {
+  if (!isAlbumLinkable(item)) return;
+  navigateToAlbum(item.album?.name, { source: item.source, albumId: item.album?.id });
 };
 
 /** 排序字段 */
@@ -198,7 +207,6 @@ const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
-  source: props.source,
   collectionType: props.collectionType,
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),
@@ -513,14 +521,11 @@ defineExpose({
                         <span
                           class="transition-opacity"
                           :class="
-                            isArtistLinkable(artist)
+                            isArtistLinkable(item, artist)
                               ? 'cursor-pointer hover:opacity-70'
                               : 'opacity-50'
                           "
-                          @click.stop="
-                            isArtistLinkable(artist) &&
-                            navigateToArtist(artist.name, { source, artistId: artist.id })
-                          "
+                          @click.stop="goArtist(item, artist)"
                         >
                           {{ artist.name }}
                         </span>
@@ -541,10 +546,7 @@ defineExpose({
                   playingId === item.id ? 'text-primary/70' : 'text-on-surface',
                   isAlbumLinkable(item) ? 'cursor-pointer hover:opacity-70' : 'opacity-50',
                 ]"
-                @click.stop="
-                  isAlbumLinkable(item) &&
-                  navigateToAlbum(item.album?.name, { source, albumId: item.album?.id })
-                "
+                @click.stop="goAlbum(item)"
               >
                 {{ item.album?.name || t("collection.unknownAlbum") }}
               </div>

@@ -1,0 +1,89 @@
+import localforage from "localforage";
+import type { Track } from "@shared/types/player";
+
+const db = localforage.createInstance({ name: "splayer", storeName: "history" });
+const HISTORY_KEY = "entries";
+
+/** 历史条数上限，超出按时间倒序裁掉尾部 */
+const MAX_HISTORY = 500;
+
+/** 单条播放历史 */
+export interface HistoryEntry {
+  track: Track;
+  /** 最近一次播放时间（unix ms） */
+  playedAt: number;
+}
+
+/** 同源同 id 视为同一首 */
+const keyOf = (track: Track): string => `${track.source}:${track.id}`;
+
+export const useHistoryStore = defineStore("history", () => {
+  /** 倒序：最近播放在前 */
+  const entries = shallowRef<HistoryEntry[]>([]);
+  const initialized = ref(false);
+  let pending = false;
+
+  const persist = (): void => {
+    db.setItem(HISTORY_KEY, toRaw(entries.value)).catch(() => {});
+  };
+
+  /** 加载持久化数据（幂等） */
+  const load = async (): Promise<void> => {
+    if (initialized.value || pending) return;
+    pending = true;
+    const cached = await db.getItem<HistoryEntry[]>(HISTORY_KEY).catch(() => null);
+    if (Array.isArray(cached) && cached.length > 0) entries.value = cached;
+    initialized.value = true;
+    pending = false;
+  };
+
+  /**
+   * 记录一次播放
+   * @param track 当前播放曲目
+   */
+  const record = (track: Track): void => {
+    if (!track?.id) return;
+    const key = keyOf(track);
+    const playedAt = Date.now();
+    const next: HistoryEntry[] = [{ track, playedAt }];
+    for (const item of entries.value) {
+      if (keyOf(item.track) === key) continue;
+      next.push(item);
+      if (next.length >= MAX_HISTORY) break;
+    }
+    entries.value = next;
+    persist();
+  };
+
+  /**
+   * 移除单条历史
+   * @param track 要删除的曲目
+   */
+  const remove = (track: Track): void => {
+    const key = keyOf(track);
+    const next = entries.value.filter((entry) => keyOf(entry.track) !== key);
+    if (next.length === entries.value.length) return;
+    entries.value = next;
+    persist();
+  };
+
+  /** 清空全部历史 */
+  const clear = (): void => {
+    if (entries.value.length === 0) return;
+    entries.value = [];
+    persist();
+  };
+
+  /** 按时间倒序的扁平曲目列表 */
+  const tracks = computed<Track[]>(() => entries.value.map((entry) => entry.track));
+
+  return {
+    entries,
+    tracks,
+    initialized,
+    load,
+    record,
+    remove,
+    clear,
+  };
+});

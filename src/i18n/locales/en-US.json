@@ -77,6 +77,7 @@
     "home": "Home",
     "library": "Library",
     "liked": "Liked Songs",
+    "history": "Play History",
     "streaming": "Streaming",
     "settings": "Settings",
     "reload": "Reload",
@@ -294,6 +295,13 @@
       "unsupported": "This source does not support liking",
       "failed": "Action failed, please try again"
     }
+  },
+  "history": {
+    "title": "Play History",
+    "empty": "No playback history yet — play something to get started",
+    "clear": "Clear history",
+    "clearConfirmTitle": "Clear Play History",
+    "clearConfirmContent": "Clear all play history? This cannot be undone."
   },
   "library": {
     "title": "Library",

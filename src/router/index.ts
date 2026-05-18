@@ -23,6 +23,11 @@ const router = createRouter({
           component: () => import("@/pages/Liked.vue"),
         },
         {
+          path: "history",
+          name: "history",
+          component: () => import("@/pages/History.vue"),
+        },
+        {
           path: "collection/:source/:type/:id",
           name: "collection",
           component: () => import("@/pages/Collection.vue"),

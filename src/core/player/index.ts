@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { useStreamingStore } from "@/stores/streaming";
 import { usePluginsStore } from "@/stores/plugins";
+import { useHistoryStore } from "@/stores/history";
 import * as queue from "@/stores/queue";
 import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyricLoader";
@@ -154,8 +155,12 @@ const loadTrack = async (track: Track | null): Promise<void> => {
     // 引擎失败且属单曲级错误才跳
     if (!result.ok && result.error && isSkippableError(result.error)) {
       shouldSkip = true;
-    } else if (result.ok && resolved.cacheRequest) {
-      cacheScheduler.schedule(track.id, resolved.cacheRequest);
+    } else if (result.ok) {
+      // 用户主动触发的成功播放记入历史；initPlayer 的恢复路径走 load() 不经此处
+      useHistoryStore().record(track);
+      if (resolved.cacheRequest) {
+        cacheScheduler.schedule(track.id, resolved.cacheRequest);
+      }
     }
   }
   if (shouldSkip) await skipOnFailure(myToken, () => trackToken);
