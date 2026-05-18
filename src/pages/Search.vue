@@ -180,27 +180,19 @@ const isEmptyResult = computed(() => {
           <span class="text-3xl font-bold text-on-surface">
             {{ keyword || t("search.title") }}
           </span>
-          <span v-if="keyword" class="ml-2 text-lg text-on-surface-variant/60">
+          <span v-if="keyword" class="ml-2 font-medium text-lg text-on-surface-variant/60">
             {{ t("search.titleSuffix") }}
           </span>
         </h1>
-        <!-- 平台切换：胶囊 segment -->
-        <div
-          class="shrink-0 inline-flex items-center gap-0.5 p-1 rounded-full bg-on-surface/5 border border-solid border-outline-variant/20"
-        >
-          <SButton
-            v-for="p in platformTabs"
-            :key="p.key"
-            :variant="status.searchPlatform === p.key ? 'secondary' : 'ghost'"
-            :type="status.searchPlatform === p.key ? 'primary' : 'default'"
-            size="small"
+        <!-- 平台切换 -->
+        <div class="shrink-0 w-40">
+          <STabs
+            :model-value="status.searchPlatform"
+            :tabs="platformTabs"
+            type="segment"
             round
-            strong
-            ripple
-            @click="onPlatformSwitch(p.key)"
-          >
-            {{ p.label }}
-          </SButton>
+            @update:model-value="onPlatformSwitch"
+          />
         </div>
       </div>
       <STabs :model-value="activeTab" :tabs="tabs" @update:model-value="onTabSwitch" />

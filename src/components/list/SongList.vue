@@ -6,6 +6,7 @@ import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
+import { useFavorite } from "@/composables/useFavorite";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
@@ -19,6 +20,8 @@ import IconLucideListMinus from "~icons/lucide/list-minus";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
 import IconLucideArrowLeftRight from "~icons/lucide/arrow-left-right";
 import IconLucideX from "~icons/lucide/x";
+import IconFavorite from "~icons/material-symbols/favorite-rounded";
+import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 
 const props = withDefaults(
   defineProps<{
@@ -66,6 +69,7 @@ const { t } = useI18n();
 const media = useMediaStore();
 const status = useStatusStore();
 const settings = useSettingsStore();
+const fav = useFavorite();
 
 /** 悬浮布局且播放栏可见时 */
 const isFloatingPlayerBar = computed(
@@ -385,6 +389,7 @@ defineExpose({
                 </div>
               </div>
               <div v-if="showAlbum" class="flex-1 min-w-0">{{ t("songList.album") }}</div>
+              <div class="w-7 shrink-0 text-center">{{ t("songList.actions") }}</div>
               <div v-if="showDuration" class="w-16 shrink-0 text-center">
                 {{ t("songList.duration") }}
               </div>
@@ -543,6 +548,27 @@ defineExpose({
               >
                 {{ item.album?.name || t("collection.unknownAlbum") }}
               </div>
+              <!-- 红心：批量模式下隐藏，其余始终显示 -->
+              <div
+                v-if="!batch.active.value"
+                class="w-7 shrink-0 flex items-center justify-center"
+                @click.stop
+              >
+                <SButton
+                  type="primary"
+                  variant="text"
+                  circle
+                  :size="28"
+                  :icon-size="20"
+                  @click="fav.toggle(item)"
+                >
+                  <template #icon>
+                    <IconFavorite v-if="fav.isLiked(item)" />
+                    <IconFavoriteOutline v-else />
+                  </template>
+                </SButton>
+              </div>
+              <div v-else class="w-7 shrink-0" />
               <!-- 时长 -->
               <div
                 v-if="showDuration"

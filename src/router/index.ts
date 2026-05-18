@@ -18,6 +18,11 @@ const router = createRouter({
           component: () => import("@/pages/Library.vue"),
         },
         {
+          path: "liked",
+          name: "liked",
+          component: () => import("@/pages/Liked.vue"),
+        },
+        {
           path: "collection/:source/:type/:id",
           name: "collection",
           component: () => import("@/pages/Collection.vue"),

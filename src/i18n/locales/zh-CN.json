@@ -10,6 +10,8 @@
     "loading": "加载中",
     "noData": "暂无数据",
     "noMore": "没有更多了 ~",
+    "refresh": "刷新",
+    "refreshCache": "刷新缓存",
     "success": "操作成功",
     "error": "操作失败",
     "playAll": "播放全部",
@@ -74,6 +76,7 @@
   "nav": {
     "home": "首页",
     "library": "音乐库",
+    "liked": "我喜欢的音乐",
     "streaming": "流媒体",
     "settings": "设置",
     "reload": "热重载",
@@ -209,6 +212,7 @@
   "songList": {
     "title": "标题",
     "album": "专辑",
+    "actions": "操作",
     "size": "大小",
     "duration": "时长",
     "noResults": "没有匹配的歌曲",
@@ -271,6 +275,25 @@
     "locateCurrent": "当前播放",
     "clearConfirmTitle": "清空播放列表",
     "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
+  },
+  "liked": {
+    "title": "我喜欢的音乐",
+    "tabs": {
+      "local": "本地",
+      "online": "在线"
+    },
+    "empty": {
+      "local": "还没有收藏的本地歌曲，点击歌曲右侧的红心试试",
+      "online": "网易云账号下还没有喜欢的歌曲"
+    },
+    "needLogin": "请先登录网易云账号查看在线喜欢",
+    "toast": {
+      "added": "已添加到喜欢",
+      "removed": "已从喜欢中移除",
+      "needLogin": "请先登录网易云账号",
+      "unsupported": "该来源暂不支持喜欢",
+      "failed": "操作失败，请稍后重试"
+    }
   },
   "library": {
     "title": "音乐库",

@@ -38,6 +38,8 @@ export interface FetchPlaylistOptions {
   onBatch?: (batch: Track[]) => void;
   /** 中断信号 */
   signal?: AbortSignal;
+  /** 绕过请求响应缓存 */
+  fresh?: boolean;
 }
 
 /**
@@ -54,7 +56,9 @@ export const fetchPlaylist = async (
   options: FetchPlaylistOptions = {},
 ): Promise<void> => {
   if (options.signal?.aborted) return;
-  const body = await neteaseApi.playlist_detail({ id: playlistId });
+  const params: Record<string, unknown> = { id: playlistId };
+  if (options.fresh) params.timestamp = Date.now();
+  const body = await neteaseApi.playlist_detail(params);
   if (options.signal?.aborted) return;
   const raw = body?.playlist;
   if (!raw) return;

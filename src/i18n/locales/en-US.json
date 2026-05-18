@@ -10,6 +10,8 @@
     "loading": "Loading",
     "noData": "No data",
     "noMore": "No more ~",
+    "refresh": "Refresh",
+    "refreshCache": "Refresh cache",
     "success": "Success",
     "error": "Error",
     "playAll": "Play All",
@@ -74,6 +76,7 @@
   "nav": {
     "home": "Home",
     "library": "Library",
+    "liked": "Liked Songs",
     "streaming": "Streaming",
     "settings": "Settings",
     "reload": "Reload",
@@ -209,6 +212,7 @@
   "songList": {
     "title": "Title",
     "album": "Album",
+    "actions": "Actions",
     "size": "Size",
     "duration": "Duration",
     "noResults": "No matching songs",
@@ -271,6 +275,25 @@
     "locateCurrent": "Now Playing",
     "clearConfirmTitle": "Clear Playlist",
     "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
+  },
+  "liked": {
+    "title": "Liked Songs",
+    "tabs": {
+      "local": "Local",
+      "online": "Online"
+    },
+    "empty": {
+      "local": "No liked local songs yet — click the heart next to a song to add it",
+      "online": "No liked songs on your NetEase account yet"
+    },
+    "needLogin": "Log in to NetEase to view online liked songs",
+    "toast": {
+      "added": "Added to liked",
+      "removed": "Removed from liked",
+      "needLogin": "Please log in to NetEase first",
+      "unsupported": "This source does not support liking",
+      "failed": "Action failed, please try again"
+    }
   },
   "library": {
     "title": "Library",

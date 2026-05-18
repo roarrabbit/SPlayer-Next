@@ -55,13 +55,18 @@ const isArtistLinkable = (artist: Artist): boolean => {
     <!-- 歌曲信息：仅文本切歌时滑动 -->
     <Transition name="slide-left" mode="out-in">
       <div v-if="media.track" :key="media.track.id" class="min-w-0 flex-1">
-        <SMarquee
-          :class="
-            compact ? 'font-medium text-sm leading-tight' : 'font-bold text-base leading-snug'
-          "
-        >
-          {{ media.track.title }}
-        </SMarquee>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <SMarquee
+            fit
+            class="min-w-0"
+            :class="
+              compact ? 'font-medium text-sm leading-tight' : 'font-bold text-base leading-snug'
+            "
+          >
+            {{ media.track.title }}
+          </SMarquee>
+          <slot name="title-trailing" />
+        </div>
         <Transition name="slide-up" mode="out-in">
           <SMarquee
             v-if="currentLyricText"

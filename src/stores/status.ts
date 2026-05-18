@@ -60,6 +60,8 @@ export const useStatusStore = defineStore(
     const searchPlatform = ref<Platform>("netease");
     /** 侧栏「我的歌单」当前展示来源 */
     const myPlaylistSource = ref<"local" | "online">("local");
+    /** 「我喜欢的音乐」页当前 tab */
+    const likedPageTab = ref<"local" | "online">("local");
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */
@@ -102,6 +104,7 @@ export const useStatusStore = defineStore(
       lyricOffsetMs,
       searchPlatform,
       myPlaylistSource,
+      likedPageTab,
       currentTrack,
     };
   },
@@ -116,6 +119,7 @@ export const useStatusStore = defineStore(
         "position",
         "searchPlatform",
         "myPlaylistSource",
+        "likedPageTab",
       ],
     },
   },

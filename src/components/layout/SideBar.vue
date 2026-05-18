@@ -13,6 +13,7 @@ import IconLucideDisc3 from "~icons/lucide/disc-3";
 import IconLucideFolder from "~icons/lucide/folder";
 import IconLucideServer from "~icons/lucide/server";
 import IconLucideListMusic from "~icons/lucide/list-music";
+import IconMaterialSymbolsFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 import IconLucidePlus from "~icons/lucide/plus";
 import IconLucideChevronDown from "~icons/lucide/chevron-down";
 import SButton from "@/components/ui/SButton.vue";
@@ -92,7 +93,8 @@ const myPlaylistItems = computed<SMenuItem[]>(() => {
       icon: markRaw(IconLucideListMusic),
     }));
   }
-  return userStore.createdPlaylists.map((pl) => ({
+  // 在线模式
+  return userStore.createdPlaylists.slice(1).map((pl) => ({
     key: `/collection/netease/playlist/${pl.id}`,
     label: pl.name,
     icon: markRaw(IconLucideListMusic),
@@ -115,10 +117,10 @@ const menuItems = computed<SMenuItem[]>(() => [
   { key: "/artists/local", label: t("artist.label"), icon: markRaw(IconLucideUser) },
   { key: "/albums/local", label: t("album.label"), icon: markRaw(IconLucideDisc3) },
   { key: "/folders", label: t("folder.label"), icon: markRaw(IconLucideFolder) },
-  // 流媒体（受 system.streaming.enabled 总开关控制）
+  { key: "divider-personal", type: "divider" },
+  { key: "/liked", label: t("nav.liked"), icon: markRaw(IconMaterialSymbolsFavoriteOutline) },
   ...(systemSettings.streaming.enabled
     ? ([
-        { key: "divider-streaming", type: "divider" },
         { key: "/streaming", label: t("nav.streaming"), icon: markRaw(IconLucideServer) },
       ] satisfies SMenuItem[])
     : []),

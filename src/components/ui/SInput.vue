@@ -54,9 +54,9 @@ const sizeClasses = computed(() => {
     if (props.size === "large") return "px-4 py-2.5 text-base";
     return "px-3 py-2 text-sm";
   }
-  if (props.size === "small") return "h-7 px-2 text-xs";
+  if (props.size === "small") return "h-8 px-2 text-xs";
   if (props.size === "large") return "h-10 px-4 text-base";
-  return "h-8.5 px-3 text-sm";
+  return "h-9 px-3 text-sm";
 });
 
 const emit = defineEmits<{

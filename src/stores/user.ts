@@ -1,4 +1,5 @@
-import type { Album, Artist, Playlist } from "@shared/types/player";
+import localforage from "localforage";
+import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { UserProfile, UserSubcount } from "@/types/user";
 import { clearNeteaseSession } from "@/apis/netease";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/apis/login/netease";
 import {
   fetchLikelist,
+  fetchPlaylist,
   fetchSubcount,
   fetchUserAlbums,
   fetchUserArtists,
@@ -19,11 +21,27 @@ import {
 /** 登录 cookie 保活间隔 */
 const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
-const emptySubcount = (): UserSubcount => ({
+/** 用户数据持久化键 */
+/** 「我喜欢的音乐」歌单曲目 */
+const LIKED_PLAYLIST_CACHE_KEY = "liked-playlist";
+/** 用户红心 id 列表 */
+const LIKED_SONG_IDS_CACHE_KEY = "liked-song-ids";
+/** 用户歌单元数据列表 */
+const PLAYLISTS_CACHE_KEY = "playlists";
+
+interface LikedPlaylistCache {
+  playlistId: string;
+  tracks: Track[];
+  cachedAt: number;
+}
+
+const cacheDb = localforage.createInstance({ name: "splayer", storeName: "user-cache" });
+
+const EMPTY_SUBCOUNT: UserSubcount = {
   createdPlaylistCount: 0,
   subPlaylistCount: 0,
   artistCount: 0,
-});
+};
 
 export const useUserStore = defineStore(
   "user",
@@ -34,10 +52,9 @@ export const useUserStore = defineStore(
     const lastRefreshAt = ref<number>(0);
     /** 是否已登录 */
     const isLoggedIn = computed(() => profile.value !== null);
-
-    /** 全部歌单（创建+收藏；首条恒为「我喜欢的音乐」） */
+    /** 全部歌单 */
     const playlists = shallowRef<Playlist[]>([]);
-    /** 红心歌曲 id 集合（Set 用于 O(1) 判定） */
+    /** 红心歌曲 id 集合 */
     const likedSongIds = ref<Set<string>>(new Set());
     /** 收藏专辑 */
     const albums = shallowRef<Album[]>([]);
@@ -46,17 +63,25 @@ export const useUserStore = defineStore(
     /** 用户等级 */
     const level = ref<number | undefined>(undefined);
     /** 订阅计数 */
-    const subcount = ref<UserSubcount>(emptySubcount());
+    const subcount = ref<UserSubcount>(EMPTY_SUBCOUNT);
     /** 内容拉取最近时间（ms） */
     const lastFetchedAt = ref<number>(0);
     /** 是否在拉内容 */
     const contentLoading = ref(false);
+    /** 「我喜欢的音乐」歌单 */
+    const likedPlaylistTracks = shallowRef<Track[]>([]);
+    /** 是否在拉取歌单曲目 */
+    const likedPlaylistLoading = ref(false);
+    /** 当前 tracks 关联的 playlistId */
+    let currentLikedPlaylistId: string | null = null;
+    /** 进行中的拉取 */
+    let likedPlaylistAbort: AbortController | null = null;
 
-    /** 「我喜欢的音乐」歌单 id（数组首条） */
+    /** 「我喜欢的音乐」歌单 id */
     const likedPlaylistId = computed<string | null>(() => playlists.value[0]?.id ?? null);
 
     /**
-     * 自建歌单（含我喜欢；按 createdPlaylistCount 切分）
+     * 自建歌单
      * NCM /user/playlist 返回数组前 createdPlaylistCount 条为自建，其后为收藏
      */
     const createdPlaylists = computed<Playlist[]>(() => {
@@ -81,27 +106,112 @@ export const useUserStore = defineStore(
       albums.value = [];
       artists.value = [];
       level.value = undefined;
-      subcount.value = emptySubcount();
+      subcount.value = EMPTY_SUBCOUNT;
       lastFetchedAt.value = 0;
+      likedPlaylistAbort?.abort();
+      likedPlaylistTracks.value = [];
+      likedPlaylistLoading.value = false;
+      currentLikedPlaylistId = null;
+    };
+
+    /** 从缓存填充喜欢歌单 */
+    const hydrateLikedPlaylistFromCache = async (playlistId: string): Promise<void> => {
+      try {
+        const cached = await cacheDb.getItem<LikedPlaylistCache>(LIKED_PLAYLIST_CACHE_KEY);
+        if (cached && cached.playlistId === playlistId && cached.tracks.length > 0) {
+          likedPlaylistTracks.value = cached.tracks;
+        }
+      } catch {
+        console.error("[user] hydrate liked playlist from cache failed");
+      }
+    };
+
+    /** 拉取最新喜欢歌单曲目 */
+    const refreshLikedPlaylist = async (playlistId: string): Promise<void> => {
+      likedPlaylistAbort?.abort();
+      const controller = new AbortController();
+      likedPlaylistAbort = controller;
+      if (likedPlaylistTracks.value.length === 0) likedPlaylistLoading.value = true;
+      try {
+        const accumulated: Track[] = [];
+        await fetchPlaylist(playlistId, {
+          signal: controller.signal,
+          fresh: true,
+          onBatch: (batch) => {
+            if (controller.signal.aborted) return;
+            accumulated.push(...batch);
+            likedPlaylistTracks.value = [...accumulated];
+          },
+        });
+        if (controller.signal.aborted) return;
+        if (accumulated.length > 0) {
+          const payload: LikedPlaylistCache = {
+            playlistId,
+            tracks: accumulated.map((track) => ({ ...track })),
+            cachedAt: Date.now(),
+          };
+          cacheDb.setItem(LIKED_PLAYLIST_CACHE_KEY, payload).catch(() => {});
+        }
+      } finally {
+        if (!controller.signal.aborted) likedPlaylistLoading.value = false;
+      }
     };
 
     /**
-     * 全量拉取用户内容（歌单 + 喜欢 id + 收藏专辑/歌手 + 计数）
+     * 确保「我喜欢的音乐」曲目已就绪
+     * - 首次访问该歌单：缓存即时上屏 + 网络刷新
+     * - 再次访问：仅当 likedSongIds 数量与已加载曲目数量不一致时才刷新（外部增删过 → 数据脏）
+     * @param force true 强制走网络刷新（用户手动点刷新时用）
+     */
+    const ensureLikedPlaylist = async (force = false): Promise<void> => {
+      const playlistId = likedPlaylistId.value;
+      if (!playlistId) return;
+      if (currentLikedPlaylistId !== playlistId) {
+        currentLikedPlaylistId = playlistId;
+        likedPlaylistTracks.value = [];
+        await hydrateLikedPlaylistFromCache(playlistId);
+        refreshLikedPlaylist(playlistId);
+        return;
+      }
+      if (force || likedSongIds.value.size !== likedPlaylistTracks.value.length) {
+        refreshLikedPlaylist(playlistId);
+      }
+    };
+
+    /** 从缓存恢复轻量内容 */
+    const hydrateContentFromCache = async (): Promise<void> => {
+      try {
+        const [cachedIds, cachedPlaylists] = await Promise.all([
+          cacheDb.getItem<string[]>(LIKED_SONG_IDS_CACHE_KEY),
+          cacheDb.getItem<Playlist[]>(PLAYLISTS_CACHE_KEY),
+        ]);
+        if (Array.isArray(cachedIds) && cachedIds.length > 0) {
+          likedSongIds.value = new Set(cachedIds);
+        }
+        if (Array.isArray(cachedPlaylists) && cachedPlaylists.length > 0) {
+          playlists.value = cachedPlaylists;
+        }
+      } catch {
+        console.error("[user] hydrate content from cache failed");
+      }
+    };
+
+    /**
+     * 全量拉取用户内容
      * 并行发起，失败的子任务不会阻塞其他类目
      */
     const loadContent = async (uid: number): Promise<void> => {
       if (!uid) return;
       contentLoading.value = true;
+      // 缓存即时上屏，不阻塞后续网络
+      await hydrateContentFromCache();
       try {
         const sub = await fetchSubcount().catch((err) => {
           console.warn("[user] subcount failed:", err);
-          return emptySubcount();
+          return EMPTY_SUBCOUNT;
         });
         subcount.value = sub;
-
-        // 用 subcount 推算歌单 limit，避免一次请求带回上千条
         const playlistTotal = (sub.createdPlaylistCount || 0) + (sub.subPlaylistCount || 0) || 50;
-
         const settled = await Promise.allSettled([
           fetchUserPlaylists(uid, playlistTotal),
           fetchLikelist(uid),
@@ -109,10 +219,16 @@ export const useUserStore = defineStore(
           fetchUserArtists(),
           fetchUserLevel(),
         ]);
-
+        /** 拉取结果 */
         const [plRes, likeRes, albumRes, artistRes, levelRes] = settled;
-        if (plRes.status === "fulfilled") playlists.value = plRes.value;
-        if (likeRes.status === "fulfilled") likedSongIds.value = new Set(likeRes.value);
+        if (plRes.status === "fulfilled") {
+          playlists.value = plRes.value;
+          cacheDb.setItem(PLAYLISTS_CACHE_KEY, plRes.value).catch(() => {});
+        }
+        if (likeRes.status === "fulfilled") {
+          likedSongIds.value = new Set(likeRes.value);
+          cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, likeRes.value).catch(() => {});
+        }
         if (albumRes.status === "fulfilled") albums.value = albumRes.value;
         if (artistRes.status === "fulfilled") artists.value = artistRes.value;
         if (levelRes.status === "fulfilled") level.value = levelRes.value;
@@ -126,7 +242,10 @@ export const useUserStore = defineStore(
       }
     };
 
-    /** 切换红心，乐观更新，失败回滚 */
+    /**
+     * 切换红心状态
+     * @param trackId - 曲目全局 id
+     */
     const toggleLike = async (trackId: string): Promise<boolean> => {
       const wasLiked = likedSongIds.value.has(trackId);
       const next = new Set(likedSongIds.value);
@@ -136,6 +255,7 @@ export const useUserStore = defineStore(
       try {
         const ok = await toggleLikeSong(trackId, !wasLiked);
         if (!ok) throw new Error("like api returned non-200");
+        cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, [...next]).catch(() => {});
         return true;
       } catch (err) {
         const rollback = new Set(likedSongIds.value);
@@ -147,7 +267,7 @@ export const useUserStore = defineStore(
       }
     };
 
-    /** uid 变更 → 拉取/清空用户内容 */
+    /** 同步用户内容 */
     const syncContent = (uid: number | undefined): void => {
       if (uid) void loadContent(uid);
       else clearContent();
@@ -160,7 +280,7 @@ export const useUserStore = defineStore(
       syncContent(newProfile?.userId);
     };
 
-    /** 后台续期 cookie，失败静默 */
+    /** 续期 cookie */
     const refresh = async (): Promise<void> => {
       try {
         await refreshLoginApi();
@@ -168,7 +288,7 @@ export const useUserStore = defineStore(
       } catch {}
     };
 
-    /** 校验 cookie 并同步最新 profile + 用户内容 */
+    /** 校验 cookie 并同步最新 profile 与用户内容 */
     const fetchStatus = async (): Promise<boolean> => {
       try {
         const latest = await fetchLoginStatus();
@@ -190,12 +310,12 @@ export const useUserStore = defineStore(
       }
     };
 
-    /** 登出：服务端清会话 + 主进程清 cookie + 本地清 profile 与内容 */
+    /** 登出 */
     const logout = async (): Promise<void> => {
       try {
         await logoutNetease();
       } catch {
-        /* 服务端登出失败仍要清本地 */
+        console.error("[user] logout failed");
       }
       await clearNeteaseSession();
       profile.value = null;
@@ -220,11 +340,14 @@ export const useUserStore = defineStore(
       lastFetchedAt,
       contentLoading,
       likedPlaylistId,
+      likedPlaylistTracks,
+      likedPlaylistLoading,
       createdPlaylists,
       subscribedPlaylists,
       isLiked,
       loadContent,
       toggleLike,
+      ensureLikedPlaylist,
       clearContent,
     };
   },
