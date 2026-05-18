@@ -3,6 +3,7 @@ import type { TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { usePlaylistStore } from "@/stores/playlist";
+import { useUserStore } from "@/stores/user";
 import { loadCollection as loadCollectionService } from "@/services/collectionLoader";
 import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
@@ -14,10 +15,13 @@ import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucideHourglass from "~icons/lucide/hourglass";
 import IconLucideCalendar from "~icons/lucide/calendar";
 import IconLucideUser from "~icons/lucide/user";
+import IconMaterialSymbolsFavoriteRounded from "~icons/material-symbols/favorite-rounded";
+import IconMaterialSymbolsFavoriteOutlineRounded from "~icons/material-symbols/favorite-outline-rounded";
 
 const { t } = useI18n();
 const route = useRoute();
 const playlistStore = usePlaylistStore();
+const userStore = useUserStore();
 
 const source = route.params.source as TrackSource;
 const type = route.params.type as CollectionType;
@@ -29,8 +33,29 @@ const loading = ref(false);
 /** 取消当次加载（路由切换/卸载时 abort） */
 let loadAbort: AbortController | null = null;
 
-/** 是否可编辑 */
-const editable = source === "local" && type === "playlist";
+/** 是否本地歌单 */
+const isLocalPlaylist = source === "local" && type === "playlist";
+/** 是否网易云歌单 */
+const isNeteasePlaylist = source === "netease" && type === "playlist";
+/** 是否网易云自建歌单 */
+const isOnlineCreated = computed(
+  () => isNeteasePlaylist && userStore.createdPlaylists.some((pl) => pl.id === id),
+);
+/** 是否"我喜欢的音乐"歌单 */
+const isLikedPlaylist = computed(
+  () => isNeteasePlaylist && userStore.likedPlaylistId === id,
+);
+/** 是否在线收藏的他人歌单 */
+const isOnlineSubscribed = computed(
+  () => isNeteasePlaylist && userStore.subscribedPlaylists.some((pl) => pl.id === id),
+);
+/** 可改名 / 删除 */
+const canManage = computed(
+  () => isLocalPlaylist || (isOnlineCreated.value && !isLikedPlaylist.value),
+);
+/** 是否显示收藏按钮 */
+const canSubscribe = computed(() => isNeteasePlaylist && !isOnlineCreated.value);
+const subscribeBusy = ref(false);
 
 /** 折叠状态 */
 const collapsed = ref(false);
@@ -46,7 +71,7 @@ const handleListScroll = (event: Event) => {
 };
 
 /** 加载数据：派发到 services/collectionLoader，本组件只管 ref + loading + abort */
-const loadCollection = async (): Promise<void> => {
+const loadCollection = async (fresh = false): Promise<void> => {
   collapsed.value = false;
   loadAbort?.abort();
   const myAbort = new AbortController();
@@ -57,6 +82,7 @@ const loadCollection = async (): Promise<void> => {
     await loadCollectionService(source, type, id, {
       fallbackName: typeof route.query.name === "string" ? route.query.name : undefined,
       signal: myAbort.signal,
+      fresh,
       onUpdate: (next) => {
         if (myAbort.signal.aborted) return;
         collection.value = next;
@@ -120,16 +146,21 @@ const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 /** 更多菜单 */
 const editLabel = computed(() => t("collection.edit", { type: typeLabel.value }));
 
-const moreMenuItems = computed<DropdownMenuItem[]>(() => [
-  { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
-  { key: "edit", label: editLabel.value, icon: IconLucidePencil },
-  {
-    key: "delete",
-    label: t("collection.delete", { type: typeLabel.value }),
-    icon: IconLucideTrash2,
-    separator: true,
-  },
-]);
+const moreMenuItems = computed<DropdownMenuItem[]>(() => {
+  const list: DropdownMenuItem[] = [
+    { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
+  ];
+  if (canManage.value) {
+    list.push({ key: "edit", label: editLabel.value, icon: IconLucidePencil });
+    list.push({
+      key: "delete",
+      label: t("collection.delete", { type: typeLabel.value }),
+      icon: IconLucideTrash2,
+      separator: true,
+    });
+  }
+  return list;
+});
 
 /** 编辑弹窗 */
 const editDialogOpen = ref(false);
@@ -145,11 +176,20 @@ const openEditDialog = () => {
 
 const handleSaveEdit = async () => {
   if (!collection.value || !editTitle.value.trim()) return;
-  await playlistStore.update(collection.value.id, {
-    title: editTitle.value.trim(),
-    description: editDescription.value.trim() || undefined,
-  });
-  await loadCollection();
+  const title = editTitle.value.trim();
+  const description = editDescription.value.trim();
+  if (isLocalPlaylist) {
+    await playlistStore.update(collection.value.id, {
+      title,
+      description: description || undefined,
+    });
+  } else {
+    await userStore.updatePlaylist(collection.value.id, {
+      name: title,
+      description,
+    });
+  }
+  await loadCollection(true);
   editDialogOpen.value = false;
 };
 
@@ -160,9 +200,30 @@ const router = useRouter();
 
 const handleDelete = async () => {
   if (!collection.value) return;
-  await playlistStore.remove(collection.value.id);
+  if (isLocalPlaylist) {
+    await playlistStore.remove(collection.value.id);
+  } else {
+    const ok = await userStore.deletePlaylist(collection.value.id);
+    if (!ok) {
+      deleteConfirmOpen.value = false;
+      return;
+    }
+  }
   deleteConfirmOpen.value = false;
   router.back();
+};
+
+/** 收藏 / 取消收藏 */
+const handleToggleSubscribe = async (): Promise<void> => {
+  if (!collection.value || subscribeBusy.value) return;
+  subscribeBusy.value = true;
+  try {
+    const next = !isOnlineSubscribed.value;
+    const ok = await userStore.togglePlaylistSubscribe(collection.value.id, next);
+    if (ok && !next) router.back();
+  } finally {
+    subscribeBusy.value = false;
+  }
 };
 
 const handleMoreMenu = (key: string) => {
@@ -259,8 +320,21 @@ const handleMoreMenu = (key: string) => {
                 </template>
                 {{ t("common.playAll") }}
               </SButton>
+              <SButton
+                v-if="canSubscribe"
+                variant="secondary"
+                round
+                :disabled="subscribeBusy"
+                @click="handleToggleSubscribe"
+              >
+                <template #icon>
+                  <IconMaterialSymbolsFavoriteRounded v-if="isOnlineSubscribed" />
+                  <IconMaterialSymbolsFavoriteOutlineRounded v-else />
+                </template>
+                {{ t(isOnlineSubscribed ? "collection.unsubscribe" : "collection.subscribe") }}
+              </SButton>
               <SDropdownMenu
-                v-if="editable"
+                v-if="moreMenuItems.length > 0"
                 :items="moreMenuItems"
                 align="start"
                 @select="handleMoreMenu"
@@ -307,7 +381,7 @@ const handleMoreMenu = (key: string) => {
           :collection-id="id"
           enable-sort
           @scroll="handleListScroll"
-          @change="loadCollection"
+          @change="loadCollection(true)"
         />
       </div>
       <!-- 加载中 -->

@@ -7,6 +7,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
+import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
@@ -204,10 +205,24 @@ const batch = useMultiSelect(sortedItems, {
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
+/** 添加到歌单弹窗：mode 跟随被操作曲目的 source（仅 local / netease 走得通） */
+const pickerOpen = ref(false);
+const pickerTracks = shallowRef<Track[]>([]);
+const pickerMode = ref<"local" | "online">("local");
+const openPicker = (tracks: Track[]): void => {
+  if (tracks.length === 0) return;
+  const source = tracks[0].source;
+  if (source !== "local" && source !== "netease") return;
+  pickerTracks.value = tracks;
+  pickerMode.value = source === "netease" ? "online" : "local";
+  pickerOpen.value = true;
+};
+
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
   collectionType: props.collectionType,
+  onAddToPlaylist: (track) => openPicker([track]),
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),
 });
@@ -631,5 +646,7 @@ defineExpose({
         <SButton type="error" @click="batch.confirmDelete">{{ t("common.confirm") }}</SButton>
       </template>
     </SDialog>
+    <!-- 添加到歌单 -->
+    <PlaylistPickerDialog v-model:open="pickerOpen" :mode="pickerMode" :tracks="pickerTracks" />
   </div>
 </template>

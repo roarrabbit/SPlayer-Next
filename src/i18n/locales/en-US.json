@@ -1111,7 +1111,12 @@
     "removeFrom": "Remove from {type}",
     "tracksAdded": "{count} songs added",
     "tracksRemoved": "{count} songs removed",
-    "edit": "Edit {type}"
+    "edit": "Edit {type}",
+    "subscribe": "Subscribe",
+    "unsubscribe": "Unsubscribe",
+    "privacy": {
+      "private": "Make private"
+    }
   },
   "artist": {
     "label": "Artists",

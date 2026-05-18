@@ -54,6 +54,13 @@ import song_url from "./song_url";
 
 // 歌单 / 喜欢
 import playlist_detail from "./playlist_detail";
+import playlist_create from "./playlist_create";
+import playlist_delete from "./playlist_delete";
+import playlist_tracks from "./playlist_tracks";
+import playlist_subscribe from "./playlist_subscribe";
+import playlist_name_update from "./playlist_name_update";
+import playlist_desc_update from "./playlist_desc_update";
+import playlist_order_update from "./playlist_order_update";
 import likelist from "./likelist";
 import like from "./like";
 
@@ -111,6 +118,13 @@ export const modules: Record<string, NeteaseModule> = {
   song_url,
 
   playlist_detail,
+  playlist_create,
+  playlist_delete,
+  playlist_tracks,
+  playlist_subscribe,
+  playlist_name_update,
+  playlist_desc_update,
+  playlist_order_update,
   likelist,
   like,
 

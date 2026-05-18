@@ -124,6 +124,104 @@ export const toggleLikeSong = async (trackId: string, like: boolean): Promise<bo
   return body?.code === 200;
 };
 
+/**
+ * 新建歌单
+ * @param name 歌单名
+ * @param privacy 0 公开 / 10 私密
+ * @returns 新建的歌单元数据；失败返回 null
+ */
+export const createPlaylist = async (
+  name: string,
+  privacy: 0 | 10 = 0,
+): Promise<Playlist | null> => {
+  const body = await neteaseApi.playlist_create({ name, privacy });
+  if (body?.code !== 200 || !body.playlist) return null;
+  return toPlaylist(body.playlist);
+};
+
+/**
+ * 删除歌单
+ * @param id 歌单 id
+ */
+export const deletePlaylist = async (id: string): Promise<boolean> => {
+  const body = await neteaseApi.playlist_delete({ id });
+  return body?.code === 200;
+};
+
+/**
+ * 改歌单名
+ * @param id 歌单 id
+ * @param name 新名称
+ */
+export const updatePlaylistName = async (id: string, name: string): Promise<boolean> => {
+  const body = await neteaseApi.playlist_name_update({ id, name });
+  return body?.code === 200;
+};
+
+/**
+ * 改歌单描述
+ * @param id 歌单 id
+ * @param desc 新描述（空字符串清空）
+ */
+export const updatePlaylistDesc = async (id: string, desc: string): Promise<boolean> => {
+  const body = await neteaseApi.playlist_desc_update({ id, desc });
+  return body?.code === 200;
+};
+
+/**
+ * 把曲目加入歌单
+ * @param playlistId 歌单 id
+ * @param trackIds 曲目 id 列表
+ * @returns 实际加入条数；失败返回 0
+ */
+export const addToPlaylist = async (playlistId: string, trackIds: string[]): Promise<number> => {
+  if (trackIds.length === 0) return 0;
+  const body = await neteaseApi.playlist_tracks({
+    op: "add",
+    pid: playlistId,
+    tracks: trackIds.join(","),
+  });
+  if (body?.code !== 200) return 0;
+  return typeof body.count === "number" ? body.count : trackIds.length;
+};
+
+/**
+ * 从歌单移除曲目
+ * @param playlistId 歌单 id
+ * @param trackIds 曲目 id 列表
+ */
+export const removeFromPlaylist = async (
+  playlistId: string,
+  trackIds: string[],
+): Promise<boolean> => {
+  if (trackIds.length === 0) return false;
+  const body = await neteaseApi.playlist_tracks({
+    op: "del",
+    pid: playlistId,
+    tracks: trackIds.join(","),
+  });
+  return body?.code === 200;
+};
+
+/**
+ * 订阅 / 取消订阅他人歌单
+ * @param id 歌单 id
+ * @param subscribe true 订阅 / false 取消
+ */
+export const subscribePlaylist = async (id: string, subscribe: boolean): Promise<boolean> => {
+  const body = await neteaseApi.playlist_subscribe({ id, t: subscribe ? 1 : 2 });
+  return body?.code === 200;
+};
+
+/**
+ * 重排自建歌单顺序
+ * @param ids 期望顺序的歌单 id 数组
+ */
+export const reorderPlaylists = async (ids: string[]): Promise<boolean> => {
+  const body = await neteaseApi.playlist_order_update({ ids: JSON.stringify(ids) });
+  return body?.code === 200;
+};
+
 /** 用户等级 */
 export const fetchUserLevel = async (): Promise<number | undefined> => {
   const body = await neteaseApi.user_level();

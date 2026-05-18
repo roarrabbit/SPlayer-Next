@@ -16,6 +16,13 @@ import {
   fetchUserLevel,
   fetchUserPlaylists,
   toggleLikeSong,
+  createPlaylist as apiCreatePlaylist,
+  deletePlaylist as apiDeletePlaylist,
+  updatePlaylistName,
+  updatePlaylistDesc,
+  addToPlaylist,
+  removeFromPlaylist,
+  subscribePlaylist,
 } from "@/apis/user/netease";
 
 /** 登录 cookie 保活间隔 */
@@ -64,10 +71,6 @@ export const useUserStore = defineStore(
     const level = ref<number | undefined>(undefined);
     /** 订阅计数 */
     const subcount = ref<UserSubcount>(EMPTY_SUBCOUNT);
-    /** 内容拉取最近时间（ms） */
-    const lastFetchedAt = ref<number>(0);
-    /** 是否在拉内容 */
-    const contentLoading = ref(false);
     /** 「我喜欢的音乐」歌单 */
     const likedPlaylistTracks = shallowRef<Track[]>([]);
     /** 是否在拉取歌单曲目 */
@@ -107,7 +110,6 @@ export const useUserStore = defineStore(
       artists.value = [];
       level.value = undefined;
       subcount.value = EMPTY_SUBCOUNT;
-      lastFetchedAt.value = 0;
       likedPlaylistAbort?.abort();
       likedPlaylistTracks.value = [];
       likedPlaylistLoading.value = false;
@@ -197,48 +199,45 @@ export const useUserStore = defineStore(
     };
 
     /**
+     * 拉取并应用用户歌单
+     * @param uid 用户 ID
+     */
+    const fetchAndApplyPlaylists = async (uid: number): Promise<void> => {
+      const sub = await fetchSubcount();
+      subcount.value = sub;
+      const total = (sub.createdPlaylistCount || 0) + (sub.subPlaylistCount || 0) || 50;
+      const list = await fetchUserPlaylists(uid, total);
+      playlists.value = list;
+      cacheDb.setItem(PLAYLISTS_CACHE_KEY, list).catch(() => {});
+    };
+
+    /**
      * 全量拉取用户内容
      * 并行发起，失败的子任务不会阻塞其他类目
      */
     const loadContent = async (uid: number): Promise<void> => {
       if (!uid) return;
-      contentLoading.value = true;
       // 缓存即时上屏，不阻塞后续网络
       await hydrateContentFromCache();
-      try {
-        const sub = await fetchSubcount().catch((err) => {
-          console.warn("[user] subcount failed:", err);
-          return EMPTY_SUBCOUNT;
-        });
-        subcount.value = sub;
-        const playlistTotal = (sub.createdPlaylistCount || 0) + (sub.subPlaylistCount || 0) || 50;
-        const settled = await Promise.allSettled([
-          fetchUserPlaylists(uid, playlistTotal),
-          fetchLikelist(uid),
-          fetchUserAlbums(),
-          fetchUserArtists(),
-          fetchUserLevel(),
-        ]);
-        /** 拉取结果 */
-        const [plRes, likeRes, albumRes, artistRes, levelRes] = settled;
-        if (plRes.status === "fulfilled") {
-          playlists.value = plRes.value;
-          cacheDb.setItem(PLAYLISTS_CACHE_KEY, plRes.value).catch(() => {});
+      const settled = await Promise.allSettled([
+        fetchAndApplyPlaylists(uid),
+        fetchLikelist(uid),
+        fetchUserAlbums(),
+        fetchUserArtists(),
+        fetchUserLevel(),
+      ]);
+      const [_plRes, likeRes, albumRes, artistRes, levelRes] = settled;
+      if (likeRes.status === "fulfilled") {
+        likedSongIds.value = new Set(likeRes.value);
+        cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, likeRes.value).catch(() => {});
+      }
+      if (albumRes.status === "fulfilled") albums.value = albumRes.value;
+      if (artistRes.status === "fulfilled") artists.value = artistRes.value;
+      if (levelRes.status === "fulfilled") level.value = levelRes.value;
+      for (const result of settled) {
+        if (result.status === "rejected") {
+          console.warn("[user] content load failed:", result.reason);
         }
-        if (likeRes.status === "fulfilled") {
-          likedSongIds.value = new Set(likeRes.value);
-          cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, likeRes.value).catch(() => {});
-        }
-        if (albumRes.status === "fulfilled") albums.value = albumRes.value;
-        if (artistRes.status === "fulfilled") artists.value = artistRes.value;
-        if (levelRes.status === "fulfilled") level.value = levelRes.value;
-
-        for (const r of settled) {
-          if (r.status === "rejected") console.warn("[user] content load failed:", r.reason);
-        }
-        lastFetchedAt.value = Date.now();
-      } finally {
-        contentLoading.value = false;
       }
     };
 
@@ -265,6 +264,113 @@ export const useUserStore = defineStore(
         console.warn("[user] toggle like failed:", err);
         return false;
       }
+    };
+
+    /** 重新获取歌单列表 */
+    const refreshPlaylists = async (): Promise<void> => {
+      const uid = profile.value?.userId;
+      if (!uid) return;
+      try {
+        await fetchAndApplyPlaylists(uid);
+      } catch (err) {
+        console.warn("[user] refreshPlaylists failed:", err);
+      }
+    };
+
+    /**
+     * 新建歌单
+     * @param name 歌单名称
+     * @param privacy 歌单隐私设置，0 为公开，10 为私密
+     */
+    const createPlaylist = async (name: string, privacy: 0 | 10 = 0): Promise<Playlist | null> => {
+      const created = await apiCreatePlaylist(name, privacy);
+      if (!created?.id) return null;
+      await refreshPlaylists();
+      return created;
+    };
+
+    /** 
+     * 删除自建歌单
+     * @param id 歌单 ID
+     * @returns 是否删除成功
+     */
+    const deletePlaylist = async (id: string): Promise<boolean> => {
+      const ok = await apiDeletePlaylist(id);
+      if (ok) await refreshPlaylists();
+      return ok;
+    };
+
+    /** 
+     * 改歌单名/描述
+     * @param id 歌单 ID
+     * @param data 包含要更新的名称和描述
+     * @returns 是否更新成功
+     */
+    const updatePlaylist = async (
+      id: string,
+      data: { name?: string; description?: string },
+    ): Promise<boolean> => {
+      const tasks: Promise<boolean>[] = [];
+      if (typeof data.name === "string") tasks.push(updatePlaylistName(id, data.name));
+      if (typeof data.description === "string")
+        tasks.push(updatePlaylistDesc(id, data.description));
+      if (tasks.length === 0) return true;
+      const results = await Promise.all(tasks);
+      if (!results.every(Boolean)) return false;
+      await refreshPlaylists();
+      return true;
+    };
+
+    /** 
+     * 加歌到歌单
+     * @param playlistId 歌单 ID
+     * @param trackIds 曲目 ID 列表
+     * @returns 成功添加的曲目数量
+     */
+    const addTracksToPlaylist = async (playlistId: string, trackIds: string[]): Promise<number> => {
+      const count = await addToPlaylist(playlistId, trackIds);
+      if (count <= 0) return 0;
+      if (playlistId === likedPlaylistId.value) {
+        const next = new Set(likedSongIds.value);
+        for (const trackId of trackIds) next.add(trackId);
+        likedSongIds.value = next;
+        cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, [...next]).catch(() => {});
+      }
+      return count;
+    };
+
+    /** 从歌单移除曲目
+     * @param playlistId 歌单 ID
+     * @param trackIds 曲目 ID 列表
+     * @returns 是否移除成功
+     */
+    const removeTracksFromPlaylist = async (
+      playlistId: string,
+      trackIds: string[],
+    ): Promise<boolean> => {
+      const ok = await removeFromPlaylist(playlistId, trackIds);
+      if (!ok) return false;
+      if (playlistId === likedPlaylistId.value) {
+        const removeSet = new Set(trackIds);
+        const next = new Set(likedSongIds.value);
+        for (const trackId of trackIds) next.delete(trackId);
+        likedSongIds.value = next;
+        cacheDb.setItem(LIKED_SONG_IDS_CACHE_KEY, [...next]).catch(() => {});
+        likedPlaylistTracks.value = likedPlaylistTracks.value.filter(
+          (track) => !removeSet.has(track.id),
+        );
+      }
+      return true;
+    };
+
+    /** 订阅 / 取消订阅他人歌单 */
+    const togglePlaylistSubscribe = async (
+      playlistId: string,
+      subscribe: boolean,
+    ): Promise<boolean> => {
+      const ok = await subscribePlaylist(playlistId, subscribe);
+      if (ok) await refreshPlaylists();
+      return ok;
     };
 
     /** 同步用户内容 */
@@ -337,8 +443,6 @@ export const useUserStore = defineStore(
       artists,
       level,
       subcount,
-      lastFetchedAt,
-      contentLoading,
       likedPlaylistId,
       likedPlaylistTracks,
       likedPlaylistLoading,
@@ -349,6 +453,13 @@ export const useUserStore = defineStore(
       toggleLike,
       ensureLikedPlaylist,
       clearContent,
+
+      createPlaylist,
+      deletePlaylist,
+      updatePlaylist,
+      addTracksToPlaylist,
+      removeTracksFromPlaylist,
+      togglePlaylistSubscribe,
     };
   },
   {

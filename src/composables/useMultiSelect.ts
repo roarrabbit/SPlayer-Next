@@ -3,6 +3,7 @@ import type { Track, TrackSource } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useLibraryStore } from "@/stores/library";
+import { useUserStore } from "@/stores/user";
 import * as player from "@/core/player";
 
 export interface MultiSelectOptions {
@@ -23,6 +24,7 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
   const { t } = useI18n();
   const playlistStore = usePlaylistStore();
   const libraryStore = useLibraryStore();
+  const userStore = useUserStore();
 
   const active = ref(false);
   const selectedIds = ref(new Set<string>());
@@ -108,10 +110,14 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
       if (options.source.value === "local") {
         await playlistStore.removeTracks(
           options.collectionId.value,
-          tracks.map((t) => t.id),
+          tracks.map((track) => track.id),
+        );
+      } else if (options.source.value === "netease") {
+        await userStore.removeTracksFromPlaylist(
+          options.collectionId.value,
+          tracks.map((track) => track.id),
         );
       }
-      // TODO: online
     }
     deleteConfirmOpen.value = false;
     exit();

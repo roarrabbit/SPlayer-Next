@@ -1111,7 +1111,12 @@
     "removeFrom": "从{type}移除",
     "tracksAdded": "已添加 {count} 首歌曲",
     "tracksRemoved": "已移除 {count} 首歌曲",
-    "edit": "编辑{type}"
+    "edit": "编辑{type}",
+    "subscribe": "收藏",
+    "unsubscribe": "取消收藏",
+    "privacy": {
+      "private": "设为私密"
+    }
   },
   "artist": {
     "label": "艺术家",

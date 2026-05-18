@@ -21,6 +21,8 @@ export interface LoadCollectionOptions {
   onUpdate: (collection: Collection | null) => void;
   /** 中断信号 */
   signal?: AbortSignal;
+  /** 强制绕过主进程响应缓存（在 mutate 后重载时用） */
+  fresh?: boolean;
 }
 
 /**
@@ -153,6 +155,7 @@ const loadNeteasePlaylist = async (id: string, options: LoadCollectionOptions): 
 
   await fetchPlaylist(id, {
     signal: options.signal,
+    fresh: options.fresh,
     onMeta: (m) => {
       if (options.signal?.aborted) return;
       meta = {

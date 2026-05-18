@@ -5,7 +5,6 @@ import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useUserStore } from "@/stores/user";
-import { navigateToPlaylist } from "@/utils/navigate";
 import IconLucideHome from "~icons/lucide/home";
 import IconLucideMusic from "~icons/lucide/music";
 import IconLucideUser from "~icons/lucide/user";
@@ -33,12 +32,19 @@ const sourceOptions = computed<SSelectOption[]>(() => [
   { value: "online", label: t("collection.onlinePlaylist") },
 ]);
 
-const handleCreate = async () => {
-  if (status.myPlaylistSource !== "local") return;
-  const playlist = await playlistStore.create(
-    t("collection.create", { type: t("collection.playlist") }),
+const createDialogOpen = ref(false);
+const createMode = ref<"local" | "online">("local");
+
+const handleCreate = (): void => {
+  createMode.value = status.myPlaylistSource;
+  createDialogOpen.value = true;
+};
+
+/** 新建成功后跳转到该歌单 */
+const handleCreated = (playlistId: string): void => {
+  router.push(
+    `/collection/${createMode.value === "local" ? "local" : "netease"}/playlist/${playlistId}`,
   );
-  navigateToPlaylist(playlist.id);
 };
 
 /** 我的歌单分组头部 */
@@ -183,5 +189,11 @@ onMounted(() => {
         @select="onSelect"
       />
     </div>
+    <!-- 新建歌单 -->
+    <PlaylistCreateDialog
+      v-model:open="createDialogOpen"
+      :mode="createMode"
+      @created="handleCreated"
+    />
   </div>
 </template>

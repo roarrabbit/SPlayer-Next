@@ -31,6 +31,18 @@ const SESSION_MUTATING: ReadonlySet<string> = new Set([
   "register_anonimous",
 ]);
 
+/** 写类接口：每次都必须打到服务端，不要走 2 分钟响应缓存 */
+const NON_CACHEABLE: ReadonlySet<string> = new Set([
+  "like",
+  "playlist_create",
+  "playlist_delete",
+  "playlist_tracks",
+  "playlist_subscribe",
+  "playlist_name_update",
+  "playlist_desc_update",
+  "playlist_order_update",
+]);
+
 /** 内存缓存：避免每次调用都走 SELECT（SQLite 仅在首次 load 时读一次） */
 let sessionCache: Record<string, string> | null = null;
 
@@ -97,9 +109,12 @@ export const callNetease = async (
   const session = loadSession();
 
   // 读缓存；调用方如不想命中，按原项目惯例在 params 里带 `timestamp: Date.now()` 即可
-  const cacheKey = buildCacheKey(name, params);
-  const hit = cacheGet(cacheKey);
-  if (hit) return hit;
+  const cacheable = !NON_CACHEABLE.has(name);
+  const cacheKey = cacheable ? buildCacheKey(name, params) : "";
+  if (cacheable) {
+    const hit = cacheGet(cacheKey);
+    if (hit) return hit;
+  }
 
   const query = {
     ...params,
@@ -121,7 +136,7 @@ export const callNetease = async (
   }
 
   const value = { status: res.status, body: res.body };
-  if (res.status === 200) cacheSet(cacheKey, value);
+  if (cacheable && res.status === 200) cacheSet(cacheKey, value);
 
   return value;
 };
