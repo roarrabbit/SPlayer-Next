@@ -197,6 +197,17 @@ const scrollToPlaying = (): void => {
   if (playingIndex.value >= 0) virtualListRef.value?.scrollToIndex(playingIndex.value);
 };
 
+/** 当前滚动位置 */
+const scrollTop = ref(0);
+
+/** 回顶按钮显示阈值 */
+const canScrollTop = computed(() => scrollTop.value > 100);
+
+const onScroll = (event: Event): void => {
+  scrollTop.value = (event.target as HTMLElement).scrollTop;
+  emit("scroll", event);
+};
+
 /** 批量操作 */
 const batch = useMultiSelect(sortedItems, {
   source: computed(() => props.source),
@@ -269,7 +280,7 @@ defineExpose({
         :get-item-key="(item: Track) => item.id"
         item-fixed
         height="100%"
-        @scroll="(event: Event) => emit('scroll', event)"
+        @scroll="onScroll"
         @reach-bottom="emit('reachBottom')"
       >
         <!-- 搜索无结果 -->
@@ -636,20 +647,44 @@ defineExpose({
         </template>
       </SVirtualList>
     </SContextMenu>
-    <!-- 定位歌曲 -->
-    <Transition name="fade">
-      <div
-        v-if="playingIndex >= 0 && !batch.active.value"
-        class="absolute right-6 z-20 rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10 transition-[bottom] duration-300"
-        :class="isFloatingPlayerBar ? 'bottom-26' : 'bottom-5'"
-      >
-        <SButton type="primary" variant="bordered" circle :size="40" @click="scrollToPlaying">
-          <template #icon>
-            <IconLucideLocate class="size-4.5" />
-          </template>
-        </SButton>
-      </div>
-    </Transition>
+    <!-- 浮动按钮 -->
+    <div
+      class="absolute right-6 z-20 flex flex-col gap-3 transition-[bottom] duration-300"
+      :class="isFloatingPlayerBar ? 'bottom-26' : 'bottom-5'"
+    >
+      <!-- 回到顶部 -->
+      <Transition name="fade">
+        <div
+          v-if="canScrollTop && !batch.active.value"
+          class="rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10"
+        >
+          <SButton
+            type="primary"
+            variant="bordered"
+            circle
+            :size="40"
+            @click="virtualListRef?.scrollTo(0)"
+          >
+            <template #icon>
+              <IconLucideArrowUp class="size-4.5" />
+            </template>
+          </SButton>
+        </div>
+      </Transition>
+      <!-- 定位歌曲 -->
+      <Transition name="fade">
+        <div
+          v-if="playingIndex >= 0 && !batch.active.value"
+          class="rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10"
+        >
+          <SButton type="primary" variant="bordered" circle :size="40" @click="scrollToPlaying">
+            <template #icon>
+              <IconLucideLocate class="size-4.5" />
+            </template>
+          </SButton>
+        </div>
+      </Transition>
+    </div>
     <!-- 删除确认弹窗 -->
     <SDialog v-model:open="deleteConfirmOpen" :title="deleteDialogTitle">
       <p class="text-sm text-on-surface-variant">{{ deleteDialogContent }}</p>

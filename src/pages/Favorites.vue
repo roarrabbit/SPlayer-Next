@@ -13,12 +13,25 @@ import IconLucideUser from "~icons/lucide/user";
 import IconMaterialSymbolsFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 
 const { t } = useI18n();
+const route = useRoute();
 const router = useRouter();
 const user = useUserStore();
 
 type FavTab = "playlist" | "album" | "artist";
 
-const activeTab = ref<FavTab>("playlist");
+const TAB_KEYS: readonly FavTab[] = ["playlist", "album", "artist"];
+
+/** 当前 tab */
+const activeTab = computed<FavTab>(() => {
+  const tab = route.query.tab;
+  return typeof tab === "string" && (TAB_KEYS as readonly string[]).includes(tab)
+    ? (tab as FavTab)
+    : "playlist";
+});
+
+const onTabSwitch = (key: string): void => {
+  router.replace({ query: { ...route.query, tab: key } });
+};
 
 const tabs = computed(() => [
   { key: "playlist" satisfies FavTab, label: t("favorites.tabs.playlist") },
@@ -90,7 +103,7 @@ const handleClick = (item: CoverItem): void => {
           </span>
         </Transition>
       </div>
-      <STabs v-model="activeTab" :tabs="tabs" />
+      <STabs :model-value="activeTab" :tabs="tabs" @update:model-value="onTabSwitch" />
     </div>
     <!-- 未登录 -->
     <div v-if="!user.isLoggedIn" class="flex-1 flex items-center justify-center">

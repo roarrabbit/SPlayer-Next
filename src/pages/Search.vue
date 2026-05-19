@@ -10,11 +10,20 @@ import { navigateToAlbum, navigateToPlaylist } from "@/utils/navigate";
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const status = useStatusStore();
 
 type TabKey = "songs" | "albums" | "artists" | "playlists";
 
-const activeTab = ref<TabKey>("songs");
+const TAB_KEYS: readonly TabKey[] = ["songs", "albums", "artists", "playlists"];
+
+/** 当前 tab */
+const activeTab = computed<TabKey>(() => {
+  const tab = route.query.tab;
+  return typeof tab === "string" && (TAB_KEYS as readonly string[]).includes(tab)
+    ? (tab as TabKey)
+    : "songs";
+});
 
 const PAGE_SIZE = 50;
 
@@ -146,7 +155,7 @@ watch(activeTab, (tab) => {
 });
 
 const onTabSwitch = (key: string): void => {
-  activeTab.value = key as TabKey;
+  router.replace({ query: { ...route.query, tab: key } });
 };
 
 const onPlatformSwitch = (key: string): void => {

@@ -8,6 +8,7 @@ import IconLucideDisc3 from "~icons/lucide/disc-3";
 import IconLucideUserRound from "~icons/lucide/user-round";
 
 const { t } = useI18n();
+const router = useRouter();
 const user = useUserStore();
 
 const loginOpen = ref(false);
@@ -25,7 +26,7 @@ const isVip = computed(() => !!user.profile?.vipType && user.profile.vipType !==
 /** 收藏计数 */
 const stats = computed(() => [
   {
-    key: "playlist",
+    key: "playlist" as const,
     label: t("collection.playlist"),
     icon: markRaw(IconLucideListMusic),
     value:
@@ -33,13 +34,13 @@ const stats = computed(() => [
       user.playlists.length,
   },
   {
-    key: "album",
+    key: "album" as const,
     label: t("collection.album"),
     icon: markRaw(IconLucideDisc3),
     value: user.albums.length,
   },
   {
-    key: "artist",
+    key: "artist" as const,
     label: t("artist.label"),
     icon: markRaw(IconLucideUserRound),
     value: user.subcount.artistCount ?? user.artists.length,
@@ -48,6 +49,11 @@ const stats = computed(() => [
 
 const onTriggerClick = (): void => {
   if (!user.isLoggedIn) loginOpen.value = true;
+};
+
+const handleStatClick = (key: "playlist" | "album" | "artist"): void => {
+  popoverOpen.value = false;
+  router.push({ path: "/favorites", query: { tab: key } });
 };
 
 const handleLogout = async (): Promise<void> => {
@@ -139,6 +145,7 @@ const handleLogout = async (): Promise<void> => {
           :key="item.key"
           :title="item.label"
           class="group flex flex-1 flex-col items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors duration-200 hover:bg-on-surface/8 active:bg-on-surface/12"
+          @click="handleStatClick(item.key)"
         >
           <component
             :is="item.icon"

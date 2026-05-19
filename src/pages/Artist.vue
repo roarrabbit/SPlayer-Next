@@ -18,6 +18,7 @@ import IconLucideListChecks from "~icons/lucide/list-checks";
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const { appearance } = useSettingsStore();
 
 const tabTransitionName = computed(() => {
@@ -29,11 +30,11 @@ const source = route.params.source as TrackSource;
 const id = route.params.id as string;
 
 const artist = shallowRef<ArtistProfile | null>(null);
-/** 正在加载（任一来源） */
+/** 正在加载 */
 const loading = ref(false);
 /** 取消当次加载 */
 let loadAbort: AbortController | null = null;
-/** NCM 歌手歌曲分页：是否还有更多 + 加载中 */
+/** 是否还有更多 */
 const hasMoreSongs = ref(false);
 const loadingMore = ref(false);
 
@@ -52,7 +53,7 @@ const handleListScroll = (event: Event) => {
   }
 };
 
-/** 加载数据：派发到 services/artistLoader，本组件只管 ref + loading + abort */
+/** 加载数据 */
 const loadArtist = async (): Promise<void> => {
   collapsed.value = false;
   loadAbort?.abort();
@@ -68,7 +69,6 @@ const loadArtist = async (): Promise<void> => {
       onUpdate: (next) => {
         if (myAbort.signal.aborted) return;
         artist.value = next;
-        // 仅 NCM 支持触底分页（artist_songs）；首屏 50 首后开放加载更多
         if (next && source === "netease" && next.tracks.length >= 50) {
           hasMoreSongs.value = true;
         }
@@ -79,7 +79,7 @@ const loadArtist = async (): Promise<void> => {
   }
 };
 
-/** 触底加载更多 NCM 歌手歌曲 */
+/** 触底加载 */
 const onReachBottom = async (): Promise<void> => {
   if (source !== "netease" || !hasMoreSongs.value || loadingMore.value || !artist.value) return;
   const current = artist.value;
@@ -134,8 +134,21 @@ const handleMoreMenu = (key: string) => {
   if (key === "batchManage") songListRef.value?.enterBatch();
 };
 
+type ArtistTab = "songs" | "albums";
+
+const ARTIST_TAB_KEYS: readonly ArtistTab[] = ["songs", "albums"];
+
 /** 当前 tab */
-const activeTab = ref("songs");
+const activeTab = computed<ArtistTab>(() => {
+  const tab = route.query.tab;
+  return typeof tab === "string" && (ARTIST_TAB_KEYS as readonly string[]).includes(tab)
+    ? (tab as ArtistTab)
+    : "songs";
+});
+
+const onTabSwitch = (key: string): void => {
+  router.replace({ query: { ...route.query, tab: key } });
+};
 
 watch(activeTab, (tab) => {
   if (tab === "albums") collapsed.value = true;
@@ -254,7 +267,13 @@ const albumItems = computed<CoverItem[]>(() => {
         </div>
       </div>
       <!-- Tab 切换 -->
-      <STabs v-model="activeTab" :tabs="tabs" type="bar" size="large" />
+      <STabs
+        :model-value="activeTab"
+        :tabs="tabs"
+        type="bar"
+        size="large"
+        @update:model-value="onTabSwitch"
+      />
     </div>
     <Transition name="fade" mode="out-in" :duration="150">
       <div
