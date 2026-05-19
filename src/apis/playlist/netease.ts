@@ -1,6 +1,6 @@
 import type { Playlist, Track } from "@shared/types/player";
 import { netease as neteaseApi } from "@/apis/netease";
-import { ensureOk, songsToTracks, toPlaylist } from "@/utils/netease";
+import { ensureOk, songsToTracks, toPlaylist } from "@/utils/format/netease";
 import { songsByIds } from "@/apis/song/netease";
 
 /** song_detail 单批上限 */

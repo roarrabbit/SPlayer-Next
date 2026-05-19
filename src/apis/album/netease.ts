@@ -1,6 +1,6 @@
 import type { Album, Track } from "@shared/types/player";
 import { netease as neteaseApi } from "@/apis/netease";
-import { ensureOk, songsToTracks, toAlbum } from "@/utils/netease";
+import { ensureOk, songsToTracks, toAlbum } from "@/utils/format/netease";
 
 /**
  * 拉取专辑：元数据 + 全部曲目

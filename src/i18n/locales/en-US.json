@@ -14,6 +14,8 @@
     "refreshCache": "Refresh cache",
     "success": "Success",
     "error": "Error",
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
     "playAll": "Play All",
     "totalSongs": "{count} songs",
     "totalAlbums": "{count} albums",
@@ -78,6 +80,7 @@
     "library": "Library",
     "liked": "Liked Songs",
     "history": "Play History",
+    "favorites": "Favorites",
     "streaming": "Streaming",
     "settings": "Settings",
     "reload": "Reload",
@@ -237,9 +240,14 @@
     "context": {
       "play": "Play",
       "playNext": "Play Next",
-      "showInExplorer": "Show in Explorer",
+      "showInExplorer": "Open Location",
       "copyPath": "Copy File Path",
-      "deleteFile": "Delete File"
+      "deleteFile": "Delete File",
+      "searchSame": "Search by Name",
+      "more": "More",
+      "copyTitle": "Copy Title",
+      "copyId": "Copy Song ID",
+      "copyUrl": "Share Song Link"
     },
     "batch": {
       "manage": "Batch Manage",
@@ -302,6 +310,16 @@
     "clear": "Clear history",
     "clearConfirmTitle": "Clear Play History",
     "clearConfirmContent": "Clear all play history? This cannot be undone."
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "Nothing here yet — go explore and save something you like",
+    "notLogin": "Sign in to see your favorites",
+    "tabs": {
+      "playlist": "Playlists",
+      "album": "Albums",
+      "artist": "Artists"
+    }
   },
   "library": {
     "title": "Library",

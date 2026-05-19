@@ -3,6 +3,8 @@ import type { Track } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import * as player from "@/core/player";
+import { useCopyText } from "@/composables/useCopyText";
+import { getShareUrl } from "@/utils/format/shareUrl";
 import IconPlay from "~icons/lucide/play";
 import IconListEnd from "~icons/lucide/list-end";
 import IconListPlus from "~icons/lucide/list-plus";
@@ -10,6 +12,8 @@ import IconFolderOpen from "~icons/lucide/folder-open";
 import IconCopy from "~icons/lucide/copy";
 import IconTrash2 from "~icons/lucide/trash-2";
 import IconListMinus from "~icons/lucide/list-minus";
+import IconSearch from "~icons/lucide/search";
+import IconMoreHorizontal from "~icons/lucide/more-horizontal";
 
 export interface TrackMenuOptions {
   /** 集合类型 */
@@ -29,53 +33,84 @@ export interface TrackMenuOptions {
  */
 export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOptions = {}) => {
   const { t } = useI18n();
-  // 可本地操作
-  const isLocal = computed(() => track.value?.source === "local");
+  const router = useRouter();
+  const { copy } = useCopyText();
   const isPlaylist = options.collectionType === "playlist";
-  // 是否添加到歌单
-  const canAddToPlaylist = computed(() => {
-    const source = track.value?.source;
-    return source === "local" || source === "netease";
-  });
   // 菜单项
-  const items = computed<DropdownMenuItem[]>(() => [
-    { key: "play", label: t("songList.context.play"), icon: markRaw(IconPlay) },
-    { key: "playNext", label: t("songList.context.playNext"), icon: markRaw(IconListEnd) },
-    {
-      key: "addToPlaylist",
-      label: t("collection.addTo", { type: t("collection.playlist") }),
-      icon: markRaw(IconListPlus),
-      separator: true,
-      show: canAddToPlaylist.value,
-    },
-    {
-      key: "showInExplorer",
-      label: t("songList.context.showInExplorer"),
-      icon: markRaw(IconFolderOpen),
-      separator: true,
-      show: isLocal.value,
-    },
-    {
-      key: "copyPath",
-      label: t("songList.context.copyPath"),
-      icon: markRaw(IconCopy),
-      show: isLocal.value,
-    },
-    {
-      key: "removeFromCollection",
-      label: t("collection.removeFrom", { type: t("collection.playlist") }),
-      icon: markRaw(IconListMinus),
-      separator: true,
-      show: isPlaylist,
-    },
-    {
-      key: "deleteFile",
-      label: t("songList.context.deleteFile"),
-      icon: markRaw(IconTrash2),
-      separator: !isPlaylist,
-      show: isLocal.value,
-    },
-  ]);
+  const items = computed<DropdownMenuItem[]>(() => {
+    const source = track.value?.source;
+    const isLocal = source === "local";
+    const canAddToPlaylist = source === "local" || source === "netease";
+    const isOnline = source !== "local" && source !== "streaming";
+    return [
+      { key: "play", label: t("songList.context.play"), icon: markRaw(IconPlay) },
+      { key: "playNext", label: t("songList.context.playNext"), icon: markRaw(IconListEnd) },
+      {
+        key: "addToPlaylist",
+        label: t("collection.addTo", { type: t("collection.playlist") }),
+        icon: markRaw(IconListPlus),
+        separator: true,
+        show: canAddToPlaylist,
+      },
+      {
+        key: "showInExplorer",
+        label: t("songList.context.showInExplorer"),
+        icon: markRaw(IconFolderOpen),
+        separator: true,
+        show: isLocal,
+      },
+      {
+        key: "copyPath",
+        label: t("songList.context.copyPath"),
+        icon: markRaw(IconCopy),
+        show: isLocal,
+      },
+      {
+        key: "removeFromCollection",
+        label: t("collection.removeFrom", { type: t("collection.playlist") }),
+        icon: markRaw(IconListMinus),
+        separator: true,
+        show: isPlaylist,
+      },
+      {
+        key: "deleteFile",
+        label: t("songList.context.deleteFile"),
+        icon: markRaw(IconTrash2),
+        separator: !isPlaylist,
+        show: isLocal,
+      },
+      {
+        key: "searchSame",
+        label: t("songList.context.searchSame"),
+        icon: markRaw(IconSearch),
+        separator: true,
+      },
+      {
+        key: "more",
+        label: t("songList.context.more"),
+        icon: markRaw(IconMoreHorizontal),
+        children: [
+          {
+            key: "copyTitle",
+            label: t("songList.context.copyTitle"),
+            icon: markRaw(IconCopy),
+          },
+          {
+            key: "copyId",
+            label: t("songList.context.copyId"),
+            icon: markRaw(IconCopy),
+            show: !isLocal,
+          },
+          {
+            key: "copyUrl",
+            label: t("songList.context.copyUrl"),
+            icon: markRaw(IconCopy),
+            show: isOnline,
+          },
+        ],
+      },
+    ];
+  });
 
   const handleSelect = async (key: string): Promise<void> => {
     const current = track.value;
@@ -94,13 +129,25 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
         if (current.path) window.api.system.showInExplorer(current.path);
         break;
       case "copyPath":
-        if (current.path) navigator.clipboard.writeText(current.path);
+        await copy(current.path);
         break;
       case "removeFromCollection":
         options.onRemove?.(current);
         break;
       case "deleteFile":
         options.onDeleteFile?.(current);
+        break;
+      case "searchSame":
+        router.push({ path: "/search", query: { q: current.title } });
+        break;
+      case "copyTitle":
+        await copy(current.title);
+        break;
+      case "copyId":
+        await copy(current.id);
+        break;
+      case "copyUrl":
+        await copy(getShareUrl(current));
         break;
     }
   };

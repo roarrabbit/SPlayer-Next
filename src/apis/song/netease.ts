@@ -1,6 +1,6 @@
 import type { Track } from "@shared/types/player";
 import { netease as neteaseApi } from "@/apis/netease";
-import { songsToTracks } from "@/utils/netease";
+import { songsToTracks } from "@/utils/format/netease";
 
 /**
  * 按 ID 批量取歌曲详情

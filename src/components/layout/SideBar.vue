@@ -14,6 +14,7 @@ import IconLucideFolder from "~icons/lucide/folder";
 import IconLucideServer from "~icons/lucide/server";
 import IconLucideListMusic from "~icons/lucide/list-music";
 import IconMaterialSymbolsFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
+import IconLucideStar from "~icons/lucide/star";
 import IconLucideHistory from "~icons/lucide/history";
 import IconLucidePlus from "~icons/lucide/plus";
 import IconLucideChevronDown from "~icons/lucide/chevron-down";
@@ -133,6 +134,7 @@ const menuItems = computed<SMenuItem[]>(() => [
         { key: "/streaming", label: t("nav.streaming"), icon: markRaw(IconLucideServer) },
       ] satisfies SMenuItem[])
     : []),
+  { key: "/favorites", label: t("nav.favorites"), icon: markRaw(IconLucideStar) },
   { key: "/history", label: t("nav.history"), icon: markRaw(IconLucideHistory) },
   // 我的歌单
   { key: "divider-playlist", type: "divider" },

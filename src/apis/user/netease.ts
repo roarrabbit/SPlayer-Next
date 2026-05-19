@@ -1,7 +1,7 @@
 import type { Album, Artist, Playlist } from "@shared/types/player";
 import type { UserSubcount } from "@/types/user";
 import { netease as neteaseApi } from "@/apis/netease";
-import { ensureOk, toAlbum, toArtist, toPlaylist, toSubcount } from "@/utils/netease";
+import { ensureOk, toAlbum, toArtist, toPlaylist, toSubcount } from "@/utils/format/netease";
 
 const PAGE_SIZE = 50;
 

@@ -9,7 +9,8 @@ interface NeteaseError {
 }
 
 /**
- * 校验网易云接口响应：code !== 200 时抛 Error，message 取自 body.message / body.msg
+ * 校验网易云接口响应
+ * code !== 200 时抛 Error，message 取自 body.message / body.msg
  */
 export const ensureOk = <T>(body: T): T => {
   const meta = body as NeteaseError | null | undefined;

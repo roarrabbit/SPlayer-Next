@@ -3,10 +3,11 @@
  */
 
 import type { TrackSource } from "@shared/types/player";
-import type { ArtistProfile, CoverItem } from "@/types/artist";
+import type { ArtistProfile } from "@/types/artist";
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
 import { fetchArtist } from "@/apis/artist/netease";
+import { albumsToCoverItems } from "@/utils/format/coverItem";
 
 export interface LoadArtistOptions {
   /** 名称兜底（在线源元数据返回前用于占位） */
@@ -87,13 +88,7 @@ const loadNetease = async (id: string, options: LoadArtistOptions): Promise<void
     options.onUpdate(null);
     return;
   }
-  const albums: CoverItem[] = result.albums.map((album) => ({
-    id: album.id ?? "",
-    title: album.name,
-    cover: album.cover,
-    subtitle: album.artist,
-    trackCount: album.trackCount ?? 0,
-  }));
+  const albums = albumsToCoverItems(result.albums);
   options.onUpdate({
     id,
     name: result.artist.name,

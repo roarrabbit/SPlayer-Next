@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { CoverItem } from "@/types/artist";
-import type { Playlist } from "@shared/types/player";
 import { useStreamingStore } from "@/stores/streaming";
 import { navigateToPlaylist } from "@/utils/navigate";
+import { playlistToCoverItem } from "@/utils/format/coverItem";
 import CoverList from "@/components/list/CoverList.vue";
 
 const { t } = useI18n();
@@ -23,12 +23,9 @@ onMounted(() => {
 });
 
 const items = computed<CoverItem[]>(() =>
-  playlists.value.map((p: Playlist) => ({
-    id: p.id ?? "",
-    title: p.name,
-    cover: p.cover,
+  playlists.value.map((p) => ({
+    ...playlistToCoverItem(p),
     subtitle: p.trackCount ? t("common.totalSongs", { count: p.trackCount }) : "",
-    trackCount: p.trackCount ?? 0,
   })),
 );
 

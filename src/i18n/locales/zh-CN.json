@@ -14,6 +14,8 @@
     "refreshCache": "刷新缓存",
     "success": "操作成功",
     "error": "操作失败",
+    "copied": "已复制",
+    "copyFailed": "复制失败",
     "playAll": "播放全部",
     "totalSongs": "共 {count} 首",
     "totalAlbums": "共 {count} 张专辑",
@@ -78,6 +80,7 @@
     "library": "音乐库",
     "liked": "我喜欢的音乐",
     "history": "播放历史",
+    "favorites": "我的收藏",
     "streaming": "流媒体",
     "settings": "设置",
     "reload": "热重载",
@@ -237,9 +240,14 @@
     "context": {
       "play": "播放",
       "playNext": "下一首播放",
-      "showInExplorer": "在文件管理器中显示",
+      "showInExplorer": "打开文件位置",
       "copyPath": "复制文件路径",
-      "deleteFile": "删除文件"
+      "deleteFile": "删除文件",
+      "searchSame": "同名搜索",
+      "more": "更多操作",
+      "copyTitle": "复制歌曲名称",
+      "copyId": "复制歌曲 ID",
+      "copyUrl": "分享歌曲链接"
     },
     "batch": {
       "manage": "批量管理",
@@ -302,6 +310,16 @@
     "clear": "清空历史",
     "clearConfirmTitle": "清空播放历史",
     "clearConfirmContent": "确认清空全部播放历史吗？此操作不可撤销！"
+  },
+  "favorites": {
+    "title": "我的收藏",
+    "empty": "这里还空空如也，去发现一些喜欢的内容吧",
+    "notLogin": "登录后才能查看收藏的内容",
+    "tabs": {
+      "playlist": "歌单",
+      "album": "专辑",
+      "artist": "歌手"
+    }
   },
   "library": {
     "title": "音乐库",
