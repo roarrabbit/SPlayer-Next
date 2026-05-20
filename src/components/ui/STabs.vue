@@ -27,12 +27,15 @@ export interface STabsProps {
     | "flex-end";
   /** 是否启用动画 */
   animated?: boolean;
+  /** 圆角胶囊 */
+  round?: boolean;
 }
 
 const props = withDefaults(defineProps<STabsProps>(), {
   type: "bar",
   size: "medium",
   animated: false,
+  round: false,
 });
 
 const emit = defineEmits<{
@@ -64,7 +67,7 @@ const setTabRef = (key: string, el: unknown): void => {
 /** 当前是否有面板内容 */
 const hasContent = computed(() => !!slots[props.modelValue]);
 
-/** 同步高亮条 left/width */
+/** 同步高亮条：用 offset* 对齐 absolute 的 padding-box 基准，避免 border / padding 推算误差 */
 const updateIndicator = (): void => {
   if (!containerRef.value) return;
   const active = tabRefs.value[props.modelValue];
@@ -72,19 +75,25 @@ const updateIndicator = (): void => {
     indicatorStyle.value = {};
     return;
   }
-  const containerRect = containerRef.value.getBoundingClientRect();
-  const activeRect = active.getBoundingClientRect();
   if (props.type === "bar") {
     const barWidth = 24;
-    const center = activeRect.left - containerRect.left + activeRect.width / 2;
+    const center = active.offsetLeft + active.offsetWidth / 2;
     indicatorStyle.value = {
       left: `${center - barWidth / 2}px`,
       width: `${barWidth}px`,
     };
+  } else if (props.type === "segment") {
+    // 整盒覆盖当前 tab，上下/左右间距由 container 的 padding 自动决定，绝对对称
+    indicatorStyle.value = {
+      left: `${active.offsetLeft}px`,
+      top: `${active.offsetTop}px`,
+      width: `${active.offsetWidth}px`,
+      height: `${active.offsetHeight}px`,
+    };
   } else {
     indicatorStyle.value = {
-      left: `${activeRect.left - containerRect.left}px`,
-      width: `${activeRect.width}px`,
+      left: `${active.offsetLeft}px`,
+      width: `${active.offsetWidth}px`,
     };
   }
 };
@@ -154,11 +163,25 @@ onMounted(() => {
   }
 });
 
-/** 尺寸到样式 class 的映射 */
+/** 尺寸到样式 class 的映射（line / bar 用：tab 自带高度） */
 const sizeClasses: Record<string, string> = {
   small: "text-xs h-7 px-2.5",
   medium: "text-sm h-8 px-3",
   large: "text-base h-10 px-3.5",
+};
+
+/** segment 外框总高度，与 SButton / SInput 同套：h-8/h-9/h-10 */
+const segmentOuterHeight: Record<string, string> = {
+  small: "h-8",
+  medium: "h-9",
+  large: "h-10",
+};
+
+/** segment 模式 tab 仅控制字号与水平 padding，高度交给外框 */
+const segmentTabClasses: Record<string, string> = {
+  small: "text-xs px-2.5",
+  medium: "text-sm px-3",
+  large: "text-base px-3.5",
 };
 
 /** 根据切换方向生成过渡 class */
@@ -188,8 +211,11 @@ const panelTransitionClasses = computed(() => {
     class="relative items-center select-none"
     :style="(type === 'line' || type === 'bar') && justifyContent ? { justifyContent } : undefined"
     :class="[
-      type === 'segment' &&
-        'flex w-full gap-1 p-1 rounded-lg bg-on-surface/5 border border-solid border-outline-variant/15',
+      type === 'segment' && [
+        'flex w-full gap-1 p-0.5 bg-on-surface/3 border border-solid border-on-surface/15',
+        segmentOuterHeight[size],
+        round ? 'rounded-full' : 'rounded-lg',
+      ],
       type === 'line' &&
         (justifyContent ? 'flex w-full pb-1' : 'flex w-full justify-start gap-3 pb-1'),
       type === 'bar' && (justifyContent ? 'flex w-full pb-1' : 'inline-flex shrink-0 gap-3 pb-1'),
@@ -202,7 +228,7 @@ const panelTransitionClasses = computed(() => {
       :class="[
         'absolute pointer-events-none transition-[left,width] duration-320 ease-[cubic-bezier(0.4,0,0.2,1)]',
         type === 'segment'
-          ? 'inset-y-1 bg-primary/25 rounded-md shadow-sm'
+          ? ['bg-primary/12', round ? 'rounded-full' : 'rounded-md']
           : 'bottom-0.5 h-[3px] bg-primary rounded-full',
       ]"
       :style="indicatorStyle"
@@ -217,8 +243,7 @@ const panelTransitionClasses = computed(() => {
       :aria-disabled="tab.disabled ? 'true' : 'false'"
       class="relative z-1 inline-flex items-center justify-center whitespace-nowrap outline-none transition-colors duration-200"
       :class="[
-        type === 'segment' && 'flex-1',
-        sizeClasses[size],
+        type === 'segment' ? ['flex-1 h-full', segmentTabClasses[size]] : sizeClasses[size],
         tab.disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
         modelValue === tab.key
           ? {

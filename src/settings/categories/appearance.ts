@@ -154,6 +154,18 @@ const appearanceCategory: SettingCategory = {
           binding: { store: "settings", path: "appearance.sidebarCollapsed" },
           defaultValue: false,
         },
+        {
+          key: "sidebarPlaylistCover",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.sidebarPlaylistCover" },
+          defaultValue: false,
+        },
+        {
+          key: "showQualitySwitch",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.showQualitySwitch" },
+          defaultValue: false,
+        },
       ],
     },
   ],

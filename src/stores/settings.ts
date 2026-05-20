@@ -23,6 +23,8 @@ export const useSettingsStore = defineStore(
       layoutMode: "default",
       routeTransition: "fade",
       sidebarCollapsed: false,
+      sidebarPlaylistCover: false,
+      showQualitySwitch: false,
       closeAction: "hide",
       rememberCloseChoice: false,
       fontFamily: "",
@@ -37,6 +39,7 @@ export const useSettingsStore = defineStore(
       outputDevice: null,
       enableSpectrum: false,
       spectrumBarWidth: 4,
+      songLevel: "hq",
     });
 
     /** 歌词 */
@@ -85,6 +88,25 @@ export const useSettingsStore = defineStore(
       try {
         Object.assign(system, await window.api.config.getAll());
       } catch {}
+    };
+
+    /**
+     * 按 dot-path 写入嵌套对象，仅触发对应叶子节点的 reactive
+     * @param target 要写入的对象
+     * @param path 形如 "player.equalizer.bands"
+     * @param value 新值
+     */
+    const setByPath = (target: Record<string, unknown>, path: string, value: unknown): void => {
+      const keys = path.split(".");
+      const last = keys.pop();
+      if (!last) return;
+      let cursor: Record<string, unknown> = target;
+      for (const key of keys) {
+        const next = cursor[key];
+        if (next === null || typeof next !== "object") return;
+        cursor = next as Record<string, unknown>;
+      }
+      cursor[last] = value;
     };
 
     /** IPC 订阅取消回调集合 */
@@ -136,10 +158,13 @@ export const useSettingsStore = defineStore(
       })
       .catch(() => {});
 
-    /** 写入后端配置并更新本地 */
+    /**
+     * 写入后端配置并同步本地
+     * 只更新指定路径，避免触发无关 watch
+     */
     const setSystem = async (keyPath: string, value: unknown): Promise<void> => {
       await window.api.config.set(keyPath, value);
-      await syncSystem();
+      setByPath(system, keyPath, value);
       // 后处理
       if (keyPath === "player.fadeEnabled" || keyPath === "player.fadeDuration") {
         await window.api.player.setFadeDuration(

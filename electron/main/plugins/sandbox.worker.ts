@@ -42,7 +42,60 @@ if (!parentPort) {
   process.exit(1);
 }
 
-const send = (msg: SandboxOut): void => parentPort.postMessage(msg);
+/**
+ * 深度剥离不可克隆字段
+ * 保留 string/number/bool/null/Uint8Array/纯字典/数组；丢函数/symbol；
+ * Buffer 转 Uint8Array、普通对象用 Object.create(null) 重建以脱掉 vm.Context 原型链
+ * @param value - 任意值
+ * @param depth - 递归深度上限
+ */
+const sanitizeForIpc = (value: unknown, depth = 0): unknown => {
+  if (depth > 6) return null;
+  if (value == null) return value;
+  const t = typeof value;
+  if (t === "string" || t === "number" || t === "boolean" || t === "bigint") return value;
+  if (t === "function" || t === "symbol") return undefined;
+  if (Buffer.isBuffer(value)) return new Uint8Array(value);
+  if (value instanceof Uint8Array || value instanceof ArrayBuffer) return value;
+  if (Array.isArray(value)) {
+    return value.map((v) => sanitizeForIpc(v, depth + 1)).filter((v) => v !== undefined);
+  }
+  if (t === "object") {
+    const out: Record<string, unknown> = Object.create(null);
+    try {
+      for (const k of Object.keys(value as object)) {
+        const cleaned = sanitizeForIpc((value as Record<string, unknown>)[k], depth + 1);
+        if (cleaned !== undefined) out[k] = cleaned;
+      }
+    } catch {
+      // Proxy 的 ownKeys 可能抛，直接返回空字典
+    }
+    return out;
+  }
+  return undefined;
+};
+
+/**
+ * 跨 worker→main 边界发消息
+ * 直发；失败 → sanitize 后重发；仍失败 → 抛带 kind 上下文的错误（不是无意义的 "object could not be cloned"）
+ * @param msg - 待发消息
+ */
+const send = (msg: SandboxOut): void => {
+  try {
+    parentPort.postMessage(msg);
+    return;
+  } catch {
+    // 走 sanitize 重试
+    try {
+      parentPort.postMessage(sanitizeForIpc(msg) as SandboxOut);
+      return;
+    } catch (err2) {
+      throw new Error(
+        `[sandbox] postMessage failed for kind=${msg.kind}: ${(err2 as Error).message}`,
+      );
+    }
+  }
+};
 
 /** 等待主进程 init 再启动，避免 TDZ */
 let initialized = false;
@@ -73,7 +126,22 @@ const hostCall = (method: HostCallMethod, args: unknown[]): Promise<unknown> => 
   const callId = nextCallId();
   return new Promise<unknown>((resolve, reject) => {
     hostCallWaiters.set(callId, { resolve, reject });
-    send({ kind: "hostCall", callId, method, args });
+    try {
+      // 提前 sanitize，防止脚本传 Proxy / 闭包 / vm 对象触发 clone 失败
+      send({
+        kind: "hostCall",
+        callId,
+        method,
+        args: sanitizeForIpc(args) as unknown[],
+      });
+    } catch (err) {
+      hostCallWaiters.delete(callId);
+      reject(
+        Object.assign(new Error((err as Error).message), {
+          code: "PLUGIN_ARGS_NOT_CLONEABLE",
+        }),
+      );
+    }
   });
 };
 
@@ -89,6 +157,8 @@ const buildSplayer = (init: Extract<SandboxIn, { kind: "init" }>): HostApi => ({
 
   register: (caps) => {
     registeredSources = { ...registeredSources, ...caps.sources };
+    // 异步 register 时主进程的 status.sources 已经定格，主动通知刷新
+    send({ kind: "sourcesUpdate", sources: registeredSources });
   },
 
   on: <A extends PluginAction>(
@@ -99,10 +169,15 @@ const buildSplayer = (init: Extract<SandboxIn, { kind: "init" }>): HostApi => ({
   },
 
   log: {
-    debug: (...args) => send({ kind: "log", level: "debug", args }),
-    info: (...args) => send({ kind: "log", level: "info", args }),
-    warn: (...args) => send({ kind: "log", level: "warn", args }),
-    error: (...args) => send({ kind: "log", level: "error", args }),
+    // 脚本可能 console.log 整个 response 含 Buffer / vm 对象，先 sanitize 再发
+    debug: (...args) =>
+      send({ kind: "log", level: "debug", args: sanitizeForIpc(args) as unknown[] }),
+    info: (...args) =>
+      send({ kind: "log", level: "info", args: sanitizeForIpc(args) as unknown[] }),
+    warn: (...args) =>
+      send({ kind: "log", level: "warn", args: sanitizeForIpc(args) as unknown[] }),
+    error: (...args) =>
+      send({ kind: "log", level: "error", args: sanitizeForIpc(args) as unknown[] }),
   },
 
   storage: {
@@ -206,6 +281,10 @@ const runScript = (init: Extract<SandboxIn, { kind: "init" }>): void => {
     URLSearchParams,
     TextEncoder,
     TextDecoder,
+    // Web 标准 base64
+    // vm.createContext 模式下必须显式注入，否则 ReferenceError 把脚本打成 fatal
+    btoa: (str: string): string => Buffer.from(str, "binary").toString("base64"),
+    atob: (str: string): string => Buffer.from(str, "base64").toString("binary"),
     // console 转发到 log
     console: {
       log: splayer.log.info,
@@ -227,6 +306,8 @@ const runScript = (init: Extract<SandboxIn, { kind: "init" }>): void => {
     handlers,
     (sources) => {
       registeredSources = { ...registeredSources, ...sources };
+      // 同 register：异步 lx.send('inited') 时也要补发 sourcesUpdate
+      send({ kind: "sourcesUpdate", sources: registeredSources });
     },
     (info) => {
       send({ kind: "updateAvailable", info });
@@ -338,7 +419,13 @@ parentPort.on("message", async (event) => {
               error: { code: "PLUGIN_CANCELLED", message: "cancelled" },
             });
           } else {
-            send({ kind: "result", requestId: msg.requestId, ok: true, data });
+            // 兜底 sanitize：lx-shim 已归一过的结果再剥一次原型链，保证跨进程一定 cloneable
+            send({
+              kind: "result",
+              requestId: msg.requestId,
+              ok: true,
+              data: sanitizeForIpc(data),
+            });
           }
         } catch (err) {
           inflight.delete(msg.requestId);

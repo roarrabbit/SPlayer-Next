@@ -283,6 +283,11 @@ const api = {
       ipcRenderer.invoke("apis:call", platform, name, params ?? {}),
     // 清空指定平台的登录态
     clearSession: (platform: string) => ipcRenderer.invoke("apis:clearSession", platform),
+    // 打开官方网页登录窗口
+    openLoginWeb: (platform: string) => ipcRenderer.invoke("apis:openLoginWeb", platform),
+    // 手动写入 cookie 登录
+    setCookie: (platform: string, cookie: string) =>
+      ipcRenderer.invoke("apis:setCookie", platform, cookie),
   },
   lyrics: {
     // 按 id 直取某平台歌词
@@ -357,6 +362,12 @@ const api = {
       servers: StreamingServerConfig[];
       activeServerId: string | null;
     }): Promise<void> => ipcRenderer.invoke("streaming:saveServers", payload),
+  },
+  externalApi: {
+    // 重启外部 API 服务
+    restart: () => ipcRenderer.invoke("externalApi:restart"),
+    // 查询当前运行状态
+    getStatus: () => ipcRenderer.invoke("externalApi:getStatus"),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),

@@ -10,8 +10,12 @@
     "loading": "Loading",
     "noData": "No data",
     "noMore": "No more ~",
+    "refresh": "Refresh",
+    "refreshCache": "Refresh cache",
     "success": "Success",
     "error": "Error",
+    "copied": "Copied",
+    "copyFailed": "Copy failed",
     "playAll": "Play All",
     "totalSongs": "{count} songs",
     "totalAlbums": "{count} albums",
@@ -74,11 +78,67 @@
   "nav": {
     "home": "Home",
     "library": "Library",
+    "liked": "Liked Songs",
+    "history": "Play History",
+    "favorites": "Favorites",
+    "cloud": "My Cloud",
     "streaming": "Streaming",
     "settings": "Settings",
     "reload": "Reload",
     "devtools": "Developer Tools",
-    "globalSettings": "Global Settings"
+    "globalSettings": "Global Settings",
+    "searchPlaceholder": "Search songs, artists or albums",
+    "searchEmpty": "Start typing to search",
+    "searchGoto": "Search for \"{keyword}\"",
+    "searchSection": {
+      "quick": "Quick",
+      "history": "Recent searches",
+      "hot": "Trending"
+    }
+  },
+  "login": {
+    "description": "Link your account for cloud playlists, favorites and personalized recommendations",
+    "thisApp": "This app",
+    "netease": "NetEase Music",
+    "qrTitle": "Scan to sign in",
+    "qrTipWaiting": "Open the Cloud Music app and scan the QR code",
+    "qrTipScanned": "Scanned, please confirm in the app",
+    "qrTipExpired": "QR code expired, refreshing",
+    "qrTipDone": "Signed in",
+    "qrTipUnknown": "Unknown state, please retry",
+    "qrRefresh": "Refresh QR code",
+    "autoFetch": "Auto fetch",
+    "autoFetchTitle": "Before you continue",
+    "autoFetchTip": "This feature can't guarantee account safety — use it at your own discretion. If the official page goes blank or unresponsive, close it and try again.",
+    "autoFetchConfirm": "I understand",
+    "manualCookie": "Manual cookie",
+    "openWeb": "Sign in",
+    "cookieHint": "Only the MUSIC_U field from your cookie is needed. e.g. MUSIC_U=xxxx;",
+    "cookiePlaceholder": "Paste cookie, must contain MUSIC_U=xxx;",
+    "cookieInvalid": "Invalid cookie. MUSIC_U is required.",
+    "cookieConfirm": "Sign in",
+    "back": "Back",
+    "success": "Signed in",
+    "failed": "Sign-in failed, please try again",
+    "unknownUser": "Unknown user",
+    "logout": "Sign out",
+    "logoutConfirmTitle": "Sign out",
+    "logoutConfirmDesc": "Sign out of the current account?",
+    "logoutDone": "Signed out"
+  },
+  "search": {
+    "title": "Search",
+    "titleSuffix": "search results",
+    "emptyKeyword": "Type a keyword to start searching",
+    "noResults": "No matching results",
+    "noResultsHint": "Try another keyword or switch the source",
+    "errorTitle": "Search failed",
+    "tabs": {
+      "songs": "Songs",
+      "albums": "Albums",
+      "artists": "Artists",
+      "playlists": "Playlists"
+    }
   },
   "streaming": {
     "hint": "Connect to a streaming platform",
@@ -157,6 +217,7 @@
   "songList": {
     "title": "Title",
     "album": "Album",
+    "actions": "Actions",
     "size": "Size",
     "duration": "Duration",
     "noResults": "No matching songs",
@@ -180,9 +241,14 @@
     "context": {
       "play": "Play",
       "playNext": "Play Next",
-      "showInExplorer": "Show in Explorer",
+      "showInExplorer": "Open Location",
       "copyPath": "Copy File Path",
-      "deleteFile": "Delete File"
+      "deleteFile": "Delete File",
+      "searchSame": "Search by Name",
+      "more": "More",
+      "copyTitle": "Copy Title",
+      "copyId": "Copy Song ID",
+      "copyUrl": "Share Song Link"
     },
     "batch": {
       "manage": "Batch Manage",
@@ -219,6 +285,51 @@
     "locateCurrent": "Now Playing",
     "clearConfirmTitle": "Clear Playlist",
     "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
+  },
+  "liked": {
+    "title": "Liked Songs",
+    "tabs": {
+      "local": "Local",
+      "online": "Online"
+    },
+    "empty": {
+      "local": "No liked local songs yet — click the heart next to a song to add it",
+      "online": "No liked songs on your NetEase account yet"
+    },
+    "needLogin": "Log in to NetEase to view online liked songs",
+    "toast": {
+      "added": "Added to liked",
+      "removed": "Removed from liked",
+      "needLogin": "Please log in to NetEase first",
+      "unsupported": "This source does not support liking",
+      "failed": "Action failed, please try again"
+    }
+  },
+  "cloud": {
+    "title": "My Cloud",
+    "empty": "No songs in your cloud yet — upload some via the NetEase Music app",
+    "needLogin": "Sign in to view your cloud library",
+    "removeAction": "Remove from cloud",
+    "removeTitle": "Remove from Cloud",
+    "removeConfirmOne": "Remove \"{title}\" from your cloud? This cannot be undone.",
+    "removeConfirm": "Remove {count} songs from your cloud? This cannot be undone."
+  },
+  "history": {
+    "title": "Play History",
+    "empty": "No playback history yet — play something to get started",
+    "clear": "Clear history",
+    "clearConfirmTitle": "Clear Play History",
+    "clearConfirmContent": "Clear all play history? This cannot be undone."
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "Nothing here yet — go explore and save something you like",
+    "notLogin": "Sign in to see your favorites",
+    "tabs": {
+      "playlist": "Playlists",
+      "album": "Albums",
+      "artist": "Artists"
+    }
   },
   "library": {
     "title": "Library",
@@ -281,6 +392,7 @@
       "hotkeys": "Hotkeys",
       "musicSpectrum": "Music Spectrum",
       "discord": "Discord RPC",
+      "externalApi": "External API",
       "systemConfig": "System",
       "pluginsList": "Installed Plugins",
       "streaming": "Streaming",
@@ -315,6 +427,17 @@
     "loudnessNormalization": {
       "label": "Loudness Normalization",
       "description": "Automatically balance volume levels between tracks"
+    },
+    "songLevel": {
+      "label": "Online Audio Quality",
+      "description": "Preferred quality for online tracks; the actual level depends on what your account supports",
+      "switchTitle": "Switch Quality",
+      "switchHint": "Subject to your account permissions",
+      "lq": "Standard (LQ)",
+      "sq": "Higher (SQ)",
+      "hq": "Extreme (HQ)",
+      "lossless": "Lossless",
+      "hi-res": "Hi-Res"
     },
     "outputDevice": {
       "label": "Output Device",
@@ -351,8 +474,8 @@
       "hint": "Picks the highest-ranked when multiple formats are available — e.g. multiple external lyric files, or TTML upgrade"
     },
     "smartPreferOnline": {
-      "label": "Prefer Online Format",
-      "description": "Fetch online when a higher-ranked format is reachable"
+      "label": "Auto-Upgrade Lyric Format",
+      "description": "Fetch a higher-ranked format from other platforms when the current one is low"
     },
     "enableOnlineTTMLLyric": {
       "label": "Enable Online TTML Lyrics",
@@ -764,6 +887,14 @@
       "label": "Collapse Sidebar",
       "description": "Collapse the sidebar to icon-only mode"
     },
+    "sidebarPlaylistCover": {
+      "label": "Show Playlist Covers",
+      "description": "Show playlist covers instead of default icons in the sidebar"
+    },
+    "showQualitySwitch": {
+      "label": "Show Quick Quality Switch",
+      "description": "Show the online audio quality tag in the player bar for quick switching"
+    },
     "fontConfig": {
       "label": "Font Settings",
       "description": "Configure fonts for the app, lyrics, and external lyric windows",
@@ -822,6 +953,30 @@
     "streamingEnabled": {
       "label": "Enable streaming",
       "description": "When disabled, the streaming entry is hidden from the sidebar"
+    },
+    "externalApiEnabled": {
+      "label": "Allow external control",
+      "description": "Let external apps control the player via the API"
+    },
+    "externalApiWs": {
+      "label": "Enable WebSocket",
+      "description": "External apps can subscribe to events and send commands"
+    },
+    "externalApiPort": {
+      "label": "Listen port",
+      "description": "TCP port for the external API (1024–65535)"
+    },
+    "externalApiPanel": {
+      "label": "",
+      "description": ""
+    },
+    "externalApi": {
+      "restart": "Restart server",
+      "restartHint": "Restart required after changing port",
+      "restarted": "Server restarted",
+      "portInUse": "Port {port} is already in use, pick another",
+      "pendingChange": "Pending restart",
+      "pendingChangeHint": "Configured {configured}, running {running}"
     },
     "closeAction": {
       "label": "Close Button Action",
@@ -991,6 +1146,9 @@
     "playlist": "Playlist",
     "radio": "Radio",
     "my": "My {type}s",
+    "subscribed": "Subscribed {type}s",
+    "localPlaylist": "Local Playlists",
+    "onlinePlaylist": "Online Playlists",
     "create": "New {type}",
     "name": "{type} Name",
     "description": "Description",
@@ -1000,7 +1158,13 @@
     "removeFrom": "Remove from {type}",
     "tracksAdded": "{count} songs added",
     "tracksRemoved": "{count} songs removed",
-    "edit": "Edit {type}"
+    "alreadyInPlaylist": "Already in the playlist",
+    "edit": "Edit {type}",
+    "subscribe": "Subscribe",
+    "unsubscribe": "Unsubscribe",
+    "privacy": {
+      "private": "Make private"
+    }
   },
   "artist": {
     "label": "Artists",
@@ -1024,8 +1188,10 @@
     "FILE_NO_AUDIO_STREAM": "No audio stream found in file",
     "FILE_DECODE_ERROR": "Audio decode failed",
     "FILE_NOT_SELECTED": "No file selected",
-    "NETWORK_ERROR": "Network connection failed",
-    "NETWORK_TIMEOUT": "Network request timed out",
+    "NETWORK_ERROR": "Failed to reach audio source, check network or try another",
+    "NETWORK_TIMEOUT": "Audio source timed out, check network or try another",
+    "URL_RESOLVE_FAILED": "Failed to get playback URL",
+    "NO_PLUGIN_AVAILABLE": "No plugin available for this platform",
     "SCAN_NO_DIRS": "No scan directories configured",
     "SCAN_DIR_EXISTS": "Directory already exists",
     "SCAN_DIR_NOT_FOUND": "Directory not found",

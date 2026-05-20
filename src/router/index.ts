@@ -18,6 +18,26 @@ const router = createRouter({
           component: () => import("@/pages/Library.vue"),
         },
         {
+          path: "liked",
+          name: "liked",
+          component: () => import("@/pages/Liked.vue"),
+        },
+        {
+          path: "history",
+          name: "history",
+          component: () => import("@/pages/History.vue"),
+        },
+        {
+          path: "favorites",
+          name: "favorites",
+          component: () => import("@/pages/Favorites.vue"),
+        },
+        {
+          path: "cloud",
+          name: "cloud",
+          component: () => import("@/pages/Cloud.vue"),
+        },
+        {
           path: "collection/:source/:type/:id",
           name: "collection",
           component: () => import("@/pages/Collection.vue"),
@@ -41,6 +61,11 @@ const router = createRouter({
           path: "folders",
           name: "folders",
           component: () => import("@/pages/Folders.vue"),
+        },
+        {
+          path: "search",
+          name: "search",
+          component: () => import("@/pages/Search.vue"),
         },
         {
           path: "streaming",

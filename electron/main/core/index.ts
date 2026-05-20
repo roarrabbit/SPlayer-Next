@@ -8,6 +8,7 @@ import { initDatabase, closeDatabase } from "@main/database";
 import { init as initSongCache } from "@main/services/songCache";
 import { pluginRegistry } from "@main/plugins/registry";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
+import { startServer, stopServer } from "@main/server";
 import { coreLog, initLogger } from "@main/utils/logger";
 
 /**
@@ -73,6 +74,8 @@ export const initApp = (): void => {
     restoreLyricWindows();
     // 注册全局快捷键
     initGlobalHotkey();
+    // 启动外部 API 服务（fire-and-forget；监听结果通过 getStatus 暴露给渲染端）
+    void startServer();
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
@@ -90,6 +93,7 @@ export const initApp = (): void => {
     coreLog.info("应用即将退出，清理资源");
     shutdownMedia();
     closeDatabase();
+    void stopServer();
     void pluginRegistry.shutdown();
   });
 };

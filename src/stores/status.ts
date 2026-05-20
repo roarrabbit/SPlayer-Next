@@ -1,4 +1,6 @@
 import type { PlayerState, AudioDevice, RepeatMode, ShuffleMode } from "@shared/types/player";
+import type { Platform } from "@shared/types/platform";
+import type { ContentScope } from "@/types/collection";
 export type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import * as queue from "./queue";
 
@@ -53,14 +55,20 @@ export const useStatusStore = defineStore(
       pointA: null as number | null,
       pointB: null as number | null,
     });
-    /** 当前曲目歌词偏移（ms，正值为歌词提前）；主进程为权威源，本地仅做镜像 */
+    /** 当前曲目歌词偏移（ms，正值为歌词提前） */
     const lyricOffsetMs = ref(0);
+    /** 搜索页选中的平台 */
+    const searchPlatform = ref<Platform>("netease");
+    /** 侧栏「我的歌单」当前展示来源 */
+    const myPlaylistSource = ref<ContentScope>("local");
+    /** 「我喜欢的音乐」页当前 tab */
+    const likedPageTab = ref<ContentScope>("local");
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */
     const isPaused = computed(() => state.value === "paused");
     /** 是否加载中 */
-    const isLoading = computed(() => state.value === "loading" || trackLoading.value);
+    const isLoading = computed(() => trackLoading.value);
     /** 播放进度 */
     const progress = computed(() => (duration.value > 0 ? position.value / duration.value : 0));
     /**
@@ -95,13 +103,25 @@ export const useStatusStore = defineStore(
       autoClose,
       abLoop,
       lyricOffsetMs,
+      searchPlatform,
+      myPlaylistSource,
+      likedPageTab,
       currentTrack,
     };
   },
   {
     persist: {
       storage: localStorage,
-      pick: ["playIndex", "repeatMode", "shuffleMode", "volume", "position"],
+      pick: [
+        "playIndex",
+        "repeatMode",
+        "shuffleMode",
+        "volume",
+        "position",
+        "searchPlatform",
+        "myPlaylistSource",
+        "likedPageTab",
+      ],
     },
   },
 );

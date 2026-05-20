@@ -83,7 +83,7 @@ export interface LxCurrentScriptInfo {
   rawScript: string;
 }
 
-/** lx.utils — 对齐 lx-music-desktop 的签名（不同于 splayer.utils） */
+/** lx.utils — 参数签名与 lx-music 老脚本兼容（与自家 splayer.utils 不同） */
 const buildLxUtils = (): object => ({
   crypto: {
     // 注意：lx 的参数顺序是 (buffer, mode, key, iv)，与我们自家 splayer.utils 不同
@@ -172,19 +172,48 @@ export const installLxShim = (
       const o = opts ?? {};
       const method = ((o.method as string) ?? "GET").toUpperCase() as "GET" | "POST";
       const timeout = typeof o.timeout === "number" ? (o.timeout as number) : undefined;
-      const headers = (o.headers as Record<string, string>) ?? {};
-      const body = (o.body ?? o.form ?? o.formData) as
-        | string
-        | Uint8Array
-        | ArrayBuffer
-        | undefined;
-
+      // headers 强制转纯字符串字典，避免脚本传 Proxy / 带函数的对象触发结构化克隆失败
+      const headers: Record<string, string> = {};
+      const rawHeaders = (o.headers as Record<string, unknown> | undefined) ?? {};
+      for (const [k, v] of Object.entries(rawHeaders)) {
+        if (typeof v === "string") headers[k] = v;
+        else if (v != null) headers[k] = String(v);
+      }
+      // form/formData 在 needle 里会被 urlencode/multipart 序列化
+      // 这里 body 优先，其次 form/formData 走 URLSearchParams 序列化并补 content-type
+      const rawBody = o.body;
+      const rawForm = (o.form ?? o.formData) as Record<string, unknown> | undefined;
+      let body: string | Uint8Array | ArrayBuffer | undefined;
+      let formContentType: string | undefined;
+      if (rawBody != null) {
+        if (typeof rawBody === "string") body = rawBody;
+        else if (rawBody instanceof Uint8Array || rawBody instanceof ArrayBuffer) body = rawBody;
+        else if (typeof rawBody === "object") {
+          try {
+            body = JSON.stringify(rawBody);
+          } catch {
+            body = undefined;
+          }
+        }
+      } else if (rawForm && typeof rawForm === "object") {
+        const usp = new URLSearchParams();
+        for (const [field, value] of Object.entries(rawForm)) {
+          if (value == null) continue;
+          usp.append(field, String(value));
+        }
+        body = usp.toString();
+        formContentType = "application/x-www-form-urlencoded";
+      }
+      // 默认 content-type 放前面，让用户传的 headers 仍能覆盖
+      const finalHeaders: Record<string, string> = formContentType
+        ? { "content-type": formContentType, ...headers }
+        : headers;
       let aborted = false;
 
       splayer
         .request(url, {
           method,
-          headers,
+          headers: finalHeaders,
           body,
           timeout,
           responseType: "text",
@@ -269,8 +298,10 @@ export const installLxShim = (
                 if (host) mapped.add(host);
               }
               const actions = (cap.actions ?? []).filter(
-                (a): a is PluginAction => a === "musicUrl",
+                (action): action is PluginAction => action === "musicUrl",
               );
+              // 不支持任何宿主已识别动作的源直接丢弃，避免 audioSource 误把
+              // lyric-only 脚本当成 musicUrl 候选去调，结果走到归一校验抛 PLUGIN_INVALID_RESULT
               if (actions.length === 0) continue;
               normalized[key] = {
                 name: cap.name ?? key,
@@ -326,6 +357,7 @@ export const installLxShim = (
   const registerAction = (action: PluginAction): void => {
     handlers.set(action, async (req: unknown) => {
       if (!requestHandler) {
+        splayer.log.warn("[lx-shim] no request handler registered for action", action);
         throw Object.assign(new Error("lx plugin has not registered request handler"), {
           code: "PLUGIN_NOT_READY",
         });
@@ -334,14 +366,21 @@ export const installLxShim = (
       const source = (reqObj.source as string) ?? "";
       // lx 期待 128k/320k/flac/... 音质字符串，宿主的 quality 做一次翻译
       const hostQuality = reqObj.quality as PluginQuality | undefined;
+      const lxType = hostQuality ? mapHostQualityToLx(hostQuality) : undefined;
       const info: Record<string, unknown> = {
-        type: hostQuality ? mapHostQualityToLx(hostQuality) : undefined,
+        type: lxType,
         musicInfo: reqObj.musicInfo ?? {},
       };
-
       const raw = await Promise.resolve(requestHandler({ source, action, info }));
+      // 严格归一为 { url }，避免脚本回包夹带闭包/Proxy 导致 postMessage 克隆失败
       if (typeof raw === "string") return { url: raw } as MusicUrlRes;
-      return raw;
+      if (raw && typeof raw === "object") {
+        const url = (raw as Record<string, unknown>).url;
+        if (typeof url === "string") return { url } as MusicUrlRes;
+      }
+      throw Object.assign(new Error("lx plugin returned invalid musicUrl result"), {
+        code: "PLUGIN_INVALID_RESULT",
+      });
     });
   };
 

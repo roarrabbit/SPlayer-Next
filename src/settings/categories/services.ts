@@ -1,4 +1,5 @@
 import type { SettingCategory } from "@/types/settings-schema";
+import ExternalApiPanel from "@/components/settings/custom/ExternalApiPanel.vue";
 import IconLucideGlobe from "~icons/lucide/globe";
 
 const servicesCategory: SettingCategory = {
@@ -41,6 +42,41 @@ const servicesCategory: SettingCategory = {
                 { value: "state", labelKey: "settings.discordDisplayMode.state" },
               ],
               defaultValue: "name",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "externalApi",
+      tag: { text: "Beta" },
+      items: [
+        {
+          key: "externalApiEnabled",
+          type: "switch",
+          binding: { store: "settings", path: "system.externalApi.enabled" },
+          defaultValue: false,
+          children: [
+            {
+              key: "externalApiWs",
+              type: "switch",
+              binding: { store: "settings", path: "system.externalApi.wsEnabled" },
+              defaultValue: false,
+            },
+            {
+              key: "externalApiPort",
+              type: "number",
+              binding: { store: "settings", path: "system.externalApi.port" },
+              min: 1024,
+              max: 65535,
+              defaultValue: 14558,
+            },
+            {
+              key: "externalApiPanel",
+              type: "custom",
+              component: ExternalApiPanel,
+              fullWidth: true,
+              keywords: ["settings.externalApi.endpoint", "settings.externalApi.restart"],
             },
           ],
         },

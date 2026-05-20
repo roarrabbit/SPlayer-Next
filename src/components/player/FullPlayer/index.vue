@@ -3,17 +3,21 @@ import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
+import { useFavorite } from "@/composables/useFavorite";
 import Lyrics from "@/components/player/Lyrics/index.vue";
 import { useWindowControls } from "@/composables/useWindowControls";
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import * as player from "@/core/player";
 import { formatTime, formatSignedSec } from "@/utils/time";
+import IconFavorite from "~icons/material-symbols/favorite-rounded";
+import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 
 const { t } = useI18n();
 const status = useStatusStore();
 const media = useMediaStore();
 const settings = useSettingsStore();
 const settingsDialog = useSettingsDialog();
+const fav = useFavorite();
 const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode, showLyric } =
   storeToRefs(status);
 
@@ -377,9 +381,22 @@ const resetLyricOffset = (): void => writeOffset(0);
           @mouseenter="onBarEnter"
           @mouseleave="onBarLeave"
         >
-          <div class="flex-1 min-w-0 flex items-center justify-start">
+          <div class="flex-1 min-w-0 flex items-center justify-start gap-2">
             <SButton type="cover" variant="ghost" size="large" circle @click="collapse">
               <template #icon><IconLucideChevronDown /></template>
+            </SButton>
+            <SButton
+              type="cover"
+              variant="ghost"
+              size="large"
+              circle
+              :disabled="!hasTrack"
+              @click="fav.toggle(media.track)"
+            >
+              <template #icon>
+                <IconFavorite v-if="fav.isLiked(media.track)" />
+                <IconFavoriteOutline v-else />
+              </template>
             </SButton>
           </div>
           <div class="shrink-0 flex flex-col items-center gap-1 w-[clamp(360px,35%,480px)]">

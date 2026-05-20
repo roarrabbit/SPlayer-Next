@@ -2,9 +2,9 @@
 import type { TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
-import { usePlaylistStore } from "@/stores/playlist";
-import { useLibraryStore } from "@/stores/library";
-import { useStreamingStore } from "@/stores/streaming";
+import { loadCollection as loadCollectionService } from "@/services/collectionLoader";
+import { useCollectionSubscribe } from "@/composables/collection/useCollectionSubscribe";
+import { usePlaylistManage } from "@/composables/collection/usePlaylistManage";
 import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
 import * as player from "@/core/player";
@@ -14,21 +14,23 @@ import IconLucideListChecks from "~icons/lucide/list-checks";
 import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucideHourglass from "~icons/lucide/hourglass";
 import IconLucideCalendar from "~icons/lucide/calendar";
+import IconLucideUser from "~icons/lucide/user";
+import IconMaterialSymbolsFavoriteRounded from "~icons/material-symbols/favorite-rounded";
+import IconMaterialSymbolsFavoriteOutlineRounded from "~icons/material-symbols/favorite-outline-rounded";
 
 const { t } = useI18n();
 const route = useRoute();
-const playlistStore = usePlaylistStore();
-const libraryStore = useLibraryStore();
-const streamingStore = useStreamingStore();
+const router = useRouter();
 
 const source = route.params.source as TrackSource;
 const type = route.params.type as CollectionType;
 const id = route.params.id as string;
 
 const collection = shallowRef<Collection | null>(null);
-
-/** 是否可编辑 */
-const editable = source === "local" && type === "playlist";
+/** 正在加载 */
+const loading = ref(false);
+/** 取消当次加载 */
+let loadAbort: AbortController | null = null;
 
 /** 折叠状态 */
 const collapsed = ref(false);
@@ -44,56 +46,48 @@ const handleListScroll = (event: Event) => {
 };
 
 /** 加载数据 */
-const loadCollection = async () => {
+const loadCollection = async (): Promise<void> => {
   collapsed.value = false;
-  if (source === "local" && type === "playlist") {
-    collection.value = await playlistStore.get(id);
-  } else if (source === "local" && type === "album") {
-    const albumName = decodeURIComponent(id);
-    collection.value = await libraryStore.getAlbumCollection(albumName);
-  } else if (source === "streaming") {
-    const originalId = decodeURIComponent(id);
-    // 名称兜底
-    const fallbackName = typeof route.query.name === "string" ? route.query.name : originalId;
-    if (type === "album") {
-      const album = streamingStore.albums.find((a) => a.id === originalId);
-      const tracks = await streamingStore.fetchAlbumSongs(originalId);
-      collection.value = {
-        id: originalId,
-        type,
-        source,
-        title: album?.name ?? fallbackName,
-        cover: album?.cover ?? tracks[0]?.cover,
-        creator: album?.artist,
-        tracks,
-        trackCount: tracks.length,
-      };
-    } else if (type === "playlist") {
-      const pl = streamingStore.playlists.find((p) => p.id === originalId);
-      const tracks = await streamingStore.fetchPlaylistSongs(originalId);
-      collection.value = {
-        id: originalId,
-        type,
-        source,
-        title: pl?.name ?? fallbackName,
-        cover: pl?.cover ?? tracks[0]?.cover,
-        description: pl?.description,
-        creator: pl?.owner,
-        tracks,
-        trackCount: tracks.length,
-      };
-    }
+  loadAbort?.abort();
+  const myAbort = new AbortController();
+  loadAbort = myAbort;
+  loading.value = true;
+
+  try {
+    await loadCollectionService(source, type, id, {
+      fallbackName: typeof route.query.name === "string" ? route.query.name : undefined,
+      signal: myAbort.signal,
+      onUpdate: (next) => {
+        if (myAbort.signal.aborted) return;
+        collection.value = next;
+      },
+    });
+  } finally {
+    if (!myAbort.signal.aborted) loading.value = false;
   }
-  // TODO: online / radio
 };
 
-loadCollection();
+/**
+ * 乐观过滤本地 tracks
+ * @param removedIds 已成功删除的曲目 id 列表
+ */
+const handleTracksRemoved = (removedIds: string[]): void => {
+  if (!collection.value || removedIds.length === 0) return;
+  const removed = new Set(removedIds);
+  const tracks = collection.value.tracks.filter((track) => !removed.has(track.id));
+  collection.value = {
+    ...collection.value,
+    tracks,
+    trackCount: tracks.length,
+  };
+};
 
 const typeLabel = computed(() => {
   const map: Record<CollectionType, string> = {
     album: t("collection.album"),
     playlist: t("collection.playlist"),
     radio: t("collection.radio"),
+    cloud: t("cloud.title"),
   };
   return map[type] ?? "";
 });
@@ -107,8 +101,14 @@ const totalDuration = computed(() => {
 
 /** 歌手文本 */
 const artistText = computed(() => {
-  if (!collection.value?.artists?.length) return collection.value?.creator ?? "";
+  if (!collection.value?.artists?.length) return "";
   return collection.value.artists.map((a) => a.name).join(" / ");
+});
+
+/** 创建者（歌单作者） */
+const creatorText = computed(() => {
+  if (collection.value?.artists?.length) return "";
+  return collection.value?.creator ?? "";
 });
 
 /** 更新时间文本 */
@@ -127,53 +127,36 @@ const searchQuery = ref("");
 /** 歌曲列表引用 */
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 
+/** 收藏 / 取消收藏 */
+const subscribe = useCollectionSubscribe(collection);
+
+/** 歌单管理：编辑 + 删除 */
+const manage = usePlaylistManage(collection, {
+  onEdited: () => loadCollection(),
+  onDeleted: () => {
+    if (window.history.length > 1) router.back();
+    else router.replace("/");
+  },
+});
+
 /** 更多菜单 */
 const editLabel = computed(() => t("collection.edit", { type: typeLabel.value }));
 
-const moreMenuItems = computed<DropdownMenuItem[]>(() => [
-  { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
-  { key: "edit", label: editLabel.value, icon: IconLucidePencil },
-  {
-    key: "delete",
-    label: t("collection.delete", { type: typeLabel.value }),
-    icon: IconLucideTrash2,
-    separator: true,
-  },
-]);
-
-/** 编辑弹窗 */
-const editDialogOpen = ref(false);
-const editTitle = ref("");
-const editDescription = ref("");
-
-const openEditDialog = () => {
-  if (!collection.value) return;
-  editTitle.value = collection.value.title;
-  editDescription.value = collection.value.description ?? "";
-  editDialogOpen.value = true;
-};
-
-const handleSaveEdit = async () => {
-  if (!collection.value || !editTitle.value.trim()) return;
-  await playlistStore.update(collection.value.id, {
-    title: editTitle.value.trim(),
-    description: editDescription.value.trim() || undefined,
-  });
-  await loadCollection();
-  editDialogOpen.value = false;
-};
-
-/** 删除确认 */
-const deleteConfirmOpen = ref(false);
-const deleteTitle = ref("");
-const router = useRouter();
-
-const handleDelete = async () => {
-  if (!collection.value) return;
-  await playlistStore.remove(collection.value.id);
-  deleteConfirmOpen.value = false;
-  router.back();
-};
+const moreMenuItems = computed<DropdownMenuItem[]>(() => {
+  const list: DropdownMenuItem[] = [
+    { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
+  ];
+  if (manage.canManage.value) {
+    list.push({ key: "edit", label: editLabel.value, icon: IconLucidePencil });
+    list.push({
+      key: "delete",
+      label: t("collection.delete", { type: typeLabel.value }),
+      icon: IconLucideTrash2,
+      separator: true,
+    });
+  }
+  return list;
+});
 
 const handleMoreMenu = (key: string) => {
   switch (key) {
@@ -181,14 +164,21 @@ const handleMoreMenu = (key: string) => {
       songListRef.value?.enterBatch();
       break;
     case "edit":
-      openEditDialog();
+      manage.openEdit();
       break;
     case "delete":
-      deleteTitle.value = collection.value?.title ?? "";
-      deleteConfirmOpen.value = true;
+      manage.openDelete();
       break;
   }
 };
+
+onMounted(() => {
+  loadCollection();
+});
+
+onBeforeUnmount(() => {
+  loadAbort?.abort();
+});
 </script>
 
 <template>
@@ -234,15 +224,19 @@ const handleMoreMenu = (key: string) => {
                 <div
                   class="flex items-center gap-3 text-sm leading-none text-on-surface-variant/50"
                 >
-                  <span class="flex items-center gap-1">
+                  <span v-if="creatorText" class="flex items-center gap-1 min-w-0">
+                    <IconLucideUser class="shrink-0" />
+                    <span class="truncate">{{ creatorText }}</span>
+                  </span>
+                  <span class="flex items-center gap-1 shrink-0">
                     <IconLucideListMusic class="shrink-0" />
                     {{ t("common.totalSongs", { count: collection.tracks.length }) }}
                   </span>
-                  <span v-if="totalDuration" class="flex items-center gap-1">
+                  <span v-if="totalDuration" class="flex items-center gap-1 shrink-0">
                     <IconLucideHourglass class="shrink-0" />
                     {{ t("collection.totalDuration", { time: totalDuration }) }}
                   </span>
-                  <span v-if="updateTimeText" class="flex items-center gap-1">
+                  <span v-if="updateTimeText" class="flex items-center gap-1 shrink-0">
                     <IconLucideCalendar class="shrink-0" />
                     {{ updateTimeText }}
                   </span>
@@ -265,8 +259,27 @@ const handleMoreMenu = (key: string) => {
                 </template>
                 {{ t("common.playAll") }}
               </SButton>
+              <SButton
+                v-if="subscribe.available.value"
+                variant="secondary"
+                round
+                :disabled="subscribe.busy.value"
+                @click="subscribe.toggle"
+              >
+                <template #icon>
+                  <IconMaterialSymbolsFavoriteRounded v-if="subscribe.isSubscribed.value" />
+                  <IconMaterialSymbolsFavoriteOutlineRounded v-else />
+                </template>
+                {{
+                  t(
+                    subscribe.isSubscribed.value
+                      ? "collection.unsubscribe"
+                      : "collection.subscribe",
+                  )
+                }}
+              </SButton>
               <SDropdownMenu
-                v-if="editable"
+                v-if="moreMenuItems.length > 0"
                 :items="moreMenuItems"
                 align="start"
                 @select="handleMoreMenu"
@@ -296,7 +309,7 @@ const handleMoreMenu = (key: string) => {
       </div>
     </div>
     <Transition name="fade" mode="out-in" :duration="150">
-      <!-- 歌曲列表 -->
+      <!-- 歌曲列表（首批到位即渲染，剩余批次会自动追加） -->
       <div
         v-if="collection && collection.tracks.length > 0"
         :key="collection.id"
@@ -313,8 +326,15 @@ const handleMoreMenu = (key: string) => {
           :collection-id="id"
           enable-sort
           @scroll="handleListScroll"
-          @change="loadCollection"
+          @change="handleTracksRemoved"
         />
+      </div>
+      <!-- 加载中 -->
+      <div v-else-if="loading" key="loading" class="flex-1 flex items-center justify-center">
+        <div class="text-center text-on-surface-variant/60">
+          <SLoading class="text-4xl text-primary/70 mb-4 mx-auto block" />
+          <div class="text-sm">{{ t("common.loading") }}</div>
+        </div>
       </div>
       <!-- 空状态 -->
       <div v-else-if="collection" key="empty" class="flex-1 flex items-center justify-center">
@@ -325,30 +345,44 @@ const handleMoreMenu = (key: string) => {
       </div>
     </Transition>
     <!-- 编辑弹窗 -->
-    <SDialog v-model:open="editDialogOpen" :title="editLabel" width="400px">
+    <SDialog v-model:open="manage.editOpen.value" :title="editLabel" width="400px">
       <div class="flex flex-col gap-4">
         <SFormItem :label="t('collection.name', { type: typeLabel })">
-          <SInput v-model="editTitle" />
+          <SInput v-model="manage.editTitle.value" :disabled="manage.submitting.value" />
         </SFormItem>
         <SFormItem :label="t('collection.description', { type: typeLabel })">
-          <SInput v-model="editDescription" />
+          <SInput v-model="manage.editDescription.value" :disabled="manage.submitting.value" />
         </SFormItem>
       </div>
       <template #footer="{ close }">
-        <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>
-        <SButton type="primary" :disabled="!editTitle.trim()" @click="handleSaveEdit">
+        <SButton variant="secondary" :disabled="manage.submitting.value" @click="close">
+          {{ t("common.cancel") }}
+        </SButton>
+        <SButton
+          type="primary"
+          :disabled="!manage.editTitle.value.trim()"
+          :loading="manage.submitting.value"
+          @click="manage.saveEdit"
+        >
           {{ t("common.confirm") }}
         </SButton>
       </template>
     </SDialog>
     <!-- 删除确认 -->
-    <SDialog v-model:open="deleteConfirmOpen" :title="t('collection.delete', { type: typeLabel })">
+    <SDialog
+      v-model:open="manage.deleteOpen.value"
+      :title="t('collection.delete', { type: typeLabel })"
+    >
       <p class="text-sm text-on-surface-variant">
-        {{ t("collection.deleteConfirm", { type: typeLabel, title: deleteTitle }) }}
+        {{ t("collection.deleteConfirm", { type: typeLabel, title: collection?.title ?? "" }) }}
       </p>
       <template #footer="{ close }">
-        <SButton variant="secondary" @click="close">{{ t("common.cancel") }}</SButton>
-        <SButton type="error" @click="handleDelete">{{ t("common.confirm") }}</SButton>
+        <SButton variant="secondary" :disabled="manage.deleting.value" @click="close">
+          {{ t("common.cancel") }}
+        </SButton>
+        <SButton type="error" :loading="manage.deleting.value" @click="manage.confirmDelete">
+          {{ t("common.confirm") }}
+        </SButton>
       </template>
     </SDialog>
   </div>

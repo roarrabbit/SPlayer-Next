@@ -11,6 +11,7 @@ import { registerHotkeyIpc } from "./hotkey";
 import { registerThemeIpc } from "./theme";
 import { registerStreamingIpc } from "./streaming";
 import { registerCacheIpc } from "./cache";
+import { registerExternalApiIpc } from "./externalApi";
 
 /** 注册所有 IPC 处理 */
 export const registerIpcHandlers = (): void => {
@@ -27,4 +28,5 @@ export const registerIpcHandlers = (): void => {
   registerThemeIpc();
   registerStreamingIpc();
   registerCacheIpc();
+  registerExternalApiIpc();
 };

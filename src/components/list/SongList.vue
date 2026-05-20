@@ -1,24 +1,31 @@
 <script setup lang="ts">
-import type { Track, TrackSource } from "@shared/types/player";
-import type { CollectionType } from "@/types/collection";
+import type { Artist, Track, TrackSource } from "@shared/types/player";
+import type { CollectionType, ContentScope } from "@/types/collection";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
+import { useFavorite } from "@/composables/useFavorite";
+import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
-import { isLosslessQuality, getQualityLevel } from "@/utils/quality";
+import { isLosslessQuality, getQualityLabel } from "@/utils/quality";
 import { navigateToAlbum, navigateToArtist } from "@/utils/navigate";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import * as player from "@/core/player";
 import IconArrowUpDown from "~icons/lucide/arrow-up-down";
 import IconArrowUpAz from "~icons/lucide/arrow-up-az";
 import IconLucideListEnd from "~icons/lucide/list-end";
+import IconLucideListPlus from "~icons/lucide/list-plus";
 import IconLucideListMinus from "~icons/lucide/list-minus";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
 import IconLucideArrowLeftRight from "~icons/lucide/arrow-left-right";
 import IconLucideX from "~icons/lucide/x";
+import IconLucideCloud from "~icons/lucide/cloud";
+import IconLucideCloudOff from "~icons/lucide/cloud-off";
+import IconFavorite from "~icons/material-symbols/favorite-rounded";
+import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 
 const props = withDefaults(
   defineProps<{
@@ -34,14 +41,18 @@ const props = withDefaults(
     showDuration?: boolean;
     /** 显示文件大小 */
     showSize?: boolean;
-    /** 是否启用排序交互（默认关闭） */
+    /** 是否启用排序交互 */
     enableSort?: boolean;
     /** 列表来源 */
     source?: TrackSource;
     /** 集合类型 */
     collectionType?: CollectionType;
-    /** 集合 ID（用于从歌单移除） */
+    /** 集合 ID */
     collectionId?: string;
+    /** 是否还能继续触底加载 */
+    hasMore?: boolean;
+    /** 触底加载中 */
+    loadingMore?: boolean;
   }>(),
   {
     searchQuery: "",
@@ -53,6 +64,8 @@ const props = withDefaults(
     source: "local",
     collectionType: undefined,
     collectionId: undefined,
+    hasMore: false,
+    loadingMore: false,
   },
 );
 
@@ -60,6 +73,7 @@ const { t } = useI18n();
 const media = useMediaStore();
 const status = useStatusStore();
 const settings = useSettingsStore();
+const fav = useFavorite();
 
 /** 悬浮布局且播放栏可见时 */
 const isFloatingPlayerBar = computed(
@@ -76,7 +90,33 @@ const textCollator = new Intl.Collator(undefined, {
 /** 当前播放歌曲 ID */
 const playingId = computed(() => media.track?.id);
 
+/** 专辑是否可跳转：本地不要求 id，其他源需要 album.id */
+const isAlbumLinkable = (item: Track): boolean => {
+  if (!item.album?.name) return false;
+  return item.source === "local" || !!item.album.id;
+};
+
+/** 歌手是否可跳转：本地不要求 id，其他源需要 artist.id */
+const isArtistLinkable = (item: Track, artist: Artist): boolean => {
+  if (!artist.name) return false;
+  return item.source === "local" || !!artist.id;
+};
+
+/** 跳转到歌手页 */
+const goArtist = (item: Track, artist: Artist): void => {
+  if (!isArtistLinkable(item, artist)) return;
+  navigateToArtist(artist.name, { source: item.source, artistId: artist.id });
+};
+
+/** 跳转到专辑页 */
+const goAlbum = (item: Track): void => {
+  if (!isAlbumLinkable(item)) return;
+  navigateToAlbum(item.album?.name, { source: item.source, albumId: item.album?.id });
+};
+
+/** 排序字段 */
 type SortField = "none" | "title" | "artist" | "album" | "duration" | "size" | "mtime" | "ctime";
+/** 排序方向 */
 type SortOrder = "asc" | "desc";
 
 /** 排序字段 */
@@ -159,28 +199,54 @@ const scrollToPlaying = (): void => {
   if (playingIndex.value >= 0) virtualListRef.value?.scrollToIndex(playingIndex.value);
 };
 
+/** 当前滚动位置 */
+const scrollTop = ref(0);
+
+/** 回顶按钮显示阈值 */
+const canScrollTop = computed(() => scrollTop.value > 100);
+
+const onScroll = (event: Event): void => {
+  scrollTop.value = (event.target as HTMLElement).scrollTop;
+  emit("scroll", event);
+};
+
 /** 批量操作 */
 const batch = useMultiSelect(sortedItems, {
   source: computed(() => props.source),
   collectionType: computed(() => props.collectionType),
   collectionId: computed(() => props.collectionId),
-  onChanged: () => emit("change"),
+  onChanged: (removedIds) => emit("change", removedIds),
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
+
+/** 添加到歌单相关 */
+const pickerOpen = ref(false);
+const pickerTracks = shallowRef<Track[]>([]);
+const pickerMode = computed<ContentScope>(() => (props.source === "netease" ? "online" : "local"));
+
+/**
+ * 打开添加到歌单
+ * @param tracks 添加的歌曲
+ */
+const openPicker = (tracks: Track[]): void => {
+  pickerTracks.value = tracks;
+  pickerOpen.value = true;
+};
 
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
-  source: props.source,
   collectionType: props.collectionType,
+  onAddToPlaylist: (track) => openPicker([track]),
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),
+  onRemoveFromCloud: (track) => batch.requestDelete([track], "cloud"),
 });
 
 const emit = defineEmits<{
   scroll: [event: Event];
   reachBottom: [];
-  change: [];
+  change: [removedIds: string[]];
 }>();
 
 onActivated(batch.exit);
@@ -217,12 +283,15 @@ defineExpose({
         :get-item-key="(item: Track) => item.id"
         item-fixed
         height="100%"
-        @scroll="(event: Event) => emit('scroll', event)"
+        @scroll="onScroll"
         @reach-bottom="emit('reachBottom')"
       >
         <!-- 搜索无结果 -->
-        <template v-if="searchQuery && sortedItems.length === 0" #empty>
-          <div class="flex flex-col items-center gap-2 text-on-surface-variant/40">
+        <template #empty>
+          <div
+            v-if="searchQuery"
+            class="flex flex-col items-center gap-2 text-on-surface-variant/40"
+          >
             <IconLucideSearchX class="size-8" />
             <span class="text-sm">{{ t("songList.noResults") }}</span>
           </div>
@@ -270,6 +339,16 @@ defineExpose({
                 <span>{{ t("songList.batch.addToQueue") }}</span>
               </SButton>
               <SButton
+                v-if="source === 'local' || source === 'netease'"
+                variant="ghost"
+                size="small"
+                :disabled="batch.selectedCount.value === 0"
+                @click="openPicker(batch.selectedItems.value)"
+              >
+                <template #icon><IconLucideListPlus class="size-3.5" /></template>
+                <span>{{ t("collection.addTo", { type: t("collection.playlist") }) }}</span>
+              </SButton>
+              <SButton
                 v-if="batch.canRemove.value"
                 variant="ghost"
                 size="small"
@@ -280,6 +359,17 @@ defineExpose({
                 <span>
                   {{ t("collection.removeFrom", { type: batch.collectionTypeLabel.value }) }}
                 </span>
+              </SButton>
+              <SButton
+                v-if="batch.canRemoveFromCloud.value"
+                type="error"
+                variant="ghost"
+                size="small"
+                :disabled="batch.selectedCount.value === 0"
+                @click="batch.batchRemoveFromCloud"
+              >
+                <template #icon><IconLucideCloudOff class="size-3.5" /></template>
+                <span>{{ t("cloud.removeAction") }}</span>
               </SButton>
               <SButton
                 v-if="source === 'local'"
@@ -359,6 +449,7 @@ defineExpose({
                 </div>
               </div>
               <div v-if="showAlbum" class="flex-1 min-w-0">{{ t("songList.album") }}</div>
+              <div class="w-7 shrink-0 text-center">{{ t("songList.actions") }}</div>
               <div v-if="showDuration" class="w-16 shrink-0 text-center">
                 {{ t("songList.duration") }}
               </div>
@@ -445,14 +536,21 @@ defineExpose({
                     >
                       {{ item.title }}
                     </span>
+                    <IconLucideCloud
+                      v-if="item.cloud"
+                      class="size-3.5 shrink-0 self-center"
+                      :class="
+                        playingId === item.id ? 'text-primary/60' : 'text-on-surface-variant/60'
+                      "
+                    />
                     <span
                       v-if="item.comment"
-                      class="text-xs shrink-0 max-w-40 truncate"
+                      class="flex-1 min-w-0 text-base truncate"
                       :class="
                         playingId === item.id ? 'text-primary/60' : 'text-on-surface-variant/60'
                       "
                     >
-                      {{ item.comment }}
+                      ({{ item.comment }})
                     </span>
                   </div>
                   <div
@@ -460,21 +558,43 @@ defineExpose({
                     :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface-variant'"
                   >
                     <span
-                      v-if="isLosslessQuality(item.quality)"
-                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-[#D4A44A] border-[#D4A44A]/40"
+                      v-if="item.quality"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid"
+                      :class="
+                        isLosslessQuality(item.quality)
+                          ? 'text-amber-500 border-amber-500/40'
+                          : 'text-on-surface-variant border-on-surface-variant/40'
+                      "
                     >
-                      {{ getQualityLevel(item.quality) === "hi-res" ? "HR" : "SQ" }}
+                      {{ getQualityLabel(item.quality) }}
+                    </span>
+                    <span
+                      v-if="item.fee === 1"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-red-400 border-red-400/40"
+                    >
+                      VIP
+                    </span>
+                    <span
+                      v-else-if="item.fee === 2"
+                      class="shrink-0 px-1 rounded text-[10px] leading-[18px] font-bold border border-solid text-red-400 border-red-400/40"
+                    >
+                      EP
                     </span>
                     <span class="truncate">
-                      <span
-                        v-for="(artist, i) in item.artists"
-                        :key="artist.id ?? i"
-                        class="cursor-pointer transition-opacity hover:opacity-70"
-                        @click.stop="navigateToArtist(artist.name, { source, artistId: artist.id })"
-                      >
-                        {{ artist.name }}
+                      <template v-for="(artist, i) in item.artists" :key="artist.id ?? i">
+                        <span
+                          class="transition-opacity"
+                          :class="
+                            isArtistLinkable(item, artist)
+                              ? 'cursor-pointer hover:opacity-70'
+                              : 'opacity-50'
+                          "
+                          @click.stop="goArtist(item, artist)"
+                        >
+                          {{ artist.name }}
+                        </span>
                         <span v-if="i < item.artists.length - 1" class="mx-0.5 opacity-50">/</span>
-                      </span>
+                      </template>
                       <span v-if="!item.artists?.length" class="opacity-50">
                         {{ t("playlist.unknownArtist") }}
                       </span>
@@ -485,12 +605,36 @@ defineExpose({
               <!-- 专辑 -->
               <div
                 v-if="showAlbum"
-                class="flex-1 min-w-0 truncate text-sm cursor-pointer transition-opacity hover:opacity-70"
-                :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
-                @click.stop="navigateToAlbum(item.album?.name, { source, albumId: item.album?.id })"
+                class="flex-1 min-w-0 truncate text-sm transition-opacity"
+                :class="[
+                  playingId === item.id ? 'text-primary/70' : 'text-on-surface',
+                  isAlbumLinkable(item) ? 'cursor-pointer hover:opacity-70' : 'opacity-50',
+                ]"
+                @click.stop="goAlbum(item)"
               >
-                {{ item.album?.name }}
+                {{ item.album?.name || t("collection.unknownAlbum") }}
               </div>
+              <!-- 红心：批量模式下隐藏，其余始终显示 -->
+              <div
+                v-if="!batch.active.value"
+                class="w-7 shrink-0 flex items-center justify-center"
+                @click.stop
+              >
+                <SButton
+                  type="primary"
+                  variant="text"
+                  circle
+                  :size="28"
+                  :icon-size="20"
+                  @click="fav.toggle(item)"
+                >
+                  <template #icon>
+                    <IconFavorite v-if="fav.isLiked(item)" />
+                    <IconFavoriteOutline v-else />
+                  </template>
+                </SButton>
+              </div>
+              <div v-else class="w-7 shrink-0" />
               <!-- 时长 -->
               <div
                 v-if="showDuration"
@@ -513,8 +657,15 @@ defineExpose({
         <template #footer>
           <slot name="footer">
             <div
-              v-if="sortedItems.length > 0"
-              class="py-3 text-center text-xs text-on-surface-variant/40"
+              v-if="sortedItems.length > 0 && loadingMore"
+              class="py-3 flex items-center justify-center gap-2 text-sm text-on-surface-variant/50"
+            >
+              <SLoading class="size-3.5 text-primary/70 shrink-0" />
+              <span>{{ t("common.loading") }}</span>
+            </div>
+            <div
+              v-else-if="sortedItems.length > 0 && !hasMore"
+              class="py-3 text-center text-sm text-on-surface-variant/40"
             >
               {{ t("common.noMore") }}
             </div>
@@ -522,20 +673,44 @@ defineExpose({
         </template>
       </SVirtualList>
     </SContextMenu>
-    <!-- 定位歌曲 -->
-    <Transition name="fade">
-      <div
-        v-if="playingIndex >= 0 && !batch.active.value"
-        class="absolute right-6 z-20 rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10 transition-[bottom] duration-300"
-        :class="isFloatingPlayerBar ? 'bottom-26' : 'bottom-5'"
-      >
-        <SButton type="primary" variant="bordered" circle :size="40" @click="scrollToPlaying">
-          <template #icon>
-            <IconLucideLocate class="size-4.5" />
-          </template>
-        </SButton>
-      </div>
-    </Transition>
+    <!-- 浮动按钮 -->
+    <div
+      class="absolute right-6 z-20 flex flex-col gap-3 transition-[bottom] duration-300"
+      :class="isFloatingPlayerBar ? 'bottom-26' : 'bottom-5'"
+    >
+      <!-- 回到顶部 -->
+      <Transition name="fade">
+        <div
+          v-if="canScrollTop && !batch.active.value"
+          class="rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10"
+        >
+          <SButton
+            type="primary"
+            variant="bordered"
+            circle
+            :size="40"
+            @click="virtualListRef?.scrollTo(0)"
+          >
+            <template #icon>
+              <IconLucideArrowUp class="size-4.5" />
+            </template>
+          </SButton>
+        </div>
+      </Transition>
+      <!-- 定位歌曲 -->
+      <Transition name="fade">
+        <div
+          v-if="playingIndex >= 0 && !batch.active.value"
+          class="rounded-full bg-surface-panel backdrop-blur-2xl backdrop-saturate-150 shadow-lg border border-solid border-primary/10"
+        >
+          <SButton type="primary" variant="bordered" circle :size="40" @click="scrollToPlaying">
+            <template #icon>
+              <IconLucideLocate class="size-4.5" />
+            </template>
+          </SButton>
+        </div>
+      </Transition>
+    </div>
     <!-- 删除确认弹窗 -->
     <SDialog v-model:open="deleteConfirmOpen" :title="deleteDialogTitle">
       <p class="text-sm text-on-surface-variant">{{ deleteDialogContent }}</p>
@@ -544,5 +719,7 @@ defineExpose({
         <SButton type="error" @click="batch.confirmDelete">{{ t("common.confirm") }}</SButton>
       </template>
     </SDialog>
+    <!-- 添加到歌单 -->
+    <PlaylistPickerDialog v-model:open="pickerOpen" :mode="pickerMode" :tracks="pickerTracks" />
   </div>
 </template>

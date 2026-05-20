@@ -6,12 +6,15 @@ export interface SMarqueeProps {
   delay?: number;
   /** 两段文本之间的间距（px） */
   gap?: number;
+  /** 收缩适应内容 */
+  fit?: boolean;
 }
 
 const props = withDefaults(defineProps<SMarqueeProps>(), {
   speed: 30,
   delay: 2000,
   gap: 50,
+  fit: false,
 });
 
 const containerRef = ref<HTMLElement>();
@@ -44,7 +47,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="overflow-hidden w-full">
+  <div ref="containerRef" class="overflow-hidden" :class="fit ? 'max-w-full' : 'w-full'">
     <div
       class="inline-flex whitespace-nowrap min-w-full will-change-transform"
       :class="isOverflowing && 's-marquee-scrolling'"

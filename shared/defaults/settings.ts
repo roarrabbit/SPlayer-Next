@@ -102,6 +102,11 @@ export const defaultSystemConfig: SystemConfig = {
   streaming: {
     enabled: true,
   },
+  externalApi: {
+    enabled: false,
+    wsEnabled: false,
+    port: 14558,
+  },
   system: {
     rememberWindowState: true,
     taskbarProgress: true,

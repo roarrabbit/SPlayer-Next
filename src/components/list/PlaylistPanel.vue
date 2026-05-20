@@ -24,13 +24,9 @@ const formatArtists = (artists: Track["artists"]): string => {
 };
 
 /** 播放指定索引的歌曲 */
-const playAtIndex = async (index: number): Promise<void> => {
-  // 关闭播放列表
+const handlePlayItem = async (index: number): Promise<void> => {
   statusStore.playlistOpen = false;
-  if (index === statusStore.playIndex) return;
-  statusStore.playIndex = index;
-  const track = statusStore.currentTrack;
-  if (track?.path) await player.load(track.path);
+  await player.playAtIndex(index);
 };
 
 const clearConfirmOpen = ref(false);
@@ -114,7 +110,7 @@ const btnType = computed(() => (props.cover ? "cover" : "default"));
                     : 'border-transparent bg-on-surface/5 hover:bg-on-surface/10 hover:border-primary/30 active:bg-on-surface/14',
                 isDragging && draggedIndex === index ? 'opacity-30 scale-95' : 'opacity-100',
               ]"
-              @click="playAtIndex(index)"
+              @click="handlePlayItem(index)"
               @mousedown="handlePointerDown($event, index, item.title)"
               @touchstart.passive="handlePointerDown($event, index, item.title)"
             >

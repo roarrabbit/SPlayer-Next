@@ -10,8 +10,12 @@
     "loading": "加载中",
     "noData": "暂无数据",
     "noMore": "没有更多了 ~",
+    "refresh": "刷新",
+    "refreshCache": "刷新缓存",
     "success": "操作成功",
     "error": "操作失败",
+    "copied": "已复制",
+    "copyFailed": "复制失败",
     "playAll": "播放全部",
     "totalSongs": "共 {count} 首",
     "totalAlbums": "共 {count} 张专辑",
@@ -74,11 +78,67 @@
   "nav": {
     "home": "首页",
     "library": "音乐库",
+    "liked": "我喜欢的音乐",
+    "history": "播放历史",
+    "favorites": "我的收藏",
+    "cloud": "我的云盘",
     "streaming": "流媒体",
     "settings": "设置",
     "reload": "热重载",
     "devtools": "开发者工具",
-    "globalSettings": "全局设置"
+    "globalSettings": "全局设置",
+    "searchPlaceholder": "搜索歌曲、歌手或专辑",
+    "searchEmpty": "输入关键词开始搜索",
+    "searchGoto": "搜索「{keyword}」",
+    "searchSection": {
+      "quick": "快捷",
+      "history": "搜索历史",
+      "hot": "热搜榜"
+    }
+  },
+  "login": {
+    "description": "绑定您的账号，使用云端歌单、收藏与个性化推荐",
+    "thisApp": "本软件",
+    "netease": "网易云音乐",
+    "qrTitle": "扫码登录",
+    "qrTipWaiting": "请打开云音乐 APP 扫码登录",
+    "qrTipScanned": "扫描成功，请在客户端确认登录",
+    "qrTipExpired": "二维码已过期，正在重试",
+    "qrTipDone": "登录成功",
+    "qrTipUnknown": "状态异常，请重试",
+    "qrRefresh": "刷新二维码",
+    "autoFetch": "自动获取",
+    "autoFetchTitle": "使用前告知",
+    "autoFetchTip": "该功能无法保证账号绝对安全，请自行判断是否使用。打开窗口后如出现白屏或无法点击，请关闭并重试",
+    "autoFetchConfirm": "我已了解",
+    "manualCookie": "手动输入",
+    "openWeb": "前往登录",
+    "cookieHint": "只需 Cookie 中的 MUSIC_U 字段，例如：MUSIC_U=xxxx;",
+    "cookiePlaceholder": "粘贴 Cookie，至少需要 MUSIC_U=xxx;",
+    "cookieInvalid": "Cookie 无效，必须包含 MUSIC_U",
+    "cookieConfirm": "登录",
+    "back": "返回",
+    "success": "登录成功",
+    "failed": "登录失败，请重试",
+    "unknownUser": "未知用户",
+    "logout": "退出登录",
+    "logoutConfirmTitle": "退出登录",
+    "logoutConfirmDesc": "确认退出当前账号？",
+    "logoutDone": "已退出登录"
+  },
+  "search": {
+    "title": "搜索",
+    "titleSuffix": "的搜索结果",
+    "emptyKeyword": "请输入关键词开始搜索",
+    "noResults": "没有找到匹配内容",
+    "noResultsHint": "换个关键词或切换音源试试",
+    "errorTitle": "搜索失败",
+    "tabs": {
+      "songs": "单曲",
+      "albums": "专辑",
+      "artists": "歌手",
+      "playlists": "歌单"
+    }
   },
   "streaming": {
     "hint": "连接到流媒体平台",
@@ -157,6 +217,7 @@
   "songList": {
     "title": "标题",
     "album": "专辑",
+    "actions": "操作",
     "size": "大小",
     "duration": "时长",
     "noResults": "没有匹配的歌曲",
@@ -180,9 +241,14 @@
     "context": {
       "play": "播放",
       "playNext": "下一首播放",
-      "showInExplorer": "在文件管理器中显示",
+      "showInExplorer": "打开文件位置",
       "copyPath": "复制文件路径",
-      "deleteFile": "删除文件"
+      "deleteFile": "删除文件",
+      "searchSame": "同名搜索",
+      "more": "更多操作",
+      "copyTitle": "复制歌曲名称",
+      "copyId": "复制歌曲 ID",
+      "copyUrl": "分享歌曲链接"
     },
     "batch": {
       "manage": "批量管理",
@@ -219,6 +285,51 @@
     "locateCurrent": "当前播放",
     "clearConfirmTitle": "清空播放列表",
     "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
+  },
+  "liked": {
+    "title": "我喜欢的音乐",
+    "tabs": {
+      "local": "本地",
+      "online": "在线"
+    },
+    "empty": {
+      "local": "还没有收藏的本地歌曲，点击歌曲右侧的红心试试",
+      "online": "网易云账号下还没有喜欢的歌曲"
+    },
+    "needLogin": "请先登录网易云账号查看在线喜欢",
+    "toast": {
+      "added": "已添加到喜欢",
+      "removed": "已从喜欢中移除",
+      "needLogin": "请先登录网易云账号",
+      "unsupported": "该来源暂不支持喜欢",
+      "failed": "操作失败，请稍后重试"
+    }
+  },
+  "cloud": {
+    "title": "我的云盘",
+    "empty": "云盘里还没有歌曲，先去网易云音乐 App 上传一些吧",
+    "needLogin": "登录后才能查看云盘歌曲",
+    "removeAction": "从云盘删除",
+    "removeTitle": "删除云盘歌曲",
+    "removeConfirmOne": "确认从云盘删除「{title}」？此操作不可撤销",
+    "removeConfirm": "确认从云盘删除选中的 {count} 首歌？此操作不可撤销"
+  },
+  "history": {
+    "title": "播放历史",
+    "empty": "还没有播放记录，先去随便听点什么吧",
+    "clear": "清空历史",
+    "clearConfirmTitle": "清空播放历史",
+    "clearConfirmContent": "确认清空全部播放历史吗？此操作不可撤销！"
+  },
+  "favorites": {
+    "title": "我的收藏",
+    "empty": "这里还空空如也，去发现一些喜欢的内容吧",
+    "notLogin": "登录后才能查看收藏的内容",
+    "tabs": {
+      "playlist": "歌单",
+      "album": "专辑",
+      "artist": "歌手"
+    }
   },
   "library": {
     "title": "音乐库",
@@ -281,6 +392,7 @@
       "hotkeys": "快捷键",
       "musicSpectrum": "音乐频谱",
       "discord": "Discord RPC",
+      "externalApi": "外部 API",
       "systemConfig": "系统配置",
       "pluginsList": "已安装插件",
       "streaming": "流媒体管理",
@@ -315,6 +427,17 @@
     "loudnessNormalization": {
       "label": "音量均衡",
       "description": "自动调节不同歌曲之间的音量差异"
+    },
+    "songLevel": {
+      "label": "在线歌曲音质",
+      "description": "在线歌曲的音质偏好，取决于账号实际可用级别",
+      "switchTitle": "音质切换",
+      "switchHint": "以账号具体权限为准",
+      "lq": "标准 (LQ)",
+      "sq": "较高 (SQ)",
+      "hq": "极高 (HQ)",
+      "lossless": "无损 (Lossless)",
+      "hi-res": "高解析度无损 (Hi-Res)"
     },
     "outputDevice": {
       "label": "输出设备",
@@ -351,8 +474,8 @@
       "hint": "存在多个可用格式时按此顺序选择，例如本地多个外挂歌词、在线 TTML 升级等场景"
     },
     "smartPreferOnline": {
-      "label": "在线格式优先",
-      "description": "本地格式低于在线可达格式时，从在线获取并覆盖"
+      "label": "自动升级歌词格式",
+      "description": "当前歌词格式较低时，从其他平台获取更高级的格式覆盖"
     },
     "enableOnlineTTMLLyric": {
       "label": "启用在线 TTML 歌词",
@@ -764,6 +887,14 @@
       "label": "折叠侧边栏",
       "description": "将侧边栏折叠为图标模式"
     },
+    "sidebarPlaylistCover": {
+      "label": "歌单显示封面",
+      "description": "侧边栏的歌单项以歌单封面替代默认图标"
+    },
+    "showQualitySwitch": {
+      "label": "显示快捷音质切换",
+      "description": "在播放栏显示在线音质标签，可点击快速切换音质"
+    },
     "fontConfig": {
       "label": "字体配置",
       "description": "统一配置应用、歌词和外部歌词窗口的字体",
@@ -822,6 +953,30 @@
     "streamingEnabled": {
       "label": "启用流媒体",
       "description": "关闭后将隐藏侧边栏的流媒体入口"
+    },
+    "externalApiEnabled": {
+      "label": "允许外部控制",
+      "description": "允许外部应用通过 API 控制播放器"
+    },
+    "externalApiWs": {
+      "label": "启用 WebSocket",
+      "description": "外部应用可订阅播放事件并发送控制指令"
+    },
+    "externalApiPort": {
+      "label": "监听端口",
+      "description": "外部 API 服务监听的端口（1024–65535）"
+    },
+    "externalApiPanel": {
+      "label": "",
+      "description": ""
+    },
+    "externalApi": {
+      "restart": "重启服务",
+      "restartHint": "修改端口后需重启服务",
+      "restarted": "服务已重启",
+      "portInUse": "端口 {port} 已被占用，请换一个",
+      "pendingChange": "待重启",
+      "pendingChangeHint": "配置端口 {configured}，当前监听 {running}"
     },
     "closeAction": {
       "label": "关闭按钮行为",
@@ -991,6 +1146,9 @@
     "playlist": "歌单",
     "radio": "电台",
     "my": "我的{type}",
+    "subscribed": "收藏的{type}",
+    "localPlaylist": "本地歌单",
+    "onlinePlaylist": "在线歌单",
     "create": "新建{type}",
     "name": "{type}名称",
     "description": "{type}描述",
@@ -1000,7 +1158,13 @@
     "removeFrom": "从{type}移除",
     "tracksAdded": "已添加 {count} 首歌曲",
     "tracksRemoved": "已移除 {count} 首歌曲",
-    "edit": "编辑{type}"
+    "alreadyInPlaylist": "歌曲已在歌单中",
+    "edit": "编辑{type}",
+    "subscribe": "收藏",
+    "unsubscribe": "取消收藏",
+    "privacy": {
+      "private": "设为私密"
+    }
   },
   "artist": {
     "label": "艺术家",
@@ -1024,8 +1188,10 @@
     "FILE_NO_AUDIO_STREAM": "文件中未找到音频流",
     "FILE_DECODE_ERROR": "音频解码失败",
     "FILE_NOT_SELECTED": "未选择文件",
-    "NETWORK_ERROR": "网络连接失败，请检查网络",
-    "NETWORK_TIMEOUT": "网络请求超时",
+    "NETWORK_ERROR": "音源连接失败，请检查网络或更换音源",
+    "NETWORK_TIMEOUT": "音源响应超时，请检查网络或更换音源",
+    "URL_RESOLVE_FAILED": "无法获取播放地址",
+    "NO_PLUGIN_AVAILABLE": "未找到支持该平台的插件",
     "SCAN_NO_DIRS": "未配置扫描目录",
     "SCAN_DIR_EXISTS": "该目录已存在",
     "SCAN_DIR_NOT_FOUND": "目录不存在",

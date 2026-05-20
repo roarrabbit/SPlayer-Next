@@ -10,8 +10,8 @@ export type RepeatMode = "off" | "list" | "one";
 /** 随机模式 */
 export type ShuffleMode = "off" | "on";
 
-/** 歌曲来源 */
-export type TrackSource = "local" | "online" | "streaming";
+/** 歌曲来源：本地 / 流媒体 / 在线平台 */
+export type TrackSource = "local" | "streaming" | Platform;
 
 /** 歌手 */
 export interface Artist {
@@ -56,12 +56,22 @@ export interface AudioQuality {
   codec: string;
 }
 
+/**
+ * 付费等级
+ * - 0: 免费
+ * - 1: VIP
+ * - 2: 需购买（数字专辑等）
+ */
+export type TrackFee = 0 | 1 | 2;
+
 /** 歌曲信息 */
 export interface Track {
+  /** 平台 id */
   id: string;
+  /** 平台二级 id */
+  extId?: string;
+  /** 歌曲来源 */
   source: TrackSource;
-  /** 在线平台 */
-  platform?: Platform;
   /** 本地路径 */
   path?: string;
   /** 流媒体服务器实例 ID（仅 source==='streaming'） */
@@ -90,13 +100,17 @@ export interface Track {
   ctime?: number;
   /** 音质信息 */
   quality?: AudioQuality;
+  /** 付费等级 */
+  fee?: TrackFee;
+  /** 云盘歌曲 */
+  cloud?: boolean;
 }
 
 /** 歌曲详细信息 */
 export interface TrackDetail {
   quality: AudioQuality;
   embeddedLyric?: string;
-  /** 外部歌词文件列表（同目录下扫描到的所有歌词文件） */
+  /** 外部歌词文件列表 */
   externalLyrics: { format: LyricFormat; path: string }[];
 }
 
@@ -148,6 +162,7 @@ export type PlayerEvent =
   | { type: "status"; data: PlayerStatus }
   | { type: "position"; data: { position: number; duration: number } }
   | { type: "ended" }
+  | { type: "sourceError" }
   | { type: "play" }
   | { type: "pause" }
   | { type: "next" }

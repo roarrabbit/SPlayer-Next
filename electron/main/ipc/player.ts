@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { app, ipcMain, powerMonitor } from "electron";
 import { sendToMain } from "@main/utils/broadcast";
+import { wsBroadcast } from "@main/server/broadcast";
 import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";
 import * as mediaService from "@main/services/media";
@@ -57,7 +58,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           setTaskbarProgress(-1);
         }
         nowPlaying.onPlayStateChange(state === "playing");
-        sendToMain("player:event", {
+        const statusEvent = {
           type: "status",
           data: {
             state,
@@ -66,11 +67,21 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
             volume: inst.getVolume(),
             isFinished: false,
           },
-        });
+        };
+        sendToMain("player:event", statusEvent);
+        wsBroadcast(statusEvent);
         break;
       }
       case "ended": {
         sendToMain("player:event", { type: "ended" });
+        wsBroadcast({ type: "ended" });
+        mediaService.setPlayState({ status: "Paused" });
+        setTaskbarProgress(-1);
+        break;
+      }
+      case "sourceError": {
+        // 音源失效（网络中断 / URL 过期）
+        sendToMain("player:event", { type: "sourceError" });
         mediaService.setPlayState({ status: "Paused" });
         setTaskbarProgress(-1);
         break;
@@ -78,20 +89,21 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
       case "position": {
         const posMs = toMs(event.position ?? 0);
         const durMs = toMs(event.duration ?? 0);
-        sendToMain("player:event", {
+        const positionEvent = {
           type: "position",
           data: { position: posMs, duration: durMs },
-        });
+        };
+        sendToMain("player:event", positionEvent);
+        wsBroadcast(positionEvent);
         mediaService.setTimeline({ currentMs: posMs, totalMs: durMs });
         nowPlaying.onPosition(posMs, true);
         if (store.get("system.taskbarProgress") && durMs > 0) setTaskbarProgress(posMs / durMs);
         break;
       }
       case "fftData": {
-        sendToMain("player:event", {
-          type: "fftData",
-          data: event.fftData ?? [],
-        });
+        const fftEvent = { type: "fftData", data: event.fftData ?? [] };
+        sendToMain("player:event", fftEvent);
+        wsBroadcast(fftEvent);
         break;
       }
       case "outputStalled": {
@@ -122,11 +134,12 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:load", async (_event, source: string, options: LoadOptions = {}) => {
     const autoPlay = options.autoPlay ?? true;
     const authoritative = options.meta ?? null;
-    const isStreaming = authoritative?.source === "streaming";
+    // 非本地音源
+    const isRemote = authoritative != null && authoritative.source !== "local";
     const seq = ++loadSeq;
     try {
       const inst = getPlayer();
-      sendToMain("player:event", {
+      const loadingEvent = {
         type: "status",
         data: {
           state: "loading",
@@ -135,7 +148,9 @@ export const registerPlayerIpc = (): void => {
           volume: inst.getVolume(),
           isFinished: false,
         },
-      });
+      };
+      sendToMain("player:event", loadingEvent);
+      wsBroadcast(loadingEvent);
       // 写一次 SMTC/托盘/标题
       const applyDisplay = (
         title: string,
@@ -170,12 +185,12 @@ export const registerPlayerIpc = (): void => {
         : formatArtists(parseArtists(meta.artist ?? ""));
       const displayAlbum = authoritative?.album?.name ?? parseAlbum(meta.album ?? "")?.name ?? "";
       // 本地封面
-      const localCover = isStreaming ? null : (inst.getCoverRaw() ?? null);
+      const localCover = isRemote ? null : (inst.getCoverRaw() ?? null);
       applyDisplay(displayTitle, displayArtist, displayAlbum, localCover ?? undefined, durationMs);
-      // 流媒体高清封面
-      if (isStreaming && authoritative?.cover && /^https?:\/\//i.test(authoritative.cover)) {
-        const coverUrl = authoritative.cover;
-        void fetchBytes(coverUrl).then((buf) => {
+      // 远端高清封面
+      const remoteCover = isRemote ? (authoritative?.coverOriginal ?? authoritative?.cover) : null;
+      if (remoteCover && /^https?:\/\//i.test(remoteCover)) {
+        void fetchBytes(remoteCover).then((buf) => {
           if (!buf) return;
           if (seq !== loadSeq) return;
           mediaService.setMetadata({
@@ -202,7 +217,7 @@ export const registerPlayerIpc = (): void => {
         },
         mediaInfo: {
           duration: durationMs,
-          cover: isStreaming ? undefined : toCacheUrl(meta.cover),
+          cover: isRemote ? undefined : toCacheUrl(meta.cover),
           quality,
         },
       };
@@ -371,6 +386,7 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:setSpeed", (_event, speed: number) => {
     try {
       getPlayer().setSpeed(speed);
+      nowPlaying.onSpeedChange(speed);
       return { success: true };
     } catch (error) {
       return fail(ErrorCode.UNKNOWN, error);
@@ -545,10 +561,12 @@ export const registerPlayerIpc = (): void => {
     playerLog.error("重建音频输出全部失败，销毁播放器实例");
     resetPlayer();
     stopDevicePolling();
-    sendToMain("player:event", {
+    const stoppedEvent = {
       type: "status",
       data: { state: "stopped", position: 0, duration: 0, volume: 1, isFinished: false },
-    });
+    };
+    sendToMain("player:event", stoppedEvent);
+    wsBroadcast(stoppedEvent);
   };
   powerMonitor.on("resume", resumeHandler);
   // 退出前停止设备轮询

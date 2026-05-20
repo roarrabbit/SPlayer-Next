@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CoverItem } from "@/types/artist";
-import type { Album } from "@shared/types/player";
 import { useStreamingStore } from "@/stores/streaming";
+import { albumsToCoverItems } from "@/utils/format/coverItem";
 import CoverList from "@/components/list/CoverList.vue";
 
 const { t } = useI18n();
@@ -22,15 +22,7 @@ onMounted(() => {
   if (isConnected.value && albums.value.length === 0) refresh();
 });
 
-const items = computed<CoverItem[]>(() =>
-  albums.value.map((a: Album) => ({
-    id: a.id ?? "",
-    title: a.name,
-    cover: a.cover,
-    subtitle: a.artist ?? "",
-    trackCount: a.trackCount ?? 0,
-  })),
-);
+const items = computed<CoverItem[]>(() => albumsToCoverItems(albums.value));
 
 const handleClick = (item: CoverItem): void => {
   router.push(`/collection/streaming/album/${encodeURIComponent(item.id)}`);

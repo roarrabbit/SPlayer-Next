@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
+import { useMediaStore } from "@/stores/media";
+import { useFavorite } from "@/composables/useFavorite";
 import * as player from "@/core/player";
 import { formatTime } from "@/utils/time";
+import IconFavorite from "~icons/material-symbols/favorite-rounded";
+import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 
 const status = useStatusStore();
 const settings = useSettingsStore();
+const media = useMediaStore();
+const fav = useFavorite();
 const { position, duration } = storeToRefs(status);
 
 /** 是否是浮动模式 */
@@ -22,7 +28,24 @@ const onSeekDragEnd = (value: number): void => {
     <PlayerControls compact />
     <div class="flex flex-col flex-1 min-w-0 gap-1 pt-2 pb-1">
       <div class="flex items-center gap-2 min-w-0">
-        <TrackInfo compact class="flex-1" />
+        <TrackInfo compact class="flex-1">
+          <template #title-trailing>
+            <SButton
+              class="-my-1"
+              type="primary"
+              variant="text"
+              circle
+              :size="24"
+              :icon-size="16"
+              @click="fav.toggle(media.track)"
+            >
+              <template #icon>
+                <IconFavorite v-if="fav.isLiked(media.track)" />
+                <IconFavoriteOutline v-else />
+              </template>
+            </SButton>
+          </template>
+        </TrackInfo>
         <span class="text-xs text-on-surface-variant/70 tabular-nums shrink-0">
           {{ formatTime(position) }} / {{ formatTime(duration) }}
         </span>
@@ -60,8 +83,25 @@ const onSeekDragEnd = (value: number): void => {
         <template #popover="{ value }">{{ formatTime(value) }}</template>
       </SSlider>
     </div>
-    <div class="grid grid-cols-[1fr_auto_1fr] items-center h-full px-3">
-      <TrackInfo />
+    <div class="grid grid-cols-[1fr_auto_1fr] items-center h-full px-3 gap-3">
+      <TrackInfo>
+        <template #title-trailing>
+          <SButton
+            class="-my-1"
+            type="primary"
+            variant="text"
+            circle
+            :size="28"
+            :icon-size="18"
+            @click="fav.toggle(media.track)"
+          >
+            <template #icon>
+              <IconFavorite v-if="fav.isLiked(media.track)" />
+              <IconFavoriteOutline v-else />
+            </template>
+          </SButton>
+        </template>
+      </TrackInfo>
       <PlayerControls class="mx-15" />
       <div class="flex items-center justify-end gap-3 min-w-0">
         <span class="text-xs text-on-surface-variant tabular-nums shrink-0">

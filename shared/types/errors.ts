@@ -23,10 +23,16 @@ export enum ErrorCode {
   FILE_NOT_SELECTED = "FILE_NOT_SELECTED",
 
   // 网络相关
-  /** 网络连接失败 */
+  /** 音源连接失败 */
   NETWORK_ERROR = "NETWORK_ERROR",
-  /** 网络请求超时 */
+  /** 音源响应超时 */
   NETWORK_TIMEOUT = "NETWORK_TIMEOUT",
+
+  // 在线源相关
+  /** 无法获取播放地址（API + 插件都失败） */
+  URL_RESOLVE_FAILED = "URL_RESOLVE_FAILED",
+  /** 未找到支持该平台的插件 */
+  NO_PLUGIN_AVAILABLE = "NO_PLUGIN_AVAILABLE",
 
   // 扫描相关
   /** 未配置扫描目录 */

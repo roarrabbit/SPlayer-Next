@@ -2,10 +2,10 @@
  * KG 请求层
  *
  * 设计：
- * - 搜索走 songsearch.kugou.com（JSON，无鉴权），透传查询参数
- * - 歌词走 lyrics.kugou.com（JSON，需要 KG-RC/KG-THash/UA 伪装 PC 客户端）
- * - 成功码约定不统一：songsearch 用 error_code=0，lyrics 用 error_code=200（HTTP 风格）
- * - 没有加密 body，纯 fetch GET
+ * - 主搜索走 mobilecdn.kugou.com/api/v3/search/song（公网无鉴权，含封面）
+ * - 兜底搜索走 songsearch.kugou.com（无鉴权，无封面）
+ * - 歌词走 lyrics.kugou.com（需要 KG-RC/KG-THash/UA 伪装 PC 客户端）
+ * - 成功码约定不统一：songsearch/mobilecdn 用 error_code=0，lyrics 用 error_code=200
  */
 
 interface FetchOptions {
@@ -35,7 +35,7 @@ export const kgRequest = async <T = unknown>(
   if (res.status !== 200) throw new Error(`KG HTTP ${res.status}`);
 
   const body = (await res.json()) as KGRawBody;
-  // 0 = songsearch 风格成功码，200 = lyrics.kugou.com 的 HTTP 风格成功码
+  // 0 = mobilecdn/songsearch 风格成功码，200 = lyrics.kugou.com 的 HTTP 风格成功码
   const code = body.error_code ?? body.errcode ?? body.err_code ?? 0;
   if (code !== 0 && code !== 200) throw new Error(`KG API error_code=${code}`);
 
