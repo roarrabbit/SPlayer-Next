@@ -35,15 +35,22 @@ watch(
   { immediate: true },
 );
 
+/** 笔画动画结束 */
+const SPLASH_ANIM_MS = 2050;
+
 // 初始化程序
 router.isReady().then(() => {
   // 挂载应用
   app.mount("#app");
-  const loading = document.getElementById("app-loading");
-  if (loading) {
-    loading.classList.add("hidden");
-    loading.addEventListener("transitionend", () => loading.remove(), { once: true });
-  }
+  // 笔画播完即淡出
+  const remaining = Math.max(0, SPLASH_ANIM_MS - performance.now());
+  setTimeout(() => {
+    const loading = document.getElementById("app-loading");
+    if (loading) {
+      loading.classList.add("hidden");
+      loading.addEventListener("transitionend", () => loading.remove(), { once: true });
+    }
+  }, remaining);
   // 初始化播放器
   initPlayer().catch(console.error);
   // 初始化快捷键
