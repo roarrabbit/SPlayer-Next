@@ -79,12 +79,13 @@ const refreshQr = async (): Promise<void> => {
 const handleQrSuccess = async (cookie: string): Promise<void> => {
   if (!cookie || !cookie.includes("MUSIC_U")) {
     toast.error(t("login.failed"));
-    void refreshQr();
+    void startQrFlow();
     return;
   }
   loading.value = true;
   try {
-    await finishLogin();
+    const ok = await finishLogin();
+    if (!ok) void startQrFlow();
   } finally {
     loading.value = false;
   }
@@ -119,7 +120,8 @@ const { pause, resume } = useIntervalFn(pollOnce, 1500, { immediate: false });
 const startQrFlow = async (): Promise<void> => {
   pause();
   await refreshQr();
-  if (qrUnikey.value) resume();
+  // 拉 key 期间弹窗可能已关闭，避免后台空转轮询
+  if (qrUnikey.value && props.open) resume();
 };
 
 watch(
@@ -158,7 +160,8 @@ const startAutoFetch = async (): Promise<void> => {
       resume();
       return;
     }
-    await finishLogin();
+    const ok = await finishLogin();
+    if (!ok) void startQrFlow();
   } finally {
     loading.value = false;
   }

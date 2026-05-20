@@ -491,13 +491,6 @@ export const useUserStore = defineStore(
       else clearContent();
     };
 
-    /** 用给定 profile 填充登录态 */
-    const setProfile = (newProfile: UserProfile | null): void => {
-      profile.value = newProfile;
-      lastRefreshAt.value = newProfile ? Date.now() : 0;
-      syncContent(newProfile?.userId);
-    };
-
     /** 续期 cookie */
     const refresh = async (): Promise<void> => {
       try {
@@ -545,7 +538,6 @@ export const useUserStore = defineStore(
       profile,
       lastRefreshAt,
       isLoggedIn,
-      setProfile,
       fetchStatus,
       logout,
 
