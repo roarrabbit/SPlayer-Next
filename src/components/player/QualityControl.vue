@@ -44,7 +44,7 @@ const onQualityChange = (value: string | number | boolean): void => {
 
 <template>
   <SPopselect
-    v-if="isNetease"
+    v-if="isNetease && media.detail?.quality"
     :model-value="settings.player.songLevel"
     :options="qualityOptions"
     side="top"

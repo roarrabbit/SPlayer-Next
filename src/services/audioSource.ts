@@ -42,8 +42,10 @@ const cacheKeyForTrack = (track: Track, songLevel: QualityLevel): string | null 
   return null;
 };
 
-/** 在线 URL 解析结果；失败时携带原因，由调用方决定提示 */
-type OnlineResolveResult = { url: string } | { url: null; errorCode: ErrorCode };
+/** 在线 URL 解析结果 */
+type OnlineResolveResult =
+  | { url: string; expiresAt?: number }
+  | { url: null; errorCode: ErrorCode };
 
 /**
  * 根据 track 信息解析出最终的音频源 URL
@@ -114,8 +116,8 @@ const resolveOnlineUrl = async (
 ): Promise<OnlineResolveResult> => {
   try {
     if (track.source === "netease") {
-      const url = await resolveNeteaseUrl(track, songLevel);
-      if (url) return { url };
+      const resolved = await resolveNeteaseUrl(track, songLevel);
+      if (resolved) return { url: resolved.url, expiresAt: resolved.expiresAt };
     }
   } catch {
     // 官方 API 异常回落插件
@@ -131,6 +133,8 @@ const resolveOnlineUrl = async (
 export interface ResolvedTrackSource {
   source: string;
   fromCache: boolean;
+  /** 在线 URL 失效时刻 */
+  expiresAt?: number;
   cacheRequest?: () => Promise<void>;
 }
 
@@ -186,6 +190,7 @@ export const resolveTrackSource = async (track: Track): Promise<ResolvedTrackSou
       }
       const url = resolved.url;
       const result: ResolvedTrackSource = { source: url, fromCache: false };
+      if (resolved.expiresAt !== undefined) result.expiresAt = resolved.expiresAt;
       if (cacheEnabled) {
         result.cacheRequest = async () => {
           void window.api.cache.song.fetch(cacheKey, track.source, url);
