@@ -84,6 +84,10 @@ export const buildRegistry = (): void => {
     const status = useStatusStore();
     status.playlistOpen = !status.playlistOpen;
   });
+  // 打开搜索
+  handlers.set("view.openSearch", () => {
+    useStatusStore().searchOpen = true;
+  });
 };
 
 /**

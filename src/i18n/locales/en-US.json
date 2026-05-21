@@ -2,7 +2,6 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "apply": "Apply",
     "close": "Close",
     "save": "Save",
     "reset": "Reset",
@@ -10,23 +9,17 @@
     "loading": "Loading",
     "noData": "No data",
     "noMore": "No more ~",
-    "refresh": "Refresh",
     "refreshCache": "Refresh cache",
-    "success": "Success",
-    "error": "Error",
     "copied": "Copied",
     "copyFailed": "Copy failed",
     "playAll": "Play All",
     "totalSongs": "{count} songs",
     "totalAlbums": "{count} albums",
     "totalArtists": "{count} artists",
-    "totalPlaylists": "{count} playlists",
-    "comingSoon": "Feature coming soon"
+    "totalPlaylists": "{count} playlists"
   },
   "equalizer": {
     "title": "Equalizer",
-    "statusOn": "Enabled",
-    "statusOff": "Disabled",
     "preamp": "Preamp",
     "preset": {
       "label": "Preset",
@@ -83,7 +76,6 @@
     "favorites": "Favorites",
     "cloud": "My Cloud",
     "streaming": "Streaming",
-    "settings": "Settings",
     "reload": "Reload",
     "devtools": "Developer Tools",
     "globalSettings": "Global Settings",
@@ -97,10 +89,6 @@
     }
   },
   "login": {
-    "description": "Link your account for cloud playlists, favorites and personalized recommendations",
-    "thisApp": "This app",
-    "netease": "NetEase Music",
-    "qrTitle": "Scan to sign in",
     "qrTipWaiting": "Open the Cloud Music app and scan the QR code",
     "qrTipScanned": "Scanned, please confirm in the app",
     "qrTipExpired": "QR code expired, refreshing",
@@ -112,12 +100,10 @@
     "autoFetchTip": "This feature can't guarantee account safety — use it at your own discretion. If the official page goes blank or unresponsive, close it and try again.",
     "autoFetchConfirm": "I understand",
     "manualCookie": "Manual cookie",
-    "openWeb": "Sign in",
     "cookieHint": "Only the MUSIC_U field from your cookie is needed. e.g. MUSIC_U=xxxx;",
     "cookiePlaceholder": "Paste cookie, must contain MUSIC_U=xxx;",
     "cookieInvalid": "Invalid cookie. MUSIC_U is required.",
     "cookieConfirm": "Sign in",
-    "back": "Back",
     "success": "Signed in",
     "failed": "Sign-in failed, please try again",
     "unknownUser": "Unknown user",
@@ -195,20 +181,12 @@
       }
     },
     "actions": {
-      "refresh": "Refresh",
-      "search": "Search",
       "settings": "Streaming settings"
     }
   },
   "player": {
-    "play": "Play",
-    "pause": "Pause",
     "prev": "Previous",
     "next": "Next",
-    "shuffle": "Shuffle",
-    "repeat": "Repeat",
-    "repeatOne": "Repeat One",
-    "volume": "Volume",
     "lyricOffset": {
       "title": "Lyric Offset",
       "hint": "Positive values advance lyrics, in milliseconds"
@@ -225,7 +203,6 @@
       "mode": "Sort Mode",
       "order": "Sort Order",
       "default": "Default",
-      "restore": "Restore",
       "asc": "Ascending",
       "desc": "Descending",
       "byTitle": "Sort by Title",
@@ -255,7 +232,6 @@
       "selected": "{count} selected",
       "invert": "Invert",
       "addToQueue": "Add to Queue",
-      "delete": "Delete",
       "exit": "Exit"
     },
     "delete": {
@@ -294,20 +270,20 @@
     },
     "empty": {
       "local": "No liked local songs yet — click the heart next to a song to add it",
-      "online": "No liked songs on your NetEase account yet"
+      "online": "No liked online songs yet"
     },
-    "needLogin": "Log in to NetEase to view online liked songs",
+    "needLogin": "Sign in to view your online liked songs",
     "toast": {
       "added": "Added to liked",
       "removed": "Removed from liked",
-      "needLogin": "Please log in to NetEase first",
+      "needLogin": "Please log in first",
       "unsupported": "This source does not support liking",
       "failed": "Action failed, please try again"
     }
   },
   "cloud": {
     "title": "My Cloud",
-    "empty": "No songs in your cloud yet — upload some via the NetEase Music app",
+    "empty": "No songs in your cloud yet",
     "needLogin": "Sign in to view your cloud library",
     "removeAction": "Remove from cloud",
     "removeTitle": "Remove from Cloud",
@@ -342,17 +318,10 @@
     "scanAll": "Full Scan",
     "scanning": "Scanning...",
     "scanProgress": "Scanning {scanned}/{total}",
-    "scanDone": "Scan complete",
-    "scanError": "Scan failed",
-    "cancel": "Cancel Scan",
     "folders": "Music Directories",
     "foldersDescription": "Songs are automatically synced when added or removed",
-    "folderCount": "{count} folders",
     "removeFolder": "Remove Directory",
-    "removeFolderConfirm": "Removing this directory will delete its songs from the library!",
-    "folderExists": "This folder already exists",
-    "folderNested": "This folder overlaps with an existing folder",
-    "duration": "{time}"
+    "removeFolderConfirm": "Removing this directory will delete its songs from the library!"
   },
   "settings": {
     "title": "Settings",
@@ -554,7 +523,8 @@
         "toggleTaskbarLyric": "Toggle taskbar lyric",
         "openPlayer": "Open player view",
         "closePlayer": "Close player view",
-        "togglePlaylist": "Show / hide playlist"
+        "togglePlaylist": "Show / hide playlist",
+        "openSearch": "Open search"
       }
     },
     "autoCenterCover": {
@@ -1139,7 +1109,6 @@
   "collection": {
     "totalDuration": "About {time}",
     "unknownAlbum": "Unknown Album",
-    "unknownCreator": "Unknown Creator",
     "empty": "No songs",
     "noDescription": "No description yet~",
     "album": "Album",
@@ -1157,7 +1126,6 @@
     "addTo": "Add to {type}",
     "removeFrom": "Remove from {type}",
     "tracksAdded": "{count} songs added",
-    "tracksRemoved": "{count} songs removed",
     "alreadyInPlaylist": "Already in the playlist",
     "edit": "Edit {type}",
     "subscribe": "Subscribe",

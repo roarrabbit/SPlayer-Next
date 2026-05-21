@@ -23,6 +23,7 @@ class ThumbarImpl implements Thumbar {
   private pause: ThumbarButton;
   private isPlaying: boolean = false;
   private onThemeUpdated: () => void;
+  private onWindowShown: () => void;
 
   constructor(win: BrowserWindow) {
     this.win = win;
@@ -57,9 +58,13 @@ class ThumbarImpl implements Thumbar {
       this.updateThumbar(this.isPlaying);
     };
     nativeTheme.on("updated", this.onThemeUpdated);
+    // 窗口从托盘恢复显示后系统会清空任务栏按钮，需重新下发一次
+    this.onWindowShown = () => this.updateThumbar(this.isPlaying);
+    win.on("show", this.onWindowShown);
     // 窗口销毁时移除监听
     win.on("closed", () => {
       nativeTheme.removeListener("updated", this.onThemeUpdated);
+      win.removeListener("show", this.onWindowShown);
     });
   }
 

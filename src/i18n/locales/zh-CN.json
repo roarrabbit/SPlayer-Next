@@ -2,7 +2,6 @@
   "common": {
     "confirm": "确认",
     "cancel": "取消",
-    "apply": "应用",
     "close": "关闭",
     "save": "保存",
     "reset": "重置",
@@ -10,23 +9,17 @@
     "loading": "加载中",
     "noData": "暂无数据",
     "noMore": "没有更多了 ~",
-    "refresh": "刷新",
     "refreshCache": "刷新缓存",
-    "success": "操作成功",
-    "error": "操作失败",
     "copied": "已复制",
     "copyFailed": "复制失败",
     "playAll": "播放全部",
     "totalSongs": "共 {count} 首",
     "totalAlbums": "共 {count} 张专辑",
     "totalArtists": "共 {count} 位歌手",
-    "totalPlaylists": "共 {count} 个歌单",
-    "comingSoon": "功能开发中，敬请期待"
+    "totalPlaylists": "共 {count} 个歌单"
   },
   "equalizer": {
     "title": "均衡器",
-    "statusOn": "已启用",
-    "statusOff": "已关闭",
     "preamp": "前级",
     "preset": {
       "label": "预设",
@@ -83,7 +76,6 @@
     "favorites": "我的收藏",
     "cloud": "我的云盘",
     "streaming": "流媒体",
-    "settings": "设置",
     "reload": "热重载",
     "devtools": "开发者工具",
     "globalSettings": "全局设置",
@@ -97,10 +89,6 @@
     }
   },
   "login": {
-    "description": "绑定您的账号，使用云端歌单、收藏与个性化推荐",
-    "thisApp": "本软件",
-    "netease": "网易云音乐",
-    "qrTitle": "扫码登录",
     "qrTipWaiting": "请打开云音乐 APP 扫码登录",
     "qrTipScanned": "扫描成功，请在客户端确认登录",
     "qrTipExpired": "二维码已过期，正在重试",
@@ -112,12 +100,10 @@
     "autoFetchTip": "该功能无法保证账号绝对安全，请自行判断是否使用。打开窗口后如出现白屏或无法点击，请关闭并重试",
     "autoFetchConfirm": "我已了解",
     "manualCookie": "手动输入",
-    "openWeb": "前往登录",
     "cookieHint": "只需 Cookie 中的 MUSIC_U 字段，例如：MUSIC_U=xxxx;",
     "cookiePlaceholder": "粘贴 Cookie，至少需要 MUSIC_U=xxx;",
     "cookieInvalid": "Cookie 无效，必须包含 MUSIC_U",
     "cookieConfirm": "登录",
-    "back": "返回",
     "success": "登录成功",
     "failed": "登录失败，请重试",
     "unknownUser": "未知用户",
@@ -195,20 +181,12 @@
       }
     },
     "actions": {
-      "refresh": "刷新",
-      "search": "搜索",
       "settings": "流媒体配置"
     }
   },
   "player": {
-    "play": "播放",
-    "pause": "暂停",
     "prev": "上一首",
     "next": "下一首",
-    "shuffle": "随机播放",
-    "repeat": "循环播放",
-    "repeatOne": "单曲循环",
-    "volume": "音量",
     "lyricOffset": {
       "title": "歌词偏移",
       "hint": "正值为歌词提前，单位毫秒"
@@ -225,7 +203,6 @@
       "mode": "排列方式",
       "order": "排序方向",
       "default": "默认",
-      "restore": "恢复",
       "asc": "正序",
       "desc": "倒序",
       "byTitle": "按标题",
@@ -255,7 +232,6 @@
       "selected": "已选 {count} 首",
       "invert": "反选",
       "addToQueue": "添加到播放列表",
-      "delete": "删除",
       "exit": "退出"
     },
     "delete": {
@@ -294,20 +270,20 @@
     },
     "empty": {
       "local": "还没有收藏的本地歌曲，点击歌曲右侧的红心试试",
-      "online": "网易云账号下还没有喜欢的歌曲"
+      "online": "还没有喜欢的在线音乐"
     },
-    "needLogin": "请先登录网易云账号查看在线喜欢",
+    "needLogin": "登录后才能查看在线喜欢的音乐",
     "toast": {
       "added": "已添加到喜欢",
       "removed": "已从喜欢中移除",
-      "needLogin": "请先登录网易云账号",
+      "needLogin": "请先登录账号",
       "unsupported": "该来源暂不支持喜欢",
       "failed": "操作失败，请稍后重试"
     }
   },
   "cloud": {
     "title": "我的云盘",
-    "empty": "云盘里还没有歌曲，先去网易云音乐 App 上传一些吧",
+    "empty": "云盘里还没有歌曲",
     "needLogin": "登录后才能查看云盘歌曲",
     "removeAction": "从云盘删除",
     "removeTitle": "删除云盘歌曲",
@@ -342,17 +318,10 @@
     "scanAll": "全量扫描",
     "scanning": "正在扫描...",
     "scanProgress": "正在扫描 {scanned}/{total}",
-    "scanDone": "扫描完成",
-    "scanError": "扫描出错",
-    "cancel": "取消扫描",
     "folders": "本地歌曲目录",
     "foldersDescription": "文件夹内歌曲增删自动同步",
-    "folderCount": "{count} 个文件夹",
     "removeFolder": "移除此目录",
-    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！",
-    "folderExists": "该文件夹已存在",
-    "folderNested": "该文件夹与已有文件夹存在包含关系",
-    "duration": "{time}"
+    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！"
   },
   "settings": {
     "title": "设置",
@@ -554,7 +523,8 @@
         "toggleTaskbarLyric": "切换任务栏歌词",
         "openPlayer": "打开播放界面",
         "closePlayer": "关闭播放界面",
-        "togglePlaylist": "展开 / 收起播放列表"
+        "togglePlaylist": "展开 / 收起播放列表",
+        "openSearch": "打开搜索"
       }
     },
     "autoCenterCover": {
@@ -1139,7 +1109,6 @@
   "collection": {
     "totalDuration": "约 {time}",
     "unknownAlbum": "未知专辑",
-    "unknownCreator": "未知创建者",
     "empty": "暂无歌曲",
     "noDescription": "还没有描述哦~",
     "album": "专辑",
@@ -1157,7 +1126,6 @@
     "addTo": "添加到{type}",
     "removeFrom": "从{type}移除",
     "tracksAdded": "已添加 {count} 首歌曲",
-    "tracksRemoved": "已移除 {count} 首歌曲",
     "alreadyInPlaylist": "歌曲已在歌单中",
     "edit": "编辑{type}",
     "subscribe": "收藏",

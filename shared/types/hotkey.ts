@@ -18,7 +18,8 @@ export type HotkeyActionId =
   | "window.toggleTaskbarLyric"
   | "view.openPlayer"
   | "view.closePlayer"
-  | "view.togglePlaylist";
+  | "view.togglePlaylist"
+  | "view.openSearch";
 
 /** 单个动作的两条作用域绑定 */
 export interface HotkeyBinding {

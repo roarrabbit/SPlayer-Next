@@ -20,7 +20,8 @@ const keyOf = (track: Track): string => `${track.source}:${track.id}`;
 export const useHistoryStore = defineStore("history", () => {
   /** 倒序：最近播放在前 */
   const entries = shallowRef<HistoryEntry[]>([]);
-  let loaded = false;
+  /** 首次读盘，并发调用复用同一个 */
+  let loadPromise: Promise<void> | null = null;
 
   /** 持久化 */
   const persist = (): void => {
@@ -28,19 +29,25 @@ export const useHistoryStore = defineStore("history", () => {
   };
 
   /** 启动时读一次盘，之后内存为真值源 */
-  const load = async (): Promise<void> => {
-    if (loaded) return;
-    loaded = true;
-    const cached = await db.getItem<HistoryEntry[]>(HISTORY_KEY).catch(() => null);
-    if (Array.isArray(cached)) entries.value = cached;
+  const load = (): Promise<void> => {
+    if (!loadPromise) {
+      loadPromise = db
+        .getItem<HistoryEntry[]>(HISTORY_KEY)
+        .then((cached) => {
+          if (Array.isArray(cached)) entries.value = cached;
+        })
+        .catch(() => {});
+    }
+    return loadPromise;
   };
 
   /**
    * 记录一次播放：同源同 id 去重后置顶
    * @param track 当前播放曲目
    */
-  const record = (track: Track): void => {
+  const record = async (track: Track): Promise<void> => {
     if (!track?.id) return;
+    await load();
     const key = keyOf(track);
     const filtered = entries.value.filter((item) => keyOf(item.track) !== key);
     entries.value = [{ track, playedAt: Date.now() }, ...filtered].slice(0, MAX_HISTORY);

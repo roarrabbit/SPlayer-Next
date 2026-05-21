@@ -11,7 +11,6 @@ import IconLucideListChecks from "~icons/lucide/list-checks";
 import IconLucideRefreshCw from "~icons/lucide/refresh-cw";
 
 const { t } = useI18n();
-const router = useRouter();
 const library = useLibraryStore();
 const user = useUserStore();
 const status = useStatusStore();
@@ -63,10 +62,6 @@ const handlePlayAll = (): void => {
 onMounted(() => {
   if (!library.initialized) library.load();
 });
-
-const goToLogin = (): void => {
-  router.push("/library");
-};
 
 /** SongList 引用：本地 / 在线两个分支共用同一 ref，因为同时只挂载一个 */
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
@@ -187,10 +182,7 @@ const handleMoreMenu = (key: string): void => {
       >
         <div class="text-center text-on-surface-variant/50">
           <IconMaterialSymbolsFavoriteOutlineRounded class="size-12 mx-auto mb-3 opacity-30" />
-          <div class="text-sm mb-4">{{ t("liked.needLogin") }}</div>
-          <SButton type="primary" variant="secondary" @click="goToLogin">
-            {{ t("login.netease") }}
-          </SButton>
+          <div class="text-sm">{{ t("liked.needLogin") }}</div>
         </div>
       </div>
       <div

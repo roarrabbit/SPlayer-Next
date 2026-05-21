@@ -156,7 +156,7 @@ const loadTrack = async (track: Track | null): Promise<void> => {
       shouldSkip = true;
     } else if (result.ok) {
       // 用户主动触发的成功播放记入历史；initPlayer 的恢复路径走 load() 不经此处
-      useHistoryStore().record(track);
+      void useHistoryStore().record(track);
       if (resolved.cacheRequest) {
         cacheScheduler.schedule(track.id, resolved.cacheRequest);
       }
