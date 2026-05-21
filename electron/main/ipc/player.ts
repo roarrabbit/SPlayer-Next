@@ -156,8 +156,7 @@ export const registerPlayerIpc = (): void => {
         authoritative && authoritative.source !== "local"
           ? (authoritative.coverOriginal ?? authoritative.cover)
           : undefined;
-      const coverUrl =
-        remoteCover && /^https?:\/\//i.test(remoteCover) ? remoteCover : undefined;
+      const coverUrl = remoteCover && /^https?:\/\//i.test(remoteCover) ? remoteCover : undefined;
       // 写一次 SMTC/托盘/标题
       const applyDisplay = (
         title: string,

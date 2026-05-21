@@ -24,10 +24,42 @@ export interface FavoriteEventInput {
   action: "add" | "remove";
 }
 
-/** preload 暴露的统计写入 API */
+/** 播放统计汇总 */
+export interface PlayStatsSummary {
+  /** 今日收听时长（毫秒） */
+  todayListenedMs: number;
+  /** 本周收听时长（毫秒） */
+  weekListenedMs: number;
+  /** 上周收听时长（毫秒，用于环比） */
+  lastWeekListenedMs: number;
+  /** 累计收听时长（毫秒） */
+  totalListenedMs: number;
+  /** 本周播放次数 */
+  weekPlayCount: number;
+  /** 累计播放次数 */
+  totalPlayCount: number;
+  /** 本周新增收藏数 */
+  weekFavoriteAdds: number;
+  /** 连续收听天数 */
+  streakDays: number;
+}
+
+/** 一首高频曲目及其播放次数 */
+export interface TopTrack {
+  /** 曲目（播放当时的快照） */
+  track: Track;
+  /** 累计播放次数 */
+  playCount: number;
+}
+
+/** preload 暴露的统计 API */
 export interface StatsApi {
   /** 记录一次播放 */
   recordPlay: (event: PlayEventInput) => void;
   /** 记录一次收藏变更 */
   recordFavorite: (event: FavoriteEventInput) => void;
+  /** 取播放统计汇总 */
+  getStatsSummary: () => Promise<PlayStatsSummary>;
+  /** 取最常播放的曲目（按次数倒序） */
+  getTopTracks: (limit: number) => Promise<TopTrack[]>;
 }

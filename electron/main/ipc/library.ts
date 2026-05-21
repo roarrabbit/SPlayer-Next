@@ -12,6 +12,7 @@ import {
   getAlbumTracks,
   getArtistTracks,
   getTracksByIds,
+  getRandomTrack,
 } from "@main/database";
 import { startScan, cancelScan, isScanning } from "@main/services/scanner";
 import { fetchArtistAvatar, prefetchArtistAvatars } from "@main/apis/musicbrainz";
@@ -108,6 +109,15 @@ export const registerLibraryIpc = (): void => {
   ipcMain.handle("library:getTrackCount", () => {
     try {
       return { success: true, data: getTrackCount() };
+    } catch (_error) {
+      return { success: false, error: ErrorCode.UNKNOWN };
+    }
+  });
+
+  // 随机取一首曲目
+  ipcMain.handle("library:getRandomTrack", () => {
+    try {
+      return { success: true, data: getRandomTrack() };
     } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }

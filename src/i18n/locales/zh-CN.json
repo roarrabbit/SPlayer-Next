@@ -88,6 +88,66 @@
       "hot": "热搜榜"
     }
   },
+  "home": {
+    "greetingLine": "{greeting}，{name}",
+    "greeting": {
+      "dawn": "凌晨好",
+      "morning": "早上好",
+      "noon": "中午好",
+      "afternoon": "下午好",
+      "evening": "晚上好"
+    },
+    "stats": {
+      "weekDuration": "本周时长",
+      "newFavorites": "新增收藏",
+      "listenStreak": "连续收听",
+      "unitHour": "h",
+      "unitSong": "首",
+      "unitDay": "天"
+    },
+    "duration": {
+      "hm": "{hours} 小时 {minutes} 分钟",
+      "hours": "{hours} 小时",
+      "minutes": "{minutes} 分钟"
+    },
+    "subtitle": {
+      "plain1": "愿今天有好音乐与你相伴",
+      "plain2": "戴上耳机，让世界安静一会儿",
+      "plain3": "音乐已就绪，挑一首开始吧",
+      "streak": "你已连续收听 {days} 天，继续保持",
+      "weekListened": "本周已经听了 {duration}",
+      "weekMore": "本周比上周多听了 {duration}",
+      "weekLess": "本周比上周少听了 {duration}",
+      "favorites": "本周新收藏了 {count} 首歌",
+      "recent": "今天想听点什么？继续上次的 {count} 首最近播放吧"
+    },
+    "quickActions": {
+      "luck": {
+        "title": "试试手气",
+        "desc": "随机播放一首",
+        "empty": "曲库里还没有歌曲"
+      },
+      "daily": {
+        "title": "每日推荐",
+        "desc": "每天为你精选"
+      },
+      "heartMode": {
+        "title": "心动模式",
+        "desc": "根据喜好智能播放"
+      },
+      "fm": {
+        "title": "私人 FM",
+        "desc": "为你不停推荐"
+      }
+    },
+    "continue": {
+      "repeatTitle": "反复聆听",
+      "repeatSubtitle": "你最常听的 {count} 首歌",
+      "continueTitle": "继续聆听",
+      "continueSubtitle": "你最近在听的 {count} 首歌",
+      "empty": "还没有播放记录，去听点什么吧"
+    }
+  },
   "login": {
     "qrTipWaiting": "请打开云音乐 APP 扫码登录",
     "qrTipScanned": "扫描成功，请在客户端确认登录",

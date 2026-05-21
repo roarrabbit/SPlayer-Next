@@ -6,6 +6,8 @@ export interface SCardProps {
   bordered?: boolean;
   /** 内边距尺寸 */
   size?: "small" | "medium" | "large";
+  /** 圆角尺寸 */
+  radius?: "md" | "lg" | "xl";
   /** 鼠标悬浮高亮 */
   hoverable?: boolean;
 }
@@ -13,12 +15,19 @@ export interface SCardProps {
 withDefaults(defineProps<SCardProps>(), {
   bordered: true,
   size: "medium",
+  radius: "lg",
 });
 
 const sizePadding: Record<NonNullable<SCardProps["size"]>, string> = {
   small: "px-3 py-2",
   medium: "px-4 py-3",
   large: "px-5 py-4",
+};
+
+const radiusClass: Record<NonNullable<SCardProps["radius"]>, string> = {
+  md: "rounded-md",
+  lg: "rounded-lg",
+  xl: "rounded-xl",
 };
 
 const slots = useSlots();
@@ -28,10 +37,11 @@ const structured = computed(() => !!slots.header || !!slots["header-extra"] || !
 
 <template>
   <div
-    class="rounded-lg transition-shadow duration-150"
+    class="bg-surface-panel transition-shadow duration-200"
     :class="[
+      radiusClass[radius],
       bordered && 'border border-solid border-primary/20',
-      hoverable && 'hover:shadow-md',
+      hoverable && 'cursor-pointer hover:shadow-md',
       !structured && !title && sizePadding[size],
     ]"
   >

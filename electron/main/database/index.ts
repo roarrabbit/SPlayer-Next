@@ -141,6 +141,7 @@ export {
   getAlbumTracks,
   getArtistTracks,
   getTracksByIds,
+  getRandomTrack,
 } from "./queries";
 
 export type { FileRecord, UpsertTrack } from "./queries";

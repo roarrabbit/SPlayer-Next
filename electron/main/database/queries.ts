@@ -64,6 +64,14 @@ export const getTrackCount = (): number => {
   return row.count;
 };
 
+/** 随机取一首曲目，库为空时返回 null */
+export const getRandomTrack = (): Track | null => {
+  const row = getDb().prepare("SELECT * FROM tracks ORDER BY RANDOM() LIMIT 1").get() as
+    | TrackRow
+    | undefined;
+  return row ? rowToTrack(row) : null;
+};
+
 /** 用于增量扫描比对的文件记录 */
 export interface FileRecord {
   path: string;

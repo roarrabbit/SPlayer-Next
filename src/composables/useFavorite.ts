@@ -4,7 +4,7 @@ import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 
-/** 
+/**
  * 记一次收藏变更
  * @param track 歌曲
  * @param liked 是否已收藏

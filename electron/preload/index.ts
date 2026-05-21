@@ -140,6 +140,8 @@ const api = {
     searchTracks: (query: string) => ipcRenderer.invoke("library:searchTracks", query),
     // 获取曲目总数
     getTrackCount: () => ipcRenderer.invoke("library:getTrackCount"),
+    // 随机取一首曲目
+    getRandomTrack: () => ipcRenderer.invoke("library:getRandomTrack"),
     // 获取扫描状态
     isScanning: () => ipcRenderer.invoke("library:isScanning"),
     // 弹出目录选择器，添加扫描目录
@@ -375,6 +377,10 @@ const api = {
     recordPlay: (event: PlayEventInput) => ipcRenderer.send("stats:recordPlay", event),
     // 记录一次收藏变更
     recordFavorite: (event: FavoriteEventInput) => ipcRenderer.send("stats:recordFavorite", event),
+    // 取播放统计汇总
+    getStatsSummary: () => ipcRenderer.invoke("stats:getStatsSummary"),
+    // 取最常播放的曲目
+    getTopTracks: (limit: number) => ipcRenderer.invoke("stats:getTopTracks", limit),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),
