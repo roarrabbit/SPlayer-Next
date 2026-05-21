@@ -15,6 +15,7 @@ import {
 import { HotkeyApi } from "@shared/types/hotkey";
 import { StreamingApi } from "@shared/types/streaming";
 import { IpcResponse } from "@shared/types/player";
+import { StatsApi } from "@shared/types/stats";
 
 declare global {
   interface Window {
@@ -65,6 +66,7 @@ declare global {
           cancel: (cacheKey: string) => Promise<void>;
         };
       };
+      stats: StatsApi;
       hotkey: HotkeyApi;
       streaming: StreamingApi;
       externalApi: {

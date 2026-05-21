@@ -5,6 +5,7 @@ import * as playback from "@/services/playback";
 import * as autoClose from "@/services/autoClose";
 import * as abLoop from "@/services/abLoop";
 import * as cacheScheduler from "@/services/cacheScheduler";
+import * as playStats from "./stats";
 import {
   hasReachedSeekTarget,
   isSeeking,
@@ -68,10 +69,14 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
       if (endedGuard) return;
       endedGuard = true;
       try {
+        const stopByTimer = autoClose.onTrackEnded();
+        const repeatOne = status.repeatMode === "one";
+        // 结算播放统计
+        playStats.onTrackEnded(repeatOne && !stopByTimer);
         // 定时关闭"等本曲结束"模式
-        if (autoClose.onTrackEnded()) break;
+        if (stopByTimer) break;
         // 单曲循环：seek 回开头继续播放
-        if (status.repeatMode === "one") {
+        if (repeatOne) {
           await seek(0);
           await play();
         } else {

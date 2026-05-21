@@ -13,6 +13,7 @@ import * as lyricLoader from "@/services/lyricLoader";
 import * as abLoop from "@/services/abLoop";
 import * as cacheScheduler from "@/services/cacheScheduler";
 import { resolveTrackSource } from "@/services/audioSource";
+import { installPlayStats } from "./stats";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
 
@@ -625,8 +626,7 @@ export const initPlayer = async (): Promise<void> => {
   await window.api.player.setFadeDuration(fadeEnabled ? fadeDuration : 0);
   // 应用音量均衡配置
   await window.api.player.setNormalizationEnabled(loudnessNormalization ?? false);
-  // 应用均衡器配置（频段/前级先下发，再切总开关，避免开关瞬间用旧值）
-  // 注意：reactive 数组无法被 IPC structured-clone，需 spread 解包
+  // 应用均衡器配置
   if (equalizer) {
     await window.api.player.setEqualizerBands([...equalizer.bands]);
     await window.api.player.setPreampGain(equalizer.preamp);
@@ -640,6 +640,8 @@ export const initPlayer = async (): Promise<void> => {
   // 先订阅事件，确保 load 触发播放后 position 事件能被接收
   if (unsubscribe) unsubscribe();
   unsubscribe = window.api.player.onEvent(handleEvent);
+  // 安装播放统计累加器
+  installPlayStats();
   // 订阅主进程下发的歌词偏移变化
   const media = useMediaStore();
   window.api.nowPlaying.onLyricOffsetChange(({ offsetMs }) => {

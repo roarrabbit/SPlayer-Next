@@ -93,6 +93,27 @@ export const initDatabase = (): void => {
     );
     CREATE INDEX IF NOT EXISTS idx_song_cache_last_used ON song_cache(last_used_at);
     CREATE INDEX IF NOT EXISTS idx_song_cache_source ON song_cache(source);
+
+    CREATE TABLE IF NOT EXISTS play_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      started_at INTEGER NOT NULL,
+      listened_ms INTEGER NOT NULL,
+      track_json TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_play_history_started ON play_history(started_at);
+    CREATE INDEX IF NOT EXISTS idx_play_history_track ON play_history(source, track_id);
+
+    CREATE TABLE IF NOT EXISTS favorite_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      action TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      track_json TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_favorite_history_at ON favorite_history(at);
   `);
   migrate(db);
   libraryLog.info(`数据库已初始化: ${dbPath}`);

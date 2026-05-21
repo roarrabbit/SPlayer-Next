@@ -12,6 +12,7 @@ import { registerThemeIpc } from "./theme";
 import { registerStreamingIpc } from "./streaming";
 import { registerCacheIpc } from "./cache";
 import { registerExternalApiIpc } from "./externalApi";
+import { registerStatsIpc } from "./stats";
 
 /** 注册所有 IPC 处理 */
 export const registerIpcHandlers = (): void => {
@@ -29,4 +30,5 @@ export const registerIpcHandlers = (): void => {
   registerStreamingIpc();
   registerCacheIpc();
   registerExternalApiIpc();
+  registerStatsIpc();
 };

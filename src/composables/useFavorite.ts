@@ -4,6 +4,15 @@ import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 
+/** 
+ * 记一次收藏变更
+ * @param track 歌曲
+ * @param liked 是否已收藏
+ */
+const recordFavoriteChange = (track: Track, liked: boolean): void => {
+  window.api.stats.recordFavorite({ track, action: liked ? "add" : "remove" });
+};
+
 /**
  * 红心收藏的统一入口
  * 按 track.source 分发
@@ -49,6 +58,7 @@ export const useFavorite = () => {
     if (!track) return;
     if (track.source === "local") {
       const next = library.toggleLike(track.id);
+      recordFavoriteChange(track, next);
       toast.success(t(next ? "liked.toast.added" : "liked.toast.removed"));
       return;
     }
@@ -63,6 +73,7 @@ export const useFavorite = () => {
         toast.error(t("liked.toast.failed"));
         return;
       }
+      recordFavoriteChange(track, !wasLiked);
       toast.success(t(wasLiked ? "liked.toast.removed" : "liked.toast.added"));
       return;
     }

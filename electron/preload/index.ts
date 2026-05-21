@@ -5,6 +5,7 @@ import type { PluginInfo, PluginResolveUrlArgs } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
 import type { LoadOptions, TrackSource } from "@shared/types/player";
 import type { StreamingServerConfig } from "@shared/types/streaming";
+import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -368,6 +369,12 @@ const api = {
     restart: () => ipcRenderer.invoke("externalApi:restart"),
     // 查询当前运行状态
     getStatus: () => ipcRenderer.invoke("externalApi:getStatus"),
+  },
+  stats: {
+    // 记录一次播放
+    recordPlay: (event: PlayEventInput) => ipcRenderer.send("stats:recordPlay", event),
+    // 记录一次收藏变更
+    recordFavorite: (event: FavoriteEventInput) => ipcRenderer.send("stats:recordFavorite", event),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),
