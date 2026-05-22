@@ -148,6 +148,12 @@
       "empty": "还没有播放记录，去听点什么吧",
       "playCount": "播放 {count} 次"
     },
+    "recommend": {
+      "title": "专属歌单",
+      "titleGuest": "推荐歌单",
+      "subtitle": "为你量身定制的歌单精选",
+      "subtitleGuest": "大家都在听的热门歌单"
+    },
     "hero": {
       "play": "立即播放",
       "addQueue": "添加到队列",

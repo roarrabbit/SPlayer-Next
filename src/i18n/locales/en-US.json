@@ -148,6 +148,12 @@
       "empty": "No play history yet — go listen to something",
       "playCount": "Played {count} time | Played {count} times"
     },
+    "recommend": {
+      "title": "Made For You",
+      "titleGuest": "Recommended Playlists",
+      "subtitle": "Playlists handpicked for your taste",
+      "subtitleGuest": "Popular playlists everyone's listening to"
+    },
     "hero": {
       "play": "Play now",
       "addQueue": "Add to queue",

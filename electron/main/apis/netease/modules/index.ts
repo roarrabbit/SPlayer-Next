@@ -55,6 +55,8 @@ import song_url from "./song_url";
 
 // 每日推荐
 import recommend_songs from "./recommend_songs";
+import personalized from "./personalized";
+import recommend_resource from "./recommend_resource";
 
 // 歌单 / 喜欢
 import playlist_detail from "./playlist_detail";
@@ -124,6 +126,8 @@ export const modules: Record<string, NeteaseModule> = {
   song_url,
 
   recommend_songs,
+  personalized,
+  recommend_resource,
 
   playlist_detail,
   playlist_create,

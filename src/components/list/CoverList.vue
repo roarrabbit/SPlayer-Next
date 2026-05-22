@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CoverItem } from "@/types/artist";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
+import { useFloatingPlayerBar, PLAYER_BAR_GAP } from "@/composables/useFloatingPlayerBar";
 
 export interface CoverListProps {
   /** 列表数据 */
@@ -43,6 +44,13 @@ const props = withDefaults(defineProps<CoverListProps>(), {
 });
 
 const { t } = useI18n();
+
+const { isFloatingBar } = useFloatingPlayerBar();
+
+/** 虚拟模式底部 padding：悬浮播放栏下留白避免遮挡 */
+const virtualPaddingBottom = computed(() =>
+  isFloatingBar.value ? PLAYER_BAR_GAP : props.paddingBottom,
+);
 
 const emit = defineEmits<{
   click: [item: CoverItem];
@@ -104,7 +112,7 @@ const getRowKey = (row: Row): string => row.id;
     item-fixed
     :get-item-key="getRowKey"
     :padding-top="paddingTop"
-    :padding-bottom="paddingBottom"
+    :padding-bottom="virtualPaddingBottom"
     height="100%"
     @reach-bottom="emit('reachBottom')"
   >

@@ -5,9 +5,15 @@ import { useHomeHeader } from "@/composables/home/useHomeHeader";
 import { useDailyRecommend } from "@/composables/home/useDailyRecommend";
 import { useContinueListening } from "@/composables/home/useContinueListening";
 import { useQuickActions } from "@/composables/home/useQuickActions";
+import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
+import { useUserStore } from "@/stores/user";
+import { fetchRecommendPlaylists } from "@/apis/recommend/netease";
+import { navigateToPlaylist } from "@/utils/navigate";
 import * as player from "@/core/player";
 
 const { t } = useI18n();
+const user = useUserStore();
+const { isFloatingBar } = useFloatingPlayerBar();
 
 /** 头部 */
 const { greetingTitle, greetingSub, headerStats, load: loadHeader } = useHomeHeader();
@@ -30,10 +36,31 @@ const {
   load: loadContinue,
 } = useContinueListening();
 
+/** 推荐歌单 / 专属歌单 */
+const recommendPlaylists = shallowRef<CoverItem[]>([]);
+const recommendTitle = computed(() =>
+  user.isLoggedIn ? t("home.recommend.title") : t("home.recommend.titleGuest"),
+);
+const recommendSubtitle = computed(() =>
+  user.isLoggedIn ? t("home.recommend.subtitle") : t("home.recommend.subtitleGuest"),
+);
+
+const loadRecommend = async (): Promise<void> => {
+  try {
+    recommendPlaylists.value = await fetchRecommendPlaylists(user.isLoggedIn);
+  } catch (error) {
+    console.warn("[home] recommend playlists failed:", error);
+  }
+};
+
+// 登录态变化后重新拉取（专属 / 通用 数据源不同）
+watch(() => user.isLoggedIn, loadRecommend);
+
 onMounted(() => {
   void loadHeader();
   void loadHero();
   void loadContinue();
+  void loadRecommend();
 });
 
 /** 拼接歌手名 */
@@ -42,18 +69,18 @@ const artistName = (track: Track): string => track.artists.map((artist) => artis
 /** 序号补零为两位 */
 const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
 
-/** 推荐歌单 */
-const recommendPlaylists: CoverItem[] = Array.from({ length: 6 }, (_, index) => ({
-  id: `placeholder-${index}`,
-  title: `推荐歌单 ${index + 1}`,
-  subtitle: "根据你的口味",
-  trackCount: 0,
-}));
+/** 打开歌单详情 */
+const openPlaylist = (item: CoverItem): void => {
+  navigateToPlaylist(item.id, { source: "netease", name: item.title });
+};
 </script>
 
 <template>
   <div class="h-full overflow-y-auto">
-    <div class="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 pt-6 pb-10">
+    <div
+      class="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 pt-6"
+      :class="isFloatingBar ? 'pb-28' : 'pb-10'"
+    >
       <!-- 问候 -->
       <header class="flex items-start justify-between gap-6">
         <div class="min-w-0">
@@ -187,16 +214,13 @@ const recommendPlaylists: CoverItem[] = Array.from({ length: 6 }, (_, index) => 
           <span class="text-sm">{{ t("home.continue.empty") }}</span>
         </div>
       </section>
-      <!-- 推荐歌单 -->
-      <section class="flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-on-surface">推荐歌单</h3>
-          <SButton variant="text" size="tiny">
-            查看全部
-            <IconLucideChevronRight class="size-3.5" />
-          </SButton>
+      <!-- 推荐歌单 / 专属歌单 -->
+      <section v-if="recommendPlaylists.length > 0" class="flex flex-col gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-on-surface">{{ recommendTitle }}</h3>
+          <p class="mt-0.5 text-xs text-on-surface-variant/50">{{ recommendSubtitle }}</p>
         </div>
-        <CoverList :items="recommendPlaylists" :virtual="false" :gap="16" />
+        <CoverList :items="recommendPlaylists" :virtual="false" :gap="16" @click="openPlaylist" />
       </section>
     </div>
   </div>
