@@ -21,14 +21,17 @@ const hasTrack = computed(() => !!media.track);
 <template>
   <div class="flex items-center" :class="compact ? 'gap-0' : 'gap-2.5'">
     <SButton
+      type="primary"
       variant="ghost"
       circle
       ripple
       :size="compact ? 32 : 38"
-      :class="shuffleMode === 'on' ? 'text-primary' : 'text-on-surface-variant'"
       @click="player.toggleShuffleMode()"
     >
-      <template #icon><IconLucideShuffle /></template>
+      <template #icon>
+        <IconLucideShuffle v-if="shuffleMode === 'on'" />
+        <IconSpPlayOrder v-else />
+      </template>
     </SButton>
     <SButton
       type="primary"

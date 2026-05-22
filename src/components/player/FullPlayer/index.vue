@@ -405,10 +405,12 @@ const resetLyricOffset = (): void => writeOffset(0);
                 type="cover"
                 variant="ghost"
                 circle
-                :class="shuffleMode === 'on' ? 'opacity-100' : 'opacity-40'"
                 @click="player.toggleShuffleMode()"
               >
-                <template #icon><IconLucideShuffle /></template>
+                <template #icon>
+                  <IconLucideShuffle v-if="shuffleMode === 'on'" />
+                  <IconSpPlayOrder v-else />
+                </template>
               </SButton>
               <SButton
                 type="cover"
