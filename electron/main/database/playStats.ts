@@ -2,7 +2,7 @@
  * 播放统计采集
  */
 
-import { getDb } from "./index";
+import { getDb, isDbOpen } from "./index";
 import { libraryLog } from "@main/utils/logger";
 import type { Track } from "@shared/types/player";
 import type {
@@ -14,6 +14,7 @@ import type {
 
 /** 写入一条播放记录 */
 export const insertPlayEvent = (event: PlayEventInput): void => {
+  if (!isDbOpen()) return;
   try {
     getDb()
       .prepare(
@@ -34,6 +35,7 @@ export const insertPlayEvent = (event: PlayEventInput): void => {
 
 /** 写入一条收藏变更记录 */
 export const insertFavoriteEvent = (event: FavoriteEventInput): void => {
+  if (!isDbOpen()) return;
   try {
     getDb()
       .prepare(

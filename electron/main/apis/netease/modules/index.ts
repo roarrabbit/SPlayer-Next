@@ -52,6 +52,7 @@ import cloud_lyric_get from "./cloud_lyric_get";
 // 播放
 import song_detail from "./song_detail";
 import song_url from "./song_url";
+import playmode_intelligence from "./playmode_intelligence";
 
 // 每日推荐 / 发现
 import recommend_songs from "./recommend_songs";
@@ -126,6 +127,7 @@ export const modules: Record<string, NeteaseModule> = {
 
   song_detail,
   song_url,
+  playmode_intelligence,
 
   recommend_songs,
   personalized,

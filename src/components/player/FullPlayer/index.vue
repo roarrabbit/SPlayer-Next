@@ -18,8 +18,17 @@ const media = useMediaStore();
 const settings = useSettingsStore();
 const settingsDialog = useSettingsDialog();
 const fav = useFavorite();
-const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode, showLyric } =
-  storeToRefs(status);
+const {
+  isPlaying,
+  isLoading,
+  position,
+  duration,
+  isExpanded,
+  repeatMode,
+  shuffleMode,
+  heartMode,
+  showLyric,
+} = storeToRefs(status);
 
 /** 歌词组件引用 */
 const lyricRef = ref<InstanceType<typeof Lyrics>>();
@@ -405,10 +414,11 @@ const resetLyricOffset = (): void => writeOffset(0);
                 type="cover"
                 variant="ghost"
                 circle
-                @click="player.toggleShuffleMode()"
+                @click="heartMode ? player.exitHeartMode() : player.toggleShuffleMode()"
               >
                 <template #icon>
-                  <IconLucideShuffle v-if="shuffleMode === 'on'" />
+                  <IconSpHeartMode v-if="heartMode" />
+                  <IconLucideShuffle v-else-if="shuffleMode === 'on'" />
                   <IconSpPlayOrder v-else />
                 </template>
               </SButton>

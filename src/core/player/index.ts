@@ -386,6 +386,8 @@ export const playFrom = async (items: readonly Track[], startIndex = 0): Promise
   if (items.length === 0) return;
   const status = useStatusStore();
   const media = useMediaStore();
+  // 退出心动模式
+  status.heartMode = false;
   const idx = Math.max(0, Math.min(startIndex, items.length - 1));
   const isSameTrack = media.track?.id === items[idx]?.id;
   queue.setQueue(items);
@@ -399,6 +401,26 @@ export const playFrom = async (items: readonly Track[], startIndex = 0): Promise
   } else {
     await loadTrack(status.currentTrack);
   }
+};
+
+/**
+ * 进入心动模式：用智能推荐列表替换队列并从头播放
+ * @param tracks - 网易云智能推荐曲目
+ */
+export const playHeartMode = async (tracks: readonly Track[]): Promise<void> => {
+  if (tracks.length === 0) return;
+  const status = useStatusStore();
+  queue.setQueue(tracks);
+  status.playIndex = 0;
+  status.shuffleMode = "off";
+  status.heartMode = true;
+  syncPlayMode();
+  await loadTrack(status.currentTrack);
+};
+
+/** 退出心动模式，保留当前队列继续播放 */
+export const exitHeartMode = (): void => {
+  useStatusStore().heartMode = false;
 };
 
 /** 播放下一首，队列末尾时根据循环模式决定行为 */
@@ -498,6 +520,8 @@ export const toggleShuffleMode = (): void => {
  */
 export const setShuffleMode = (mode: ShuffleMode): void => {
   const status = useStatusStore();
+  // 心动模式下忽略
+  if (status.heartMode) return;
   if (status.shuffleMode === mode) return;
   status.shuffleMode = mode;
   if (mode === "on") {

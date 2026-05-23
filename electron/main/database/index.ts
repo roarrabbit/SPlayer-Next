@@ -17,6 +17,9 @@ export const getDb = (): Database.Database => {
   return db;
 };
 
+/** 数据库是否已打开 */
+export const isDbOpen = (): boolean => db !== null;
+
 /** 初始化数据库：打开连接、启用 WAL、建表建索引、执行迁移 */
 export const initDatabase = (): void => {
   fs.mkdirSync(dbDir, { recursive: true });

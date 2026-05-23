@@ -47,6 +47,7 @@ const NON_CACHEABLE: ReadonlySet<string> = new Set([
   "user_cloud",
   "user_cloud_del",
   "album_sub",
+  "playmode_intelligence",
 ]);
 
 /** 内存缓存 */

@@ -1,5 +1,6 @@
 import type { Track } from "@shared/types/player";
 import type { CoverItem } from "@/types/artist";
+import type { NeteaseSong } from "@/types/netease";
 import { netease as neteaseApi } from "@/apis/netease";
 import { songsToTracks, withPicSize, toPlaylist, toArtist, toAlbum } from "@/utils/format/netease";
 import { playlistToCoverItem, artistToCoverItem, albumToCoverItem } from "@/utils/format/coverItem";
@@ -8,6 +9,23 @@ import { playlistToCoverItem, artistToCoverItem, albumToCoverItem } from "@/util
 export const fetchDailySongs = async (): Promise<Track[]> => {
   const body = await neteaseApi.recommend_songs({ timestamp: Date.now() });
   return songsToTracks(body?.data?.dailySongs);
+};
+
+/**
+ * 心动模式智能播放列表
+ * @param seedId - 种子歌曲 id
+ * @param playlistId - 歌单 id（「我喜欢的音乐」）
+ * @returns 智能推荐的 Track 列表
+ */
+export const fetchHeartModeList = async (
+  seedId: string,
+  playlistId: string,
+): Promise<Track[]> => {
+  const body = await neteaseApi.playmode_intelligence<{ data?: { songInfo: NeteaseSong }[] }>({
+    id: seedId,
+    pid: playlistId,
+  });
+  return songsToTracks((body?.data ?? []).map((item) => item.songInfo));
 };
 
 /** 首页推荐区块展示数 */

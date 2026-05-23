@@ -1,9 +1,10 @@
 import { useUserStore } from "@/stores/user";
+import { useHeartMode } from "@/composables/useHeartMode";
 import { toast } from "@/composables/useToast";
 import * as player from "@/core/player";
 import IconDices from "~icons/lucide/dices";
 import IconCalendarDays from "~icons/lucide/calendar-days";
-import IconHeart from "~icons/lucide/heart";
+import IconHeart from "~icons/sp/heart-mode";
 import IconRadio from "~icons/lucide/radio";
 
 /**
@@ -13,6 +14,7 @@ export const useQuickActions = () => {
   const { t } = useI18n();
   const router = useRouter();
   const user = useUserStore();
+  const { enterHeartMode } = useHeartMode();
 
   /** 试试手气 */
   const playLucky = useThrottleFn(async (): Promise<void> => {
@@ -36,6 +38,9 @@ export const useQuickActions = () => {
     if (onlineTrack) await player.playNow(onlineTrack);
   }, 800);
 
+  /** 进入心动模式 */
+  const playHeartMode = useThrottleFn(() => enterHeartMode(), 800);
+
   /** 暂未实现的入口占位 */
   const noop = (): void => {};
 
@@ -57,7 +62,7 @@ export const useQuickActions = () => {
       icon: IconHeart,
       title: t("home.quickActions.heartMode.title"),
       desc: t("home.quickActions.heartMode.desc"),
-      run: noop,
+      run: playHeartMode,
     },
     {
       icon: IconRadio,

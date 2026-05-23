@@ -287,6 +287,14 @@
   "player": {
     "prev": "Previous",
     "next": "Next",
+    "heartMode": {
+      "needLogin": "Sign in to use Heart Mode",
+      "noSeed": "No seed track available for Heart Mode",
+      "loading": "Starting Heart Mode…",
+      "entered": "Heart Mode started",
+      "already": "Already in Heart Mode",
+      "failed": "Failed to start Heart Mode, please try again later"
+    },
     "lyricOffset": {
       "title": "Lyric Offset",
       "hint": "Positive values advance lyrics, in milliseconds"

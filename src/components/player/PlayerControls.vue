@@ -13,7 +13,7 @@ withDefaults(
 
 const status = useStatusStore();
 const media = useMediaStore();
-const { isPlaying, isLoading, repeatMode, shuffleMode } = storeToRefs(status);
+const { isPlaying, isLoading, repeatMode, shuffleMode, heartMode } = storeToRefs(status);
 
 const hasTrack = computed(() => !!media.track);
 </script>
@@ -26,10 +26,11 @@ const hasTrack = computed(() => !!media.track);
       circle
       ripple
       :size="compact ? 32 : 38"
-      @click="player.toggleShuffleMode()"
+      @click="heartMode ? player.exitHeartMode() : player.toggleShuffleMode()"
     >
       <template #icon>
-        <IconLucideShuffle v-if="shuffleMode === 'on'" />
+        <IconSpHeartMode v-if="heartMode" />
+        <IconLucideShuffle v-else-if="shuffleMode === 'on'" />
         <IconSpPlayOrder v-else />
       </template>
     </SButton>

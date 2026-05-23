@@ -6,6 +6,8 @@ import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useUserStore } from "@/stores/user";
+import { useHeartMode } from "@/composables/useHeartMode";
+import * as player from "@/core/player";
 import IconLucideHome from "~icons/lucide/home";
 import IconLucideMusic from "~icons/lucide/music";
 import IconLucideUser from "~icons/lucide/user";
@@ -19,6 +21,7 @@ import IconLucideHistory from "~icons/lucide/history";
 import IconLucideCloud from "~icons/lucide/cloud";
 import IconLucidePlus from "~icons/lucide/plus";
 import IconLucideChevronDown from "~icons/lucide/chevron-down";
+import IconSpHeartMode from "~icons/sp/heart-mode";
 import SButton from "@/components/ui/SButton.vue";
 import SPopselect from "@/components/ui/SPopselect.vue";
 
@@ -29,6 +32,26 @@ const { appearance, system: systemSettings } = useSettingsStore();
 const status = useStatusStore();
 const playlistStore = usePlaylistStore();
 const userStore = useUserStore();
+const { enterHeartMode } = useHeartMode();
+
+/** 心动模式 */
+const toggleHeartMode = useThrottleFn((): void => {
+  if (status.heartMode) player.exitHeartMode();
+  else void enterHeartMode();
+}, 800);
+
+const renderHeartTrailing = () =>
+  h(
+    SButton,
+    {
+      type: status.heartMode ? "primary" : "default",
+      variant: "tertiary",
+      size: "tiny",
+      round: true,
+      onClick: toggleHeartMode,
+    },
+    { icon: () => h(IconSpHeartMode) },
+  );
 
 const sourceOptions = computed<SSelectOption[]>(() => [
   { value: "local", label: t("collection.localPlaylist") },
@@ -137,7 +160,12 @@ const menuItems = computed<SMenuItem[]>(() => [
   { key: "/folders", label: t("folder.label"), icon: markRaw(IconLucideFolder) },
   // 个人歌曲
   { key: "divider-personal", type: "divider" },
-  { key: "/liked", label: t("nav.liked"), icon: markRaw(IconMaterialSymbolsFavoriteOutline) },
+  {
+    key: "/liked",
+    label: t("nav.liked"),
+    icon: markRaw(IconMaterialSymbolsFavoriteOutline),
+    trailing: renderHeartTrailing,
+  },
   { key: "/favorites", label: t("nav.favorites"), icon: markRaw(IconLucideStar) },
   { key: "/cloud", label: t("nav.cloud"), icon: markRaw(IconLucideCloud) },
   ...(systemSettings.streaming.enabled

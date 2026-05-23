@@ -14,6 +14,8 @@ export interface SMenuItem {
   disabled?: boolean;
   /** group 类型的自定义渲染内容 */
   render?: () => VNode;
+  /** item 类型的行尾自定义内容 */
+  trailing?: () => VNode;
 }
 
 const props = withDefaults(
@@ -115,11 +117,19 @@ const handleSelect = (item: SMenuItem) => {
             :class="[sizeClass.icon, 'shrink-0 transition-[width,height] duration-300']"
           />
           <span
-            class="truncate transition-opacity duration-300"
+            class="flex-1 min-w-0 truncate transition-opacity duration-300"
             :class="collapsed ? 'opacity-0' : 'opacity-100'"
           >
             {{ item.label }}
           </span>
+          <!-- 行尾自定义 -->
+          <div
+            v-if="!collapsed && item.trailing"
+            class="shrink-0 transition-opacity duration-300"
+            @click.stop
+          >
+            <component :is="item.trailing" />
+          </div>
           <Transition name="fade">
             <span
               v-if="modelValue === item.key"
