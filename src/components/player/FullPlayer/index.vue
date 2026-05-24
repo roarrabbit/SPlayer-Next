@@ -18,8 +18,18 @@ const media = useMediaStore();
 const settings = useSettingsStore();
 const settingsDialog = useSettingsDialog();
 const fav = useFavorite();
-const { isPlaying, isLoading, position, duration, isExpanded, repeatMode, shuffleMode, showLyric } =
-  storeToRefs(status);
+const {
+  isPlaying,
+  isLoading,
+  position,
+  duration,
+  isExpanded,
+  repeatMode,
+  shuffleMode,
+  heartMode,
+  fmMode,
+  showLyric,
+} = storeToRefs(status);
 
 /** 歌词组件引用 */
 const lyricRef = ref<InstanceType<typeof Lyrics>>();
@@ -405,16 +415,26 @@ const resetLyricOffset = (): void => writeOffset(0);
                 type="cover"
                 variant="ghost"
                 circle
-                :class="shuffleMode === 'on' ? 'opacity-100' : 'opacity-40'"
-                @click="player.toggleShuffleMode()"
+                @click="
+                  fmMode
+                    ? player.dislikeFmTrack()
+                    : heartMode
+                      ? player.exitHeartMode()
+                      : player.toggleShuffleMode()
+                "
               >
-                <template #icon><IconLucideShuffle /></template>
+                <template #icon>
+                  <IconLucideHeartOff v-if="fmMode" />
+                  <IconSpHeartMode v-else-if="heartMode" />
+                  <IconLucideShuffle v-else-if="shuffleMode === 'on'" />
+                  <IconSpPlayOrder v-else />
+                </template>
               </SButton>
               <SButton
                 type="cover"
                 variant="ghost"
                 circle
-                :disabled="!hasTrack"
+                :disabled="!hasTrack || fmMode"
                 @click="player.prevTrack()"
               >
                 <template #icon><IconLucideSkipBack /></template>
@@ -446,11 +466,13 @@ const resetLyricOffset = (): void => writeOffset(0);
                 type="cover"
                 variant="ghost"
                 circle
-                :class="repeatMode === 'off' ? 'opacity-40' : 'opacity-100'"
+                :disabled="fmMode"
+                :class="fmMode || repeatMode === 'off' ? 'opacity-40' : 'opacity-100'"
                 @click="player.cycleRepeatMode()"
               >
                 <template #icon>
-                  <IconLucideRepeat1 v-if="repeatMode === 'one'" />
+                  <IconLucideInfinity v-if="fmMode" />
+                  <IconLucideRepeat1 v-else-if="repeatMode === 'one'" />
                   <IconLucideRepeat v-else />
                 </template>
               </SButton>

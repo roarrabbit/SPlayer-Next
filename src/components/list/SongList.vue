@@ -7,6 +7,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
+import { PLAYER_BAR_GAP } from "@/composables/useFloatingPlayerBar";
 import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
@@ -279,7 +280,7 @@ defineExpose({
         ref="virtualListRef"
         :items="sortedItems"
         :item-height="88"
-        :padding-bottom="80"
+        :padding-bottom="isFloatingPlayerBar ? PLAYER_BAR_GAP : 80"
         :get-item-key="(item: Track) => item.id"
         item-fixed
         height="100%"

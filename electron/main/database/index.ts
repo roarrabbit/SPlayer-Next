@@ -17,6 +17,9 @@ export const getDb = (): Database.Database => {
   return db;
 };
 
+/** 数据库是否已打开 */
+export const isDbOpen = (): boolean => db !== null;
+
 /** 初始化数据库：打开连接、启用 WAL、建表建索引、执行迁移 */
 export const initDatabase = (): void => {
   fs.mkdirSync(dbDir, { recursive: true });
@@ -93,6 +96,27 @@ export const initDatabase = (): void => {
     );
     CREATE INDEX IF NOT EXISTS idx_song_cache_last_used ON song_cache(last_used_at);
     CREATE INDEX IF NOT EXISTS idx_song_cache_source ON song_cache(source);
+
+    CREATE TABLE IF NOT EXISTS play_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      started_at INTEGER NOT NULL,
+      listened_ms INTEGER NOT NULL,
+      track_json TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_play_history_started ON play_history(started_at);
+    CREATE INDEX IF NOT EXISTS idx_play_history_track ON play_history(source, track_id);
+
+    CREATE TABLE IF NOT EXISTS favorite_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      action TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      track_json TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_favorite_history_at ON favorite_history(at);
   `);
   migrate(db);
   libraryLog.info(`数据库已初始化: ${dbPath}`);
@@ -120,6 +144,8 @@ export {
   getAlbumTracks,
   getArtistTracks,
   getTracksByIds,
+  getRandomTrack,
+  getRandomTracks,
 } from "./queries";
 
 export type { FileRecord, UpsertTrack } from "./queries";

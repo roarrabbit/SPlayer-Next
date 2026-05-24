@@ -2,7 +2,6 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "apply": "Apply",
     "close": "Close",
     "save": "Save",
     "reset": "Reset",
@@ -10,23 +9,17 @@
     "loading": "Loading",
     "noData": "No data",
     "noMore": "No more ~",
-    "refresh": "Refresh",
     "refreshCache": "Refresh cache",
-    "success": "Success",
-    "error": "Error",
     "copied": "Copied",
     "copyFailed": "Copy failed",
     "playAll": "Play All",
     "totalSongs": "{count} songs",
     "totalAlbums": "{count} albums",
     "totalArtists": "{count} artists",
-    "totalPlaylists": "{count} playlists",
-    "comingSoon": "Feature coming soon"
+    "totalPlaylists": "{count} playlists"
   },
   "equalizer": {
     "title": "Equalizer",
-    "statusOn": "Enabled",
-    "statusOff": "Disabled",
     "preamp": "Preamp",
     "preset": {
       "label": "Preset",
@@ -83,7 +76,6 @@
     "favorites": "Favorites",
     "cloud": "My Cloud",
     "streaming": "Streaming",
-    "settings": "Settings",
     "reload": "Reload",
     "devtools": "Developer Tools",
     "globalSettings": "Global Settings",
@@ -96,11 +88,107 @@
       "hot": "Trending"
     }
   },
+  "home": {
+    "greetingLine": "{greeting}, {name}",
+    "greeting": {
+      "dawn": "Good morning",
+      "morning": "Good morning",
+      "noon": "Good afternoon",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "stats": {
+      "weekDuration": "This week",
+      "newFavorites": "New favorites",
+      "listenStreak": "Streak",
+      "unitHour": "h",
+      "unitSong": "songs",
+      "unitDay": "days"
+    },
+    "duration": {
+      "hm": "{hours} h {minutes} min",
+      "hours": "{hours} h",
+      "minutes": "{minutes} min"
+    },
+    "subtitle": {
+      "plain1": "May good music keep you company today",
+      "plain2": "Put on your headphones and let the world quiet down",
+      "plain3": "Music's ready — pick a track to start",
+      "streak": "You've listened {days} days straight, keep it up",
+      "weekListened": "You've listened for {duration} this week",
+      "weekMore": "That's {duration} more than last week",
+      "weekLess": "That's {duration} less than last week",
+      "favorites": "You added {count} new favorites this week",
+      "recent": "What to play today? Pick up your {count} recently played"
+    },
+    "quickActions": {
+      "luck": {
+        "title": "Feeling lucky",
+        "desc": "Play a random track",
+        "empty": "No tracks available yet"
+      },
+      "daily": {
+        "title": "Daily picks",
+        "desc": "Fresh picks every day"
+      },
+      "heartMode": {
+        "title": "Heart mode",
+        "desc": "Smart play by your taste"
+      },
+      "fm": {
+        "title": "Personal FM",
+        "desc": "Endless recommendations"
+      }
+    },
+    "continue": {
+      "repeatTitle": "On Repeat",
+      "repeatSubtitle": "Your {count} most-played tracks",
+      "continueTitle": "Continue Listening",
+      "continueSubtitle": "{count} tracks you recently played",
+      "empty": "No play history yet — go listen to something",
+      "playCount": "Played {count} time | Played {count} times"
+    },
+    "recommend": {
+      "title": "Made For You",
+      "titleGuest": "Recommended Playlists",
+      "subtitle": "Playlists handpicked for your taste",
+      "subtitleGuest": "Popular playlists everyone's listening to"
+    },
+    "radar": {
+      "title": "Radar",
+      "subtitle": "Keeps recommending music for your taste"
+    },
+    "artists": {
+      "title": "Artists",
+      "subtitle": "Discover artists you may like"
+    },
+    "albums": {
+      "title": "New Releases",
+      "subtitle": "Freshly released albums"
+    },
+    "hero": {
+      "play": "Play now",
+      "addQueue": "Add to queue",
+      "empty": "No playable tracks",
+      "added": "Added {count} tracks to the queue",
+      "daily": {
+        "tag": "Daily Mix",
+        "title": "Start with “{song}”",
+        "subtitle": "Picked for your taste · {count} tracks"
+      },
+      "local": {
+        "tag": "Local",
+        "title": "Randomly landed on “{song}”",
+        "subtitle": "Random picks from your library · {count} tracks"
+      },
+      "liked": {
+        "tag": "Favorites",
+        "title": "Revisit your favorites~",
+        "subtitle": "All your liked music · {count} tracks"
+      }
+    }
+  },
   "login": {
-    "description": "Link your account for cloud playlists, favorites and personalized recommendations",
-    "thisApp": "This app",
-    "netease": "NetEase Music",
-    "qrTitle": "Scan to sign in",
     "qrTipWaiting": "Open the Cloud Music app and scan the QR code",
     "qrTipScanned": "Scanned, please confirm in the app",
     "qrTipExpired": "QR code expired, refreshing",
@@ -112,12 +200,10 @@
     "autoFetchTip": "This feature can't guarantee account safety — use it at your own discretion. If the official page goes blank or unresponsive, close it and try again.",
     "autoFetchConfirm": "I understand",
     "manualCookie": "Manual cookie",
-    "openWeb": "Sign in",
     "cookieHint": "Only the MUSIC_U field from your cookie is needed. e.g. MUSIC_U=xxxx;",
     "cookiePlaceholder": "Paste cookie, must contain MUSIC_U=xxx;",
     "cookieInvalid": "Invalid cookie. MUSIC_U is required.",
     "cookieConfirm": "Sign in",
-    "back": "Back",
     "success": "Signed in",
     "failed": "Sign-in failed, please try again",
     "unknownUser": "Unknown user",
@@ -195,20 +281,27 @@
       }
     },
     "actions": {
-      "refresh": "Refresh",
-      "search": "Search",
       "settings": "Streaming settings"
     }
   },
   "player": {
-    "play": "Play",
-    "pause": "Pause",
     "prev": "Previous",
     "next": "Next",
-    "shuffle": "Shuffle",
-    "repeat": "Repeat",
-    "repeatOne": "Repeat One",
-    "volume": "Volume",
+    "heartMode": {
+      "needLogin": "Sign in to use Heart Mode",
+      "noSeed": "No seed track available for Heart Mode",
+      "loading": "Starting Heart Mode…",
+      "entered": "Heart Mode started",
+      "already": "Already in Heart Mode",
+      "failed": "Failed to start Heart Mode, please try again later"
+    },
+    "fm": {
+      "needLogin": "Sign in to use Personal FM",
+      "loading": "Starting Personal FM…",
+      "entered": "Personal FM started",
+      "already": "Already in Personal FM",
+      "failed": "Failed to start Personal FM, please try again later"
+    },
     "lyricOffset": {
       "title": "Lyric Offset",
       "hint": "Positive values advance lyrics, in milliseconds"
@@ -225,7 +318,6 @@
       "mode": "Sort Mode",
       "order": "Sort Order",
       "default": "Default",
-      "restore": "Restore",
       "asc": "Ascending",
       "desc": "Descending",
       "byTitle": "Sort by Title",
@@ -255,7 +347,6 @@
       "selected": "{count} selected",
       "invert": "Invert",
       "addToQueue": "Add to Queue",
-      "delete": "Delete",
       "exit": "Exit"
     },
     "delete": {
@@ -294,20 +385,20 @@
     },
     "empty": {
       "local": "No liked local songs yet — click the heart next to a song to add it",
-      "online": "No liked songs on your NetEase account yet"
+      "online": "No liked online songs yet"
     },
-    "needLogin": "Log in to NetEase to view online liked songs",
+    "needLogin": "Sign in to view your online liked songs",
     "toast": {
       "added": "Added to liked",
       "removed": "Removed from liked",
-      "needLogin": "Please log in to NetEase first",
+      "needLogin": "Please log in first",
       "unsupported": "This source does not support liking",
       "failed": "Action failed, please try again"
     }
   },
   "cloud": {
     "title": "My Cloud",
-    "empty": "No songs in your cloud yet — upload some via the NetEase Music app",
+    "empty": "No songs in your cloud yet",
     "needLogin": "Sign in to view your cloud library",
     "removeAction": "Remove from cloud",
     "removeTitle": "Remove from Cloud",
@@ -320,6 +411,14 @@
     "clear": "Clear history",
     "clearConfirmTitle": "Clear Play History",
     "clearConfirmContent": "Clear all play history? This cannot be undone."
+  },
+  "daily": {
+    "title": "Daily Recommend",
+    "tagline": "Based on your music taste",
+    "today": "Today",
+    "refresh": "Refresh",
+    "empty": "No daily recommendations available",
+    "needLogin": "Sign in to see daily recommendations"
   },
   "favorites": {
     "title": "Favorites",
@@ -342,17 +441,10 @@
     "scanAll": "Full Scan",
     "scanning": "Scanning...",
     "scanProgress": "Scanning {scanned}/{total}",
-    "scanDone": "Scan complete",
-    "scanError": "Scan failed",
-    "cancel": "Cancel Scan",
     "folders": "Music Directories",
     "foldersDescription": "Songs are automatically synced when added or removed",
-    "folderCount": "{count} folders",
     "removeFolder": "Remove Directory",
-    "removeFolderConfirm": "Removing this directory will delete its songs from the library!",
-    "folderExists": "This folder already exists",
-    "folderNested": "This folder overlaps with an existing folder",
-    "duration": "{time}"
+    "removeFolderConfirm": "Removing this directory will delete its songs from the library!"
   },
   "settings": {
     "title": "Settings",
@@ -554,7 +646,8 @@
         "toggleTaskbarLyric": "Toggle taskbar lyric",
         "openPlayer": "Open player view",
         "closePlayer": "Close player view",
-        "togglePlaylist": "Show / hide playlist"
+        "togglePlaylist": "Show / hide playlist",
+        "openSearch": "Open search"
       }
     },
     "autoCenterCover": {
@@ -1139,7 +1232,6 @@
   "collection": {
     "totalDuration": "About {time}",
     "unknownAlbum": "Unknown Album",
-    "unknownCreator": "Unknown Creator",
     "empty": "No songs",
     "noDescription": "No description yet~",
     "album": "Album",
@@ -1157,7 +1249,6 @@
     "addTo": "Add to {type}",
     "removeFrom": "Remove from {type}",
     "tracksAdded": "{count} songs added",
-    "tracksRemoved": "{count} songs removed",
     "alreadyInPlaylist": "Already in the playlist",
     "edit": "Edit {type}",
     "subscribe": "Subscribe",

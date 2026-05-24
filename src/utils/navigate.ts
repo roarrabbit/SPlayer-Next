@@ -52,10 +52,10 @@ export const navigateToArtist = (
 
 /**
  * 跳转到歌单页
- * 任意来源都依赖 playlistId（不像专辑/歌手有本地"按名聚合"的语义）
- * @param playlistId - 歌单 ID（必填）
- * @param options.source - 来源；默认为 local
- * @param options.name - 标题兜底（元数据返回前用于头部占位）
+ * 任意来源都依赖 playlistId
+ * @param playlistId - 歌单 ID
+ * @param options.source - 来源
+ * @param options.name - 标题兜底
  */
 export const navigateToPlaylist = (
   playlistId: string | undefined,

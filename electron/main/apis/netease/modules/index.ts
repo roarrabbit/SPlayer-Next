@@ -52,6 +52,16 @@ import cloud_lyric_get from "./cloud_lyric_get";
 // 播放
 import song_detail from "./song_detail";
 import song_url from "./song_url";
+import playmode_intelligence from "./playmode_intelligence";
+import personal_fm from "./personal_fm";
+import fm_trash from "./fm_trash";
+
+// 每日推荐 / 发现
+import recommend_songs from "./recommend_songs";
+import personalized from "./personalized";
+import recommend_resource from "./recommend_resource";
+import top_artists from "./top_artists";
+import album_new from "./album_new";
 
 // 歌单 / 喜欢
 import playlist_detail from "./playlist_detail";
@@ -119,6 +129,15 @@ export const modules: Record<string, NeteaseModule> = {
 
   song_detail,
   song_url,
+  playmode_intelligence,
+  personal_fm,
+  fm_trash,
+
+  recommend_songs,
+  personalized,
+  recommend_resource,
+  top_artists,
+  album_new,
 
   playlist_detail,
   playlist_create,

@@ -10,7 +10,6 @@ import IconLucideCloud from "~icons/lucide/cloud";
 import IconLucideHardDrive from "~icons/lucide/hard-drive";
 
 const { t } = useI18n();
-const router = useRouter();
 const user = useUserStore();
 
 const searchQuery = ref("");
@@ -44,10 +43,6 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => [
 const handleMoreMenu = (key: string): void => {
   if (key === "refresh") user.ensureCloud(true);
   else if (key === "batch") songListRef.value?.enterBatch();
-};
-
-const goToLogin = (): void => {
-  router.push("/library");
 };
 
 watch(
@@ -132,10 +127,7 @@ watch(
       <div v-if="!user.isLoggedIn" key="login" class="flex-1 flex items-center justify-center">
         <div class="text-center text-on-surface-variant/50">
           <IconLucideCloud class="size-12 mx-auto mb-3 opacity-30" />
-          <div class="text-sm mb-4">{{ t("cloud.needLogin") }}</div>
-          <SButton type="primary" variant="secondary" @click="goToLogin">
-            {{ t("login.netease") }}
-          </SButton>
+          <div class="text-sm">{{ t("cloud.needLogin") }}</div>
         </div>
       </div>
       <!-- 列表 -->

@@ -13,7 +13,7 @@ withDefaults(
 
 const status = useStatusStore();
 const media = useMediaStore();
-const { isPlaying, isLoading, repeatMode, shuffleMode } = storeToRefs(status);
+const { isPlaying, isLoading, repeatMode, shuffleMode, heartMode, fmMode } = storeToRefs(status);
 
 const hasTrack = computed(() => !!media.track);
 </script>
@@ -21,14 +21,25 @@ const hasTrack = computed(() => !!media.track);
 <template>
   <div class="flex items-center" :class="compact ? 'gap-0' : 'gap-2.5'">
     <SButton
+      type="primary"
       variant="ghost"
       circle
       ripple
       :size="compact ? 32 : 38"
-      :class="shuffleMode === 'on' ? 'text-primary' : 'text-on-surface-variant'"
-      @click="player.toggleShuffleMode()"
+      @click="
+        fmMode
+          ? player.dislikeFmTrack()
+          : heartMode
+            ? player.exitHeartMode()
+            : player.toggleShuffleMode()
+      "
     >
-      <template #icon><IconLucideShuffle /></template>
+      <template #icon>
+        <IconLucideHeartOff v-if="fmMode" />
+        <IconSpHeartMode v-else-if="heartMode" />
+        <IconLucideShuffle v-else-if="shuffleMode === 'on'" />
+        <IconSpPlayOrder v-else />
+      </template>
     </SButton>
     <SButton
       type="primary"
@@ -36,7 +47,7 @@ const hasTrack = computed(() => !!media.track);
       circle
       ripple
       :size="compact ? 34 : 38"
-      :disabled="!hasTrack"
+      :disabled="!hasTrack || fmMode"
       @click="player.prevTrack()"
     >
       <template #icon><IconLucideSkipBack /></template>
@@ -73,11 +84,13 @@ const hasTrack = computed(() => !!media.track);
       circle
       ripple
       :size="compact ? 32 : 38"
-      :class="repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
+      :disabled="fmMode"
+      :class="fmMode || repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
       @click="player.cycleRepeatMode()"
     >
       <template #icon>
-        <IconLucideRepeat1 v-if="repeatMode === 'one'" />
+        <IconLucideInfinity v-if="fmMode" />
+        <IconLucideRepeat1 v-else-if="repeatMode === 'one'" />
         <IconLucideRepeat v-else />
       </template>
     </SButton>

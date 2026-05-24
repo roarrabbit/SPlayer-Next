@@ -43,7 +43,7 @@ export const createMainWindow = (): BrowserWindow => {
   initTray();
 
   // 缩略图工具栏
-  mainWindow.once("ready-to-show", () => {
+  mainWindow.webContents.once("did-finish-load", () => {
     initThumbar(mainWindow!);
   });
 

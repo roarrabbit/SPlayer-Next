@@ -8,11 +8,13 @@ import { useStreamingStore } from "@/stores/streaming";
 import { usePluginsStore } from "@/stores/plugins";
 import { useHistoryStore } from "@/stores/history";
 import * as queue from "@/stores/queue";
+import * as fm from "./fm";
 import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyricLoader";
 import * as abLoop from "@/services/abLoop";
 import * as cacheScheduler from "@/services/cacheScheduler";
 import { resolveTrackSource } from "@/services/audioSource";
+import { installPlayStats } from "./stats";
 import { extractColorFromUrl } from "@/utils/color";
 import { handleError, isSkippableError } from "@/utils/errors";
 
@@ -156,7 +158,7 @@ const loadTrack = async (track: Track | null): Promise<void> => {
       shouldSkip = true;
     } else if (result.ok) {
       // 用户主动触发的成功播放记入历史；initPlayer 的恢复路径走 load() 不经此处
-      useHistoryStore().record(track);
+      void useHistoryStore().record(track);
       if (resolved.cacheRequest) {
         cacheScheduler.schedule(track.id, resolved.cacheRequest);
       }
@@ -385,6 +387,9 @@ export const playFrom = async (items: readonly Track[], startIndex = 0): Promise
   if (items.length === 0) return;
   const status = useStatusStore();
   const media = useMediaStore();
+  // 退出特殊模式
+  status.heartMode = false;
+  status.fmMode = false;
   const idx = Math.max(0, Math.min(startIndex, items.length - 1));
   const isSameTrack = media.track?.id === items[idx]?.id;
   queue.setQueue(items);
@@ -400,9 +405,57 @@ export const playFrom = async (items: readonly Track[], startIndex = 0): Promise
   }
 };
 
+/**
+ * 进入心动模式：用智能推荐列表替换队列并从头播放
+ * @param tracks - 网易云智能推荐曲目
+ */
+export const playHeartMode = async (tracks: readonly Track[]): Promise<void> => {
+  if (tracks.length === 0) return;
+  const status = useStatusStore();
+  queue.setQueue(tracks);
+  status.playIndex = 0;
+  status.shuffleMode = "off";
+  status.heartMode = true;
+  // 心动 / FM 互斥
+  status.fmMode = false;
+  syncPlayMode();
+  await loadTrack(status.currentTrack);
+};
+
+/** 退出心动模式，保留当前队列继续播放 */
+export const exitHeartMode = (): void => {
+  useStatusStore().heartMode = false;
+};
+
+/** 进入私人 FM */
+export const playPersonalFm = async (): Promise<boolean> => {
+  const status = useStatusStore();
+  const track = await fm.start();
+  if (!track) return false;
+  status.fmMode = true;
+  // 心动 / FM 互斥
+  status.heartMode = false;
+  await loadTrack(track);
+  return true;
+};
+
+/** 私人 FM 减少推荐 */
+export const dislikeFmTrack = async (): Promise<void> => {
+  if (!useStatusStore().fmMode) return;
+  const playedSec = Math.max(0, Math.round(playback.getCurrentTime() / 1000));
+  const next = await fm.dislikeCurrent(playedSec);
+  if (next) await loadTrack(next);
+};
+
 /** 播放下一首，队列末尾时根据循环模式决定行为 */
 export const nextTrack = async (): Promise<void> => {
   const status = useStatusStore();
+  // 私人 FM
+  if (status.fmMode) {
+    const next = await fm.next();
+    if (next) await loadTrack(next);
+    return;
+  }
   if (queue.queueLength.value === 0) return;
   // 到末尾了
   if (status.playIndex >= queue.queueLength.value - 1) {
@@ -439,6 +492,8 @@ export const playAtIndex = async (index: number): Promise<void> => {
     if (!status.isPlaying && useMediaStore().track) play();
     return;
   }
+  // 退出 FM
+  status.fmMode = false;
   status.playIndex = index;
   await loadTrack(status.currentTrack);
 };
@@ -446,6 +501,7 @@ export const playAtIndex = async (index: number): Promise<void> => {
 /** 播放上一首，首位时回绕到末尾 */
 export const prevTrack = async (): Promise<void> => {
   const status = useStatusStore();
+  if (status.fmMode) return;
   if (queue.queueLength.value === 0) return;
   status.playIndex = status.playIndex > 0 ? status.playIndex - 1 : queue.queueLength.value - 1;
   await loadTrack(status.currentTrack);
@@ -497,6 +553,8 @@ export const toggleShuffleMode = (): void => {
  */
 export const setShuffleMode = (mode: ShuffleMode): void => {
   const status = useStatusStore();
+  // 心动模式下忽略
+  if (status.heartMode) return;
   if (status.shuffleMode === mode) return;
   status.shuffleMode = mode;
   if (mode === "on") {
@@ -567,6 +625,27 @@ export const insertToQueue = (item: Track, afterIndex?: number): number => {
 };
 
 /**
+ * 批量插入曲目到当前曲目之后，一次性切片落盘，避免逐首插入的卡顿
+ * 跳过队列中已存在的（含当前播放曲目）与传入列表内部的重复
+ * @param items - 要插入的曲目
+ * @returns 实际插入的数量
+ */
+export const insertManyToQueue = (items: readonly Track[]): number => {
+  if (items.length === 0) return 0;
+  const status = useStatusStore();
+  const seen = new Set(queue.queue.value.map((track) => track.id));
+  const fresh: Track[] = [];
+  for (const item of items) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    fresh.push(item);
+  }
+  if (fresh.length === 0) return 0;
+  queue.insertManyToQueue(fresh, status.playIndex + 1);
+  return fresh.length;
+};
+
+/**
  * 插入歌曲到当前位置之后并立即播放
  * 如果是当前正在播放的歌曲则继续播放，不重新加载
  */
@@ -578,6 +657,8 @@ export const playNow = async (item: Track): Promise<void> => {
     if (!status.isPlaying) play();
     return;
   }
+  // 退出 FM
+  status.fmMode = false;
   status.playIndex = insertToQueue(item);
   await loadTrack(item);
 };
@@ -625,8 +706,7 @@ export const initPlayer = async (): Promise<void> => {
   await window.api.player.setFadeDuration(fadeEnabled ? fadeDuration : 0);
   // 应用音量均衡配置
   await window.api.player.setNormalizationEnabled(loudnessNormalization ?? false);
-  // 应用均衡器配置（频段/前级先下发，再切总开关，避免开关瞬间用旧值）
-  // 注意：reactive 数组无法被 IPC structured-clone，需 spread 解包
+  // 应用均衡器配置
   if (equalizer) {
     await window.api.player.setEqualizerBands([...equalizer.bands]);
     await window.api.player.setPreampGain(equalizer.preamp);
@@ -640,6 +720,8 @@ export const initPlayer = async (): Promise<void> => {
   // 先订阅事件，确保 load 触发播放后 position 事件能被接收
   if (unsubscribe) unsubscribe();
   unsubscribe = window.api.player.onEvent(handleEvent);
+  // 安装播放统计累加器
+  installPlayStats();
   // 订阅主进程下发的歌词偏移变化
   const media = useMediaStore();
   window.api.nowPlaying.onLyricOffsetChange(({ offsetMs }) => {

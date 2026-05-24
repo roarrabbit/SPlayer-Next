@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useDataStore } from "@/stores/data";
+import { useStatusStore } from "@/stores/status";
 import { getHotSearches, type HotSearchItem } from "@/apis/search/hot";
 import { getSearchSuggest, type SuggestData } from "@/apis/search/suggest";
 import { songsByIds as getNeteaseSongsByIds } from "@/apis/song/netease";
@@ -9,8 +10,13 @@ import * as player from "@/core/player";
 const { t, locale } = useI18n();
 const router = useRouter();
 const data = useDataStore();
+const status = useStatusStore();
 
-const dialogOpen = ref(false);
+/** 弹窗开关挂在 status store，便于快捷键打开 */
+const dialogOpen = computed({
+  get: () => status.searchOpen,
+  set: (value: boolean) => (status.searchOpen = value),
+});
 const searchQuery = ref("");
 
 const trimmedQuery = computed(() => searchQuery.value.trim());

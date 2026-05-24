@@ -5,6 +5,7 @@ import type { PluginInfo, PluginResolveUrlArgs } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
 import type { LoadOptions, TrackSource } from "@shared/types/player";
 import type { StreamingServerConfig } from "@shared/types/streaming";
+import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -139,6 +140,10 @@ const api = {
     searchTracks: (query: string) => ipcRenderer.invoke("library:searchTracks", query),
     // 获取曲目总数
     getTrackCount: () => ipcRenderer.invoke("library:getTrackCount"),
+    // 随机取一首曲目
+    getRandomTrack: () => ipcRenderer.invoke("library:getRandomTrack"),
+    // 随机取多首曲目
+    getRandomTracks: (limit: number) => ipcRenderer.invoke("library:getRandomTracks", limit),
     // 获取扫描状态
     isScanning: () => ipcRenderer.invoke("library:isScanning"),
     // 弹出目录选择器，添加扫描目录
@@ -368,6 +373,16 @@ const api = {
     restart: () => ipcRenderer.invoke("externalApi:restart"),
     // 查询当前运行状态
     getStatus: () => ipcRenderer.invoke("externalApi:getStatus"),
+  },
+  stats: {
+    // 记录一次播放
+    recordPlay: (event: PlayEventInput) => ipcRenderer.send("stats:recordPlay", event),
+    // 记录一次收藏变更
+    recordFavorite: (event: FavoriteEventInput) => ipcRenderer.send("stats:recordFavorite", event),
+    // 取播放统计汇总
+    getStatsSummary: () => ipcRenderer.invoke("stats:getStatsSummary"),
+    // 取最常播放的曲目
+    getTopTracks: (limit: number) => ipcRenderer.invoke("stats:getTopTracks", limit),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),

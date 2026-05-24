@@ -64,6 +64,24 @@ export const getTrackCount = (): number => {
   return row.count;
 };
 
+/** 随机取一首曲目，库为空时返回 null */
+export const getRandomTrack = (): Track | null => {
+  const row = getDb().prepare("SELECT * FROM tracks ORDER BY RANDOM() LIMIT 1").get() as
+    | TrackRow
+    | undefined;
+  return row ? rowToTrack(row) : null;
+};
+
+/** 随机取多首曲目 */
+export const getRandomTracks = (limit: number): Track[] => {
+  const safe = Math.max(0, Math.min(limit | 0, 500));
+  if (safe === 0) return [];
+  const rows = getDb()
+    .prepare("SELECT * FROM tracks ORDER BY RANDOM() LIMIT ?")
+    .all(safe) as TrackRow[];
+  return rows.map(rowToTrack);
+};
+
 /** 用于增量扫描比对的文件记录 */
 export interface FileRecord {
   path: string;

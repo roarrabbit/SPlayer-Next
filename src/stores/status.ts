@@ -27,6 +27,8 @@ export const useStatusStore = defineStore(
     const isExpanded = ref(false);
     /** 播放列表状态 */
     const playlistOpen = ref(false);
+    /** 搜索弹窗状态 */
+    const searchOpen = ref(false);
     /** 全屏播放器是否展示歌词 */
     const showLyric = ref(true);
     /** 当前播放索引 */
@@ -35,6 +37,10 @@ export const useStatusStore = defineStore(
     const repeatMode = ref<RepeatMode>("list");
     /** 随机模式 */
     const shuffleMode = ref<ShuffleMode>("off");
+    /** 心动模式 */
+    const heartMode = ref(false);
+    /** 私人 FM 模式 */
+    const fmMode = ref(false);
     /** 播放速度（0.5 ~ 2.0），不持久化 */
     const speed = ref(1.0);
     /** 音调偏移（半音 -12 ~ 12），不持久化 */
@@ -92,11 +98,14 @@ export const useStatusStore = defineStore(
       trackLoading,
       isExpanded,
       playlistOpen,
+      searchOpen,
       showLyric,
       outputDevices,
       playIndex,
       repeatMode,
       shuffleMode,
+      heartMode,
+      fmMode,
       speed,
       pitch,
       pitchSync,
@@ -116,6 +125,7 @@ export const useStatusStore = defineStore(
         "playIndex",
         "repeatMode",
         "shuffleMode",
+        "heartMode",
         "volume",
         "position",
         "searchPlatform",

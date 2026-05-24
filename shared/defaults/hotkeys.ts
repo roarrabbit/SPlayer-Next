@@ -127,6 +127,12 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     defaultBinding: { inApp: "CommandOrControl+P", global: null },
     allowGlobal: false,
   },
+  {
+    id: "view.openSearch",
+    labelKey: "settings.hotkeys.actions.openSearch",
+    defaultBinding: { inApp: "CommandOrControl+F", global: null },
+    allowGlobal: false,
+  },
 ];
 
 /** 默认绑定表（HotkeyBindingsMap） */
