@@ -97,7 +97,7 @@ fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<ScannedTrack>
 
     let info = reader.source_info();
     let stream_info = metadata::extract_stream_info(info);
-    let mut codec = info.codec_name.clone();
+    let mut codec = info.codec_name.clone().unwrap_or_default();
 
     // codec 兜底：从扩展名推导
     if codec.is_empty() {

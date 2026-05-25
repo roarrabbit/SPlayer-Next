@@ -56,7 +56,7 @@ impl<T> IntoNapiResult<T> for anyhow::Result<T> {
 #[napi]
 pub fn init_logger(log_dir: String, is_dev: bool) {
     logger::init_logger(&log_dir, is_dev);
-    ffmpeg_audio::log::set_log_level(ffmpeg_audio::log::AV_LOG_FATAL as i32);
+    ffmpeg_audio::log::set_log_level(ffmpeg_audio::sys::LogLevel::Fatal);
     info!(log_dir, is_dev, "audio-engine 日志系统已初始化");
 }
 

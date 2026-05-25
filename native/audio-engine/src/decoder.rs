@@ -66,7 +66,7 @@ pub fn start_decode(
     let info = reader.source_info();
     let duration_secs = reader.duration().map(|d| d.as_secs_f64()).unwrap_or(0.0);
     let stream_info = metadata::extract_stream_info(info);
-    let codec = info.codec_name.clone();
+    let codec = info.codec_name.clone().unwrap_or_default();
 
     let raw_metadata = reader.metadata();
     let tags = metadata::extract_tags(&raw_metadata);

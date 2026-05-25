@@ -337,7 +337,7 @@ dependencies = [
  "bitflags 2.11.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -357,7 +357,7 @@ dependencies = [
  "bitflags 2.11.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -911,7 +911,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg_audio"
 version = "0.1.0"
-source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#5b7d2c05d7fadd1a530b5c32c5b63e7385d8745c"
+source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?tag=v0.1.0#9cfb1a6fecef0fa242535f678b8d593da0ea3610"
 dependencies = [
  "ffmpeg_audio_sys",
  "libc",
@@ -921,7 +921,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg_audio_sys"
 version = "0.1.0"
-source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#5b7d2c05d7fadd1a530b5c32c5b63e7385d8745c"
+source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?tag=v0.1.0#9cfb1a6fecef0fa242535f678b8d593da0ea3610"
 dependencies = [
  "bindgen 0.72.1",
  "cc",
@@ -1404,15 +1404,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "itertools"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
-dependencies = [
- "either",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1502,7 +1493,7 @@ dependencies = [
  "ascii-canvas",
  "bit-set",
  "ena",
- "itertools 0.11.0",
+ "itertools",
  "lalrpop-util",
  "petgraph",
  "pico-args",

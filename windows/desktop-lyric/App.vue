@@ -43,7 +43,7 @@ const { track, lyric, playing, primaryIndex } = useNowPlayingSync({
 const { onRootPointerDown } = useDragWindow(() => config.locked);
 const { isHovered } = useHoverState();
 
-/** 
+/**
  * 占位行
  * @param key - 唯一键
  * @param mainText - 主行文本
