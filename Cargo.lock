@@ -744,7 +744,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg_audio"
 version = "0.1.0"
-source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#4743d479c43595382873306a63ccb2420d2afda2"
+source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#5b7d2c05d7fadd1a530b5c32c5b63e7385d8745c"
 dependencies = [
  "ffmpeg_audio_sys",
  "libc",
@@ -754,7 +754,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg_audio_sys"
 version = "0.1.0"
-source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#4743d479c43595382873306a63ccb2420d2afda2"
+source = "git+https://github.com/SPlayer-Dev/ffmpeg-audio?branch=feat%2Fduration-api#5b7d2c05d7fadd1a530b5c32c5b63e7385d8745c"
 dependencies = [
  "bindgen 0.72.1",
  "cc",
