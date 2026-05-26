@@ -1,9 +1,12 @@
 use windows::{
     Win32::{
-        Foundation::{CloseHandle, HWND},
-        System::Threading::{
-            OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
-            QueryFullProcessImageNameW,
+        Foundation::{CloseHandle, HWND, RPC_E_CHANGED_MODE},
+        System::{
+            Com::{COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize},
+            Threading::{
+                OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+                QueryFullProcessImageNameW,
+            },
         },
         UI::WindowsAndMessaging::{
             FindWindowExW, GetWindowLongPtrW, GetWindowThreadProcessId, SetWindowLongPtrW,
@@ -106,4 +109,42 @@ pub fn read_system_uses_light_theme() -> bool {
         .open_subkey(REG_KEY_PERSONALIZE)
         .and_then(|key| key.get_value::<u32, _>("SystemUsesLightTheme"))
         .map_or(false, |v| v != 0)
+}
+
+/// COM MTA 初始化的 RAII 守卫。
+///
+/// 处理 `RPC_E_CHANGED_MODE`：当前线程已被其他代码初始化为别的 apartment 模式时，
+/// 允许继续运行但不接管 `CoUninitialize` 责任（由最初的 init 持有）。
+/// `try_init` 返回 `None` 表示真正失败，调用方应中止
+pub struct ComApartmentGuard {
+    should_uninitialize: bool,
+}
+
+impl ComApartmentGuard {
+    pub fn try_init() -> Option<Self> {
+        // SAFETY: CoInitializeEx 跨线程独立调用是安全的，HRESULT 分类后决定 Drop 行为
+        let hr = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+        if hr.is_ok() {
+            Some(Self {
+                should_uninitialize: true,
+            })
+        } else if hr == RPC_E_CHANGED_MODE {
+            Some(Self {
+                should_uninitialize: false,
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl Drop for ComApartmentGuard {
+    fn drop(&mut self) {
+        if self.should_uninitialize {
+            // SAFETY: 与构造时的 CoInitializeEx 成对调用
+            unsafe {
+                CoUninitialize();
+            }
+        }
+    }
 }

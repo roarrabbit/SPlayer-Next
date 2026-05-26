@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use ffmpeg_audio::{AudioError, AudioReader};
-use tracing::warn;
+use tracing::debug;
 
 use crate::http_source;
 use crate::loudness::LoudnessAnalyzer;
@@ -153,8 +153,13 @@ fn open_source(source: &str) -> Result<(AudioReader, Option<Arc<AtomicBool>>)> {
 fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
     // 响度归一化：有 ReplayGain 标签时用固定增益，否则用实时分析
     let has_replay_gain = (shared.normalization_gain() - 1.0).abs() > f32::EPSILON;
-    let mut loudness = LoudnessAnalyzer::new();
+    let mut loudness = LoudnessAnalyzer::new(TARGET_SAMPLE_RATE, TARGET_CHANNELS);
     loudness.set_has_replay_gain(has_replay_gain);
+
+    // 容忍尾部坏帧（FLAC ID3v1 尾巴 / 封面 chunk / VBR 末帧），避免整首歌被标记 SourceError。
+    // 已成功解出过音频后再出错只是结束音频流，没必要走重载与跳曲；ffmpeg_audio crate 后续若
+    // 在 demuxer 层加 retry-once 可以撤掉这个兜底
+    let mut had_success = false;
 
     loop {
         // 背压：缓冲区满时阻塞等待消费
@@ -164,11 +169,12 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
 
         let samples = match data.reader.receive_frame() {
             Ok(Some(s)) => s.to_vec(),
-            Ok(None) => return,
-            Err(AudioError::Eof) => return,
+            Ok(None) | Err(AudioError::Eof) => return,
             Err(e) => {
-                warn!(error = %e, "解码失败");
-                shared.mark_decode_failed();
+                debug!(error = %e, had_success, "解码线程结束");
+                if !had_success {
+                    shared.mark_decode_failed();
+                }
                 return;
             }
         };
@@ -176,6 +182,7 @@ fn run_decoding_loop(data: &mut DecoderData, shared: &Shared) {
         if samples.is_empty() {
             continue;
         }
+        had_success = true;
 
         let mut player_samples = samples;
 

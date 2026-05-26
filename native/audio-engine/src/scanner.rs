@@ -51,7 +51,6 @@ pub struct ScannedTrack {
 }
 
 /// 扫描事件
-#[expect(dead_code, reason = "Error variant 预留给未来扫描错误处理")]
 pub enum ScanEvent {
     /// 进度：已处理一批文件
     Progress {
@@ -65,12 +64,6 @@ pub enum ScanEvent {
         scanned: u32,
         total: u32,
         removed_paths: Vec<String>,
-    },
-    /// 扫描出错
-    Error {
-        scanned: u32,
-        total: u32,
-        error: String,
     },
 }
 

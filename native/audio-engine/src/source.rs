@@ -70,7 +70,9 @@ impl Iterator for DecoderSource {
                 if !chunk.player_samples.is_empty() {
                     let mut samples = chunk.player_samples;
                     // 对整 chunk 应用 EQ：每秒只锁 50~100 次，开销摊到几千个样本上
-                    self.equalizer.lock().process_interleaved_stereo(&mut samples);
+                    self.equalizer
+                        .lock()
+                        .process_interleaved_stereo(&mut samples);
                     // 源时间长度（按输入计数，与 speed 无关；让 consumed_position 反映源进度）
                     let source_count = samples.len() as u64;
                     // 变速变调（bypass 时直接 extend，零开销）

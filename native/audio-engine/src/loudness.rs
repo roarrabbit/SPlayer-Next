@@ -6,11 +6,11 @@
 /// 目标 RMS 响度（线性值），约 -14 dBFS
 const TARGET_RMS: f32 = 0.2;
 
-/// 正常 RMS 窗口大小（采样数，约 0.4 秒 @ 48kHz stereo）
-const WINDOW_SIZE: usize = 38400;
+/// 正常 RMS 窗口时长（秒）
+const WINDOW_DURATION_SECS: f32 = 0.4;
 
-/// 初始快速收敛窗口（约 0.1 秒，让开头快速获得增益）
-const INITIAL_WINDOW_SIZE: usize = 9600;
+/// 初始快速收敛窗口时长（秒），让开头快速获得增益
+const INITIAL_WINDOW_DURATION_SECS: f32 = 0.1;
 
 /// 初始快速收敛的增益平滑因子
 const INITIAL_SMOOTHING: f32 = 0.4;
@@ -29,6 +29,10 @@ const INITIAL_WINDOWS: u32 = 3;
 
 /// 实时响度分析器
 pub struct LoudnessAnalyzer {
+    /// 正常窗口的交错样本数
+    window_size: usize,
+    /// 初始窗口的交错样本数
+    initial_window_size: usize,
     /// 平方和累加器
     sum_squares: f64,
     /// 当前窗口内的采样数
@@ -42,8 +46,12 @@ pub struct LoudnessAnalyzer {
 }
 
 impl LoudnessAnalyzer {
-    pub fn new() -> Self {
+    /// 按目标采样率/声道数推算窗口尺寸，避免硬编码与 TARGET_SAMPLE_RATE 解耦后失配
+    pub fn new(sample_rate: u32, channels: u16) -> Self {
+        let samples_per_sec = sample_rate as f32 * channels as f32;
         Self {
+            window_size: (samples_per_sec * WINDOW_DURATION_SECS) as usize,
+            initial_window_size: (samples_per_sec * INITIAL_WINDOW_DURATION_SECS) as usize,
             sum_squares: 0.0,
             sample_count: 0,
             current_gain: 1.0,
@@ -70,8 +78,16 @@ impl LoudnessAnalyzer {
 
         // 初始阶段用更小的窗口快速收敛
         let is_initial = self.windows_completed < INITIAL_WINDOWS;
-        let window = if is_initial { INITIAL_WINDOW_SIZE } else { WINDOW_SIZE };
-        let smoothing = if is_initial { INITIAL_SMOOTHING } else { NORMAL_SMOOTHING };
+        let window = if is_initial {
+            self.initial_window_size
+        } else {
+            self.window_size
+        };
+        let smoothing = if is_initial {
+            INITIAL_SMOOTHING
+        } else {
+            NORMAL_SMOOTHING
+        };
 
         if self.sample_count >= window {
             let rms = (self.sum_squares / self.sample_count as f64).sqrt() as f32;

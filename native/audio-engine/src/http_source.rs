@@ -44,6 +44,70 @@ impl Default for Config {
     }
 }
 
+enum OpenOutcome {
+    Ok,
+    Fatal(io::Error),
+    Retryable {
+        error: io::Error,
+        retry_after: Option<Duration>,
+    },
+}
+
+enum RetryAction {
+    FailFast,
+    Backoff,
+    RetryAfter,
+}
+
+fn classify_status(code: u16) -> RetryAction {
+    match code {
+        429 | 503 => RetryAction::RetryAfter,
+        400..=499 => RetryAction::FailFast,
+        _ => RetryAction::Backoff,
+    }
+}
+
+/// 解析 `Content-Range: bytes 0-999/12345` 中末尾的 total
+/// 形如 `bytes 0-999/*` 表示未知，返回 None
+fn parse_content_range_total(header: &str) -> Option<u64> {
+    let after_slash = header.rsplit_once('/')?.1.trim();
+    if after_slash == "*" {
+        return None;
+    }
+    after_slash.parse().ok()
+}
+
+/// 解析 Retry-After，仅支持纯秒数（HTTP-date 形式暂不支持，回退到退避）
+fn parse_retry_after(header: &str) -> Option<Duration> {
+    let trimmed = header.trim();
+    match trimmed.parse::<u64>() {
+        Ok(secs) => Some(Duration::from_secs(secs)),
+        Err(_) => {
+            warn!(value = trimmed, "Retry-After 非纯秒数，回退到指数退避");
+            None
+        }
+    }
+}
+
+/// 基于 SystemTime 子秒 nano 的低成本伪随机 jitter，±25%
+fn jitter(base: Duration) -> Duration {
+    let nanos = base.as_nanos() as u64;
+    if nanos == 0 {
+        return base;
+    }
+    let max_offset = nanos / 4;
+    if max_offset == 0 {
+        return base;
+    }
+    let seed = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos() as u64)
+        .unwrap_or(0);
+    let offset = (seed % (2 * max_offset + 1)) as i64 - max_offset as i64;
+    let result = (nanos as i64 + offset).max(0) as u64;
+    Duration::from_nanos(result)
+}
+
 pub struct HttpRangeSource {
     url: String,
     agent: ureq::Agent,
@@ -134,12 +198,7 @@ impl HttpRangeSource {
         }
         let range_header = format!("bytes={}-", self.pos);
 
-        match self
-            .agent
-            .get(&self.url)
-            .set("Range", &range_header)
-            .call()
-        {
+        match self.agent.get(&self.url).set("Range", &range_header).call() {
             Ok(resp) => {
                 let status = resp.status();
                 if self.pos > 0 && status == 200 {
@@ -156,9 +215,9 @@ impl HttpRangeSource {
                 OpenOutcome::Ok
             }
             Err(ureq::Error::Status(code, resp)) => match classify_status(code) {
-                RetryAction::FailFast => OpenOutcome::Fatal(io::Error::other(format!(
-                    "GET 返回 {code}（不可重试）"
-                ))),
+                RetryAction::FailFast => {
+                    OpenOutcome::Fatal(io::Error::other(format!("GET 返回 {code}（不可重试）")))
+                }
                 RetryAction::RetryAfter => OpenOutcome::Retryable {
                     error: io::Error::other(format!("status {code}")),
                     retry_after: resp.header("Retry-After").and_then(parse_retry_after),
@@ -228,14 +287,21 @@ impl Read for HttpRangeSource {
                 }
             }
 
-            let stream = self.stream.as_mut().expect("stream is Some after open_stream Ok");
+            let stream = self
+                .stream
+                .as_mut()
+                .expect("stream is Some after open_stream Ok");
             match stream.read(buf) {
                 Ok(0) => {
                     self.stream = None;
                     if self.pos >= self.total_size {
                         return Ok(0);
                     }
-                    debug!(pos = self.pos, total = self.total_size, "stream 早 EOF，重连");
+                    debug!(
+                        pos = self.pos,
+                        total = self.total_size,
+                        "stream 早 EOF，重连"
+                    );
                     continue;
                 }
                 Ok(n) => {
@@ -294,64 +360,6 @@ pub fn is_network_source(source: &str) -> bool {
     source.starts_with("http://") || source.starts_with("https://")
 }
 
-enum OpenOutcome {
-    Ok,
-    Fatal(io::Error),
-    Retryable {
-        error: io::Error,
-        retry_after: Option<Duration>,
-    },
-}
-
-enum RetryAction {
-    FailFast,
-    Backoff,
-    RetryAfter,
-}
-
-fn classify_status(code: u16) -> RetryAction {
-    match code {
-        429 | 503 => RetryAction::RetryAfter,
-        400..=499 => RetryAction::FailFast,
-        500..=599 => RetryAction::Backoff,
-        _ => RetryAction::Backoff,
-    }
-}
-
-/// 解析 `Content-Range: bytes 0-999/12345` 中末尾的 total
-/// 形如 `bytes 0-999/*` 表示未知，返回 None
-fn parse_content_range_total(header: &str) -> Option<u64> {
-    let after_slash = header.rsplit_once('/')?.1.trim();
-    if after_slash == "*" {
-        return None;
-    }
-    after_slash.parse().ok()
-}
-
-/// 解析 Retry-After，仅支持纯秒数（HTTP-date 形式暂不支持，回退到退避）
-fn parse_retry_after(header: &str) -> Option<Duration> {
-    header.trim().parse::<u64>().ok().map(Duration::from_secs)
-}
-
-/// 基于 SystemTime 子秒 nano 的低成本伪随机 jitter，±25%
-fn jitter(base: Duration) -> Duration {
-    let nanos = base.as_nanos() as u64;
-    if nanos == 0 {
-        return base;
-    }
-    let max_offset = nanos / 4;
-    if max_offset == 0 {
-        return base;
-    }
-    let seed = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|d| d.subsec_nanos() as u64)
-        .unwrap_or(0);
-    let offset = (seed % (2 * max_offset + 1)) as i64 - max_offset as i64;
-    let result = (nanos as i64 + offset).max(0) as u64;
-    Duration::from_nanos(result)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -382,7 +390,10 @@ mod tests {
         let mock = server.mock(|when, then| {
             when.method(GET).path("/file");
             then.status(206)
-                .header("Content-Range", format!("bytes 0-{}/{}", payload.len() - 1, payload.len()))
+                .header(
+                    "Content-Range",
+                    format!("bytes 0-{}/{}", payload.len() - 1, payload.len()),
+                )
                 .header("Content-Length", payload.len().to_string())
                 .body(&payload);
         });
@@ -417,7 +428,10 @@ mod tests {
         let mock = server.mock(|when, then| {
             when.method(GET).path("/file");
             then.status(206)
-                .header("Content-Range", format!("bytes 0-{}/{}", payload.len() - 1, payload.len()))
+                .header(
+                    "Content-Range",
+                    format!("bytes 0-{}/{}", payload.len() - 1, payload.len()),
+                )
                 .body(&payload);
         });
 
@@ -441,9 +455,14 @@ mod tests {
                 .body(&payload);
         });
         let m_seek = server.mock(|when, then| {
-            when.method(GET).path("/file").header("range", "bytes=2000-");
+            when.method(GET)
+                .path("/file")
+                .header("range", "bytes=2000-");
             then.status(206)
-                .header("Content-Range", format!("bytes 2000-{}/{}", total - 1, total))
+                .header(
+                    "Content-Range",
+                    format!("bytes 2000-{}/{}", total - 1, total),
+                )
                 .body(&payload[2000..]);
         });
 
@@ -571,7 +590,10 @@ mod tests {
 
         assert_eq!(err.kind(), io::ErrorKind::Interrupted);
         // 503 快速返回 → 进 sleep_with_cancel(500ms)，cancel 在 ~100ms 触发，应在 ~150ms 内返回
-        assert!(elapsed < Duration::from_secs(1), "cancel 响应超时: {elapsed:?}");
+        assert!(
+            elapsed < Duration::from_secs(1),
+            "cancel 响应超时: {elapsed:?}"
+        );
     }
 
     #[test]

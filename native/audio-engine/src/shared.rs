@@ -47,6 +47,10 @@ pub const FRAME_BUFFER_CAPACITY: usize = 64;
 
 impl Shared {
     pub fn new(sample_rate: u32, channels: u16) -> Arc<Self> {
+        assert!(
+            sample_rate > 0 && channels > 0,
+            "sample_rate/channels 必须为正"
+        );
         Arc::new(Self {
             buffer: Mutex::new(VecDeque::with_capacity(FRAME_BUFFER_CAPACITY)),
             condvar: Condvar::new(),

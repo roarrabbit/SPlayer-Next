@@ -1,11 +1,7 @@
 use windows::{
     Win32::{
         Foundation::{HWND, RECT},
-        UI::WindowsAndMessaging::{
-            FindWindowExW, GWL_EXSTYLE, GWL_STYLE, GetWindowRect, SetParent, WINDOW_EX_STYLE,
-            WINDOW_STYLE, WS_CAPTION, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-            WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_SYSMENU, WS_THICKFRAME,
-        },
+        UI::WindowsAndMessaging::{FindWindowExW, GetWindowRect},
     },
     core::w,
 };
@@ -16,10 +12,7 @@ use crate::{
         TaskbarStrategy,
     },
     uia::TaskbarScanner,
-    utils::{
-        BRIDGE_CLASS, check_registry_value, find_taskbar_hwnd, modify_window_long,
-        read_system_uses_light_theme,
-    },
+    utils::{BRIDGE_CLASS, check_registry_value, find_taskbar_hwnd, read_system_uses_light_theme},
 };
 
 pub struct Win11Strategy {
@@ -61,26 +54,7 @@ impl TaskbarStrategy for Win11Strategy {
     }
 
     fn embed_window(&self, child_wnd: HWND) -> bool {
-        if self.h_taskbar.0.is_null() {
-            return false;
-        }
-
-        unsafe {
-            let _ = SetParent(child_wnd, Some(self.h_taskbar));
-
-            modify_window_long(child_wnd, GWL_STYLE, |raw_style| {
-                let style = WINDOW_STYLE(raw_style);
-                let mask =
-                    WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-                (style & !mask).0
-            });
-
-            modify_window_long(child_wnd, GWL_EXSTYLE, |raw_style| {
-                let ex_style = WINDOW_EX_STYLE(raw_style);
-                (ex_style | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE).0
-            });
-        }
-        true
+        super::embed_child_window(child_wnd, self.h_taskbar)
     }
 
     fn update_layout(&mut self, _params: LayoutParams) -> Option<TaskbarLayout> {

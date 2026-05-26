@@ -4,6 +4,8 @@ out
 .DS_Store
 .eslintcache
 .claude
+.agents
+skills-lock.json
 *.log*
 .vscode/settings.json
 

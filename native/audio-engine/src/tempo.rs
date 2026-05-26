@@ -44,8 +44,7 @@ impl StretchProcessor {
 
     /// 1.0 速度 + 当前模式下 transpose 为 0：bypass，可走 passthrough
     pub(crate) fn is_bypass(&self) -> bool {
-        (self.speed - 1.0).abs() < FLOAT_EQ_EPS
-            && self.effective_transpose().abs() < FLOAT_EQ_EPS
+        (self.speed - 1.0).abs() < FLOAT_EQ_EPS && self.effective_transpose().abs() < FLOAT_EQ_EPS
     }
 
     /// sync=ON：transpose = pitch_semitones（独立调音调）

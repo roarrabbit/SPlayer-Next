@@ -170,7 +170,12 @@ impl Equalizer {
     fn recompute_coefficients(&mut self) {
         for channel in self.filters.iter_mut() {
             for (i, filter) in channel.iter_mut().enumerate() {
-                filter.set_peaking(EQ_FREQUENCIES[i], self.sample_rate, EQ_Q, self.band_gains_db[i]);
+                filter.set_peaking(
+                    EQ_FREQUENCIES[i],
+                    self.sample_rate,
+                    EQ_Q,
+                    self.band_gains_db[i],
+                );
             }
         }
     }

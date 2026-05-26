@@ -110,12 +110,11 @@ export interface FileRecord {
   size: number
 }
 
-/** 初始化原生日志系统（主进程启动时调用一次） */
+/** 初始化原生日志系统。重复调用是无害的（HMR 重载时主进程可能多次注入） */
 export declare function initLogger(logDir: string, isDev: boolean): void
 
 /** 音频输出设备信息 */
 export interface JsAudioDevice {
-  /** 设备名称 */
   name: string
   /** 是否为系统默认设备 */
   isDefault: boolean
@@ -172,7 +171,7 @@ export interface JsPlayerEvent {
   fftData?: Array<number>
 }
 
-/** 播放器状态快照，返回给 JS 侧 */
+/** 播放器状态快照 */
 export interface JsPlayerStatus {
   /** 播放状态："idle" | "playing" | "paused" | "stopped" */
   state: string
@@ -188,7 +187,7 @@ export interface JsPlayerStatus {
 
 /** 扫描事件回调数据 */
 export interface JsScanEvent {
-  /** "progress" | "done" | "error" */
+  /** "progress" | "done" */
   eventType: string
   /** 已扫描文件数 */
   scanned: number
@@ -200,8 +199,6 @@ export interface JsScanEvent {
   tracks?: Array<JsScannedTrack>
   /** 已删除的文件路径列表（仅 done 事件） */
   removedPaths?: Array<string>
-  /** 错误信息（仅 error 事件） */
-  error?: string
 }
 
 /** 扫描到的曲目信息 */

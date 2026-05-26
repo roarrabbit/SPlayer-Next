@@ -1,6 +1,6 @@
 use std::{
     sync::{
-        LazyLock, Mutex,
+        OnceLock,
         mpsc::{self, Receiver, Sender},
     },
     thread,
@@ -32,7 +32,7 @@ enum Msg {
     Config(DiscordConfig),
 }
 
-static SENDER: LazyLock<Mutex<Option<Sender<Msg>>>> = LazyLock::new(|| Mutex::new(None));
+static SENDER: OnceLock<Sender<Msg>> = OnceLock::new();
 
 #[derive(Clone, PartialEq)]
 struct ActivityData {
@@ -148,7 +148,9 @@ impl Worker {
 
     fn connect(&mut self) {
         if let Some(t) = self.next_retry_at {
-            if std::time::Instant::now() < t { return; }
+            if std::time::Instant::now() < t {
+                return;
+            }
         }
         let mut client = DiscordIpcClient::new(APP_ID);
         match client.connect() {
@@ -158,8 +160,9 @@ impl Worker {
                 self.last_end_ts = None;
                 self.next_retry_at = None;
             }
-            Err(_) => {
+            Err(e) => {
                 debug!(
+                    error = %e,
                     cooldown_secs = RECONNECT_COOLDOWN.as_secs(),
                     "Discord IPC 连接失败，进入冷却"
                 );
@@ -233,7 +236,8 @@ impl Worker {
         match data.status {
             PlaybackStatus::Paused => {
                 if !show_paused {
-                    if let Err(_) = client.clear_activity() {
+                    if let Err(e) = client.clear_activity() {
+                        debug!(error = %e, "Discord clear_activity 失败，断开重连");
                         return false;
                     }
                     *last_end = None;
@@ -276,7 +280,8 @@ impl Worker {
         }
 
         if should_send {
-            if let Err(_) = client.set_activity(activity) {
+            if let Err(e) = client.set_activity(activity) {
+                debug!(error = %e, "Discord set_activity 失败，断开重连");
                 return false;
             }
         }
@@ -328,17 +333,16 @@ fn background_loop(rx: &Receiver<Msg>) {
 
 pub fn init() {
     let (tx, rx) = mpsc::channel();
-    if let Ok(mut g) = SENDER.lock() {
-        *g = Some(tx);
+    if SENDER.set(tx).is_err() {
+        // 重复初始化无害，直接忽略；前次的 background_loop 仍在运行
+        return;
     }
     thread::spawn(move || background_loop(&rx));
     info!("Discord RPC 后台线程已启动");
 }
 
 fn send(msg: Msg) {
-    if let Ok(g) = SENDER.lock()
-        && let Some(tx) = g.as_ref()
-    {
+    if let Some(tx) = SENDER.get() {
         let _ = tx.send(msg);
     }
 }

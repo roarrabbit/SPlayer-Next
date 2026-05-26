@@ -45,13 +45,13 @@ fn fade_volume(sink: &Sink, from: f32, to: f32, duration_ms: u64, cancel: &Atomi
         sink.set_volume(to);
         return;
     }
-    let step_duration = Duration::from_millis(duration_ms / FADE_STEPS as u64);
-    for i in 1..=FADE_STEPS {
+    let step_duration = Duration::from_millis(duration_ms / u64::from(FADE_STEPS));
+    for step in 1..=FADE_STEPS {
         if cancel.load(Ordering::Relaxed) {
             return;
         }
-        let t = i as f32 / FADE_STEPS as f32;
-        sink.set_volume(from + (to - from) * t);
+        let progress = step as f32 / FADE_STEPS as f32;
+        sink.set_volume(from + (to - from) * progress);
         thread::sleep(step_duration);
     }
 }
@@ -177,20 +177,15 @@ fn join_with_timeout(handle: JoinHandle<()>, timeout_ms: u64) {
 }
 
 impl InnerPlayer {
-    /// 未初始化时通过 `AudioOutput::new` 懒构造音频输出，返回当前输出。
-    /// 设备失效时的重建由 `reinit_output` 显式处理，不在此函数内自动恢复。
+    /// 未初始化时通过 `AudioOutput::new` 懒构造音频输出。
+    /// 设备失效时的重建由 `reinit_output` 显式处理，不在此函数内自动恢复
     fn ensure_output(&mut self) -> Result<&AudioOutput> {
         if self.output.is_none() {
             self.output = Some(AudioOutput::new(self.selected_device_name.as_deref())?);
         }
-        // None 分支不可达：上面分支若进入则 output 已被赋为 Some，否则进入这里之前就是 Some
-        // 仍写成 match：在 NLL 限制下既能让借用检查通过，又规避非测试代码 unwrap/expect
-        match self.output {
-            Some(ref output) => Ok(output),
-            None => Err(anyhow::anyhow!(
-                "ensure_output post-condition violated: output should be Some"
-            )),
-        }
+        self.output
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("ensure_output 后置条件违反"))
     }
 
     pub fn new() -> Result<Self> {
@@ -270,7 +265,8 @@ impl InnerPlayer {
         }
     }
 
-    /// 启动非阻塞渐变（独立线程执行，不阻塞调用方）
+    /// 启动非阻塞渐变（独立线程执行，不阻塞调用方）。
+    /// 完成回调仅在未被取消时执行
     fn start_fade(&mut self, from: f32, to: f32, on_complete: Option<Box<dyn FnOnce() + Send>>) {
         self.cancel_fade();
 
@@ -282,10 +278,9 @@ impl InnerPlayer {
             let fade_ms = self.fade_duration_ms;
             let handle = thread::spawn(move || {
                 fade_volume(&sink, from, to, fade_ms, &cancel);
-                // 渐变未被取消时执行完成回调
                 if !cancel.load(Ordering::Relaxed) {
-                    if let Some(f) = on_complete {
-                        f();
+                    if let Some(callback) = on_complete {
+                        callback();
                     }
                 }
             });
@@ -869,6 +864,15 @@ impl InnerPlayer {
         self.seek_base = 0.0;
     }
 
+    /// seek 失败时的回退：从头重新 load 当前源，保留 seek 前的播放/暂停状态
+    fn seek_via_reload(&mut self) -> Result<()> {
+        let was_playing = self.state == PlayerState::Playing;
+        if let Some(source) = self.current_source.clone() {
+            self.load(&source, was_playing)?;
+        }
+        Ok(())
+    }
+
     /// 跳转到指定位置（秒）
     ///
     /// 回收解码线程中的 DecoderData 并复用（seek + flush），不重建 FFmpeg 上下文。
@@ -886,7 +890,7 @@ impl InnerPlayer {
             sink.stop();
         }
 
-        let mut decoder_data = self.decoder_thread.take().and_then(|h| h.join().ok());
+        let decoder_data = self.decoder_thread.take().and_then(|h| h.join().ok());
 
         // 清空旧缓冲区，释放 AudioChunk 内存
         if let Some(ref shared) = self.shared {
@@ -895,27 +899,19 @@ impl InnerPlayer {
 
         self.fft.reset();
 
+        // 解码线程回收失败（panic）或 seek 失败时回退到从头 load
+        let Some(mut decoder_data) = decoder_data else {
+            return self.seek_via_reload();
+        };
+
         // 清掉中断标志：上面 shared.stop() 已让 interrupt_flag=true，
         // 否则 ffmpeg 的 avformat_seek_file 一进入就会被中断
-        if let Some(ref d) = decoder_data {
-            d.reset_interrupt();
-        }
+        decoder_data.reset_interrupt();
 
-        // 在已有上下文上 seek（不重新打开文件）
-        let seek_ok = decoder_data.as_mut().is_some_and(|d| d.seek(position_secs));
-
-        if !seek_ok {
-            // 回收失败（线程 panic 或 seek 出错），回退到从头 load，不再递归 seek
-            // 保持 seek 前的播放/暂停状态
-            let was_playing = self.state == PlayerState::Playing;
+        if !decoder_data.seek(position_secs) {
             drop(decoder_data);
-            if let Some(source) = self.current_source.clone() {
-                self.load(&source, was_playing)?;
-            }
-            return Ok(());
+            return self.seek_via_reload();
         }
-
-        let decoder_data = decoder_data.unwrap();
 
         // 创建新的共享状态（旧的 is_stopping=true 不可复用）
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
@@ -945,7 +941,6 @@ impl InnerPlayer {
             self.audio_channels,
         );
 
-        // 保持 seek 前的播放/暂停状态
         let was_paused = self.state == PlayerState::Paused;
         sink.set_volume(self.target_volume);
         if was_paused {

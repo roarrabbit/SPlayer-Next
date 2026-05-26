@@ -82,8 +82,8 @@ pub fn extract_replay_gain(dict: &HashMap<String, String>) -> Option<f32> {
     }
 
     // ReplayGain：格式如 "-6.50 dB"
-    if let Some(val) = dict_get(dict, "replaygain_track_gain")
-        .or_else(|| dict_get(dict, "replaygain_album_gain"))
+    if let Some(val) =
+        dict_get(dict, "replaygain_track_gain").or_else(|| dict_get(dict, "replaygain_album_gain"))
     {
         let cleaned = val.trim().trim_end_matches(" dB").trim_end_matches("dB");
         if let Ok(db) = cleaned.parse::<f32>() {

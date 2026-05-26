@@ -4,6 +4,7 @@
 mod audio_output;
 mod decoder;
 mod equalizer;
+mod error;
 mod fft;
 mod http_source;
 mod logger;
@@ -16,7 +17,7 @@ mod source;
 mod tempo;
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Once};
 use std::thread::{self, JoinHandle};
 
 use napi::bindgen_prelude::*;
@@ -41,23 +42,32 @@ enum SeekOutcome {
 /// 全局扫描取消标志
 static SCAN_CANCEL: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 
-/// anyhow::Error → napi::Error 统一转换
+/// anyhow::Error → napi::Error 统一转换。
+///
+/// 经 `AudioEngineError::classify` 启发式分类，错误消息附带 `[CODE]` 前缀，
+/// JS 侧可解析 code 走分支（网络中断 vs 解码失败 vs 取消等）
 trait IntoNapiResult<T> {
     fn into_napi(self) -> napi::Result<T>;
 }
 
 impl<T> IntoNapiResult<T> for anyhow::Result<T> {
     fn into_napi(self) -> napi::Result<T> {
-        self.map_err(|e| Error::from_reason(format!("{e:#}")))
+        self.map_err(|err| {
+            let classified = crate::error::AudioEngineError::classify(&err);
+            Error::from_reason(format!("[{}] {classified}", classified.code()))
+        })
     }
 }
 
-/// 初始化原生日志系统（主进程启动时调用一次）
+/// 初始化原生日志系统。重复调用是无害的（HMR 重载时主进程可能多次注入）
 #[napi]
 pub fn init_logger(log_dir: String, is_dev: bool) {
-    logger::init_logger(&log_dir, is_dev);
-    ffmpeg_audio::log::set_log_level(ffmpeg_audio::sys::LogLevel::Fatal);
-    info!(log_dir, is_dev, "audio-engine 日志系统已初始化");
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        logger::init_logger(&log_dir, is_dev);
+        ffmpeg_audio::log::set_log_level(ffmpeg_audio::sys::LogLevel::Fatal);
+        info!(log_dir, is_dev, "audio-engine 日志系统已初始化");
+    });
 }
 
 /// 一条外部歌词，返回给 JS 侧（仅格式和路径，内容按需加载）
@@ -102,7 +112,6 @@ pub struct JsMusicMetadata {
 /// 音频输出设备信息
 #[napi(object)]
 pub struct JsAudioDevice {
-    /// 设备名称
     pub name: String,
     /// 是否为系统默认设备
     pub is_default: bool,
@@ -125,7 +134,7 @@ pub struct JsPlayerEvent {
     pub fft_data: Option<Vec<f64>>,
 }
 
-/// 播放器状态快照，返回给 JS 侧
+/// 播放器状态快照
 #[napi(object)]
 pub struct JsPlayerStatus {
     /// 播放状态："idle" | "playing" | "paused" | "stopped"
@@ -149,7 +158,6 @@ fn state_to_str(state: PlayerState) -> &'static str {
         PlayerState::Stopped => "stopped",
     }
 }
-
 /// 音频播放器，通过 napi-rs 暴露给 Node.js
 #[napi]
 pub struct AudioPlayer {
@@ -239,13 +247,11 @@ impl AudioPlayer {
         source: String,
         #[napi(ts_arg_type = "boolean")] auto_play: Option<bool>,
     ) -> Result<JsMusicMetadata> {
-        use crate::decoder;
         use crate::shared::Shared;
 
         let auto_play = auto_play.unwrap_or(true);
         info!(source = %source, auto_play, "加载音频源");
 
-        // 阶段 1：主线程持锁瞬间，take 所有旧线程 handle + 拿参数 + 拿 load token
         let (old_threads, token, cover_dir, normalization_enabled) = {
             let mut player = self.inner.lock();
             let (old_threads, token) = player.take_for_async_load();
@@ -258,15 +264,12 @@ impl AudioPlayer {
             )
         };
 
-        // 创建 shared（不持锁）
         let shared = Shared::new(decoder::TARGET_SAMPLE_RATE, decoder::TARGET_CHANNELS);
         shared.set_normalization_enabled(normalization_enabled);
         let shared_for_decoder = Arc::clone(&shared);
         let source_for_decoder = source.clone();
 
-        // 阶段 2：工作线程（不持有 inner 引用）—— join 旧 timer/fade/decoder + 跑 ffmpeg open URL
         let (metadata, decode_handle) = tokio::task::spawn_blocking(move || {
-            // 先 join 所有旧辅助线程（timer/fade），再 join 旧解码线程
             if let Some(h) = old_threads.join_aux() {
                 let _ = h.join();
             }
@@ -280,8 +283,6 @@ impl AudioPlayer {
         .map_err(|e| Error::from_reason(format!("load task join error: {e}")))?
         .into_napi()?;
 
-        // 阶段 3：主线程持锁瞬间，attach 新资源
-        // commit_loaded 内部比对 token，被新 load 抢占时返回 None：丢弃本次结果，避免覆盖
         let returned_meta = {
             let mut player = self.inner.lock();
             player
@@ -349,10 +350,8 @@ impl AudioPlayer {
     /// seek 失败时 fallback 到完整 load
     #[napi]
     pub async fn seek(&self, position: f64) -> Result<()> {
-        use crate::decoder;
         use crate::shared::Shared;
 
-        // 阶段 1：主线程持锁瞬间，take 旧资源
         let take = {
             let mut player = self.inner.lock();
             player.take_for_async_seek()
@@ -366,7 +365,6 @@ impl AudioPlayer {
             was_playing,
         } = take;
 
-        // 阶段 2：工作线程（不持有 inner 引用）—— join 旧 timer/fade/decoder + ffmpeg seek + 启动新解码
         let outcome: SeekOutcome = tokio::task::spawn_blocking(move || {
             let decoder_data = old_threads.join_aux().and_then(|h| h.join().ok());
             let mut decoder_data = match decoder_data {
@@ -391,12 +389,10 @@ impl AudioPlayer {
 
         match outcome {
             SeekOutcome::Resumed { shared, handle } => {
-                // 阶段 3：主线程持锁瞬间，attach
                 let mut player = self.inner.lock();
                 player.commit_seeked(position, shared, handle).into_napi()
             }
             SeekOutcome::Fallback => {
-                // seek 失败（线程 panic 或 ffmpeg seek 出错），回退到完整 load 重新打开
                 if let Some(src) = current_source {
                     self.load(src, Some(was_playing)).await?;
                     Ok(())
@@ -607,8 +603,6 @@ impl AudioPlayer {
     }
 }
 
-// ─── 批量扫描 ─────────────────────────────────────────────────────────────────
-
 /// 已有文件记录，用于增量扫描比对
 #[napi(object)]
 pub struct FileRecord {
@@ -645,7 +639,7 @@ pub struct JsScannedTrack {
 #[napi(object)]
 #[derive(Default)]
 pub struct JsScanEvent {
-    /// "progress" | "done" | "error"
+    /// "progress" | "done"
     pub event_type: String,
     /// 已扫描文件数
     pub scanned: u32,
@@ -657,8 +651,6 @@ pub struct JsScanEvent {
     pub tracks: Option<Vec<JsScannedTrack>>,
     /// 已删除的文件路径列表（仅 done 事件）
     pub removed_paths: Option<Vec<String>>,
-    /// 错误信息（仅 error 事件）
-    pub error: Option<String>,
 }
 
 /// 批量扫描目录，通过回调推送进度和结果
@@ -736,17 +728,6 @@ pub fn scan_dirs(
                     scanned,
                     total,
                     removed_paths: Some(removed_paths),
-                    ..Default::default()
-                },
-                scanner::ScanEvent::Error {
-                    scanned,
-                    total,
-                    error,
-                } => JsScanEvent {
-                    event_type: "error".into(),
-                    scanned,
-                    total,
-                    error: Some(error),
                     ..Default::default()
                 },
             };

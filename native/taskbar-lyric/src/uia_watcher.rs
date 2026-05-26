@@ -13,12 +13,9 @@ use std::{
 use anyhow::{Result, anyhow};
 use windows::{
     Win32::{
-        Foundation::{LPARAM, RPC_E_CHANGED_MODE, WPARAM},
+        Foundation::{LPARAM, WPARAM},
         System::{
-            Com::{
-                CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED, CoCreateInstance, CoInitializeEx,
-                CoUninitialize, SAFEARRAY,
-            },
+            Com::{CLSCTX_INPROC_SERVER, CoCreateInstance, SAFEARRAY},
             Threading::GetCurrentThreadId,
             Variant::VARIANT,
         },
@@ -39,7 +36,7 @@ use windows::{
     core::{Ref, Result as WinResult, implement},
 };
 
-use crate::utils::find_taskbar_hwnd;
+use crate::utils::{ComApartmentGuard, find_taskbar_hwnd};
 
 pub type LayoutChangedCallback = Box<dyn Fn() + Send + Sync + 'static>;
 
@@ -119,18 +116,10 @@ impl UiaWatcher {
         });
 
         thread::spawn(move || unsafe {
-            // RPC_E_CHANGED_MODE：调用线程已被其它代码路径初始化为另一种 apartment 模式，
-            // 允许继续但末尾不能 CoUninitialize（成对关系由最初的 init 持有）
-            let should_uninitialize = {
-                let hr = CoInitializeEx(None, COINIT_MULTITHREADED);
-                if hr.is_ok() {
-                    true
-                } else if hr == RPC_E_CHANGED_MODE {
-                    false
-                } else {
-                    let _ = tid_tx.send(GetCurrentThreadId());
-                    return;
-                }
+            // 进入 MTA apartment，作用域结束自动配对 CoUninitialize；失败时把当前线程 ID 透出后退出
+            let Some(_com_guard) = ComApartmentGuard::try_init() else {
+                let _ = tid_tx.send(GetCurrentThreadId());
+                return;
             };
 
             let thread_id = GetCurrentThreadId();
@@ -180,12 +169,12 @@ impl UiaWatcher {
             }
 
             drop(_handlers_guard);
-            if should_uninitialize {
-                CoUninitialize();
-            }
+            // _com_guard 在 closure 结束时 drop 配对 CoUninitialize
         });
 
-        let thread_id = tid_rx.recv().map_err(|error| anyhow!("获取线程 ID 失败: {error}"))?;
+        let thread_id = tid_rx
+            .recv()
+            .map_err(|error| anyhow!("获取线程 ID 失败: {error}"))?;
 
         Ok(Self {
             thread_id: Some(thread_id),
