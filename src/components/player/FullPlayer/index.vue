@@ -349,6 +349,7 @@ const resetLyricOffset = (): void => writeOffset(0);
                     size="small"
                     unit="ms"
                     placeholder="0"
+                    cover
                   />
                   <SButton
                     type="cover"
