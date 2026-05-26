@@ -12,8 +12,8 @@ const { isPlaying } = storeToRefs(status);
 const hdCache = shallowRef<{ id: string; data: string } | null>(null);
 
 const coverSrc = computed(() =>
-  hdCache.value?.id === media.track?.id
-    ? hdCache.value!.data
+  hdCache.value && hdCache.value.id === media.track?.id
+    ? hdCache.value.data
     : media.track?.coverOriginal || media.track?.cover,
 );
 

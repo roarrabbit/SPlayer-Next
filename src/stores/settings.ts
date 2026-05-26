@@ -84,10 +84,36 @@ export const useSettingsStore = defineStore(
     /** 任务栏歌词窗口是否打开；由主进程广播 */
     const isTaskbarLyricOpen = ref(false);
 
+    /**
+     * 深合并：嵌套对象原地 mutate，叶子值不变就不写
+     * 避免浅 Object.assign 替换嵌套引用，导致依赖路径的 watcher 误触
+     */
+    const deepAssign = (target: Record<string, unknown>, source: Record<string, unknown>): void => {
+      for (const key of Object.keys(source)) {
+        const next = source[key];
+        const cur = target[key];
+        if (
+          next &&
+          typeof next === "object" &&
+          !Array.isArray(next) &&
+          cur &&
+          typeof cur === "object" &&
+          !Array.isArray(cur)
+        ) {
+          deepAssign(cur as Record<string, unknown>, next as Record<string, unknown>);
+        } else if (cur !== next) {
+          target[key] = next;
+        }
+      }
+    };
+
     /** 从主进程拉取后端配置 */
     const syncSystem = async (): Promise<void> => {
       try {
-        Object.assign(system, await window.api.config.getAll());
+        deepAssign(
+          system as unknown as Record<string, unknown>,
+          (await window.api.config.getAll()) as unknown as Record<string, unknown>,
+        );
       } catch {}
     };
 
