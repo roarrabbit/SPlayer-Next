@@ -31,6 +31,10 @@ export interface SVirtualListProps<T> {
   defaultScrollIndex?: number;
   /** 获取唯一键 */
   getItemKey?: (item: T, index: number) => string | number;
+  /** 隐藏滚动条 */
+  hideScrollbar?: boolean;
+  /** 封面主题色 */
+  cover?: boolean;
 }
 
 const props = withDefaults(defineProps<SVirtualListProps<T>>(), {
@@ -267,10 +271,10 @@ const scrollToIndex = (index: number, behavior: ScrollBehavior = "auto"): void =
   const targetIndex = Math.max(0, Math.min(index, props.items.length - 1));
   let top = 0;
   if (props.itemFixed) {
-    top = targetIndex * props.itemHeight + props.paddingTop;
+    top = targetIndex * props.itemHeight;
   } else {
     if (itemTops.value.length <= targetIndex) initializeHeights();
-    top = (itemTops.value[targetIndex] || 0) + props.paddingTop;
+    top = itemTops.value[targetIndex] || 0;
   }
   scrollToPosition(top, behavior);
 };
@@ -368,7 +372,17 @@ defineExpose({
       <div v-if="$slots.header" class="shrink-0">
         <slot name="header" />
       </div>
-      <div ref="scrollRef" class="flex-1 min-h-0 overflow-y-auto" @scroll="handleScroll">
+      <div
+        ref="scrollRef"
+        class="flex-1 min-h-0 overflow-y-auto"
+        :class="[
+          hideScrollbar ? '[&::-webkit-scrollbar]:hidden' : '',
+          cover
+            ? '[&::-webkit-scrollbar-thumb]:bg-cover/25 [&::-webkit-scrollbar-thumb:hover]:bg-cover/45'
+            : '',
+        ]"
+        @scroll="handleScroll"
+      >
         <div
           v-show="items.length > 0"
           :style="{

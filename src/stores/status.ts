@@ -25,8 +25,10 @@ export const useStatusStore = defineStore(
     const trackLoading = ref(false);
     /** 菜单折叠状态 */
     const isExpanded = ref(false);
-    /** 播放列表状态 */
-    const playlistOpen = ref(false);
+    /** 外层播放队列 */
+    const outerQueueOpen = ref(false);
+    /** 播放器播放队列 */
+    const fullQueueOpen = ref(false);
     /** 搜索弹窗状态 */
     const searchOpen = ref(false);
     /** 全屏播放器是否展示歌词 */
@@ -97,7 +99,8 @@ export const useStatusStore = defineStore(
       progress,
       trackLoading,
       isExpanded,
-      playlistOpen,
+      outerQueueOpen,
+      fullQueueOpen,
       searchOpen,
       showLyric,
       outputDevices,

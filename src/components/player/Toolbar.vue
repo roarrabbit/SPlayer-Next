@@ -123,16 +123,31 @@ const onMoreMenuSelect = (key: string): void => {
       <template #icon><IconLucideMicVocal /></template>
     </SButton>
     <SButton
-      v-if="!status.fmMode"
+      v-if="!status.fmMode && cover"
       :type="buttonType"
       variant="ghost"
       circle
       size="large"
-      :class="mutedClass"
-      @click="status.playlistOpen = true"
+      :class="status.fullQueueOpen ? 'opacity-100' : 'opacity-40'"
+      @click="status.fullQueueOpen = !status.fullQueueOpen"
     >
       <template #icon><IconLucideListMusic /></template>
     </SButton>
+    <SPopover
+      v-else-if="!status.fmMode"
+      v-model:open="status.outerQueueOpen"
+      trigger="click"
+      side="top"
+      :side-offset="12"
+      content-class="!p-0 w-72 h-[min(60vh,520px)] overflow-hidden"
+    >
+      <template #trigger>
+        <SButton :type="buttonType" variant="ghost" circle size="large" :class="mutedClass">
+          <template #icon><IconLucideListMusic /></template>
+        </SButton>
+      </template>
+      <QueuePopover @close="status.outerQueueOpen = false" />
+    </SPopover>
     <SDropdownMenu
       :items="moreMenuItems"
       side="top"

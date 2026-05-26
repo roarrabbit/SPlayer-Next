@@ -78,9 +78,10 @@ const hasLyric = computed(() => media.parsedLyric.length > 0 || media.lyricLoadi
 const { isFullscreen, toggleFullscreen } = useWindowControls();
 
 /** 封面是否居中 */
-const coverCentered = computed(
-  () => !showLyric.value || (settings.player.autoCenterCover && !hasLyric.value),
-);
+const coverCentered = computed(() => {
+  if (status.fullQueueOpen) return false;
+  return !showLyric.value || (settings.player.autoCenterCover && !hasLyric.value);
+});
 
 /** 弹簧配置 */
 const springConfig = computed(() => ({
@@ -191,6 +192,16 @@ const advanceLyric = (): void => writeOffset(songOffset.value + LYRIC_OFFSET_STE
 const delayLyric = (): void => writeOffset(songOffset.value - LYRIC_OFFSET_STEP);
 /** 重置歌词偏移 */
 const resetLyricOffset = (): void => writeOffset(0);
+
+/** 切换歌词展示 */
+const toggleLyric = (): void => {
+  if (status.fullQueueOpen) {
+    status.fullQueueOpen = false;
+    showLyric.value = true;
+  } else {
+    showLyric.value = !showLyric.value;
+  }
+};
 </script>
 
 <template>
@@ -233,8 +244,8 @@ const resetLyricOffset = (): void => writeOffset(0);
               circle
               :size="40"
               :disabled="!hasLyric"
-              :class="showLyric && hasLyric ? 'opacity-100' : 'opacity-40'"
-              @click="showLyric = !showLyric"
+              :class="showLyric && hasLyric && !status.fullQueueOpen ? 'opacity-100' : 'opacity-40'"
+              @click="toggleLyric"
             >
               <template #icon><IconLucideTextQuote /></template>
             </SButton>
@@ -272,7 +283,11 @@ const resetLyricOffset = (): void => writeOffset(0);
           <!-- 右侧 -->
           <div
             class="lyric-area group absolute inset-y-0 right-0 pr-20 w-[55%] transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            :class="coverCentered ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+            :class="
+              coverCentered || status.fullQueueOpen
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100'
+            "
             :style="{
               fontSize: settings.lyric.adaptiveFontSize
                 ? `calc(${settings.lyric.fontSize} / 1080 * 100vh)`
@@ -383,6 +398,22 @@ const resetLyricOffset = (): void => writeOffset(0);
                 <template #icon><IconLucideSettings2 /></template>
               </SButton>
             </div>
+          </div>
+          <!-- 播放队列 -->
+          <div
+            class="absolute inset-y-0 right-0 w-[55%] pl-4 py-6 flex items-center"
+            :class="status.fullQueueOpen ? '' : 'pointer-events-none'"
+          >
+            <Transition
+              enter-active-class="transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              enter-from-class="opacity-0"
+              leave-active-class="transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              leave-to-class="opacity-0"
+            >
+              <div v-if="status.fullQueueOpen" class="w-full h-full">
+                <QueuePanel @close="status.fullQueueOpen = false" />
+              </div>
+            </Transition>
           </div>
         </div>
         <!-- 底栏 -->
