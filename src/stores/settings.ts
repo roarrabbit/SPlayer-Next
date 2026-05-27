@@ -29,6 +29,7 @@ export const useSettingsStore = defineStore(
       closeAction: "hide",
       rememberCloseChoice: false,
       fontFamily: "",
+      showPerformanceMonitor: false,
     });
 
     /** 播放器 */

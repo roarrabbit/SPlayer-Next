@@ -52,6 +52,12 @@ const generalCategory: SettingCategory = {
           binding: { store: "settings", path: "appearance.rememberCloseChoice" },
           defaultValue: false,
         },
+        {
+          key: "showPerformanceMonitor",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.showPerformanceMonitor" },
+          defaultValue: false,
+        },
       ],
     },
     {

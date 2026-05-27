@@ -1055,6 +1055,10 @@
       "label": "记忆窗口状态",
       "description": "下次启动时恢复窗口的大小、位置和最大化状态"
     },
+    "showPerformanceMonitor": {
+      "label": "性能监视器",
+      "description": "悬浮显示 FPS / 帧时间 / 内存占用，点击切换指标，拖动可调整位置"
+    },
     "taskbarProgress": {
       "label": "任务栏播放进度",
       "description": "在任务栏图标上显示当前播放进度"

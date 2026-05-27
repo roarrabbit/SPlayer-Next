@@ -1055,6 +1055,10 @@
       "label": "Remember Window State",
       "description": "Restore window size, position and maximized state on next launch"
     },
+    "showPerformanceMonitor": {
+      "label": "Performance Monitor",
+      "description": "Floating widget showing FPS / frame time / memory. Click to switch, drag to move"
+    },
     "taskbarProgress": {
       "label": "Taskbar Progress",
       "description": "Show playback progress on the taskbar icon"
