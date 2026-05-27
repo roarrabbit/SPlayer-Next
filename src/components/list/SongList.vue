@@ -50,6 +50,8 @@ const props = withDefaults(
     collectionType?: CollectionType;
     /** 集合 ID */
     collectionId?: string;
+    /** 是否有权从集合移除曲目 */
+    canRemove?: boolean;
     /** 是否还能继续触底加载 */
     hasMore?: boolean;
     /** 触底加载中 */
@@ -65,6 +67,7 @@ const props = withDefaults(
     source: "local",
     collectionType: undefined,
     collectionId: undefined,
+    canRemove: true,
     hasMore: false,
     loadingMore: false,
   },
@@ -216,6 +219,7 @@ const batch = useMultiSelect(sortedItems, {
   source: computed(() => props.source),
   collectionType: computed(() => props.collectionType),
   collectionId: computed(() => props.collectionId),
+  canRemove: computed(() => props.canRemove),
   onChanged: (removedIds) => emit("change", removedIds),
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
@@ -238,6 +242,7 @@ const openPicker = (tracks: Track[]): void => {
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
   collectionType: props.collectionType,
+  canRemove: props.canRemove,
   onAddToPlaylist: (track) => openPicker([track]),
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),

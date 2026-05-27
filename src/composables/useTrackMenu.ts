@@ -19,6 +19,8 @@ import IconMoreHorizontal from "~icons/lucide/more-horizontal";
 export interface TrackMenuOptions {
   /** 集合类型 */
   collectionType?: CollectionType;
+  /** 是否有权从集合中移除曲目 */
+  canRemove?: boolean;
   /** 隐藏播放相关菜单项 */
   hidePlayActions?: boolean;
   /** 添加到歌单 */
@@ -46,6 +48,7 @@ export const useTrackMenu = (
   const isPlaylist = options.collectionType === "playlist";
   const isCloudView = options.collectionType === "cloud";
   const showPlay = !options.hidePlayActions;
+  const canRemove = options.canRemove !== false;
   // 菜单项
   const items = computed<DropdownMenuItem[]>(() => {
     const source = track.value?.source;
@@ -86,13 +89,13 @@ export const useTrackMenu = (
         label: t("collection.removeFrom", { type: t("collection.playlist") }),
         icon: markRaw(IconListMinus),
         separator: true,
-        show: isPlaylist,
+        show: isPlaylist && canRemove,
       },
       {
         key: "deleteFile",
         label: t("songList.context.deleteFile"),
         icon: markRaw(IconTrash2),
-        separator: !isPlaylist,
+        separator: !(isPlaylist && canRemove),
         show: isLocal,
       },
       {
