@@ -9,18 +9,15 @@ import { useFavorite } from "@/composables/useFavorite";
 import Lyrics from "@/components/player/Lyrics/index.vue";
 import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { useWindowControls } from "@/composables/useWindowControls";
-import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import * as player from "@/core/player";
-import { formatTime, formatSignedSec } from "@/utils/time";
+import { formatTime } from "@/utils/time";
 import IconFavorite from "~icons/material-symbols/favorite-rounded";
 import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 import IconLucideListPlus from "~icons/lucide/list-plus";
 
-const { t } = useI18n();
 const status = useStatusStore();
 const media = useMediaStore();
 const settings = useSettingsStore();
-const settingsDialog = useSettingsDialog();
 const fav = useFavorite();
 const {
   isPlaying,
@@ -164,42 +161,6 @@ watch(immersiveEnabled, (on) => {
 
 onBeforeUnmount(() => clearTimeout(idleTimer));
 
-/** 歌词偏移步长（ms） */
-const LYRIC_OFFSET_STEP = 500;
-
-/** 偏移弹层是否打开；打开期间按钮组保持可见 */
-const offsetPopoverOpen = ref(false);
-
-/** 歌词区右侧操作按钮组的显隐 */
-const lyricActionsClass = computed(() => {
-  if (immersive.value) return "opacity-0 pointer-events-none";
-  if (offsetPopoverOpen.value) return "opacity-100 pointer-events-auto";
-  return "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto";
-});
-
-/** 当前曲目偏移 */
-const songOffset = computed(() => status.lyricOffsetMs);
-
-/** 写入偏移 */
-const writeOffset = (offsetMs: number): void => {
-  const id = media.track?.id;
-  if (!id) return;
-  window.api.nowPlaying.setLyricOffset(id, offsetMs);
-};
-
-/** 弹层里直接编辑（ms） */
-const offsetInputMs = computed<number>({
-  get: () => songOffset.value,
-  set: (val) => writeOffset(val ?? 0),
-});
-
-/** 歌词提前 */
-const advanceLyric = (): void => writeOffset(songOffset.value + LYRIC_OFFSET_STEP);
-/** 歌词延后 */
-const delayLyric = (): void => writeOffset(songOffset.value - LYRIC_OFFSET_STEP);
-/** 重置歌词偏移 */
-const resetLyricOffset = (): void => writeOffset(0);
-
 /** 添加到歌单 */
 const pickerOpen = ref(false);
 const pickerTracks = shallowRef<Track[]>([]);
@@ -216,8 +177,7 @@ const openPicker = (): void => {
 /** 歌词显隐按钮 */
 const lyricToggleDisabled = computed(() => !hasLyric.value || fullscreenCover.value);
 const lyricToggleActive = computed(
-  () =>
-    showLyric.value && hasLyric.value && !status.fullQueueOpen && !fullscreenCover.value,
+  () => showLyric.value && hasLyric.value && !status.fullQueueOpen && !fullscreenCover.value,
 );
 
 /** 切换歌词展示 */
@@ -380,84 +340,8 @@ const toggleLyric = (): void => {
                 暂无歌词
               </div>
             </div>
-            <!-- 操作按钮 -->
-            <div
-              class="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 transition-opacity duration-300"
-              :class="lyricActionsClass"
-            >
-              <SButton
-                type="cover"
-                variant="ghost"
-                circle
-                :size="40"
-                :disabled="!hasTrack"
-                @click="advanceLyric"
-              >
-                <template #icon><IconLucidePlus /></template>
-              </SButton>
-              <SPopover
-                v-model:open="offsetPopoverOpen"
-                trigger="click"
-                side="left"
-                :side-offset="8"
-                cover
-              >
-                <template #trigger>
-                  <div
-                    class="inline-flex items-center justify-center gap-0.5 h-6 w-10 rounded-md cursor-pointer border border-solid border-cover/30 bg-cover/8 hover:bg-cover/15 transition-colors tabular-nums"
-                    :class="!hasTrack ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''"
-                  >
-                    <span class="text-xs font-medium text-cover">
-                      {{ formatSignedSec(songOffset) }}
-                    </span>
-                    <span class="text-[10px] text-cover/60">s</span>
-                  </div>
-                </template>
-                <div class="flex flex-col gap-2 w-44">
-                  <h4 class="m-0 text-sm font-medium leading-tight text-cover">
-                    {{ t("player.lyricOffset.title") }}
-                  </h4>
-                  <p class="m-0 text-xs text-cover/60">{{ t("player.lyricOffset.hint") }}</p>
-                  <SNumberInput
-                    v-model="offsetInputMs"
-                    :step="100"
-                    size="small"
-                    unit="ms"
-                    placeholder="0"
-                    cover
-                  />
-                  <SButton
-                    type="cover"
-                    variant="secondary"
-                    size="tiny"
-                    :disabled="songOffset === 0"
-                    @click="resetLyricOffset"
-                  >
-                    {{ t("common.reset") }}
-                  </SButton>
-                </div>
-              </SPopover>
-              <SButton
-                type="cover"
-                variant="ghost"
-                circle
-                :size="40"
-                :disabled="!hasTrack"
-                @click="delayLyric"
-              >
-                <template #icon><IconLucideMinus /></template>
-              </SButton>
-              <div class="h-px w-6 bg-cover/25 my-1" />
-              <SButton
-                type="cover"
-                variant="ghost"
-                circle
-                :size="40"
-                @click="settingsDialog.show('lyric')"
-              >
-                <template #icon><IconLucideSettings2 /></template>
-              </SButton>
-            </div>
+            <!-- 歌词侧边工具栏 -->
+            <LyricActions :immersive="immersive" />
           </div>
           <!-- 播放队列 -->
           <div

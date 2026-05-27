@@ -13,7 +13,7 @@ const props = withDefaults(
   defineProps<{
     /** 对齐方式 */
     align?: "center" | "left" | "right";
-    /** 简单模式：隐藏标签行和副标题 */
+    /** 简单模式 */
     simple?: boolean;
   }>(),
   {
@@ -131,7 +131,7 @@ const alignItems = computed(() => {
       {{ media.track.comment }}
     </div>
     <!-- 元信息标签行 -->
-    <div v-if="!simple" class="flex items-center gap-1.5 text-[1em] my-1 text-cover/60">
+    <div class="flex items-center gap-1.5 text-[1em] my-1 text-cover/60">
       <span
         class="inline-flex items-center justify-center leading-none px-1.5 py-1.2 rounded-md border border-solid border-cover/30"
       >

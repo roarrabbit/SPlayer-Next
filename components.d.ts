@@ -146,6 +146,7 @@ declare module 'vue' {
     IconSpRepeatOff: typeof import('~icons/sp/repeat-off')['default']
     LoginCookieDialog: typeof import('./src/components/modals/LoginCookieDialog.vue')['default']
     LoginDialog: typeof import('./src/components/modals/LoginDialog.vue')['default']
+    LyricActions: typeof import('./src/components/player/FullPlayer/LyricActions.vue')['default']
     LyricFormatOrderConfig: typeof import('./src/components/settings/custom/LyricFormatOrderConfig.vue')['default']
     Lyrics: typeof import('./src/components/player/Lyrics/index.vue')['default']
     LyricSourceOrderConfig: typeof import('./src/components/settings/custom/LyricSourceOrderConfig.vue')['default']

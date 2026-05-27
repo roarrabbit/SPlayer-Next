@@ -28,38 +28,25 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div :class="['player-cover', { playing: isPlaying, fullscreen }]">
+  <div
+    :class="
+      fullscreen
+        ? 'player-cover-fullscreen w-full h-full aspect-auto rounded-none bg-transparent overflow-hidden shrink-0'
+        : [
+            'w-full aspect-square rounded-[32px] overflow-hidden shrink-0',
+            'shadow-[0_0_20px_10px_rgba(0,0,0,0.1)]',
+            'transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+            isPlaying ? 'scale-100' : 'scale-90',
+          ]
+    "
+  >
     <SImg :src="coverSrc" class="size-full" />
   </div>
 </template>
 
 <style scoped>
-.player-cover {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 32px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background-color: black;
-  transform: scale(0.9);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.1);
-}
-
-.player-cover.playing {
-  transform: scale(1);
-}
-
-/* 全屏封面 */
-.player-cover.fullscreen {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-  border-radius: 0;
-  background-color: transparent;
-  transform: none;
-  box-shadow: none;
-  --cover-fade: linear-gradient(
+.player-cover-fullscreen {
+  mask-image: linear-gradient(
     to right,
     rgba(0, 0, 0, 1) 0%,
     rgba(0, 0, 0, 0.98) 10%,
@@ -73,7 +60,5 @@ watchEffect(async () => {
     rgba(0, 0, 0, 0.03) 92%,
     rgba(0, 0, 0, 0) 100%
   );
-  mask-image: var(--cover-fade);
-  -webkit-mask-image: var(--cover-fade);
 }
 </style>

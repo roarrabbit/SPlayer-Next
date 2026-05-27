@@ -11,6 +11,7 @@ import {
 } from "@/types/settings";
 import type { SystemConfig, LocaleCode } from "@shared/types/settings";
 import { defaultSystemConfig } from "@shared/defaults/settings";
+import { setByPath } from "@shared/utils/path";
 
 export const useSettingsStore = defineStore(
   "settings",
@@ -117,25 +118,6 @@ export const useSettingsStore = defineStore(
       } catch {}
     };
 
-    /**
-     * 按 dot-path 写入嵌套对象，仅触发对应叶子节点的 reactive
-     * @param target 要写入的对象
-     * @param path 形如 "player.equalizer.bands"
-     * @param value 新值
-     */
-    const setByPath = (target: Record<string, unknown>, path: string, value: unknown): void => {
-      const keys = path.split(".");
-      const last = keys.pop();
-      if (!last) return;
-      let cursor: Record<string, unknown> = target;
-      for (const key of keys) {
-        const next = cursor[key];
-        if (next === null || typeof next !== "object") return;
-        cursor = next as Record<string, unknown>;
-      }
-      cursor[last] = value;
-    };
-
     /** IPC 订阅取消回调集合 */
     const unsubscribers: Array<() => void> = [
       // 订阅桌面歌词配置变化：歌词窗口点锁定按钮等场景需要回流到主窗口设置页
@@ -187,12 +169,13 @@ export const useSettingsStore = defineStore(
 
     /**
      * 写入后端配置并同步本地
-     * 只更新指定路径，避免触发无关 watch
+     * 先就地 mutate 叶子保证 UI 即时反馈，IPC 落盘异步执行
      */
     const setSystem = async (keyPath: string, value: unknown): Promise<void> => {
-      await window.api.config.set(keyPath, value);
       setByPath(system, keyPath, value);
-      // 后处理
+      window.api.config.set(keyPath, value).catch((err) => {
+        console.error("[settings] config.set failed", keyPath, err);
+      });
       if (keyPath === "player.fadeEnabled" || keyPath === "player.fadeDuration") {
         await window.api.player.setFadeDuration(
           system.player.fadeEnabled ? system.player.fadeDuration : 0,
