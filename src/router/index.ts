@@ -4,6 +4,11 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
+      path: "/onboarding",
+      name: "onboarding",
+      component: () => import("@/pages/Onboarding.vue"),
+    },
+    {
       path: "/",
       component: () => import("@/layouts/MainLayout.vue"),
       children: [

@@ -307,6 +307,8 @@ export interface SystemConfig {
     rememberWindowState: boolean;
     /** 在任务栏显示播放进度 */
     taskbarProgress: boolean;
+    /** 首启引导是否已完成 */
+    onboardingCompleted: boolean;
   };
   /** 窗口几何状态（运行时自动记录，非用户主动配置） */
   windowStates: WindowStates;

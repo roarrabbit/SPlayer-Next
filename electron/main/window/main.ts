@@ -98,11 +98,18 @@ export const createMainWindow = (): BrowserWindow => {
     return { action: "deny" };
   });
 
+  // 首启引导：未完成则把窗口直接开在 /onboarding，避免渲染端启动期闪过主页
+  const initialHash = store.get("system.onboardingCompleted") ? "" : "/onboarding";
+
   // 基于 electron-vite cli 的 HMR
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    const base = process.env["ELECTRON_RENDERER_URL"];
+    mainWindow.loadURL(initialHash ? `${base}#${initialHash}` : base);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(
+      join(__dirname, "../renderer/index.html"),
+      initialHash ? { hash: initialHash } : undefined,
+    );
   }
 
   mainWindow.on("closed", () => {
