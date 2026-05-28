@@ -82,7 +82,11 @@ export const buildRegistry = (): void => {
   // 切换播放列表
   handlers.set("view.togglePlaylist", () => {
     const status = useStatusStore();
-    status.playlistOpen = !status.playlistOpen;
+    if (status.isExpanded) {
+      status.fullQueueOpen = !status.fullQueueOpen;
+    } else {
+      status.outerQueueOpen = !status.outerQueueOpen;
+    }
   });
   // 打开搜索
   handlers.set("view.openSearch", () => {

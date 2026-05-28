@@ -55,6 +55,17 @@ const generalCategory: SettingCategory = {
       ],
     },
     {
+      id: "debug",
+      items: [
+        {
+          key: "showPerformanceMonitor",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.showPerformanceMonitor" },
+          defaultValue: false,
+        },
+      ],
+    },
+    {
       id: "backupReset",
       items: [
         {

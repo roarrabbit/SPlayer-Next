@@ -2,52 +2,63 @@
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 
+withDefaults(defineProps<{ fullscreen?: boolean }>(), { fullscreen: false });
+
 const media = useMediaStore();
-const { isPlaying } = storeToRefs(useStatusStore());
+const status = useStatusStore();
+const { isPlaying } = storeToRefs(status);
 
-// 高清封面 data URL
-const hdCover = ref<string | null>(null);
-const coverSrc = computed(() => hdCover.value || media.track?.coverOriginal || media.track?.cover);
+/** 高清封面缓存 */
+const hdCache = shallowRef<{ id: string; data: string } | null>(null);
 
-// 歌曲切换时获取高清封面，拿到前保持旧封面
-watch(
-  () => media.track?.id,
-  async (newId) => {
-    hdCover.value = null;
-    if (!newId) return;
-
-    try {
-      const result = await window.api.player.getCoverRaw();
-      if (media.track?.id !== newId) return;
-      hdCover.value = result.success ? (result.data ?? null) : null;
-    } catch {
-      if (media.track?.id === newId) hdCover.value = null;
-    }
-  },
-  { immediate: true },
+const coverSrc = computed(() =>
+  hdCache.value && hdCache.value.id === media.track?.id
+    ? hdCache.value.data
+    : media.track?.coverOriginal || media.track?.cover,
 );
+
+watchEffect(async () => {
+  const id = media.track?.id;
+  if (!status.isExpanded || status.trackLoading || !id) return;
+  if (media.track?.source !== "local" || hdCache.value?.id === id) return;
+  const r = await window.api.player.getCoverRaw();
+  if (media.track?.id !== id || !r.success || !r.data) return;
+  hdCache.value = { id, data: r.data };
+});
 </script>
 
 <template>
-  <div :class="['player-cover', { playing: isPlaying }]">
+  <div
+    :class="
+      fullscreen
+        ? 'player-cover-fullscreen w-full h-full aspect-auto rounded-none bg-transparent overflow-hidden shrink-0'
+        : [
+            'w-full aspect-square rounded-[32px] overflow-hidden shrink-0',
+            'shadow-[0_0_20px_10px_rgba(0,0,0,0.1)]',
+            'transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+            isPlaying ? 'scale-100' : 'scale-90',
+          ]
+    "
+  >
     <SImg :src="coverSrc" class="size-full" />
   </div>
 </template>
 
 <style scoped>
-.player-cover {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 32px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background-color: black;
-  transform: scale(0.9);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 20px 10px rgba(0, 0, 0, 0.1);
-}
-
-.player-cover.playing {
-  transform: scale(1);
+.player-cover-fullscreen {
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.98) 10%,
+    rgba(0, 0, 0, 0.92) 22%,
+    rgba(0, 0, 0, 0.82) 32%,
+    rgba(0, 0, 0, 0.68) 42%,
+    rgba(0, 0, 0, 0.52) 52%,
+    rgba(0, 0, 0, 0.36) 62%,
+    rgba(0, 0, 0, 0.22) 72%,
+    rgba(0, 0, 0, 0.1) 82%,
+    rgba(0, 0, 0, 0.03) 92%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 </style>

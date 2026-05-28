@@ -305,6 +305,15 @@
     "lyricOffset": {
       "title": "Lyric Offset",
       "hint": "Positive values advance lyrics, in milliseconds"
+    },
+    "repeatMode": {
+      "list": "Repeat all",
+      "one": "Repeat one",
+      "off": "Repeat off"
+    },
+    "shuffleMode": {
+      "on": "Shuffle on",
+      "off": "Shuffle off"
     }
   },
   "songList": {
@@ -492,7 +501,8 @@
       "songCache": "Song Cache",
       "cache": "Caches",
       "database": "Database",
-      "backupReset": "Backup & Reset"
+      "backupReset": "Backup & Reset",
+      "debug": "Debug"
     },
     "language": {
       "label": "Language",
@@ -525,6 +535,7 @@
       "description": "Preferred quality for online tracks; the actual level depends on what your account supports",
       "switchTitle": "Switch Quality",
       "switchHint": "Subject to your account permissions",
+      "unsupportedHint": "Quality switching is not supported for this track",
       "lq": "Standard (LQ)",
       "sq": "Higher (SQ)",
       "hq": "Extreme (HQ)",
@@ -913,6 +924,12 @@
       "blur": "Blur",
       "solid": "Solid"
     },
+    "coverLayout": {
+      "label": "Cover Layout",
+      "description": "Cover presentation in the full-screen player",
+      "default": "Default",
+      "fullscreen": "Fullscreen"
+    },
     "themeMode": {
       "label": "Theme Mode",
       "description": "Application color theme",
@@ -1038,6 +1055,10 @@
     "rememberWindowState": {
       "label": "Remember Window State",
       "description": "Restore window size, position and maximized state on next launch"
+    },
+    "showPerformanceMonitor": {
+      "label": "Performance Monitor",
+      "description": "Floating widget showing FPS / frame time / memory. Click to switch"
     },
     "taskbarProgress": {
       "label": "Taskbar Progress",

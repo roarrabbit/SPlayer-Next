@@ -2,9 +2,7 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
-import { queueLength } from "@/stores/queue";
 
-const { t } = useI18n();
 const status = useStatusStore();
 const settings = useSettingsStore();
 
@@ -121,26 +119,13 @@ const playerBarInnerClass = computed(() => {
   </Transition>
 
   <!-- Toast -->
-  <SToast :max="5" />
+  <SToast :max="1" />
+  <!-- 性能监视器 -->
+  <SPerformanceMonitor v-if="appearance.showPerformanceMonitor" />
   <!-- Dialog -->
   <SDialogProvider />
   <!-- 全屏播放器 -->
   <FullPlayer />
-  <!-- 播放列表抽屉 -->
-  <SDrawer v-model:open="status.playlistOpen" :cover="status.isExpanded" width="380px">
-    <template #header>
-      <div class="flex flex-col">
-        <span class="text-base font-semibold">{{ t("playlist.title") }}</span>
-        <span
-          class="text-xs"
-          :class="status.isExpanded ? 'text-cover/50' : 'text-on-surface-variant'"
-        >
-          {{ t("common.totalSongs", { count: queueLength }) }}
-        </span>
-      </div>
-    </template>
-    <PlaylistPanel :cover="status.isExpanded" />
-  </SDrawer>
   <!-- 全局设置 -->
   <SettingsDialog />
 </template>

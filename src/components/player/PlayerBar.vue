@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import type { Track } from "@shared/types/player";
+import type { ContentScope } from "@/types/collection";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useMediaStore } from "@/stores/media";
 import { useFavorite } from "@/composables/useFavorite";
+import { useTrackMenu } from "@/composables/useTrackMenu";
 import * as player from "@/core/player";
 import { formatTime } from "@/utils/time";
 import IconFavorite from "~icons/material-symbols/favorite-rounded";
 import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
+import IconLucideMoreHorizontal from "~icons/lucide/more-horizontal";
 
 const status = useStatusStore();
 const settings = useSettingsStore();
@@ -20,6 +24,21 @@ const isFloating = computed(() => settings.appearance.layoutMode === "floating")
 const onSeekDragEnd = (value: number): void => {
   player.seek(value);
 };
+
+/** 添加到歌单 */
+const pickerOpen = ref(false);
+const pickerTracks = shallowRef<Track[]>([]);
+const pickerMode = ref<ContentScope>("local");
+
+/** 歌曲菜单 */
+const { items: menuItems, handleSelect: onMenuSelect } = useTrackMenu(toRef(media, "track"), {
+  hidePlayActions: true,
+  onAddToPlaylist: (track) => {
+    pickerTracks.value = [track];
+    pickerMode.value = track.source === "netease" ? "online" : "local";
+    pickerOpen.value = true;
+  },
+});
 </script>
 
 <template>
@@ -30,20 +49,42 @@ const onSeekDragEnd = (value: number): void => {
       <div class="flex items-center gap-2 min-w-0">
         <TrackInfo compact class="flex-1">
           <template #title-trailing>
-            <SButton
-              class="-my-1"
-              type="primary"
-              variant="text"
-              circle
-              :size="24"
-              :icon-size="16"
-              @click="fav.toggle(media.track)"
-            >
-              <template #icon>
-                <IconFavorite v-if="fav.isLiked(media.track)" />
-                <IconFavoriteOutline v-else />
-              </template>
-            </SButton>
+            <div class="flex items-center shrink-0">
+              <SButton
+                class="-my-1"
+                type="primary"
+                variant="text"
+                circle
+                :size="24"
+                :icon-size="16"
+                @click="fav.toggle(media.track)"
+              >
+                <template #icon>
+                  <IconFavorite v-if="fav.isLiked(media.track)" />
+                  <IconFavoriteOutline v-else />
+                </template>
+              </SButton>
+              <SDropdownMenu
+                v-if="media.track"
+                :items="menuItems"
+                side="top"
+                align="start"
+                @select="onMenuSelect"
+              >
+                <template #trigger>
+                  <SButton
+                    class="-my-1"
+                    type="primary"
+                    variant="text"
+                    circle
+                    :size="24"
+                    :icon-size="16"
+                  >
+                    <template #icon><IconLucideMoreHorizontal /></template>
+                  </SButton>
+                </template>
+              </SDropdownMenu>
+            </div>
           </template>
         </TrackInfo>
         <span class="text-xs text-on-surface-variant/70 tabular-nums shrink-0">
@@ -86,20 +127,42 @@ const onSeekDragEnd = (value: number): void => {
     <div class="grid grid-cols-[1fr_auto_1fr] items-center h-full px-3 gap-3">
       <TrackInfo>
         <template #title-trailing>
-          <SButton
-            class="-my-1"
-            type="primary"
-            variant="text"
-            circle
-            :size="28"
-            :icon-size="18"
-            @click="fav.toggle(media.track)"
-          >
-            <template #icon>
-              <IconFavorite v-if="fav.isLiked(media.track)" />
-              <IconFavoriteOutline v-else />
-            </template>
-          </SButton>
+          <div class="flex items-center shrink-0">
+            <SButton
+              class="-my-1"
+              type="primary"
+              variant="text"
+              circle
+              :size="28"
+              :icon-size="18"
+              @click="fav.toggle(media.track)"
+            >
+              <template #icon>
+                <IconFavorite v-if="fav.isLiked(media.track)" />
+                <IconFavoriteOutline v-else />
+              </template>
+            </SButton>
+            <SDropdownMenu
+              v-if="media.track"
+              :items="menuItems"
+              side="top"
+              align="start"
+              @select="onMenuSelect"
+            >
+              <template #trigger>
+                <SButton
+                  class="-my-1"
+                  type="primary"
+                  variant="text"
+                  circle
+                  :size="28"
+                  :icon-size="18"
+                >
+                  <template #icon><IconLucideMoreHorizontal /></template>
+                </SButton>
+              </template>
+            </SDropdownMenu>
+          </div>
         </template>
       </TrackInfo>
       <PlayerControls class="mx-15" />
@@ -111,4 +174,5 @@ const onSeekDragEnd = (value: number): void => {
       </div>
     </div>
   </div>
+  <PlaylistPickerDialog v-model:open="pickerOpen" :mode="pickerMode" :tracks="pickerTracks" />
 </template>

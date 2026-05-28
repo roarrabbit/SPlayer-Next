@@ -19,6 +19,10 @@ import IconMoreHorizontal from "~icons/lucide/more-horizontal";
 export interface TrackMenuOptions {
   /** 集合类型 */
   collectionType?: CollectionType;
+  /** 是否有权从集合中移除曲目 */
+  canRemove?: boolean;
+  /** 隐藏播放相关菜单项 */
+  hidePlayActions?: boolean;
   /** 添加到歌单 */
   onAddToPlaylist?: (track: Track) => void;
   /** 从集合移除回调 */
@@ -34,12 +38,17 @@ export interface TrackMenuOptions {
  * @param track - 当前操作的歌曲
  * @param options - 配置项
  */
-export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOptions = {}) => {
+export const useTrackMenu = (
+  track: Ref<Track | null | undefined>,
+  options: TrackMenuOptions = {},
+) => {
   const { t } = useI18n();
   const router = useRouter();
   const { copy } = useCopyText();
   const isPlaylist = options.collectionType === "playlist";
   const isCloudView = options.collectionType === "cloud";
+  const showPlay = !options.hidePlayActions;
+  const canRemove = options.canRemove !== false;
   // 菜单项
   const items = computed<DropdownMenuItem[]>(() => {
     const source = track.value?.source;
@@ -48,13 +57,18 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
     const canAddToPlaylist = source === "local" || source === "netease";
     const isOnline = source !== "local" && source !== "streaming";
     return [
-      { key: "play", label: t("songList.context.play"), icon: markRaw(IconPlay) },
-      { key: "playNext", label: t("songList.context.playNext"), icon: markRaw(IconListEnd) },
+      { key: "play", label: t("songList.context.play"), icon: markRaw(IconPlay), show: showPlay },
+      {
+        key: "playNext",
+        label: t("songList.context.playNext"),
+        icon: markRaw(IconListEnd),
+        show: showPlay,
+      },
       {
         key: "addToPlaylist",
         label: t("collection.addTo", { type: t("collection.playlist") }),
         icon: markRaw(IconListPlus),
-        separator: true,
+        separator: showPlay,
         show: canAddToPlaylist,
       },
       {
@@ -75,13 +89,13 @@ export const useTrackMenu = (track: Ref<Track | undefined>, options: TrackMenuOp
         label: t("collection.removeFrom", { type: t("collection.playlist") }),
         icon: markRaw(IconListMinus),
         separator: true,
-        show: isPlaylist,
+        show: isPlaylist && canRemove,
       },
       {
         key: "deleteFile",
         label: t("songList.context.deleteFile"),
         icon: markRaw(IconTrash2),
-        separator: !isPlaylist,
+        separator: !(isPlaylist && canRemove),
         show: isLocal,
       },
       {

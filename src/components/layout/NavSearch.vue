@@ -5,6 +5,7 @@ import { getHotSearches, type HotSearchItem } from "@/apis/search/hot";
 import { getSearchSuggest, type SuggestData } from "@/apis/search/suggest";
 import { songsByIds as getNeteaseSongsByIds } from "@/apis/song/netease";
 import { formatCompact } from "@/utils/format";
+import { navigateToAlbum, navigateToArtist, navigateToPlaylist } from "@/utils/navigate";
 import * as player from "@/core/player";
 
 const { t, locale } = useI18n();
@@ -59,15 +60,37 @@ const onPickKeyword = (keyword: string): void => submit(keyword);
 const onRemoveHistory = (keyword: string): void => data.removeSearchHistory(keyword);
 const onClearHistory = (): void => data.clearSearchHistory();
 
-/** 单曲建议点击 */
-const onPickSong = async (id: number): Promise<void> => {
+/**
+ * 建议点击
+ * @param kind - 建议类型
+ * @param id - 网易云 id
+ * @param name - 名称
+ */
+const onPickSuggest = async (
+  kind: "song" | "artist" | "album" | "playlist",
+  id: number,
+  name: string,
+): Promise<void> => {
   if (trimmedQuery.value) data.addSearchHistory(trimmedQuery.value);
   dialogOpen.value = false;
-  try {
-    const [track] = await getNeteaseSongsByIds([id]);
-    if (track) await player.playNow(track);
-  } catch (err) {
-    console.warn("[NavSearch] play suggest song failed:", err);
+  switch (kind) {
+    case "song":
+      try {
+        const [track] = await getNeteaseSongsByIds([id]);
+        if (track) await player.playNow(track);
+      } catch (err) {
+        console.warn("[NavSearch] play suggest song failed:", err);
+      }
+      break;
+    case "artist":
+      navigateToArtist(name, { source: "netease", artistId: String(id) });
+      break;
+    case "album":
+      navigateToAlbum(name, { source: "netease", albumId: String(id) });
+      break;
+    case "playlist":
+      navigateToPlaylist(String(id), { source: "netease", name });
+      break;
   }
 };
 
@@ -174,7 +197,7 @@ onMounted(() => {
                 v-for="song in suggest.songs"
                 :key="song.id"
                 class="min-w-0 flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-on-surface/5 transition-colors duration-200"
-                @click="onPickSong(song.id)"
+                @click="onPickSuggest('song', song.id, song.name)"
               >
                 <div class="flex-1 min-w-0 flex flex-col leading-tight">
                   <span class="truncate text-sm text-on-surface">{{ song.name }}</span>
@@ -194,7 +217,7 @@ onMounted(() => {
                 v-for="artist in suggest.artists"
                 :key="artist.id"
                 class="min-w-0 flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-on-surface/5 transition-colors duration-200"
-                @click="onPickKeyword(artist.name)"
+                @click="onPickSuggest('artist', artist.id, artist.name)"
               >
                 <span class="flex-1 truncate text-sm text-on-surface">{{ artist.name }}</span>
               </div>
@@ -208,7 +231,7 @@ onMounted(() => {
                 v-for="album in suggest.albums"
                 :key="album.id"
                 class="min-w-0 flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-on-surface/5 transition-colors duration-200"
-                @click="onPickKeyword(album.name)"
+                @click="onPickSuggest('album', album.id, album.name)"
               >
                 <div class="flex-1 min-w-0 flex flex-col leading-tight">
                   <span class="truncate text-sm text-on-surface">{{ album.name }}</span>
@@ -227,7 +250,7 @@ onMounted(() => {
                 v-for="playlist in suggest.playlists"
                 :key="playlist.id"
                 class="min-w-0 flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-on-surface/5 transition-colors duration-200"
-                @click="onPickKeyword(playlist.name)"
+                @click="onPickSuggest('playlist', playlist.id, playlist.name)"
               >
                 <span class="flex-1 truncate text-sm text-on-surface">{{ playlist.name }}</span>
               </div>

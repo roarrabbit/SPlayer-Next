@@ -324,6 +324,7 @@ onBeforeUnmount(() => {
           :source="source"
           :collection-type="type"
           :collection-id="id"
+          :can-remove="manage.canManage.value"
           enable-sort
           @scroll="handleListScroll"
           @change="handleTracksRemoved"

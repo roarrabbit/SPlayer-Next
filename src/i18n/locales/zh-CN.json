@@ -305,6 +305,15 @@
     "lyricOffset": {
       "title": "歌词偏移",
       "hint": "正值为歌词提前，单位毫秒"
+    },
+    "repeatMode": {
+      "list": "列表循环",
+      "one": "单曲循环",
+      "off": "关闭循环"
+    },
+    "shuffleMode": {
+      "on": "随机播放",
+      "off": "顺序播放"
     }
   },
   "songList": {
@@ -492,7 +501,8 @@
       "songCache": "歌曲缓存",
       "cache": "缓存",
       "database": "数据库",
-      "backupReset": "备份与重置"
+      "backupReset": "备份与重置",
+      "debug": "调试"
     },
     "language": {
       "label": "界面语言",
@@ -525,6 +535,7 @@
       "description": "在线歌曲的音质偏好，取决于账号实际可用级别",
       "switchTitle": "音质切换",
       "switchHint": "以账号具体权限为准",
+      "unsupportedHint": "当前歌曲不支持调节音质",
       "lq": "标准 (LQ)",
       "sq": "较高 (SQ)",
       "hq": "极高 (HQ)",
@@ -913,6 +924,12 @@
       "blur": "模糊",
       "solid": "纯色"
     },
+    "coverLayout": {
+      "label": "封面布局",
+      "description": "全屏播放器封面的呈现方式",
+      "default": "默认",
+      "fullscreen": "全屏封面"
+    },
     "themeMode": {
       "label": "主题模式",
       "description": "应用的颜色主题",
@@ -1038,6 +1055,10 @@
     "rememberWindowState": {
       "label": "记忆窗口状态",
       "description": "下次启动时恢复窗口的大小、位置和最大化状态"
+    },
+    "showPerformanceMonitor": {
+      "label": "性能监视器",
+      "description": "悬浮显示 FPS / 帧时间 / 内存占用，点击切换指标"
     },
     "taskbarProgress": {
       "label": "任务栏播放进度",

@@ -11,6 +11,7 @@ import {
 } from "@/types/settings";
 import type { SystemConfig, LocaleCode } from "@shared/types/settings";
 import { defaultSystemConfig } from "@shared/defaults/settings";
+import { setByPath } from "@shared/utils/path";
 
 export const useSettingsStore = defineStore(
   "settings",
@@ -28,11 +29,13 @@ export const useSettingsStore = defineStore(
       closeAction: "hide",
       rememberCloseChoice: false,
       fontFamily: "",
+      showPerformanceMonitor: false,
     });
 
     /** 播放器 */
     const player = reactive<PlayerSettings>({
       playerBgType: "blur",
+      coverLayout: "default",
       autoCenterCover: true,
       followCoverColor: true,
       autoImmersive: true,
@@ -83,30 +86,37 @@ export const useSettingsStore = defineStore(
     /** 任务栏歌词窗口是否打开；由主进程广播 */
     const isTaskbarLyricOpen = ref(false);
 
+    /**
+     * 深合并：嵌套对象原地 mutate，叶子值不变就不写
+     * 避免浅 Object.assign 替换嵌套引用，导致依赖路径的 watcher 误触
+     */
+    const deepAssign = (target: Record<string, unknown>, source: Record<string, unknown>): void => {
+      for (const key of Object.keys(source)) {
+        const next = source[key];
+        const cur = target[key];
+        if (
+          next &&
+          typeof next === "object" &&
+          !Array.isArray(next) &&
+          cur &&
+          typeof cur === "object" &&
+          !Array.isArray(cur)
+        ) {
+          deepAssign(cur as Record<string, unknown>, next as Record<string, unknown>);
+        } else if (cur !== next) {
+          target[key] = next;
+        }
+      }
+    };
+
     /** 从主进程拉取后端配置 */
     const syncSystem = async (): Promise<void> => {
       try {
-        Object.assign(system, await window.api.config.getAll());
+        deepAssign(
+          system as unknown as Record<string, unknown>,
+          (await window.api.config.getAll()) as unknown as Record<string, unknown>,
+        );
       } catch {}
-    };
-
-    /**
-     * 按 dot-path 写入嵌套对象，仅触发对应叶子节点的 reactive
-     * @param target 要写入的对象
-     * @param path 形如 "player.equalizer.bands"
-     * @param value 新值
-     */
-    const setByPath = (target: Record<string, unknown>, path: string, value: unknown): void => {
-      const keys = path.split(".");
-      const last = keys.pop();
-      if (!last) return;
-      let cursor: Record<string, unknown> = target;
-      for (const key of keys) {
-        const next = cursor[key];
-        if (next === null || typeof next !== "object") return;
-        cursor = next as Record<string, unknown>;
-      }
-      cursor[last] = value;
     };
 
     /** IPC 订阅取消回调集合 */
@@ -160,12 +170,13 @@ export const useSettingsStore = defineStore(
 
     /**
      * 写入后端配置并同步本地
-     * 只更新指定路径，避免触发无关 watch
+     * 先就地 mutate 叶子保证 UI 即时反馈，IPC 落盘异步执行
      */
     const setSystem = async (keyPath: string, value: unknown): Promise<void> => {
-      await window.api.config.set(keyPath, value);
       setByPath(system, keyPath, value);
-      // 后处理
+      window.api.config.set(keyPath, value).catch((err) => {
+        console.error("[settings] config.set failed", keyPath, err);
+      });
       if (keyPath === "player.fadeEnabled" || keyPath === "player.fadeDuration") {
         await window.api.player.setFadeDuration(
           system.player.fadeEnabled ? system.player.fadeDuration : 0,

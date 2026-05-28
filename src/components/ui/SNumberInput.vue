@@ -120,8 +120,9 @@ const isFocused = ref(false);
       v-if="unit"
       class="text-xs mr-1"
       :class="cover ? 'text-cover/60' : 'text-on-surface-variant/60'"
-      >{{ unit }}</span
     >
+      {{ unit }}
+    </span>
     <NumberFieldIncrement
       :class="[
         stepperClass,

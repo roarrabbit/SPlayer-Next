@@ -14,6 +14,8 @@ export interface MultiSelectOptions {
   collectionType: Ref<CollectionType | undefined>;
   /** 集合 ID */
   collectionId: Ref<string | undefined>;
+  /** 是否有权从集合移除曲目 */
+  canRemove?: Ref<boolean>;
   /**
    * 删除/移除完成后的回调
    * @param removedIds 成功删除的曲目 id 列表
@@ -82,7 +84,9 @@ export const useMultiSelect = (items: Ref<Track[]>, options: MultiSelectOptions)
     else selectAll();
   };
 
-  const canRemove = computed(() => options.collectionType.value === "playlist");
+  const canRemove = computed(
+    () => options.collectionType.value === "playlist" && options.canRemove?.value !== false,
+  );
   const canRemoveFromCloud = computed(() => options.collectionType.value === "cloud");
 
   const collectionTypeLabel = computed(() => {
