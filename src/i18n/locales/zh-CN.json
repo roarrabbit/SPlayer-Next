@@ -4,17 +4,24 @@
     "back": "上一步",
     "skip": "稍后再说",
     "finish": "完成",
-    "footer": "可在「设置」中调整本次未配置的内容",
+    "footer": "可随时在「设置」中调整本次未配置的内容",
     "welcome": {
       "title": "欢迎使用 SPlayer-Next",
-      "subtitle": "一个现代化的桌面音乐播放器。完成几步设置即可开始享用，所有项目都可以稍后在设置中调整。",
+      "subtitle": "一个现代化的桌面音乐播放器，完成几步设置即可开始享用",
       "start": "开始设置",
       "features": {
-        "music": { "title": "在线音乐", "desc": "网易云 / QQ 音乐 / 酷狗" },
-        "local": { "title": "本地音乐库", "desc": "扫描本地目录、生成歌词索引" },
-        "streaming": { "title": "流媒体服务器", "desc": "Subsonic / Jellyfin / Emby" },
-        "lyrics": { "title": "丰富歌词体验", "desc": "桌面歌词、灵动岛、任务栏歌词" }
+        "local": { "title": "本地音乐库", "desc": "扫描本地目录，自动整理音乐库" },
+        "quality": { "title": "无损音质", "desc": "原生音频引擎，支持多种无损格式" },
+        "streaming": { "title": "流媒体服务器", "desc": "Subsonic / Jellyfin / Emby 等" },
+        "lyrics": { "title": "丰富歌词体验", "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词" }
       }
+    },
+    "agreement": {
+      "title": "用户协议与免责声明",
+      "subtitle": "继续使用前，请阅读并同意以下协议",
+      "scrollHint": "请滚动阅读至结尾后再勾选",
+      "agree": "我已阅读并同意《用户协议与免责声明》",
+      "accept": "同意并继续"
     },
     "library": {
       "title": "本地音乐库",

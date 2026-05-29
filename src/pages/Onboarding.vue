@@ -2,16 +2,19 @@
 import { useSettingsStore } from "@/stores/settings";
 import WindowControls from "@/components/layout/WindowControls.vue";
 import StepWelcome from "@/components/onboarding/StepWelcome.vue";
+import StepAgreement from "@/components/onboarding/StepAgreement.vue";
 import StepLibrary from "@/components/onboarding/StepLibrary.vue";
 import StepStreaming from "@/components/onboarding/StepStreaming.vue";
 import StepAppearance from "@/components/onboarding/StepAppearance.vue";
 import StepHotkeys from "@/components/onboarding/StepHotkeys.vue";
+
 const { t } = useI18n();
 const router = useRouter();
 const settings = useSettingsStore();
 
 const STEPS = [
   { key: "welcome", component: StepWelcome },
+  { key: "agreement", component: StepAgreement },
   { key: "library", component: StepLibrary },
   { key: "streaming", component: StepStreaming },
   { key: "appearance", component: StepAppearance },
@@ -60,18 +63,18 @@ const complete = async (): Promise<void> => {
       <WindowControls />
     </div>
 
-    <div class="flex-1 min-h-0 flex flex-col items-center justify-center px-8 py-6 overflow-y-auto">
-      <div class="w-full max-w-2xl flex flex-col">
-        <header class="flex items-center gap-4 mb-8">
+    <div class="flex-1 min-h-0 flex flex-col items-center px-8 py-6">
+      <div class="w-full max-w-2xl flex-1 min-h-0 flex flex-col">
+        <header class="flex items-center gap-4 mb-8 shrink-0">
           <div class="flex-1 flex items-center gap-1.5">
             <span
-              v-for="(s, i) in STEPS"
-              :key="s.key"
+              v-for="(step, index) in STEPS"
+              :key="step.key"
               class="h-1.5 rounded-full transition-all duration-300"
               :class="
-                i === currentIndex
+                index === currentIndex
                   ? 'flex-[2] bg-primary'
-                  : i < currentIndex
+                  : index < currentIndex
                     ? 'flex-1 bg-primary/60'
                     : 'flex-1 bg-on-surface/12'
               "
@@ -82,7 +85,7 @@ const complete = async (): Promise<void> => {
           </span>
         </header>
 
-        <div class="relative min-h-[560px] flex items-start justify-center">
+        <div class="relative flex-1 min-h-0 flex flex-col justify-center">
           <Transition :name="direction === 'forward' ? 'slide-fwd' : 'slide-back'" mode="out-in">
             <component
               :is="currentStep.component"

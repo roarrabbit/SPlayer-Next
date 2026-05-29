@@ -98,7 +98,7 @@ export const createMainWindow = (): BrowserWindow => {
     return { action: "deny" };
   });
 
-  // 首启引导：未完成则把窗口直接开在 /onboarding，避免渲染端启动期闪过主页
+  // 首启引导路径
   const initialHash = store.get("system.onboardingCompleted") ? "" : "/onboarding";
 
   // 基于 electron-vite cli 的 HMR

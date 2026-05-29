@@ -232,6 +232,7 @@ declare module 'vue' {
     SSwitch: typeof import('./src/components/ui/SSwitch.vue')['default']
     STabs: typeof import('./src/components/ui/STabs.vue')['default']
     STag: typeof import('./src/components/ui/STag.vue')['default']
+    StepAgreement: typeof import('./src/components/onboarding/StepAgreement.vue')['default']
     StepAppearance: typeof import('./src/components/onboarding/StepAppearance.vue')['default']
     StepHotkeys: typeof import('./src/components/onboarding/StepHotkeys.vue')['default']
     StepLibrary: typeof import('./src/components/onboarding/StepLibrary.vue')['default']

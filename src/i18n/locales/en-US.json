@@ -4,17 +4,36 @@
     "back": "Back",
     "skip": "Skip",
     "finish": "Finish",
-    "footer": "You can adjust anything skipped here later in Settings",
+    "footer": "You can adjust anything skipped here anytime in Settings",
     "welcome": {
       "title": "Welcome to SPlayer-Next",
-      "subtitle": "A modern desktop music player. A few quick steps and you're ready — everything can be adjusted later in Settings.",
+      "subtitle": "A modern desktop music player — a few quick steps and you're ready",
       "start": "Get Started",
       "features": {
-        "music": { "title": "Online Music", "desc": "Netease / QQ Music / Kugou" },
-        "local": { "title": "Local Library", "desc": "Scan folders, build a music index" },
-        "streaming": { "title": "Streaming Servers", "desc": "Subsonic / Jellyfin / Emby" },
-        "lyrics": { "title": "Rich Lyric Experience", "desc": "Desktop, Dynamic Island, taskbar lyrics" }
+        "local": {
+          "title": "Local Library",
+          "desc": "Scan folders, organize your library automatically"
+        },
+        "quality": {
+          "title": "Lossless Audio",
+          "desc": "Native audio engine with broad lossless format support"
+        },
+        "streaming": {
+          "title": "Streaming Servers",
+          "desc": "Subsonic / Jellyfin / Emby and more"
+        },
+        "lyrics": {
+          "title": "Rich Lyrics",
+          "desc": "AMLL word-by-word lyrics, plus desktop, Dynamic Island and taskbar lyrics"
+        }
       }
+    },
+    "agreement": {
+      "title": "User Agreement & Disclaimer",
+      "subtitle": "Please read and accept the agreement before continuing",
+      "scrollHint": "Scroll to the end before you can accept",
+      "agree": "I have read and agree to the User Agreement & Disclaimer",
+      "accept": "Agree & Continue"
     },
     "library": {
       "title": "Local Music Library",

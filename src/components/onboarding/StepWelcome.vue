@@ -9,8 +9,8 @@ const { t } = useI18n();
 const emit = defineEmits<{ (e: "next"): void }>();
 
 const FEATURES = [
-  { icon: IconMusic, key: "music" },
   { icon: IconFolder, key: "local" },
+  { icon: IconMusic, key: "quality" },
   { icon: IconServer, key: "streaming" },
   { icon: IconSparkles, key: "lyrics" },
 ];
@@ -25,17 +25,17 @@ const FEATURES = [
     </p>
     <div class="grid grid-cols-2 gap-3 w-full mb-10">
       <div
-        v-for="f in FEATURES"
-        :key="f.key"
+        v-for="feature in FEATURES"
+        :key="feature.key"
         class="flex items-center gap-3 px-4 py-3 bg-on-surface/4 border border-solid border-primary/10 rounded-xl text-left"
       >
-        <component :is="f.icon" class="size-5 text-primary shrink-0" />
+        <component :is="feature.icon" class="size-5 text-primary shrink-0" />
         <div class="flex-1 min-w-0">
           <div class="text-sm font-medium">
-            {{ t(`onboarding.welcome.features.${f.key}.title`) }}
+            {{ t(`onboarding.welcome.features.${feature.key}.title`) }}
           </div>
           <div class="text-xs text-on-surface-variant/60 truncate">
-            {{ t(`onboarding.welcome.features.${f.key}.desc`) }}
+            {{ t(`onboarding.welcome.features.${feature.key}.desc`) }}
           </div>
         </div>
       </div>
