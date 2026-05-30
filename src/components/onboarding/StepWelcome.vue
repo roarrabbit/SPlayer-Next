@@ -17,7 +17,7 @@ const FEATURES = [
 </script>
 
 <template>
-  <div class="flex flex-col items-center text-center w-full max-w-2xl mx-auto">
+  <div class="flex flex-col items-center text-center w-full max-w-2xl mx-auto my-auto">
     <SLogo :size="80" class="mb-6" />
     <h1 class="text-3xl font-bold mb-2">{{ t("onboarding.welcome.title") }}</h1>
     <p class="text-on-surface-variant/70 mb-8 leading-relaxed">

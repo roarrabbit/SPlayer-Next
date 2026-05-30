@@ -2,10 +2,10 @@
 import { useSettingsStore } from "@/stores/settings";
 import WindowControls from "@/components/layout/WindowControls.vue";
 import StepWelcome from "@/components/onboarding/StepWelcome.vue";
+import StepPreferences from "@/components/onboarding/StepPreferences.vue";
 import StepAgreement from "@/components/onboarding/StepAgreement.vue";
 import StepLibrary from "@/components/onboarding/StepLibrary.vue";
 import StepStreaming from "@/components/onboarding/StepStreaming.vue";
-import StepAppearance from "@/components/onboarding/StepAppearance.vue";
 import StepHotkeys from "@/components/onboarding/StepHotkeys.vue";
 
 const { t } = useI18n();
@@ -15,9 +15,9 @@ const settings = useSettingsStore();
 const STEPS = [
   { key: "welcome", component: StepWelcome },
   { key: "agreement", component: StepAgreement },
+  { key: "preferences", component: StepPreferences },
   { key: "library", component: StepLibrary },
   { key: "streaming", component: StepStreaming },
-  { key: "appearance", component: StepAppearance },
   { key: "hotkeys", component: StepHotkeys },
 ] as const;
 
@@ -60,7 +60,7 @@ const complete = async (): Promise<void> => {
 <template>
   <div class="flex flex-col h-screen w-screen bg-app text-on-surface overflow-hidden">
     <div class="app-drag-region h-16 shrink-0 flex items-center justify-end px-3">
-      <WindowControls />
+      <WindowControls direct-quit />
     </div>
 
     <div class="flex-1 min-h-0 flex flex-col items-center px-8 py-6">
@@ -85,7 +85,7 @@ const complete = async (): Promise<void> => {
           </span>
         </header>
 
-        <div class="relative flex-1 min-h-0 flex flex-col justify-center">
+        <div class="relative flex-1 min-h-0 flex flex-col">
           <Transition :name="direction === 'forward' ? 'slide-fwd' : 'slide-back'" mode="out-in">
             <component
               :is="currentStep.component"

@@ -1,4 +1,5 @@
 import type { SettingCategory } from "@/types/settings-schema";
+import { LOCALES } from "@shared/types/settings";
 import StorageManager from "@/components/settings/custom/StorageManager.vue";
 import IconLucideCog from "~icons/lucide/cog";
 
@@ -13,10 +14,7 @@ const generalCategory: SettingCategory = {
           key: "language",
           type: "select",
           binding: { store: "settings", path: "locale" },
-          options: [
-            { value: "zh-CN", labelKey: "settings.language.zhCN" },
-            { value: "en-US", labelKey: "settings.language.enUS" },
-          ],
+          options: LOCALES.map(({ value, label }) => ({ value, label })),
           defaultValue: "zh-CN",
         },
       ],

@@ -4,6 +4,12 @@ import type { HotkeyConfig } from "./hotkey";
 /** 支持的语言代码 */
 export type LocaleCode = "zh-CN" | "en-US";
 
+/** 语言选项 */
+export const LOCALES: { value: LocaleCode; label: string }[] = [
+  { value: "zh-CN", label: "简体中文" },
+  { value: "en-US", label: "English" },
+];
+
 /** 均衡器预设标识 */
 export type EqualizerPreset =
   | "flat"

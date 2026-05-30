@@ -2,7 +2,6 @@
   "onboarding": {
     "next": "Next",
     "back": "Back",
-    "skip": "Skip",
     "finish": "Finish",
     "footer": "You can adjust anything skipped here anytime in Settings",
     "welcome": {
@@ -37,14 +36,12 @@
     },
     "library": {
       "title": "Local Music Library",
-      "subtitle": "Add folders to scan and SPlayer-Next will index them automatically. You can add more later.",
-      "add": "Choose Folder",
-      "nestedHint": "Folder is nested with an existing one; skipped"
+      "subtitle": "Add folders to scan and SPlayer-Next will index them automatically. You can add more later."
     },
     "streaming": {
       "title": "Streaming Servers",
       "subtitle": "Connect to Subsonic-compatible services, Jellyfin or Emby for seamless access to your home music server.",
-      "hint": "After finishing setup, head to Settings → Music Source to add a server and test the connection.",
+      "hint": "After finishing setup, head to Settings → Media Sources → Streaming to add a server and test the connection.",
       "servers": {
         "subsonic": "Subsonic",
         "navidrome": "Navidrome",
@@ -52,18 +49,12 @@
         "emby": "Emby"
       }
     },
-    "appearance": {
-      "title": "Appearance",
-      "subtitle": "Pick your theme mode and accent color. The accent can also follow the current cover art.",
+    "preferences": {
+      "title": "Language & Theme",
+      "subtitle": "Pick your interface language and theme. You can fine-tune everything later in Settings.",
+      "languageLabel": "Interface Language",
       "modeLabel": "Theme Mode",
-      "colorLabel": "Accent Color",
-      "followCover": "Follow cover",
-      "useDefault": "Default",
-      "mode": {
-        "light": "Light",
-        "dark": "Dark",
-        "system": "System"
-      }
+      "colorLabel": "Accent Color"
     },
     "hotkeys": {
       "title": "Keyboard Shortcuts",
@@ -538,7 +529,8 @@
     "folders": "Music Directories",
     "foldersDescription": "Songs are automatically synced when added or removed",
     "removeFolder": "Remove Directory",
-    "removeFolderConfirm": "Removing this directory will delete its songs from the library!"
+    "removeFolderConfirm": "Removing this directory will delete its songs from the library!",
+    "nestedHint": "Folder is nested with an existing one; skipped"
   },
   "settings": {
     "title": "Settings",
@@ -591,9 +583,7 @@
     },
     "language": {
       "label": "Language",
-      "description": "Switch the display language",
-      "zhCN": "简体中文",
-      "enUS": "English"
+      "description": "Switch the display language"
     },
     "autoPlay": {
       "label": "Auto Play",

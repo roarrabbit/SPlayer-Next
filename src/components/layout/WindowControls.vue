@@ -5,12 +5,18 @@ import IconSquare from "~icons/lucide/square";
 import IconCopy from "~icons/lucide/copy";
 import IconX from "~icons/lucide/x";
 
-defineProps<{
-  /** 使用 cover 主题色（全屏播放器等沉浸场景） */
+const props = defineProps<{
+  /** 使用 cover 主题 */
   cover?: boolean;
+  /** 直接退出 */
+  directQuit?: boolean;
 }>();
 
-const { isMaximized, minimize, toggleMaximize, close } = useWindowControls();
+const { isMaximized, minimize, toggleMaximize, close, quit } = useWindowControls();
+
+const onClose = (): void => {
+  props.directQuit ? quit() : close();
+};
 </script>
 
 <template>
@@ -45,7 +51,7 @@ const { isMaximized, minimize, toggleMaximize, close } = useWindowControls();
       :variant="cover ? 'ghost' : 'tertiary'"
       circle
       :size="40"
-      @click="close"
+      @click="onClose"
     >
       <template #icon><IconX /></template>
     </SButton>

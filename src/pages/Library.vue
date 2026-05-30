@@ -24,32 +24,14 @@ const totalSize = computed(() => {
   return bytes > 0 ? formatFileSize(bytes) : "";
 });
 
-// 截取目录名
-const folderName = (dir: string): string => {
-  const parts = dir.replace(/\\/g, "/").split("/").filter(Boolean);
-  return parts[parts.length - 1] || dir;
+/** 新增目录后立即扫描 */
+const handleFolderAdded = (): void => {
+  libraryStore.startScan(false);
 };
 
-// 添加文件夹
-const handleAddFolder = async (): Promise<void> => {
+const handleQuickAddFolder = async (): Promise<void> => {
   const res = await libraryStore.addScanDir();
-  if (res.success) {
-    // 新增目录后立即扫描
-    libraryStore.startScan(false);
-  }
-};
-
-// 移除文件夹确认
-const removingDir = ref<string | null>(null);
-const removeConfirmOpen = ref(false);
-const confirmRemoveDir = (dir: string): void => {
-  removingDir.value = dir;
-  removeConfirmOpen.value = true;
-};
-const handleRemoveFolder = async (): Promise<void> => {
-  if (!removingDir.value) return;
-  await libraryStore.removeScanDir(removingDir.value);
-  removeConfirmOpen.value = false;
+  if (res.success) libraryStore.startScan(false);
 };
 
 // 播放全部
@@ -218,7 +200,7 @@ onUnmounted(() => {
         <IconLucideMusic class="size-12 mx-auto mb-3 opacity-30" />
         <div class="text-sm mb-1">{{ t("library.empty") }}</div>
         <div class="text-xs mb-4 opacity-70">{{ t("library.emptyHint") }}</div>
-        <SButton type="primary" variant="secondary" @click="handleAddFolder">
+        <SButton type="primary" variant="secondary" @click="handleQuickAddFolder">
           <template #icon><IconLucideFolderPlus /></template>
           {{ t("library.addFolder") }}
         </SButton>
@@ -231,51 +213,7 @@ onUnmounted(() => {
       :description="t('library.foldersDescription')"
       width="480px"
     >
-      <div class="space-y-2">
-        <!-- 目录列表 -->
-        <div
-          v-for="dir in scanDirs"
-          :key="dir"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg bg-on-surface/4"
-        >
-          <IconLucideFolder class="size-4 text-on-surface-variant shrink-0" />
-          <div class="flex-1 min-w-0">
-            <div class="text-sm truncate text-on-surface">{{ folderName(dir) }}</div>
-            <div class="text-xs truncate text-on-surface-variant/60">{{ dir }}</div>
-          </div>
-          <SButton variant="ghost" size="small" @click="confirmRemoveDir(dir)">
-            <template #icon><IconLucideTrash2 /></template>
-          </SButton>
-        </div>
-        <!-- 空 -->
-        <div
-          v-if="scanDirs.length === 0"
-          class="py-6 text-center text-on-surface-variant/50 text-sm"
-        >
-          {{ t("library.emptyHint") }}
-        </div>
-      </div>
-      <template #footer>
-        <SButton variant="secondary" @click="handleAddFolder">
-          <template #icon><IconLucideFolderPlus /></template>
-          {{ t("library.addFolder") }}
-        </SButton>
-      </template>
-    </SDialog>
-    <!-- 移除确认 -->
-    <SDialog v-model:open="removeConfirmOpen" :title="t('library.removeFolder')">
-      <template #default>
-        <p class="text-sm text-on-surface-variant">{{ t("library.removeFolderConfirm") }}</p>
-        <p class="text-xs text-on-surface-variant/60 mt-2 break-all">{{ removingDir }}</p>
-      </template>
-      <template #footer="{ close }">
-        <SButton variant="secondary" @click="close">
-          {{ t("common.cancel") }}
-        </SButton>
-        <SButton type="error" @click="handleRemoveFolder">
-          {{ t("common.confirm") }}
-        </SButton>
-      </template>
+      <FolderManager @added="handleFolderAdded" />
     </SDialog>
   </div>
 </template>

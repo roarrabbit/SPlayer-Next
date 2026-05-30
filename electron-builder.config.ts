@@ -69,6 +69,7 @@ const config: Configuration = {
     createDesktopShortcut: "always",
     allowElevation: true,
     allowToChangeInstallationDirectory: true,
+    license: "build/license.txt",
   },
   portable: {
     artifactName: "${productName}-${version}-${arch}-portable.${ext}",

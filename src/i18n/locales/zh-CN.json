@@ -2,7 +2,6 @@
   "onboarding": {
     "next": "下一步",
     "back": "上一步",
-    "skip": "稍后再说",
     "finish": "完成",
     "footer": "可随时在「设置」中调整本次未配置的内容",
     "welcome": {
@@ -25,14 +24,12 @@
     },
     "library": {
       "title": "本地音乐库",
-      "subtitle": "添加要扫描的音乐文件夹，SPlayer-Next 会自动建立曲库索引。可以添加多个目录，也可以之后再添加。",
-      "add": "选择文件夹",
-      "nestedHint": "该目录与已添加目录嵌套，已自动跳过"
+      "subtitle": "添加要扫描的音乐文件夹，SPlayer-Next 会自动建立曲库索引。可以添加多个目录，也可以之后再添加"
     },
     "streaming": {
       "title": "流媒体服务器",
-      "subtitle": "SPlayer-Next 支持连接 Subsonic 兼容服务和 Jellyfin / Emby，让你的家庭音乐服务器与播放器无缝集成。",
-      "hint": "完成引导后，前往「设置 → 音乐源」即可添加服务器并测试连接。",
+      "subtitle": "SPlayer-Next 支持连接 Subsonic 兼容服务和 Jellyfin / Emby，让你的家庭音乐服务器与播放器无缝集成",
+      "hint": "完成引导后，前往「设置 → 媒体源配置 → 流媒体管理」即可添加服务器并测试连接",
       "servers": {
         "subsonic": "Subsonic 兼容",
         "navidrome": "Navidrome",
@@ -40,22 +37,16 @@
         "emby": "Emby"
       }
     },
-    "appearance": {
-      "title": "外观",
-      "subtitle": "选择喜欢的主题模式和主色调，也可以让主色跟随当前歌曲封面自动变化。",
+    "preferences": {
+      "title": "语言与主题",
+      "subtitle": "选择界面语言与主题，进入应用后还可在「设置」中进一步调整",
+      "languageLabel": "界面语言",
       "modeLabel": "主题模式",
-      "colorLabel": "主色调",
-      "followCover": "跟随封面",
-      "useDefault": "默认",
-      "mode": {
-        "light": "浅色",
-        "dark": "深色",
-        "system": "跟随系统"
-      }
+      "colorLabel": "主色调"
     },
     "hotkeys": {
       "title": "快捷键",
-      "subtitle": "SPlayer-Next 内置了完整的播放控制快捷键，需要时随时调用。",
+      "subtitle": "SPlayer-Next 内置了完整的播放控制快捷键，需要时随时调用",
       "tips": {
         "global": {
           "title": "全局快捷键",
@@ -526,7 +517,8 @@
     "folders": "本地歌曲目录",
     "foldersDescription": "文件夹内歌曲增删自动同步",
     "removeFolder": "移除此目录",
-    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！"
+    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！",
+    "nestedHint": "该目录与已添加目录嵌套，已自动跳过"
   },
   "settings": {
     "title": "设置",
@@ -579,9 +571,7 @@
     },
     "language": {
       "label": "界面语言",
-      "description": "切换应用的显示语言",
-      "zhCN": "简体中文",
-      "enUS": "English"
+      "description": "切换应用的显示语言"
     },
     "autoPlay": {
       "label": "自动播放",
