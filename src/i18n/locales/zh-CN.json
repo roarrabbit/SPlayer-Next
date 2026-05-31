@@ -1,4 +1,68 @@
 {
+  "onboarding": {
+    "next": "下一步",
+    "back": "上一步",
+    "finish": "完成",
+    "footer": "可随时在「设置」中调整本次未配置的内容",
+    "welcome": {
+      "title": "欢迎使用 SPlayer-Next",
+      "subtitle": "一个现代化的桌面音乐播放器，完成几步设置即可开始享用",
+      "start": "开始设置",
+      "features": {
+        "local": { "title": "本地音乐库", "desc": "扫描本地目录，自动整理音乐库" },
+        "quality": { "title": "无损音质", "desc": "原生音频引擎，支持多种无损格式" },
+        "streaming": { "title": "流媒体服务器", "desc": "Subsonic / Jellyfin / Emby 等" },
+        "lyrics": { "title": "丰富歌词体验", "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词" }
+      }
+    },
+    "agreement": {
+      "title": "用户协议与免责声明",
+      "subtitle": "继续使用前，请阅读并同意以下协议",
+      "scrollHint": "请滚动阅读至结尾后再勾选",
+      "agree": "我已阅读并同意《用户协议与免责声明》",
+      "accept": "同意并继续"
+    },
+    "library": {
+      "title": "本地音乐库",
+      "subtitle": "添加要扫描的音乐文件夹，SPlayer-Next 会自动建立曲库索引。可以添加多个目录，也可以之后再添加"
+    },
+    "streaming": {
+      "title": "流媒体服务器",
+      "subtitle": "SPlayer-Next 支持连接 Subsonic 兼容服务和 Jellyfin / Emby，让你的家庭音乐服务器与播放器无缝集成",
+      "hint": "完成引导后，前往「设置 → 媒体源配置 → 流媒体管理」即可添加服务器并测试连接",
+      "servers": {
+        "subsonic": "Subsonic 兼容",
+        "navidrome": "Navidrome",
+        "jellyfin": "Jellyfin",
+        "emby": "Emby"
+      }
+    },
+    "preferences": {
+      "title": "语言与主题",
+      "subtitle": "选择界面语言与主题，进入应用后还可在「设置」中进一步调整",
+      "languageLabel": "界面语言",
+      "modeLabel": "主题模式",
+      "colorLabel": "主色调"
+    },
+    "hotkeys": {
+      "title": "快捷键",
+      "subtitle": "SPlayer-Next 内置了完整的播放控制快捷键，需要时随时调用",
+      "tips": {
+        "global": {
+          "title": "全局快捷键",
+          "desc": "无需聚焦应用窗口，例如媒体键即可控制播放、暂停、切歌"
+        },
+        "local": {
+          "title": "应用内快捷键",
+          "desc": "空格键播放暂停、左右切歌、Ctrl+F 搜索等常用操作"
+        },
+        "customize": {
+          "title": "自由定制",
+          "desc": "「设置 → 快捷键」中可以查看完整列表并修改绑定"
+        }
+      }
+    }
+  },
   "common": {
     "confirm": "确认",
     "cancel": "取消",
@@ -453,7 +517,8 @@
     "folders": "本地歌曲目录",
     "foldersDescription": "文件夹内歌曲增删自动同步",
     "removeFolder": "移除此目录",
-    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！"
+    "removeFolderConfirm": "移除该目录后，其中的歌曲将从音乐库中删除！",
+    "nestedHint": "该目录与已添加目录嵌套，已自动跳过"
   },
   "settings": {
     "title": "设置",
@@ -506,9 +571,7 @@
     },
     "language": {
       "label": "界面语言",
-      "description": "切换应用的显示语言",
-      "zhCN": "简体中文",
-      "enUS": "English"
+      "description": "切换应用的显示语言"
     },
     "autoPlay": {
       "label": "自动播放",

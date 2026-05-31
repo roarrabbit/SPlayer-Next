@@ -71,6 +71,7 @@ export default defineConfig({
         "@": resolve("src"),
         "@shared": resolve(__dirname, "shared"),
         "@windows": resolve(__dirname, "windows"),
+        "@root": resolve(__dirname),
       },
     },
     plugins: [

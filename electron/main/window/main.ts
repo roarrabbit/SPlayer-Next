@@ -12,6 +12,13 @@ import { broadcast } from "@main/utils/broadcast";
 /** 主窗口 session */
 const MAIN_PARTITION = "persist:main";
 
+/** 判断是否应用内部导航 */
+const isInternalNavigation = (url: string): boolean => {
+  if (url.startsWith("file://")) return true;
+  const devBase = process.env["ELECTRON_RENDERER_URL"];
+  return !!devBase && url.startsWith(devBase);
+};
+
 let mainWindow: BrowserWindow | null = null;
 
 /**
@@ -97,12 +104,25 @@ export const createMainWindow = (): BrowserWindow => {
     shell.openExternal(details.url);
     return { action: "deny" };
   });
+  // 拦截外站顶层导航（如 v-html 内的外链），交系统浏览器打开，防止主窗口被导航走
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (isInternalNavigation(url)) return;
+    event.preventDefault();
+    shell.openExternal(url);
+  });
+
+  // 首启引导路径
+  const initialHash = store.get("system.onboardingCompleted") ? "" : "/onboarding";
 
   // 基于 electron-vite cli 的 HMR
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    const base = process.env["ELECTRON_RENDERER_URL"];
+    mainWindow.loadURL(initialHash ? `${base}#${initialHash}` : base);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(
+      join(__dirname, "../renderer/index.html"),
+      initialHash ? { hash: initialHash } : undefined,
+    );
   }
 
   mainWindow.on("closed", () => {

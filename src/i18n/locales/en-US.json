@@ -1,4 +1,80 @@
 {
+  "onboarding": {
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish",
+    "footer": "You can adjust anything skipped here anytime in Settings",
+    "welcome": {
+      "title": "Welcome to SPlayer-Next",
+      "subtitle": "A modern desktop music player — a few quick steps and you're ready",
+      "start": "Get Started",
+      "features": {
+        "local": {
+          "title": "Local Library",
+          "desc": "Scan folders, organize your library automatically"
+        },
+        "quality": {
+          "title": "Lossless Audio",
+          "desc": "Native audio engine with broad lossless format support"
+        },
+        "streaming": {
+          "title": "Streaming Servers",
+          "desc": "Subsonic / Jellyfin / Emby and more"
+        },
+        "lyrics": {
+          "title": "Rich Lyrics",
+          "desc": "AMLL word-by-word lyrics, plus desktop, Dynamic Island and taskbar lyrics"
+        }
+      }
+    },
+    "agreement": {
+      "title": "User Agreement & Disclaimer",
+      "subtitle": "Please read and accept the agreement before continuing",
+      "scrollHint": "Scroll to the end before you can accept",
+      "agree": "I have read and agree to the User Agreement & Disclaimer",
+      "accept": "Agree & Continue"
+    },
+    "library": {
+      "title": "Local Music Library",
+      "subtitle": "Add folders to scan and SPlayer-Next will index them automatically. You can add more later."
+    },
+    "streaming": {
+      "title": "Streaming Servers",
+      "subtitle": "Connect to Subsonic-compatible services, Jellyfin or Emby for seamless access to your home music server.",
+      "hint": "After finishing setup, head to Settings → Media Sources → Streaming to add a server and test the connection.",
+      "servers": {
+        "subsonic": "Subsonic",
+        "navidrome": "Navidrome",
+        "jellyfin": "Jellyfin",
+        "emby": "Emby"
+      }
+    },
+    "preferences": {
+      "title": "Language & Theme",
+      "subtitle": "Pick your interface language and theme. You can fine-tune everything later in Settings.",
+      "languageLabel": "Interface Language",
+      "modeLabel": "Theme Mode",
+      "colorLabel": "Accent Color"
+    },
+    "hotkeys": {
+      "title": "Keyboard Shortcuts",
+      "subtitle": "SPlayer-Next ships with complete playback shortcuts you can use whenever you need them.",
+      "tips": {
+        "global": {
+          "title": "Global shortcuts",
+          "desc": "Control playback even when the window isn't focused — including media keys"
+        },
+        "local": {
+          "title": "In-app shortcuts",
+          "desc": "Space to play/pause, arrow keys to skip, Ctrl+F to search, and more"
+        },
+        "customize": {
+          "title": "Fully customizable",
+          "desc": "See and rebind every shortcut in Settings → Shortcuts"
+        }
+      }
+    }
+  },
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
@@ -453,7 +529,8 @@
     "folders": "Music Directories",
     "foldersDescription": "Songs are automatically synced when added or removed",
     "removeFolder": "Remove Directory",
-    "removeFolderConfirm": "Removing this directory will delete its songs from the library!"
+    "removeFolderConfirm": "Removing this directory will delete its songs from the library!",
+    "nestedHint": "Folder is nested with an existing one; skipped"
   },
   "settings": {
     "title": "Settings",
@@ -506,9 +583,7 @@
     },
     "language": {
       "label": "Language",
-      "description": "Switch the display language",
-      "zhCN": "简体中文",
-      "enUS": "English"
+      "description": "Switch the display language"
     },
     "autoPlay": {
       "label": "Auto Play",
