@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { Track } from "@shared/types/player";
-import type { ContentScope } from "@/types/collection";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useMediaStore } from "@/stores/media";
 import { useFavorite } from "@/composables/useFavorite";
+import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import * as player from "@/core/player";
 import { formatTime } from "@/utils/time";
@@ -26,18 +25,17 @@ const onSeekDragEnd = (value: number): void => {
 };
 
 /** 添加到歌单 */
-const pickerOpen = ref(false);
-const pickerTracks = shallowRef<Track[]>([]);
-const pickerMode = ref<ContentScope>("local");
+const {
+  open: pickerOpen,
+  tracks: pickerTracks,
+  mode: pickerMode,
+  openPicker,
+} = usePlaylistPicker();
 
 /** 歌曲菜单 */
 const { items: menuItems, handleSelect: onMenuSelect } = useTrackMenu(toRef(media, "track"), {
   hidePlayActions: true,
-  onAddToPlaylist: (track) => {
-    pickerTracks.value = [track];
-    pickerMode.value = track.source === "netease" ? "online" : "local";
-    pickerOpen.value = true;
-  },
+  onAddToPlaylist: (track) => openPicker([track]),
 });
 </script>
 

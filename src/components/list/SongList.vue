@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { Artist, Track, TrackSource } from "@shared/types/player";
-import type { CollectionType, ContentScope } from "@/types/collection";
+import type { CollectionType } from "@/types/collection";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
+import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { PLAYER_BAR_GAP } from "@/composables/useFloatingPlayerBar";
 import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { formatTime } from "@/utils/time";
@@ -225,18 +226,12 @@ const batch = useMultiSelect(sortedItems, {
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
 /** 添加到歌单相关 */
-const pickerOpen = ref(false);
-const pickerTracks = shallowRef<Track[]>([]);
-const pickerMode = computed<ContentScope>(() => (props.source === "netease" ? "online" : "local"));
-
-/**
- * 打开添加到歌单
- * @param tracks 添加的歌曲
- */
-const openPicker = (tracks: Track[]): void => {
-  pickerTracks.value = tracks;
-  pickerOpen.value = true;
-};
+const {
+  open: pickerOpen,
+  tracks: pickerTracks,
+  mode: pickerMode,
+  openPicker,
+} = usePlaylistPicker();
 
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();

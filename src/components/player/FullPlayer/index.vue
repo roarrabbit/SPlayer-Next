@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import type { Track } from "@shared/types/player";
-import type { ContentScope } from "@/types/collection";
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
 import { getCurrentTime } from "@/services/playback";
 import { useFavorite } from "@/composables/useFavorite";
+import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import Lyrics from "@/components/player/Lyrics/index.vue";
 import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { useWindowControls } from "@/composables/useWindowControls";
@@ -168,17 +167,12 @@ watch(immersiveEnabled, (on) => {
 onBeforeUnmount(() => clearTimeout(idleTimer));
 
 /** 添加到歌单 */
-const pickerOpen = ref(false);
-const pickerTracks = shallowRef<Track[]>([]);
-const pickerMode = ref<ContentScope>("local");
-
-const openPicker = (): void => {
-  const track = media.track;
-  if (!track) return;
-  pickerTracks.value = [track];
-  pickerMode.value = track.source === "netease" ? "online" : "local";
-  pickerOpen.value = true;
-};
+const {
+  open: pickerOpen,
+  tracks: pickerTracks,
+  mode: pickerMode,
+  openPicker,
+} = usePlaylistPicker();
 
 /** 歌词显隐按钮 */
 const lyricToggleDisabled = computed(() => !hasLyric.value || fullscreenCover.value);
@@ -400,7 +394,7 @@ const toggleLyric = (): void => {
               variant="ghost"
               size="large"
               circle
-              @click="openPicker"
+              @click="media.track && openPicker([media.track])"
             >
               <template #icon><IconLucideListPlus /></template>
             </SButton>
