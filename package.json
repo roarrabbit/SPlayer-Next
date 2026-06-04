@@ -39,9 +39,9 @@
     "build": "rimraf dist && pnpm build:native && pnpm typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm build && electron-builder --dir --config electron-builder.config.ts",
-    "build:win": "pnpm build && tsx scripts/gen-license.ts && electron-builder --win --config electron-builder.config.ts",
-    "build:mac": "pnpm build && electron-builder --mac --config electron-builder.config.ts",
-    "build:linux": "pnpm build && electron-builder --linux --config electron-builder.config.ts"
+    "build:win": "pnpm build && tsx scripts/gen-license.ts && electron-builder --config electron-builder.config.ts --win",
+    "build:mac": "pnpm build && electron-builder --config electron-builder.config.ts --mac",
+    "build:linux": "pnpm build && electron-builder --config electron-builder.config.ts --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
