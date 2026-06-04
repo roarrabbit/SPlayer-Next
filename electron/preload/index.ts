@@ -368,6 +368,19 @@ const api = {
       activeServerId: string | null;
     }): Promise<void> => ipcRenderer.invoke("streaming:saveServers", payload),
   },
+  lastfm: {
+    // 发起授权
+    connect: () => ipcRenderer.invoke("lastfm:connect"),
+    // 取消授权轮询
+    cancelConnect: () => ipcRenderer.invoke("lastfm:cancelConnect"),
+    // 断开并清除凭证
+    disconnect: () => ipcRenderer.invoke("lastfm:disconnect"),
+    // 查询连接状态
+    getStatus: () => ipcRenderer.invoke("lastfm:getStatus"),
+    // 同步喜欢
+    love: (artist: string, track: string, loved: boolean) =>
+      ipcRenderer.invoke("lastfm:love", artist, track, loved),
+  },
   externalApi: {
     // 重启外部 API 服务
     restart: () => ipcRenderer.invoke("externalApi:restart"),

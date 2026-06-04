@@ -1,6 +1,7 @@
 import type { Track } from "@shared/types/player";
 import { useLibraryStore } from "@/stores/library";
 import { useUserStore } from "@/stores/user";
+import { useSettingsStore } from "@/stores/settings";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 
@@ -23,7 +24,20 @@ const recordFavoriteChange = (track: Track, liked: boolean): void => {
 export const useFavorite = () => {
   const library = useLibraryStore();
   const user = useUserStore();
+  const settings = useSettingsStore();
   const { t } = useI18n();
+
+  /**
+   * 同步喜欢到 Last.fm（未开启/未连接时由主进程静默兜底）
+   * @param track - 歌曲
+   * @param loved - 是否已喜欢
+   */
+  const syncLastfmLove = (track: Track, loved: boolean): void => {
+    if (!settings.system.lastfm.enabled || !settings.system.lastfm.loveSync) return;
+    const artist = track.artists?.[0]?.name ?? "";
+    if (!artist || !track.title) return;
+    void window.api.lastfm.love(artist, track.title, loved).catch(() => {});
+  };
 
   /**
    * 当前 Track 是否已收藏
@@ -59,6 +73,7 @@ export const useFavorite = () => {
     if (track.source === "local") {
       const next = library.toggleLike(track.id);
       recordFavoriteChange(track, next);
+      syncLastfmLove(track, next);
       toast.success(t(next ? "liked.toast.added" : "liked.toast.removed"));
       return;
     }
@@ -74,6 +89,7 @@ export const useFavorite = () => {
         return;
       }
       recordFavoriteChange(track, !wasLiked);
+      syncLastfmLove(track, !wasLiked);
       toast.success(t(wasLiked ? "liked.toast.removed" : "liked.toast.added"));
       return;
     }
