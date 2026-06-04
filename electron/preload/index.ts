@@ -6,6 +6,7 @@ import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/type
 import type { LoadOptions, TrackSource } from "@shared/types/player";
 import type { StreamingServerConfig } from "@shared/types/streaming";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
+import type { UpdateEvent } from "@shared/types/update";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -386,6 +387,18 @@ const api = {
     restart: () => ipcRenderer.invoke("externalApi:restart"),
     // 查询当前运行状态
     getStatus: () => ipcRenderer.invoke("externalApi:getStatus"),
+  },
+  update: {
+    // 检查更新
+    check: (manual: boolean) => ipcRenderer.invoke("update:check", manual),
+    // 下载更新（Win/Linux）
+    download: () => ipcRenderer.invoke("update:download"),
+    // 退出并安装
+    install: () => ipcRenderer.invoke("update:install"),
+    // 打开 Releases 下载页（mac / 兜底）
+    openDownloadPage: () => ipcRenderer.invoke("update:openDownloadPage"),
+    // 订阅更新事件
+    onEvent: (callback: (event: UpdateEvent) => void) => subscribe("update:event", callback),
   },
   stats: {
     // 记录一次播放

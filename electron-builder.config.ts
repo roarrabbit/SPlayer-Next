@@ -138,7 +138,11 @@ const config: Configuration = {
   electronDownload: {
     mirror: "https://npmmirror.com/mirrors/electron/",
   },
-  publish: [],
+  publish: {
+    provider: "github",
+    owner: "SPlayer-Dev",
+    repo: "SPlayer-Next",
+  },
 };
 
 export default config;

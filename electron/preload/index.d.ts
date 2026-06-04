@@ -17,6 +17,7 @@ import { StreamingApi } from "@shared/types/streaming";
 import { LastfmApi } from "@shared/types/lastfm";
 import { IpcResponse } from "@shared/types/player";
 import { StatsApi } from "@shared/types/stats";
+import { UpdateApi } from "@shared/types/update";
 
 declare global {
   interface Window {
@@ -75,6 +76,7 @@ declare global {
         restart: () => Promise<ExternalApiStatus>;
         getStatus: () => Promise<ExternalApiStatus>;
       };
+      update: UpdateApi;
     };
   }
 }

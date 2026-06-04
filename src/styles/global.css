@@ -1,4 +1,5 @@
 @import "/fonts/font.css";
+@import "./markdown.css";
 
 * {
   margin: 0;

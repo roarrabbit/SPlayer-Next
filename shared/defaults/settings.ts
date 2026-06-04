@@ -113,6 +113,9 @@ export const defaultSystemConfig: SystemConfig = {
     wsEnabled: false,
     port: 14558,
   },
+  update: {
+    autoCheck: true,
+  },
   system: {
     rememberWindowState: true,
     taskbarProgress: true,

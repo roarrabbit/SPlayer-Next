@@ -88,3 +88,4 @@ export const songCacheLog = log.scope("songCache");
 export const serverLog = log.scope("server");
 export const pluginLog = log.scope("plugin");
 export const lastfmLog = log.scope("lastfm");
+export const updaterLog = log.scope("updater");

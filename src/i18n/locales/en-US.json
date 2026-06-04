@@ -1,4 +1,14 @@
 {
+  "update": {
+    "dialogTitle": "New Version Available",
+    "download": "Download",
+    "downloading": "Downloading",
+    "installNow": "Restart & Install",
+    "goDownload": "Go to Download",
+    "upToDate": "You're on the latest version",
+    "readyToast": "Update ready — restart to install",
+    "failed": "Update failed, please try again later"
+  },
   "onboarding": {
     "next": "Next",
     "back": "Back",
@@ -549,6 +559,7 @@
       "plugins": "Plugin Manager"
     },
     "section": {
+      "update": "Update",
       "language": "Language",
       "playback": "Player",
       "playControl": "Playback Control",
@@ -1163,6 +1174,14 @@
     "rememberWindowState": {
       "label": "Remember Window State",
       "description": "Restore window size, position and maximized state on next launch"
+    },
+    "autoCheckUpdate": {
+      "label": "Auto Check for Updates",
+      "description": "Check for new versions in the background on launch and periodically"
+    },
+    "checkUpdate": {
+      "label": "Check for Updates",
+      "description": "Check for a new version now"
     },
     "showPerformanceMonitor": {
       "label": "Performance Monitor",
