@@ -6,6 +6,7 @@ build
 .eslintcache
 .claude
 .agents
+docs/superpowers
 skills-lock.json
 *.log*
 .vscode/settings.json

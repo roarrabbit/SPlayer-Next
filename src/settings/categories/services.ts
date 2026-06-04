@@ -1,5 +1,6 @@
 import type { SettingCategory } from "@/types/settings-schema";
 import ExternalApiPanel from "@/components/settings/custom/ExternalApiPanel.vue";
+import LastfmPanel from "@/components/settings/custom/LastfmPanel.vue";
 import IconLucideGlobe from "~icons/lucide/globe";
 
 const servicesCategory: SettingCategory = {
@@ -42,6 +43,44 @@ const servicesCategory: SettingCategory = {
                 { value: "state", labelKey: "settings.discordDisplayMode.state" },
               ],
               defaultValue: "name",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "lastfm",
+      items: [
+        {
+          key: "lastfmEnabled",
+          type: "switch",
+          binding: { store: "settings", path: "system.lastfm.enabled" },
+          defaultValue: false,
+          children: [
+            {
+              key: "lastfmAccount",
+              type: "custom",
+              component: LastfmPanel,
+              fullWidth: true,
+              keywords: ["settings.lastfm.connect", "settings.lastfm.disconnect"],
+            },
+            {
+              key: "lastfmScrobble",
+              type: "switch",
+              binding: { store: "settings", path: "system.lastfm.scrobble" },
+              defaultValue: true,
+            },
+            {
+              key: "lastfmNowPlaying",
+              type: "switch",
+              binding: { store: "settings", path: "system.lastfm.nowPlaying" },
+              defaultValue: true,
+            },
+            {
+              key: "lastfmLoveSync",
+              type: "switch",
+              binding: { store: "settings", path: "system.lastfm.loveSync" },
+              defaultValue: true,
             },
           ],
         },

@@ -3,6 +3,7 @@ import { electronApp, optimizer } from "@electron-toolkit/utils";
 import { createMainWindow, restoreLyricWindows } from "@main/window";
 import { registerIpcHandlers } from "@main/ipc";
 import { init as initMedia, shutdown as shutdownMedia } from "@main/services/media";
+import { init as initLastfm } from "@main/services/lastfm";
 import { initGlobalHotkey } from "@main/services/globalHotkey";
 import { initDatabase, closeDatabase } from "@main/database";
 import { init as initSongCache } from "@main/services/songCache";
@@ -66,6 +67,8 @@ export const initApp = (): void => {
     registerIpcHandlers();
     // 初始化系统媒体控件
     initMedia();
+    // 初始化 Last.fm 集成
+    initLastfm();
     // 初始化插件系统（扫描并启动已启用的插件）
     pluginRegistry.init();
     // 创建主窗口
