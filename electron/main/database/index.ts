@@ -6,8 +6,7 @@ import { databaseDir } from "@main/utils/paths";
 import { migrate } from "./migration";
 
 /** 数据库文件路径 */
-const dbDir = databaseDir;
-const dbPath = path.join(dbDir, "library.db");
+const dbPath = path.join(databaseDir, "library.db");
 
 let db: Database.Database | null = null;
 
@@ -22,7 +21,7 @@ export const isDbOpen = (): boolean => db !== null;
 
 /** 初始化数据库：打开连接、启用 WAL、建表建索引、执行迁移 */
 export const initDatabase = (): void => {
-  fs.mkdirSync(dbDir, { recursive: true });
+  fs.mkdirSync(databaseDir, { recursive: true });
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
 

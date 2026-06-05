@@ -17,6 +17,9 @@ export const isMac = process.platform === "darwin";
 /** 是否为 Linux 系统 */
 export const isLinux = process.platform === "linux";
 
+/** 是否为便携版 */
+export const isPortable = !!process.env.PORTABLE_EXECUTABLE_DIR;
+
 /**
  * 软件版本
  * @returns string
@@ -26,11 +29,8 @@ export const appVersion = app.getVersion();
 /** 应用名称 */
 export const appName = app.getName();
 
-/** 默认缓存根目录（统一放在 app-data/cache，区别于 Electron 内置的 Cache/Code Cache） */
-export const defaultAppCacheDir = defaultCacheDir;
-
-/** 当前生效的缓存根目录：用户在设置中可选自定义路径，未配置时回退默认 */
-export const getAppCacheDir = (): string => store.get("cache.dir") || defaultAppCacheDir;
+/** 当前生效的缓存根目录 */
+export const getAppCacheDir = (): string => store.get("cache.dir") || defaultCacheDir;
 
 /** 当前生效的封面缩略图目录 */
 export const getCoverCacheDir = (): string => path.join(getAppCacheDir(), "covers");

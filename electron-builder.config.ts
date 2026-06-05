@@ -51,7 +51,7 @@ const config: Configuration = {
     icon: "public/icons/logo.ico",
     artifactName: "${productName}-${version}-${arch}.${ext}",
     forceCodeSigning: false,
-    target: ["nsis"],
+    target: ["nsis", "portable"],
   },
   nsis: {
     oneClick: false,

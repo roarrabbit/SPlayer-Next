@@ -2,11 +2,14 @@ import electronUpdater, { type UpdateInfo } from "electron-updater";
 import { shell } from "electron";
 import { sendToMain } from "@main/utils/broadcast";
 import { store } from "@main/store";
-import { isDev, isMac } from "@main/utils/config";
+import { isDev, isMac, isPortable } from "@main/utils/config";
 import { updaterLog } from "@main/utils/logger";
 import type { UpdateEvent, UpdateMeta } from "@shared/types/update";
 
 const { autoUpdater } = electronUpdater;
+
+/** 是否支持内置下载安装 */
+const canSelfInstall = !isMac && !isPortable;
 
 /** Releases 页：手动下载与兜底跳转 */
 const RELEASES_URL = "https://github.com/SPlayer-Dev/SPlayer-Next/releases/latest";
@@ -50,7 +53,7 @@ const toMeta = (info: UpdateInfo): UpdateMeta => ({
 const bindEvents = (): void => {
   autoUpdater.on("checking-for-update", () => emit({ type: "checking" }));
   autoUpdater.on("update-available", (info) =>
-    emit({ type: "available", meta: toMeta(info), manual: manualCheck, canInstall: !isMac }),
+    emit({ type: "available", meta: toMeta(info), manual: manualCheck, canInstall: canSelfInstall }),
   );
   autoUpdater.on("update-not-available", () => emit({ type: "notAvailable", manual: manualCheck }));
   autoUpdater.on("download-progress", (progress) =>
@@ -86,7 +89,7 @@ export const checkForUpdates = (manual: boolean): void => {
 
 /** 下载更新 */
 export const downloadUpdate = (): void => {
-  if (isMac) return;
+  if (!canSelfInstall) return;
   autoUpdater.downloadUpdate().catch((error) => {
     updaterLog.error("下载更新失败", error);
     emit({ type: "error", message: error?.message ?? String(error), manual: true });
@@ -95,7 +98,7 @@ export const downloadUpdate = (): void => {
 
 /** 退出并安装 */
 export const quitAndInstall = (): void => {
-  if (isMac) return;
+  if (!canSelfInstall) return;
   autoUpdater.quitAndInstall();
 };
 
