@@ -247,7 +247,7 @@ export interface SongCacheSettings {
 
 /** 缓存配置 */
 export interface CacheSettings {
-  /** 自定义缓存目录；null 使用默认 {userData}/app-cache */
+  /** 自定义缓存目录；null 使用默认 {userData}/app-data/cache */
   dir: string | null;
   /** 歌曲文件级缓存 */
   songCache: SongCacheSettings;
@@ -295,6 +295,12 @@ export interface WindowStates {
   taskbarLyric: TaskbarLyricWindowState;
 }
 
+/** 应用更新配置 */
+export interface AppUpdateSettings {
+  /** 自动检查更新 */
+  autoCheck: boolean;
+}
+
 /** 后端配置汇总 */
 export interface SystemConfig {
   /** 播放器配置 */
@@ -321,6 +327,8 @@ export interface SystemConfig {
   lastfm: LastfmSettings;
   /** 外部 API 服务（HTTP + WS） */
   externalApi: ExternalApiSettings;
+  /** 应用更新配置 */
+  update: AppUpdateSettings;
   /** 系统配置 */
   system: {
     /** 记忆窗口状态 */

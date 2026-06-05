@@ -128,4 +128,6 @@ const playerBarInnerClass = computed(() => {
   <FullPlayer />
   <!-- 全局设置 -->
   <SettingsDialog />
+  <!-- 更新弹窗 -->
+  <UpdateDialog />
 </template>

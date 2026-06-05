@@ -1,4 +1,14 @@
 {
+  "update": {
+    "dialogTitle": "发现新版本",
+    "download": "下载",
+    "downloading": "下载中",
+    "installNow": "立即重启安装",
+    "goDownload": "前往下载页",
+    "upToDate": "已是最新版本",
+    "readyToast": "更新已就绪，可重启安装",
+    "failed": "更新失败，请稍后重试"
+  },
   "onboarding": {
     "next": "下一步",
     "back": "上一步",
@@ -537,6 +547,7 @@
       "plugins": "插件管理"
     },
     "section": {
+      "update": "更新",
       "language": "语言",
       "playback": "播放器",
       "playControl": "播放控制",
@@ -1151,6 +1162,14 @@
     "rememberWindowState": {
       "label": "记忆窗口状态",
       "description": "下次启动时恢复窗口的大小、位置和最大化状态"
+    },
+    "autoCheckUpdate": {
+      "label": "自动检查更新",
+      "description": "启动后及定时在后台检查新版本"
+    },
+    "checkUpdate": {
+      "label": "检查更新",
+      "description": "立即检查是否有新版本"
     },
     "showPerformanceMonitor": {
       "label": "性能监视器",

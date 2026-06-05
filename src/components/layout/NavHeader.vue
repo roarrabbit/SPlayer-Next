@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import { useThemeStore } from "@/stores/theme";
+import { useUpdateStore } from "@/stores/update";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import IconSun from "~icons/lucide/sun";
 import IconMoon from "~icons/lucide/moon";
@@ -13,6 +14,7 @@ const router = useRouter();
 const { t } = useI18n();
 const { show: showSettings } = useSettingsDialog();
 const theme = useThemeStore();
+const update = useUpdateStore();
 
 const themeIcon = computed(() => {
   if (theme.mode === "light") return IconMoon;
@@ -71,6 +73,14 @@ const onMenuSelect = (key: string): void => {
         <template #icon><IconLucideChevronRight /></template>
       </SButton>
       <NavSearch />
+      <div v-if="update.hasUpdate" class="app-no-drag relative">
+        <SButton variant="tertiary" circle :size="40" :icon-size="20" @click="update.openDialog()">
+          <template #icon><IconLucideDownload /></template>
+        </SButton>
+        <span
+          class="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 pointer-events-none"
+        />
+      </div>
     </div>
     <!-- 中间 -->
     <div class="flex-1 h-full" />

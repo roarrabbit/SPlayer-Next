@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import { existsSync, type Dirent } from "node:fs";
 import { store } from "@main/store";
 import {
-  defaultAppCacheDir,
   getAppCacheDir,
   getCoverCacheDir,
   getArtistCacheDir,
@@ -19,6 +18,7 @@ import { clearLyricMatchCache } from "@main/database/lyricMatchCache";
 import * as songCache from "@main/services/songCache";
 import type { TrackSource } from "@shared/types/player";
 import { systemLog } from "@main/utils/logger";
+import { defaultCacheDir } from "@main/utils/paths";
 
 /** 已知的缓存类别 */
 export type CacheCategory =
@@ -240,13 +240,13 @@ export const registerCacheIpc = (): void => {
     },
   );
 
-  /** 还原默认缓存目录（同样清空旧的文件类缓存） */
+  /** 还原默认缓存目录 */
   ipcMain.handle("cache:resetDir", async (): Promise<string> => {
     await Promise.all(idsByKind("file").map((id) => categoryHandlers[id].clear()));
     store.set("cache.dir", null);
     syncCoverCacheDir();
     songCache.reloadDir();
-    return defaultAppCacheDir;
+    return defaultCacheDir;
   });
 
   /** 歌曲文件级缓存：命中查询 */

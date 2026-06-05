@@ -1,13 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
-import { app } from "electron";
 import Database from "better-sqlite3";
 import { libraryLog } from "@main/utils/logger";
+import { databaseDir } from "@main/utils/paths";
 import { migrate } from "./migration";
 
 /** 数据库文件路径 */
-const dbDir = path.join(app.getPath("userData"), "Database");
-const dbPath = path.join(dbDir, "library.db");
+const dbPath = path.join(databaseDir, "library.db");
 
 let db: Database.Database | null = null;
 
@@ -22,7 +21,7 @@ export const isDbOpen = (): boolean => db !== null;
 
 /** 初始化数据库：打开连接、启用 WAL、建表建索引、执行迁移 */
 export const initDatabase = (): void => {
-  fs.mkdirSync(dbDir, { recursive: true });
+  fs.mkdirSync(databaseDir, { recursive: true });
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
 

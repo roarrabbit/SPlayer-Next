@@ -47,7 +47,7 @@ const handleContinue = (): void => {
     <!-- eslint-disable vue/no-v-html -->
     <div
       ref="scrollArea"
-      class="agreement-body flex-1 min-h-0 overflow-y-auto px-5 py-4 bg-on-surface/4 border border-solid border-primary/10 rounded-xl"
+      class="markdown-body flex-1 min-h-0 overflow-y-auto px-5 py-4 bg-on-surface/4 border border-solid border-primary/10 rounded-xl"
       @scroll="checkScroll"
       v-html="agreementHtml"
     />
@@ -76,62 +76,3 @@ const handleContinue = (): void => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.agreement-body {
-  line-height: 1.7;
-  font-size: 13px;
-  color: rgb(var(--s-on-surface-variant) / 0.85);
-}
-.agreement-body :deep(h1) {
-  margin: 0 0 0.75em;
-  font-size: 18px;
-  font-weight: 700;
-  color: rgb(var(--s-on-surface));
-}
-.agreement-body :deep(h2) {
-  margin: 1.4em 0 0.6em;
-  font-size: 15px;
-  font-weight: 600;
-  color: rgb(var(--s-on-surface));
-}
-.agreement-body :deep(h3) {
-  margin: 1.1em 0 0.5em;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: rgb(var(--s-on-surface));
-}
-.agreement-body :deep(p) {
-  margin: 0.5em 0;
-}
-.agreement-body :deep(ul) {
-  margin: 0.5em 0;
-  padding-left: 1.3em;
-  list-style: disc;
-}
-.agreement-body :deep(li) {
-  margin: 0.25em 0;
-}
-.agreement-body :deep(strong) {
-  font-weight: 600;
-  color: rgb(var(--s-on-surface));
-}
-.agreement-body :deep(a) {
-  color: rgb(var(--s-primary));
-  text-decoration: none;
-}
-.agreement-body :deep(a:hover) {
-  text-decoration: underline;
-}
-.agreement-body :deep(hr) {
-  margin: 1.2em 0;
-  border: none;
-  border-top: 1px solid rgb(var(--s-on-surface) / 0.1);
-}
-.agreement-body :deep(code) {
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
-  background: rgb(var(--s-on-surface) / 0.08);
-  font-size: 0.9em;
-}
-</style>

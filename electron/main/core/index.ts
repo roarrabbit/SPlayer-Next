@@ -10,6 +10,7 @@ import { init as initSongCache } from "@main/services/songCache";
 import { pluginRegistry } from "@main/plugins/registry";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
 import { startServer, stopServer } from "@main/server";
+import { initUpdater, disposeUpdater } from "@main/services/updater";
 import { coreLog, initLogger } from "@main/utils/logger";
 
 /**
@@ -36,7 +37,7 @@ export const initApp = (): void => {
   configureMemoryOptimizations();
   // 初始化日志
   initLogger();
-  // 单例锁：已有实例时聚焦现有窗口
+  // 单例锁
   const gotLock = app.requestSingleInstanceLock();
   if (!gotLock) {
     app.quit();
@@ -51,7 +52,7 @@ export const initApp = (): void => {
   });
   // 注册缓存协议方案
   registerCacheScheme();
-
+  // 其他初始化
   app.whenReady().then(() => {
     electronApp.setAppUserModelId("com.imsyy.splayer-next");
     // 注册 cache:// 协议处理
@@ -59,44 +60,46 @@ export const initApp = (): void => {
     app.on("browser-window-created", (_, window) => {
       optimizer.watchWindowShortcuts(window);
     });
-    // 初始化数据库
-    initDatabase();
-    // 启动歌曲缓存服务
-    initSongCache();
     // 注册 IPC
     registerIpcHandlers();
-    // 初始化系统媒体控件
+    // 创建主窗口
+    createMainWindow();
+    // 初始化数据库
+    initDatabase();
+    // 启动歌曲缓存
+    void initSongCache();
     initMedia();
     // 初始化 Last.fm 集成
     initLastfm();
-    // 初始化插件系统（扫描并启动已启用的插件）
+    // 初始化插件系统
     pluginRegistry.init();
-    // 创建主窗口
-    createMainWindow();
     // 恢复歌词相关窗口
     restoreLyricWindows();
     // 注册全局快捷键
     initGlobalHotkey();
-    // 启动外部 API 服务（fire-and-forget；监听结果通过 getStatus 暴露给渲染端）
+    // 启动外部 API 服务
     void startServer();
+    // 初始化自动更新
+    initUpdater();
+    // macOS 特例：激活应用时如果没有窗口则创建新窗口
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
     coreLog.info("应用初始化完成");
   });
-
+  // 所有窗口关闭时退出应用
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
       app.quit();
     }
   });
-
-  // 退出前清理原生模块资源
+  // 退出前清理
   app.on("before-quit", () => {
     coreLog.info("应用即将退出，清理资源");
     shutdownMedia();
     closeDatabase();
     void stopServer();
     void pluginRegistry.shutdown();
+    disposeUpdater();
   });
 };
