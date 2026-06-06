@@ -133,7 +133,8 @@ export const initUpdater = (): void => {
   autoUpdater.autoInstallOnAppQuit = true;
   bindEvents();
   if (isDev) {
-    updaterLog.info("开发模式，跳过自动检查更新");
+    autoUpdater.forceDevUpdateConfig = true;
+    updaterLog.info("开发模式，仅支持手动检查更新");
     return;
   }
   // 定时检查
