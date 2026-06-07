@@ -1,5 +1,6 @@
 import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 import { BRACKET_TIME_RE, ANGLE_TIME_RE, parseTime, MAX_TIME } from "./timestamp";
+import { detectBackgroundLine } from "./bg";
 
 /** 匹配元数据标签（如 [ti:xxx]、[ar:xxx]） */
 const META_TAG_RE = /^\[[a-zA-Z]+:/;
@@ -134,7 +135,7 @@ export const parseLRC = (text: string): LyricLine[] => {
           romanLyric: "",
           startTime: words[0].startTime,
           endTime: words[words.length - 1].endTime,
-          isBG: false,
+          isBG: detectBackgroundLine(words),
           isDuet: false,
         });
       }
@@ -149,21 +150,22 @@ export const parseLRC = (text: string): LyricLine[] => {
         romanLyric: "",
         startTime: lrcWords[0].startTime,
         endTime: lrcWords[lrcWords.length - 1].endTime,
-        isBG: false,
+        isBG: detectBackgroundLine(lrcWords),
         isDuet: false,
       });
       continue;
     }
     // 回退标准整行模式
-    const lineText = content.trim();
+    const lineWords = [{ startTime: 0, endTime: 0, word: content.trim() }];
+    const isBG = detectBackgroundLine(lineWords);
     for (const t of times) {
       lines.push({
-        words: [{ startTime: t, endTime: 0, word: lineText }],
+        words: [{ startTime: t, endTime: 0, word: lineWords[0].word }],
         translatedLyric: "",
         romanLyric: "",
         startTime: t,
         endTime: 0,
-        isBG: false,
+        isBG,
         isDuet: false,
       });
     }

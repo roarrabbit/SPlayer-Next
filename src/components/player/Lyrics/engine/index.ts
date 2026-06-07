@@ -340,6 +340,9 @@ export class LyricRenderer {
     this.lineAnimTargets = new Array(lineCount);
     this.isStaticLine = new Array(lineCount);
 
+    // 是否视为逐字
+    const hasMultiWordLine = lines.some((line) => line.words.length > 1);
+
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < lineCount; i++) {
       const line = lines[i];
@@ -348,8 +351,8 @@ export class LyricRenderer {
       const mainDiv = document.createElement("div");
       mainDiv.className = "lp-main";
 
-      // 静态行（≤1 个单词）不需要逐字动画
-      const isStatic = line.words.length <= 1;
+      // 行歌词是否静态
+      const isStatic = line.words.length === 0 || (line.words.length === 1 && !hasMultiWordLine);
       this.isStaticLine[i] = isStatic;
 
       if (isStatic) {

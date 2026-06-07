@@ -8,6 +8,7 @@
  */
 
 import type { LyricLine, LyricWord } from "@shared/types/lyrics";
+import { detectBackgroundLine } from "./bg";
 
 /** 行头：[起始毫秒, 时长毫秒] */
 const LINE_HEADER_RE = /^\[(\d+),(\d+)\]/;
@@ -47,7 +48,7 @@ export const parseYRC = (text: string): LyricLine[] => {
       romanLyric: "",
       startTime: lineStart,
       endTime: lineStart + lineDur,
-      isBG: false,
+      isBG: detectBackgroundLine(words),
       isDuet: false,
     });
   }

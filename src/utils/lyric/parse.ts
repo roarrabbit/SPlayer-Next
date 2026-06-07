@@ -108,6 +108,20 @@ export const parseLyric = (input: LyricInput, format: LyricFormat): LyricLine[] 
   return lines;
 };
 
+/** 对齐容差（毫秒） */
+const ALIGN_TOLERANCE_MS = 300;
+
+/** 翻译/音译文本去首尾空白 */
+const lineText = (line: LyricLine): string =>
+  line.words
+    .map((w) => w.word)
+    .join("")
+    .trim();
+
+/** 是否为有意义的翻译文本 */
+const isMeaningfulTrans = (text: string): boolean =>
+  !!text && text !== "//" && !text.includes("作品的著作权");
+
 /**
  * 将翻译/音译歌词按时间戳对齐到主歌词行
  * @param lines 主歌词行数组（会被原地修改）
@@ -119,42 +133,20 @@ export const pairTranslation = (
   transLines: LyricLine[],
   field: "translatedLyric" | "romanLyric",
 ): void => {
-  for (const transLine of transLines) {
-    // 跳过空行
-    const text = transLine.words
-      .map((w) => w.word)
-      .join("")
-      .trim();
-    if (!text) continue;
-    // 在主歌词中找 startTime 最接近的非空行
-    let nearest: LyricLine | undefined;
-    let minDiff = Infinity;
-    for (const mainLine of lines) {
-      if (
-        mainLine.words
-          .map((w) => w.word)
-          .join("")
-          .trim().length === 0
-      )
-        continue;
-
-      const diff = Math.abs(mainLine.startTime - transLine.startTime);
-      // 精确匹配直接命中
-      if (diff === 0) {
-        nearest = mainLine;
-        break;
-      }
-      if (diff < minDiff) {
-        minDiff = diff;
-        nearest = mainLine;
-      }
-    }
-    if (nearest) {
-      if (nearest[field].length > 0) {
-        nearest[field] += text;
-      } else {
-        nearest[field] = text;
-      }
+  const trans = [...transLines].sort((a, b) => a.startTime - b.startTime);
+  let i = 0;
+  let j = 0;
+  while (i < lines.length && j < trans.length) {
+    const diff = lines[i].startTime - trans[j].startTime;
+    if (Math.abs(diff) <= ALIGN_TOLERANCE_MS) {
+      const text = lineText(trans[j]);
+      if (isMeaningfulTrans(text)) lines[i][field] = text;
+      i++;
+      j++;
+    } else if (diff < 0) {
+      i++;
+    } else {
+      j++;
     }
   }
 };

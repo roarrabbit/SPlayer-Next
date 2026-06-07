@@ -10,6 +10,7 @@
  */
 
 import type { LyricLine, LyricWord } from "@shared/types/lyrics";
+import { detectBackgroundLine } from "./bg";
 
 /** 行头：[起始毫秒, 时长毫秒] */
 const LINE_HEADER_RE = /^\[(\d+),(\d+)\]/;
@@ -20,10 +21,12 @@ const WORD_RE = /([^(]+)\((\d+),(\d+)\)/g;
 /** 从 XML 包裹中提取纯文本歌词内容（非 XML 原样返回） */
 const extractFromXml = (text: string): string => {
   if (!text.trimStart().startsWith("<")) return text;
-  const attrMatch = text.match(/LyricContent="([^"]*)"/);
-  if (attrMatch) return attrMatch[1];
+  const greedyMatch = text.match(/LyricContent="([\s\S]*)"\s*\/?>/);
+  if (greedyMatch) return greedyMatch[1];
   const cdataMatch = text.match(/<!\[CDATA\[([\s\S]*?)\]\]>/);
   if (cdataMatch) return cdataMatch[1];
+  const attrMatch = text.match(/LyricContent="([^"]*)"/);
+  if (attrMatch) return attrMatch[1];
   return text;
 };
 
@@ -60,7 +63,7 @@ export const parseQRC = (text: string): LyricLine[] => {
       romanLyric: "",
       startTime: lineStart,
       endTime: lineStart + lineDur,
-      isBG: false,
+      isBG: detectBackgroundLine(words),
       isDuet: false,
     });
   }

@@ -12,6 +12,7 @@
 
 import type { LyricLine, LyricWord } from "@shared/types/lyrics";
 import { parseTime } from "./timestamp";
+import { detectBackgroundLine } from "./bg";
 
 /** 行头：[mm:ss.xxx] / [mm:ss:xxx]，支持 1~3 位毫秒 */
 const LINE_HEADER_RE = /^\[(\d+):(\d+)[.:](\d{1,3})\]/;
@@ -56,7 +57,7 @@ export const parseKRC = (text: string): LyricLine[] => {
       romanLyric: "",
       startTime: lineStart,
       endTime: lastEnd,
-      isBG: false,
+      isBG: detectBackgroundLine(words),
       isDuet: false,
     });
   }
