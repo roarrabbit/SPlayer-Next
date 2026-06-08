@@ -25,8 +25,9 @@ jobs:
               issue_number: context.issue.number,
               body: [
                 `👋 您好 @${login}，感谢提交 Issue！`,
+                `🚀 我们已经收到您的反馈，会尽快确认您的问题。`,
+                ``,
                 `👋 Hi @${login}, thanks for opening this issue!`,
-                `🚀 我们已经收到您的反馈，会尽快确认您的问题`,
                 `🚀 We have received your report and will review it as soon as possible.`,
               ].join('\n'),
             });
@@ -43,9 +44,10 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                `抱歉，由于该 Issue 被标记为 **${labelName}**，将自动关闭`,
+                `抱歉，由于该 Issue 被标记为 **${labelName}**，将自动关闭。`,
+                `如果您认为该 Issue 仍然有效，请补充信息后重新提交。`,
+                ``,
                 `Sorry, this issue has been marked as **${labelName}** and will be closed automatically.`,
-                `如果您认为该 Issue 仍然有效，请补充信息后重新提交`,
                 `If you believe this issue is still valid, please provide more details and open a new issue.`,
               ].join('\n'),
             });
@@ -70,10 +72,11 @@ jobs:
               issue_number: context.issue.number,
               body: [
                 `🤝 您好 @${login}，感谢您的反馈！`,
+                `由于缺少清晰的复现步骤，我们暂时无法稳定复现该问题。`,
+                `请补充详细复现步骤、日志和环境信息，我们会尽快跟进。`,
+                ``,
                 `🤝 Hi @${login}, thanks for your report!`,
-                `由于缺少清晰的复现步骤，我们暂时无法稳定复现该问题`,
                 `We currently cannot reproduce this issue due to missing or unclear reproduction steps.`,
-                `请补充详细复现步骤、日志和环境信息，我们会尽快跟进`,
                 `Please provide detailed reproduction steps, logs, and environment info, and we will follow up soon.`,
               ].join('\n'),
             });
@@ -102,8 +105,11 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                `🤝 您好 @${login}，感谢您的反馈！我们已经确认该问题，并计划在后续版本修复`,
-                `🤝 Hi @${login}, thanks for your report! We have confirmed this bug and plan to fix it in a future release.`,
+                `🤝 您好 @${login}，感谢您的反馈！`,
+                `我们已经确认该问题，并计划在后续版本修复。`,
+                ``,
+                `🤝 Hi @${login}, thanks for your report!`,
+                `We have confirmed this bug and plan to fix it in a future release.`,
               ].join('\n'),
             });
 
@@ -120,10 +126,11 @@ jobs:
               issue_number: context.issue.number,
               body: [
                 `🤝 您好 @${login}，感谢您的反馈！`,
+                `由于当前信息不足或无法复现，我们将该 Issue 标记为 invalid 并关闭。`,
+                `如果您可以提供稳定复现步骤，欢迎重新提交。`,
+                ``,
                 `🤝 Hi @${login}, thanks for your report!`,
-                `由于当前信息不足或无法复现，我们将该 Issue 标记为 invalid 并关闭`,
                 `We are marking this issue as invalid and closing it because we cannot reproduce it with the current information.`,
-                `如果您可以提供稳定复现步骤，欢迎重新提交`,
                 `If you can provide reliable reproduction steps, feel free to open a new issue.`,
               ].join('\n'),
             });
@@ -148,10 +155,11 @@ jobs:
               issue_number: context.issue.number,
               body: [
                 `🎉 您好 @${login}，感谢您的反馈！`,
+                `该问题已修复，并将在当前开发版或下一个正式版中生效。`,
+                `若您仍能复现该问题，欢迎重新提交新的 Issue。`,
+                ``,
                 `🎉 Hi @${login}, thanks for your report!`,
-                `该问题已修复，并将在当前开发版或下一个正式版中生效`,
                 `This issue has been resolved and will be available in the current dev build or next stable release.`,
-                `若您仍能复现该问题，欢迎重新提交新的 Issue`,
                 `If you can still reproduce this problem, please open a new issue.`,
               ].join('\n'),
             });
