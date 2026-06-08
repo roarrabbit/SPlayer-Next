@@ -71,7 +71,7 @@ const onBeforeLeave = (el: Element): void => {
                 class="size-5 shrink-0"
                 :class="iconStyles.success"
               />
-              <IconMaterialSymbolsWarningRounded
+              <IconMaterialSymbolsErrorRounded
                 v-else-if="item.type === 'warning'"
                 class="size-5 shrink-0"
                 :class="iconStyles.warning"

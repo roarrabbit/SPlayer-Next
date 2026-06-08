@@ -17,6 +17,7 @@ import {
 } from "@main/services/engine";
 import {
   setTaskbarProgress,
+  applyMainWindowZoom,
   applyDesktopLyricLock,
   applyDesktopLyricAlwaysOnTop,
   applyDynamicIslandAlwaysOnTop,
@@ -58,6 +59,9 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
       break;
     case "system.taskbarProgress":
       if (!value) setTaskbarProgress(-1);
+      break;
+    case "system.uiZoom":
+      applyMainWindowZoom();
       break;
     case "desktopLyric.locked":
       applyDesktopLyricLock(value as boolean);

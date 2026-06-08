@@ -43,11 +43,11 @@ export const useStatusStore = defineStore(
     const heartMode = ref(false);
     /** 私人 FM 模式 */
     const fmMode = ref(false);
-    /** 播放速度（0.5 ~ 2.0），不持久化 */
+    /** 播放速度（0.5 ~ 2.0） */
     const speed = ref(1.0);
-    /** 音调偏移（半音 -12 ~ 12），不持久化 */
+    /** 音调偏移（半音 -12 ~ 12） */
     const pitch = ref(0);
-    /** 音调同步：true = 变速保音调（默认），不持久化 */
+    /** 音调同步：true = 变速保音调（默认） */
     const pitchSync = ref(true);
     /**定时关闭 */
     const autoClose = reactive({

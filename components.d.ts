@@ -132,6 +132,7 @@ declare module 'vue' {
     IconMaterialSymbolsCancelRounded: typeof import('~icons/material-symbols/cancel-rounded')['default']
     IconMaterialSymbolsChatBubbleRounded: typeof import('~icons/material-symbols/chat-bubble-rounded')['default']
     IconMaterialSymbolsCheckCircleRounded: typeof import('~icons/material-symbols/check-circle-rounded')['default']
+    IconMaterialSymbolsErrorRounded: typeof import('~icons/material-symbols/error-rounded')['default']
     IconMaterialSymbolsFavoriteOutlineRounded: typeof import('~icons/material-symbols/favorite-outline-rounded')['default']
     IconMaterialSymbolsInfoRounded: typeof import('~icons/material-symbols/info-rounded')['default']
     IconMaterialSymbolsWarningRounded: typeof import('~icons/material-symbols/warning-rounded')['default']
@@ -237,6 +238,7 @@ declare module 'vue' {
     SwitchThumb: typeof import('reka-ui')['SwitchThumb']
     Toolbar: typeof import('./src/components/player/Toolbar.vue')['default']
     TrackInfo: typeof import('./src/components/player/TrackInfo.vue')['default']
+    UiZoomDialog: typeof import('./src/components/modals/UiZoomDialog.vue')['default']
     UpdateDialog: typeof import('./src/components/modals/UpdateDialog.vue')['default']
     WindowControls: typeof import('./src/components/layout/WindowControls.vue')['default']
   }

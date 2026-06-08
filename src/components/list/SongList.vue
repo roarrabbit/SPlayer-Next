@@ -606,14 +606,16 @@ defineExpose({
               <!-- 专辑 -->
               <div
                 v-if="showAlbum"
-                class="flex-1 min-w-0 truncate text-sm transition-opacity"
-                :class="[
-                  playingId === item.id ? 'text-primary/70' : 'text-on-surface',
-                  isAlbumLinkable(item) ? 'cursor-pointer hover:opacity-70' : 'opacity-50',
-                ]"
-                @click.stop="goAlbum(item)"
+                class="flex-1 min-w-0 truncate text-sm"
+                :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
               >
-                {{ item.album?.name || t("collection.unknownAlbum") }}
+                <span
+                  class="transition-opacity"
+                  :class="isAlbumLinkable(item) ? 'cursor-pointer hover:opacity-70' : 'opacity-50'"
+                  @click.stop="goAlbum(item)"
+                >
+                  {{ item.album?.name || t("collection.unknownAlbum") }}
+                </span>
               </div>
               <!-- 红心：批量模式下隐藏，其余始终显示 -->
               <div

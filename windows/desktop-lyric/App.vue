@@ -140,8 +140,7 @@ const rootStyle = computed(() => ({
   "--dl-unplayed": config.unplayedColor,
   "--dl-stroke": config.strokeColor,
   "--dl-mask": config.backgroundMaskColor,
-  // 行位置 / 字号 / 颜色的过渡时长，关动画时置 0 让所有后代 transition 变瞬时
-  "--dl-anim": config.animation ? "0.6s" : "0s",
+  "--dl-anim": config.animation ? "0.4s" : "0s",
   fontFamily: config.fontFamily || undefined,
 }));
 
@@ -315,7 +314,7 @@ onBeforeUnmount(() => {
         v-for="(item, index) in displayItems"
         :key="item.key"
         :line="item.line"
-        :font-size="item.isNext ? Math.round(config.fontSize * 0.8) : config.fontSize"
+        :font-size="config.fontSize"
         :font-weight="config.fontWeight"
         :align="item.align"
         :word-by-word="resolveWordByWord(config, item)"
@@ -323,6 +322,7 @@ onBeforeUnmount(() => {
         :background-mask="config.backgroundMask"
         :style="{
           '--dl-y': getLineTop(index, config.fontSize),
+          '--dl-scale': item.isNext ? 0.8 : 1,
         }"
       />
     </component>
@@ -517,10 +517,10 @@ onBeforeUnmount(() => {
 }
 .dl-line-enter-from {
   opacity: 0;
-  transform: translate3d(0, var(--dl-y, 0px), 0) translateY(100%);
+  transform: translate3d(0, var(--dl-y, 0px), 0) translateY(100%) scale(var(--dl-scale, 1));
 }
 .dl-line-leave-to {
   opacity: 0;
-  transform: translate3d(0, var(--dl-y, 0px), 0) translateY(-100%);
+  transform: translate3d(0, var(--dl-y, 0px), 0) translateY(-100%) scale(var(--dl-scale, 1));
 }
 </style>

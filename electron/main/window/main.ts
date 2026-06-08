@@ -54,6 +54,11 @@ export const createMainWindow = (): BrowserWindow => {
     initThumbar(mainWindow!);
   });
 
+  // 每次加载完成应用界面缩放
+  mainWindow.webContents.on("did-finish-load", () => {
+    applyMainWindowZoom();
+  });
+
   // 保存窗口状态
   const saveWindowState = (): void => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -180,6 +185,15 @@ export const isMainWindowFullscreen = (): boolean => !!getMainWindow()?.isFullSc
 /** 隐藏主窗口 */
 export const hideMainWindow = (): void => {
   getMainWindow()?.hide();
+};
+
+/** 应用界面缩放：百分比 → setZoomFactor（clamp 0.5~2.0） */
+export const applyMainWindowZoom = (): void => {
+  const win = getMainWindow();
+  if (!win) return;
+  const percent = store.get("system.uiZoom") ?? 100;
+  const factor = Math.max(0.5, Math.min(2, percent / 100));
+  win.webContents.setZoomFactor(factor);
 };
 
 /**

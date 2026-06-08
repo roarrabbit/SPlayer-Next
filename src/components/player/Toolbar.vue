@@ -24,10 +24,10 @@ const { isDesktopLyricOpen } = storeToRefs(settings);
 
 const buttonType = computed<"default" | "cover">(() => (props.cover ? "cover" : "default"));
 const mutedClass = computed(() => (props.cover ? "text-cover/50" : "text-on-surface-variant"));
-const lyricActiveClass = computed(() => {
-  if (props.cover) return isDesktopLyricOpen.value ? "opacity-100" : "opacity-40";
-  return isDesktopLyricOpen.value ? "text-primary" : "text-on-surface-variant";
-});
+
+const lyricButtonType = computed(() =>
+  isDesktopLyricOpen.value ? (props.cover ? "cover" : "primary") : buttonType.value,
+);
 
 const volumePercent = computed(() => Math.round(status.volume * 100));
 
@@ -113,11 +113,11 @@ const onMoreMenuSelect = (key: string): void => {
       </div>
     </SPopover>
     <SButton
-      :type="buttonType"
-      variant="ghost"
+      :type="lyricButtonType"
+      :variant="isDesktopLyricOpen ? 'tertiary' : 'ghost'"
       circle
       size="large"
-      :class="lyricActiveClass"
+      :class="isDesktopLyricOpen ? undefined : mutedClass"
       @click="toggleDesktopLyric"
     >
       <template #icon><IconLucideMicVocal /></template>
@@ -125,10 +125,10 @@ const onMoreMenuSelect = (key: string): void => {
     <SButton
       v-if="!status.fmMode && cover"
       :type="buttonType"
-      variant="ghost"
+      :variant="status.fullQueueOpen ? 'tertiary' : 'ghost'"
       circle
       size="large"
-      :class="status.fullQueueOpen ? 'opacity-100' : 'opacity-40'"
+      :class="status.fullQueueOpen ? undefined : mutedClass"
       @click="status.fullQueueOpen = !status.fullQueueOpen"
     >
       <template #icon><IconLucideListMusic /></template>
@@ -142,7 +142,13 @@ const onMoreMenuSelect = (key: string): void => {
       content-class="!p-0 w-72 h-[min(60vh,520px)] overflow-hidden"
     >
       <template #trigger>
-        <SButton :type="buttonType" variant="ghost" circle size="large" :class="mutedClass">
+        <SButton
+          :type="status.outerQueueOpen ? 'primary' : buttonType"
+          :variant="status.outerQueueOpen ? 'tertiary' : 'ghost'"
+          circle
+          size="large"
+          :class="status.outerQueueOpen ? undefined : mutedClass"
+        >
           <template #icon><IconLucideListMusic /></template>
         </SButton>
       </template>

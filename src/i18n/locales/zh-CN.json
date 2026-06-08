@@ -142,6 +142,11 @@
     "plus": "+{n}s",
     "warningBLessThanA": "B 点必须晚于 A 点，循环未启用"
   },
+  "uiZoom": {
+    "title": "界面缩放",
+    "range": "可调节范围：50% - 200%",
+    "reset": "恢复默认"
+  },
   "nav": {
     "home": "首页",
     "library": "音乐库",

@@ -9,12 +9,16 @@ import IconMonitor from "~icons/lucide/monitor";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
 import IconTerminal from "~icons/lucide/terminal";
 import IconSettings from "~icons/lucide/settings";
+import IconScaling from "~icons/lucide/scaling";
 
 const router = useRouter();
 const { t } = useI18n();
 const { show: showSettings } = useSettingsDialog();
 const theme = useThemeStore();
 const update = useUpdateStore();
+
+/** 界面缩放弹窗开关 */
+const uiZoomOpen = ref(false);
 
 const themeIcon = computed(() => {
   if (theme.mode === "light") return IconMoon;
@@ -35,6 +39,7 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
     icon: themeIcon.value,
     disabled: theme.appearanceStyle === "image",
   },
+  { key: "uiZoom", label: t("uiZoom.title"), icon: IconScaling },
   { key: "reload", label: t("nav.reload"), icon: IconRefreshCw, separator: true },
   { key: "devtools", label: t("nav.devtools"), icon: IconTerminal },
   { key: "settings", label: t("nav.globalSettings"), icon: IconSettings },
@@ -44,6 +49,7 @@ const onMenuSelect = (key: string): void => {
   if (key === "theme") theme.cycleMode();
   else if (key === "reload") location.reload();
   else if (key === "devtools") window.api.system.toggleDevTools();
+  else if (key === "uiZoom") uiZoomOpen.value = true;
   else if (key === "settings") showSettings();
 };
 </script>
@@ -97,5 +103,6 @@ const onMenuSelect = (key: string): void => {
       <SDivider vertical />
       <WindowControls />
     </div>
+    <UiZoomDialog v-model:open="uiZoomOpen" />
   </div>
 </template>

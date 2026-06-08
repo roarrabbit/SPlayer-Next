@@ -119,6 +119,7 @@ export const defaultSystemConfig: SystemConfig = {
   system: {
     rememberWindowState: true,
     taskbarProgress: true,
+    uiZoom: 100,
     onboardingCompleted: false,
   },
   windowStates: {

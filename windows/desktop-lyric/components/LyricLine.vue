@@ -45,6 +45,11 @@ const lineStyle = computed(() => ({
   textAlign: props.align,
 }));
 
+/** 缩放原点 */
+const blockStyle = computed(() => ({
+  "--dl-origin": props.align === "left" ? "0%" : props.align === "right" ? "100%" : "50%",
+}));
+
 /**
  * 内容横向平移量：溢出才滚，0~30% 不动，30% 后线性滚到终点（endTime-2s）
  * 不做 Math.round，否则在 overflow 小时会出现明显的像素跳动。
@@ -186,7 +191,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dl-line-block">
+  <div class="dl-line-block" :style="blockStyle">
     <div ref="containerRef" class="dl-line" :style="lineStyle">
       <span ref="contentRef" class="dl-line-inner" :class="{ 'has-mask': backgroundMask }">
         <span class="dl-text">
@@ -218,10 +223,11 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 0 24px;
   box-sizing: border-box;
-  transform: translate3d(0, var(--dl-y, 0px), 0) translateY(0);
+  transform: translate3d(0, var(--dl-y, 0px), 0) scale(var(--dl-scale, 1));
+  transform-origin: var(--dl-origin, 50%) center;
   transition:
-    transform var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1),
-    opacity var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
+    transform var(--dl-anim, 0.4s) cubic-bezier(0.55, 0, 0.1, 1),
+    opacity var(--dl-anim, 0.4s) cubic-bezier(0.55, 0, 0.1, 1);
   will-change: transform, opacity;
 }
 .dl-line {
@@ -231,7 +237,6 @@ onBeforeUnmount(() => {
   padding: 4px 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: font-size var(--dl-anim, 0.6s) cubic-bezier(0.55, 0, 0.1, 1);
 }
 .dl-line-inner {
   display: inline-block;

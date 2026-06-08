@@ -42,7 +42,7 @@ export const makePlaceholderLine = (text: string): LyricLine => ({
  */
 export const getLineTop = (index: number, fontSize: number): string => {
   if (index === 0) return "0px";
-  return `${Math.round(fontSize * 1.9)}px`;
+  return `${Math.round(fontSize * 1.6)}px`;
 };
 
 /** 字号下限（与设置 schema 一致） */

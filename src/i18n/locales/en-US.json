@@ -154,6 +154,11 @@
     "plus": "+{n}s",
     "warningBLessThanA": "B must be later than A; loop disabled"
   },
+  "uiZoom": {
+    "title": "Interface Zoom",
+    "range": "Range: 50% - 200%",
+    "reset": "Reset to default"
+  },
   "nav": {
     "home": "Home",
     "library": "Library",
