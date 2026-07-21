@@ -54,12 +54,12 @@ const descriptionText = computed(() =>
     <component
       :is="item.component"
       v-if="item.type === 'custom' && item.fullWidth && item.component"
-      class="transition-all duration-300"
+      class="transition-[opacity,background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
       :class="highlighted ? 'animate-highlight-pulse' : ''"
     />
     <div
       v-else
-      class="flex items-center justify-between gap-4 rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5 transition-all duration-300"
+      class="flex items-center justify-between gap-4 rounded-xl bg-surface-panel border border-solid border-outline-variant/15 px-4 py-3.5 transition-[opacity,background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
       :class="highlighted ? 'animate-highlight-pulse' : ''"
     >
       <div class="min-w-0 flex-1">

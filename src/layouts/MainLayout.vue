@@ -47,7 +47,7 @@ const mainMarginClass = computed(() =>
 
 /** 外层播放条样式 */
 const playerBarWrapperClass = computed(() => {
-  const base = "fixed bottom-0 z-50 transition-[left] duration-300 pointer-events-none";
+  const base = "fixed bottom-0 z-50 transition-[left] duration-280 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-none";
   const collapsed = appearance.sidebarCollapsed;
   switch (appearance.layoutMode) {
     case "sidebar-full":
@@ -75,12 +75,12 @@ const playerBarInnerClass = computed(() => {
 <template>
   <!-- 主界面 -->
   <div
-    class="h-screen flex bg-app text-on-surface transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.7,0,0.3,1)] origin-center"
+    class="h-screen flex bg-app text-on-surface transition-[transform,opacity] duration-420 ease-[cubic-bezier(0.32,0.72,0,1)] origin-center"
     :class="isExpanded ? 'scale-95 opacity-0 pointer-events-none' : ''"
   >
     <!-- 侧边栏 -->
     <aside
-      class="shrink-0 bg-surface-panel overflow-y-auto z-10 transition-[width,margin] duration-300"
+      class="shrink-0 bg-surface-panel overflow-y-auto z-10 transition-[width,margin] duration-280 ease-[cubic-bezier(0.32,0.72,0,1)]"
       :class="[appearance.sidebarCollapsed ? 'w-16' : 'w-60', sidebarClass]"
     >
       <SideBar />
@@ -106,8 +106,8 @@ const playerBarInnerClass = computed(() => {
 
   <!-- 底部播放栏 -->
   <Transition
-    enter-active-class="transition-transform duration-300 ease-out"
-    leave-active-class="transition-transform duration-300 ease-in"
+    enter-active-class="transition-transform duration-280 ease-[cubic-bezier(0.32,0.72,0,1)]"
+    leave-active-class="transition-transform duration-240 ease-[cubic-bezier(0.32,0.72,0,1)]"
     enter-from-class="translate-y-full"
     leave-to-class="translate-y-full"
   >

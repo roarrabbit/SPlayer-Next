@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
   transform: scale(1.5);
   filter: blur(45px) saturate(1.2);
   opacity: 0;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bg-blur-wrap .bg-img.active {
@@ -195,11 +195,11 @@ onBeforeUnmount(() => {
 
 /* 流体背景渐入 */
 .bg-fade-enter-active {
-  transition: opacity 0.8s ease-in-out;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bg-fade-leave-active {
-  transition: opacity 0.3s ease-in;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bg-fade-enter-from,

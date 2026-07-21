@@ -54,7 +54,7 @@ const handleSelect = (item: DropdownMenuItem): void => {
 /** 内容区域样式 */
 const contentClass = computed(() =>
   [
-    "z-300 min-w-32 rounded-lg shadow-lg p-1 text-sm data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out",
+    "z-300 min-w-32 rounded-lg shadow-lg p-1 text-sm origin-[var(--reka-popper-transform-origin,center)] data-[side=bottom]:origin-top data-[side=top]:origin-bottom data-[side=left]:origin-right data-[side=right]:origin-left data-[state=open]:animate-popover-in data-[state=closed]:animate-popover-out",
     props.cover
       ? "bg-black/55 backdrop-blur-xl backdrop-saturate-160 border border-solid border-white/10"
       : "bg-surface-bright",

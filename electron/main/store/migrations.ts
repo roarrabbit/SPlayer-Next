@@ -12,11 +12,28 @@ export interface Migration {
  * 新增字段已由 deepMerge 自动补全，此处仅用于字段重命名、数据转换等
  */
 export const migrations: Migration[] = [
-  // 示例：
-  // {
-  //   version: 1,
-  //   migrate: (data) => {
-  //     // 重命名字段、转换数据格式等
-  //   },
-  // },
+  {
+    version: 1,
+    migrate: (data) => {
+      // 清空出厂默认的全局快捷键，用户自行绑定的其它全局键保留
+      const hotkeys = data.hotkeys as
+        | {
+            bindings?: Record<string, { inApp?: string | null; global?: string | null }>;
+          }
+        | undefined;
+      if (!hotkeys?.bindings) return;
+      const oldDefaultGlobals: Record<string, string> = {
+        "player.togglePlay": "CommandOrControl+Shift+Space",
+        "player.prev": "CommandOrControl+Shift+Left",
+        "player.next": "CommandOrControl+Shift+Right",
+        "player.volumeUp": "CommandOrControl+Shift+Up",
+        "player.volumeDown": "CommandOrControl+Shift+Down",
+      };
+      for (const [id, oldGlobal] of Object.entries(oldDefaultGlobals)) {
+        const binding = hotkeys.bindings[id];
+        if (!binding || typeof binding !== "object") continue;
+        if (binding.global === oldGlobal) binding.global = null;
+      }
+    },
+  },
 ];

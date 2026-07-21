@@ -72,7 +72,7 @@ const complete = async (): Promise<void> => {
             <span
               v-for="(step, index) in STEPS"
               :key="step.key"
-              class="h-1.5 rounded-full transition-all duration-300"
+              class="h-1.5 rounded-full transition-[width,background-color] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)]"
               :class="
                 index === currentIndex
                   ? 'flex-[2] bg-primary'

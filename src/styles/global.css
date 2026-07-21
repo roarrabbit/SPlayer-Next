@@ -34,6 +34,19 @@ img {
 :root {
   --s-app-bg: rgb(var(--s-surface));
 }
+
+/* 动效 token：全应用统一时长 / 曲线（Emil ease-out + iOS sheet 感） */
+:root {
+  --s-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --s-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --s-ease-press: cubic-bezier(0.2, 0, 0, 1);
+  --s-duration-press: 120ms;
+  --s-duration-fast: 150ms;
+  --s-duration-ui: 200ms;
+  --s-duration-panel: 280ms;
+  --s-duration-sheet: 420ms;
+}
+
 html[data-appearance-style="image"] {
   --s-app-bg: transparent;
 }
@@ -121,7 +134,7 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity var(--fade-duration, 0.3s) ease;
+  transition: opacity var(--fade-duration, var(--s-duration-ui)) var(--s-ease-out);
 }
 
 .fade-enter-from,
@@ -131,29 +144,29 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
 
 .slide-left-enter-active {
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    transform var(--s-duration-ui) var(--s-ease-out),
+    opacity var(--s-duration-ui) var(--s-ease-out);
 }
 .slide-left-leave-active {
   transition:
-    transform 0.1s ease,
-    opacity 0.1s ease;
+    transform var(--s-duration-fast) var(--s-ease-out),
+    opacity var(--s-duration-fast) var(--s-ease-out);
 }
 .slide-left-enter-from,
 .slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-5px);
+  transform: translateX(-4px);
 }
 
 .slide-up-enter-active {
   transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.25s ease;
+    transform var(--s-duration-ui) var(--s-ease-out),
+    opacity var(--s-duration-ui) var(--s-ease-out);
 }
 .slide-up-leave-active {
   transition:
-    transform 0.15s ease,
-    opacity 0.15s ease;
+    transform var(--s-duration-fast) var(--s-ease-out),
+    opacity var(--s-duration-fast) var(--s-ease-out);
 }
 .slide-up-enter-from {
   opacity: 0;
@@ -161,33 +174,33 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
 }
 .slide-up-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(4px);
 }
 
 .scale-switch-enter-active {
   transition:
-    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease;
+    transform var(--s-duration-panel) var(--s-ease-out),
+    opacity var(--s-duration-panel) var(--s-ease-out);
 }
 .scale-switch-leave-active {
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    transform var(--s-duration-ui) var(--s-ease-out),
+    opacity var(--s-duration-ui) var(--s-ease-out);
 }
 .scale-switch-enter-from {
   opacity: 0;
-  transform: translateX(10px);
+  transform: scale(0.97);
 }
 .scale-switch-leave-to {
   opacity: 0;
-  transform: translateX(-10px);
+  transform: scale(0.97);
 }
 
 .route-fade-enter-active {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--s-duration-fast) var(--s-ease-out);
 }
 .route-fade-leave-active {
-  transition: opacity 0.1s ease;
+  transition: opacity 100ms var(--s-ease-out);
 }
 .route-fade-enter-from,
 .route-fade-leave-to {
@@ -196,32 +209,32 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
 
 .route-slide-enter-active {
   transition:
-    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.15s ease;
+    transform var(--s-duration-fast) var(--s-ease-out),
+    opacity var(--s-duration-fast) var(--s-ease-out);
 }
 .route-slide-leave-active {
   transition:
-    transform 0.1s ease,
-    opacity 0.1s ease;
+    transform 100ms var(--s-ease-out),
+    opacity 100ms var(--s-ease-out);
 }
 .route-slide-enter-from {
   opacity: 0;
-  transform: translateX(6px);
+  transform: translateX(4px);
 }
 .route-slide-leave-to {
   opacity: 0;
-  transform: translateX(-6px);
+  transform: translateX(-4px);
 }
 
 .route-zoom-enter-active {
   transition:
-    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.15s ease;
+    transform var(--s-duration-fast) var(--s-ease-out),
+    opacity var(--s-duration-fast) var(--s-ease-out);
 }
 .route-zoom-leave-active {
   transition:
-    transform 0.1s ease,
-    opacity 0.1s ease;
+    transform 100ms var(--s-ease-out),
+    opacity 100ms var(--s-ease-out);
 }
 .route-zoom-enter-from {
   opacity: 0;
@@ -229,5 +242,17 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
 }
 .route-zoom-leave-to {
   opacity: 0;
-  transform: scale(1.02);
+  transform: scale(0.98);
+}
+
+/* 系统减少动态效果：瞬时完成，保留功能不保留装饰 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

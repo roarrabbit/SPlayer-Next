@@ -1,6 +1,6 @@
 # 贡献指南
 
-欢迎为 SPlayer-Next 贡献代码！本页介绍本地开发环境与基本约定。
+欢迎为本 Fork（[roarrabbit/SPlayer-Next](https://github.com/roarrabbit/SPlayer-Next)）或上游贡献代码。本页介绍本地开发环境与基本约定。
 
 ## 环境要求
 
@@ -11,9 +11,12 @@
 ## 快速开始
 
 ```bash
-# 克隆仓库
-git clone https://github.com/SPlayer-Dev/SPlayer-Next.git
+# 克隆本 Fork
+git clone https://github.com/roarrabbit/SPlayer-Next.git
 cd SPlayer-Next
+
+# 如需同步上游
+# git remote add upstream https://github.com/roarrabbit/SPlayer-Next.git
 
 # 安装依赖
 pnpm install

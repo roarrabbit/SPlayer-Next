@@ -16,9 +16,9 @@ import type {
 /**
  * 全部动作的元数据
  *
- * 默认全局快捷键统一用 `CommandOrControl+Shift+...` 模式：
- * - 与 OS 媒体键路径正交，与 in-app 单/双修饰键模式正交
- * - 不容易被其他应用占用
+ * 全局快捷键默认全部留空，由用户自行在设置中绑定：
+ * - 避免出厂占用系统快捷键
+ * - allowGlobal=true 的动作仍可手动设全局键
  */
 export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
   {
@@ -26,7 +26,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     labelKey: "settings.hotkeys.actions.togglePlay",
     defaultBinding: {
       inApp: "Space",
-      global: "CommandOrControl+Shift+Space",
+      global: null,
     },
     allowGlobal: true,
   },
@@ -35,7 +35,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     labelKey: "settings.hotkeys.actions.prev",
     defaultBinding: {
       inApp: "CommandOrControl+Left",
-      global: "CommandOrControl+Shift+Left",
+      global: null,
     },
     allowGlobal: true,
   },
@@ -44,7 +44,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     labelKey: "settings.hotkeys.actions.next",
     defaultBinding: {
       inApp: "CommandOrControl+Right",
-      global: "CommandOrControl+Shift+Right",
+      global: null,
     },
     allowGlobal: true,
   },
@@ -66,7 +66,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     labelKey: "settings.hotkeys.actions.volumeUp",
     defaultBinding: {
       inApp: "CommandOrControl+Up",
-      global: "CommandOrControl+Shift+Up",
+      global: null,
     },
     allowGlobal: true,
   },
@@ -75,7 +75,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     labelKey: "settings.hotkeys.actions.volumeDown",
     defaultBinding: {
       inApp: "CommandOrControl+Down",
-      global: "CommandOrControl+Shift+Down",
+      global: null,
     },
     allowGlobal: true,
   },
@@ -118,7 +118,7 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
   {
     id: "view.closePlayer",
     labelKey: "settings.hotkeys.actions.closePlayer",
-    defaultBinding: { inApp: "CommandOrControl+Escape", global: null },
+    defaultBinding: { inApp: "Escape", global: null },
     allowGlobal: false,
   },
   {

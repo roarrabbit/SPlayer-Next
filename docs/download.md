@@ -2,7 +2,7 @@
 title: 下载
 ---
 
-# 下载 SPlayer-Next
+# 下载 SPlayer-Next Fork
 
 下方会自动从 GitHub 拉取最新版本，并根据你的系统推荐合适的安装包。若下载缓慢，可切换为镜像线路。
 
@@ -10,8 +10,10 @@ title: 下载
 
 ## 其他获取方式
 
-- **历史版本**：前往 [GitHub Releases](https://github.com/SPlayer-Dev/SPlayer-Next/releases) 查看全部归档。
-- **开发版**：可在 [GitHub Actions](https://github.com/SPlayer-Dev/SPlayer-Next/actions) 工作流产物中获取最新构建（需登录 GitHub）。
+> 本页默认指向 **Fork 仓库** [roarrabbit/SPlayer-Next](https://github.com/roarrabbit/SPlayer-Next)。上游官方发行版见 [SPlayer-Dev/SPlayer-Next](https://github.com/roarrabbit/SPlayer-Next/releases)。
+
+- **历史版本**：前往 [GitHub Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 查看全部归档。
+- **开发版**：可在 [GitHub Actions](https://github.com/roarrabbit/SPlayer-Next/actions) 工作流产物中获取最新构建（需登录 GitHub）。
 
 ## 安装提示
 

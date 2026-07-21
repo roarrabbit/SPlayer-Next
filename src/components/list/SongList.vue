@@ -644,16 +644,16 @@ defineExpose({
                 <template v-else>
                   <span
                     v-if="playingId !== item.id"
-                    class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-300"
+                    class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   >
                     {{ index + 1 }}
                   </span>
                   <IconLucideMusic
                     v-else
-                    class="size-5 group-hover:opacity-0 transition-opacity duration-300"
+                    class="size-5 group-hover:opacity-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   />
                   <div
-                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 group-hover:scale-100 scale-80 cursor-pointer"
+                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-160 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-100 scale-90 cursor-pointer"
                   >
                     <IconLucidePause
                       v-if="playingId === item.id && status.isPlaying"

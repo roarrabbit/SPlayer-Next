@@ -72,11 +72,11 @@ export const buildRegistry = (): void => {
   handlers.set("view.openPlayer", () => {
     useStatusStore().isExpanded = true;
   });
-  // 关闭播放器
+  // 关闭播放器（与退出按钮同一套收起动画）
   handlers.set("view.closePlayer", (): boolean => {
     const status = useStatusStore();
     if (!status.isExpanded) return false;
-    status.isExpanded = false;
+    window.dispatchEvent(new CustomEvent("splayer:close-full-player"));
     return true;
   });
   // 切换播放列表

@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "SPlayer-Next",
+  title: "SPlayer-Next Fork",
   description: "一款简洁而精致的多平台桌面音乐播放器",
   lang: "zh-CN",
   ignoreDeadLinks: true,
@@ -10,19 +10,19 @@ export default defineConfig({
   srcExclude: ["superpowers/**"],
   head: [
     ["link", { rel: "icon", href: "/favicon.png" }],
-    ["meta", { name: "author", content: "imsyy" }],
+    ["meta", { name: "author", content: "imsyy, roarrabbit" }],
     [
       "meta",
       {
         name: "keywords",
-        content: "SPlayer,SPlayer-Next,音乐播放器,桌面歌词,流媒体,Electron,Vue3,Rust",
+        content: "SPlayer,SPlayer-Next,SPlayer-Next Fork,音乐播放器,桌面歌词,流媒体,Electron,Vue3,Rust",
       },
     ],
   ],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: "/favicon.png",
-    siteTitle: "SPlayer-Next",
+    siteTitle: "SPlayer-Next Fork",
     nav: [
       { text: "首页", link: "/" },
       { text: "下载", link: "/download" },
@@ -37,7 +37,7 @@ export default defineConfig({
         ],
       },
       { text: "类型参考", link: "/types" },
-      { text: "GitHub", link: "https://github.com/SPlayer-Dev/SPlayer-Next" },
+      { text: "GitHub", link: "https://github.com/roarrabbit/SPlayer-Next" },
     ],
 
     sidebar: [
@@ -92,15 +92,15 @@ export default defineConfig({
       label: "文章目录",
     },
 
-    socialLinks: [{ icon: "github", link: "https://github.com/SPlayer-Dev/SPlayer-Next" }],
+    socialLinks: [{ icon: "github", link: "https://github.com/roarrabbit/SPlayer-Next" }],
 
     footer: {
       message: "基于 AGPL-3.0 许可发布",
-      copyright: "Copyright © 2025-present imsyy",
+      copyright: "Copyright © 2025-present imsyy · Fork by roarrabbit",
     },
 
     editLink: {
-      pattern: "https://github.com/SPlayer-Dev/SPlayer-Next/edit/dev/docs/:path",
+      pattern: "https://github.com/roarrabbit/SPlayer-Next/edit/dev/docs/:path",
       text: "查看或编辑此页",
     },
 

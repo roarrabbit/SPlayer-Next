@@ -40,7 +40,7 @@ const isDisabled = computed(() => props.disabled || props.loading);
 
 const enableRipple = computed(() => props.ripple && !props.disabled && !props.loading);
 
-const pressScale = computed(() => (props.static ? undefined : "not-disabled:active:scale-96"));
+const pressScale = computed(() => (props.static ? undefined : "not-disabled:active:scale-[0.97]"));
 
 /** 预设尺寸名称 */
 type SizePreset = "tiny" | "small" | "medium" | "large";
@@ -213,7 +213,7 @@ const variantClass = computed(() => {
   <button
     v-ripple="enableRipple"
     :disabled="isDisabled"
-    class="s-button inline-flex items-center justify-center gap-1.5 font-sans select-none outline-none cursor-pointer transition-[color,background-color,border-color,opacity,transform] duration-200 disabled:cursor-not-allowed disabled:op-50"
+    class="s-button inline-flex items-center justify-center gap-1.5 font-sans select-none outline-none cursor-pointer transition-[color,background-color,border-color,opacity,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)] disabled:cursor-not-allowed disabled:op-50"
     :class="[
       block && 'w-full',
       strong && 'font-semibold',

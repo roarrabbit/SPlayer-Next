@@ -39,10 +39,10 @@ const setupRipple = (el: RippleElement) => {
       height: `${size}px`,
       borderRadius: "50%",
       backgroundColor: "currentColor",
-      opacity: "0.2",
+      opacity: "0.18",
       transform: "scale(0)",
       pointerEvents: "none",
-      transition: "transform 0.8s cubic-bezier(0.2, 0, 0, 1), opacity 0.6s ease",
+      transition: "transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 280ms cubic-bezier(0.16, 1, 0.3, 1)",
     });
 
     el.appendChild(ripple);
@@ -57,7 +57,7 @@ const setupRipple = (el: RippleElement) => {
       removed = true;
       ripple.style.opacity = "0";
       ripple.addEventListener("transitionend", () => ripple.remove(), { once: true });
-      setTimeout(() => ripple.remove(), 1000);
+      setTimeout(() => ripple.remove(), 500);
     };
     el.addEventListener("pointerup", remove, { once: true });
     el.addEventListener("pointerleave", remove, { once: true });

@@ -3,7 +3,11 @@ import { settingsSchema } from "@/settings/schema";
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
 import { useSettingsStore } from "@/stores/settings";
 import { openExternal } from "@/utils/url";
-import { REPO_URL, REPO_NAME, APP_VERSION } from "@/utils/config";
+import { APP_VERSION } from "@/utils/config";
+
+/** 设置页底部仓库入口指向本 Fork */
+const FORK_REPO_URL = "https://github.com/roarrabbit/SPlayer-Next";
+const FORK_REPO_NAME = "SPlayer-Next Fork";
 
 const { initialCategory, initialHighlight, rememberCategory } = useSettingsDialog();
 
@@ -86,9 +90,9 @@ onMounted(() => {
 
       <!-- 底部 -->
       <div class="shrink-0 mt-auto pt-4 px-1 flex items-center gap-1">
-        <SButton variant="text" size="tiny" @click="openExternal(REPO_URL)">
+        <SButton variant="text" size="tiny" @click="openExternal(FORK_REPO_URL)">
           <template #icon><IconLucideGithub /></template>
-          {{ REPO_NAME }}
+          {{ FORK_REPO_NAME }}
         </SButton>
         <STag size="tiny">v{{ APP_VERSION }}</STag>
       </div>

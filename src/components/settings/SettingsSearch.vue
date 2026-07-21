@@ -75,7 +75,7 @@ const handleBlur = () => {
     <!-- 搜索结果 -->
     <Transition
       enter-active-class="transition-[opacity,transform] duration-200 ease-out"
-      leave-active-class="transition-[opacity,transform] duration-150 ease-in"
+      leave-active-class="transition-[opacity,transform] duration-120 ease-[cubic-bezier(0.16,1,0.3,1)]"
       enter-from-class="opacity-0 -translate-y-1"
       leave-to-class="opacity-0 -translate-y-1"
     >

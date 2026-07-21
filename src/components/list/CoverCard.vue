@@ -26,25 +26,25 @@ const actualFallback = computed(() => (props.type === "artist" ? artistFallback 
 
 <template>
   <div
-    class="cursor-pointer group rounded-xl transition-colors duration-300"
+    class="cursor-pointer group rounded-xl transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98]"
     :class="type !== 'artist' ? 'hover:bg-primary/10' : ''"
     @click="$emit('click')"
   >
     <!-- 封面 -->
-    <div class="relative overflow-hidden group-hover:will-change-transform" :class="coverRounded">
+    <div class="relative overflow-hidden" :class="coverRounded">
       <SImg
         :src="item.cover"
         :fallback="actualFallback"
         :alt="item.title"
-        class="w-full aspect-square transition-[transform,filter] duration-300 ease-out group-hover:scale-108 group-hover:brightness-80"
+        class="w-full aspect-square transition-[transform,filter] duration-240 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04] group-hover:brightness-80"
       />
       <!-- 播放按钮 -->
       <div
-        class="absolute size-9 flex items-center justify-center rounded-full opacity-0 transition-[opacity,transform] duration-300 group-hover:opacity-100"
+        class="absolute size-9 flex items-center justify-center rounded-full opacity-0 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
         :class="
           type === 'artist'
             ? 'inset-0 m-auto'
-            : 'right-2 bottom-2 bg-white/50 translate-y-1.5 group-hover:translate-y-0'
+            : 'right-2 bottom-2 bg-white/50 translate-y-1 group-hover:translate-y-0'
         "
       >
         <IconLucidePlay v-if="type !== 'artist'" class="size-4.5 text-white" />

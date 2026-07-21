@@ -304,8 +304,33 @@ export class Spring {
   };
 
   /**
+   * 设置目标位置并注入初速度（用于手势松手后的惯性衔接）
+   *
+   * 从当前呈现位置出发，带着 velocity 重定向到新目标，保证动画可打断、无跳变。
+   *
+   * @param position - 新目标位置
+   * @param velocity - 初速度（单位与 position 一致 / 秒，向下为正）
+   */
+  setTargetPositionWithVelocity = (position: number, velocity: number) => {
+    this.pendingPosition = undefined;
+    this.pendingParams = undefined;
+    this.targetPosition = position;
+    this.elapsedTime = 0;
+    this.positionSolver = solveSpring(this.position, velocity, this.targetPosition, 0, this.params);
+    this.velocitySolver = derivative(this.positionSolver);
+    this.accelerationSolver = derivative(this.velocitySolver);
+    this.settled = false;
+  };
+
+  /**
    * 获取当前位置
    * @returns 当前弹簧位置
    */
   getCurrentPosition = (): number => this.position;
+
+  /**
+   * 获取当前速度（单位 / 秒）
+   * @returns 当前弹簧速度
+   */
+  getCurrentVelocity = (): number => this.velocitySolver(this.elapsedTime);
 }

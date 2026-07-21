@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: "SPlayer-Next"
+  name: "SPlayer-Next Fork"
   text: "听音乐，本该如此"
-  tagline: 一款简洁而精致的多平台桌面音乐播放器。支持多种音频格式与丰富的歌词展现形式，性能经过深度优化，每一处细节都恰到好处。
+  tagline: 上游 SPlayer-Next 的二次开发分支。保留完整能力，并增强全屏播放页手势、应用内 Esc 关闭与更克制的快捷键默认。
   actions:
     - theme: brand
       text: 立即下载
@@ -15,7 +15,7 @@ hero:
       link: /guide
     - theme: alt
       text: GitHub
-      link: https://github.com/SPlayer-Dev/SPlayer-Next
+      link: https://github.com/roarrabbit/SPlayer-Next
 
 features:
   - icon: 🎵

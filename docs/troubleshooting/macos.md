@@ -47,6 +47,6 @@ SPlayer-Next 在 macOS 上**支持系统级媒体集成**：通过 `media-ctrl` 
 
 ### 自动更新失败
 
-1. 手动从 [GitHub Releases](https://github.com/SPlayer-Dev/SPlayer-Next/releases) 下载最新版本；
+1. 手动从 [GitHub Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 下载最新版本；
 2. 删除旧版本后重新安装；
 3. 检查网络连接是否正常。

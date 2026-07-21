@@ -15,33 +15,35 @@ export default defineConfig({
     },
     animation: {
       keyframes: {
+        // 浮层：从触发方向轻微上移 + 缩放，避免凭空出现
         "popover-in":
-          "{ from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }",
+          "{ from { opacity: 0; transform: translateY(4px) scale(0.96) } to { opacity: 1; transform: translateY(0) scale(1) } }",
         "popover-out":
-          "{ from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(6px) } }",
+          "{ from { opacity: 1; transform: translateY(0) scale(1) } to { opacity: 0; transform: translateY(4px) scale(0.96) } }",
         "overlay-in": "{ from { opacity: 0 } to { opacity: 1 } }",
         "overlay-out": "{ from { opacity: 1 } to { opacity: 0 } }",
         "dialog-in":
-          "{ from { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }",
+          "{ from { opacity: 0; transform: translate(-50%, -48%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }",
         "dialog-out":
-          "{ from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -50%) scale(0.96) } }",
+          "{ from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -48%) scale(0.97) } }",
         "dialog-in-top":
-          "{ from { opacity: 0; transform: translateX(-50%) scale(0.96) } to { opacity: 1; transform: translateX(-50%) scale(1) } }",
+          "{ from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.97) } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) } }",
         "dialog-out-top":
-          "{ from { opacity: 1; transform: translateX(-50%) scale(1) } to { opacity: 0; transform: translateX(-50%) scale(0.96) } }",
+          "{ from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) } to { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(0.97) } }",
         "panel-in":
           "{ from { opacity: 0; transform: scale(0.97) } to { opacity: 1; transform: scale(1) } }",
         "panel-out":
           "{ from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(0.97) } }",
         "select-in":
-          "{ from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: translateY(0) } }",
+          "{ from { opacity: 0; transform: translateY(-3px) scale(0.98) } to { opacity: 1; transform: translateY(0) scale(1) } }",
         "select-out":
-          "{ from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-4px) } }",
+          "{ from { opacity: 1; transform: translateY(0) scale(1) } to { opacity: 0; transform: translateY(-3px) scale(0.98) } }",
         "slide-in-item":
-          "{ from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }",
+          "{ from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }",
         "fade-in": "{ from { opacity: 0 } to { opacity: 1 } }",
         "highlight-pulse":
           "{ 0%, 100% { box-shadow: 0 0 0 0 transparent } 25%, 75% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.3) } 50% { box-shadow: 0 0 0 3px rgb(var(--s-primary) / 0.15) } }",
+        // 抽屉：iOS sheet 感（连续、可感动量，无 ease-in 拖沓）
         "drawer-in-right":
           "{ from { transform: translateX(100%) } to { transform: translateX(0) } }",
         "drawer-out-right":
@@ -52,46 +54,47 @@ export default defineConfig({
           "{ from { transform: translateX(0) } to { transform: translateX(-100%) } }",
       },
       durations: {
-        "popover-in": "200ms",
-        "popover-out": "150ms",
-        "overlay-in": "200ms",
-        "overlay-out": "150ms",
-        "dialog-in": "200ms",
-        "dialog-out": "150ms",
-        "dialog-in-top": "200ms",
-        "dialog-out-top": "150ms",
-        "panel-in": "250ms",
-        "panel-out": "150ms",
+        "popover-in": "180ms",
+        "popover-out": "120ms",
+        "overlay-in": "180ms",
+        "overlay-out": "120ms",
+        "dialog-in": "220ms",
+        "dialog-out": "160ms",
+        "dialog-in-top": "220ms",
+        "dialog-out-top": "160ms",
+        "panel-in": "220ms",
+        "panel-out": "140ms",
         "select-in": "150ms",
         "select-out": "100ms",
-        "fade-in": "150ms",
-        "slide-in-item": "250ms",
+        "fade-in": "140ms",
+        "slide-in-item": "200ms",
         "highlight-pulse": "2s",
-        "drawer-in-right": "300ms",
-        "drawer-out-right": "200ms",
-        "drawer-in-left": "300ms",
-        "drawer-out-left": "200ms",
+        "drawer-in-right": "320ms",
+        "drawer-out-right": "240ms",
+        "drawer-in-left": "320ms",
+        "drawer-out-left": "240ms",
       },
       timingFns: {
+        // ease-out / iOS 近似曲线；exit 同样用 ease-out，避免 ease-in 发闷
         "popover-in": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "popover-out": "ease-in",
-        "overlay-in": "ease-out",
-        "overlay-out": "ease-in",
+        "popover-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "overlay-in": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "overlay-out": "cubic-bezier(0.16, 1, 0.3, 1)",
         "dialog-in": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "dialog-out": "ease-in",
+        "dialog-out": "cubic-bezier(0.16, 1, 0.3, 1)",
         "dialog-in-top": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "dialog-out-top": "ease-in",
+        "dialog-out-top": "cubic-bezier(0.16, 1, 0.3, 1)",
         "panel-in": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "panel-out": "ease-in",
+        "panel-out": "cubic-bezier(0.16, 1, 0.3, 1)",
         "select-in": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "select-out": "ease-in",
-        "fade-in": "ease-out",
-        "slide-in-item": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "select-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "fade-in": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-in-item": "cubic-bezier(0.16, 1, 0.3, 1)",
         "highlight-pulse": "ease-in-out",
-        "drawer-in-right": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "drawer-out-right": "ease-in",
-        "drawer-in-left": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "drawer-out-left": "ease-in",
+        "drawer-in-right": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "drawer-out-right": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "drawer-in-left": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "drawer-out-left": "cubic-bezier(0.32, 0.72, 0, 1)",
       },
     },
     colors: {

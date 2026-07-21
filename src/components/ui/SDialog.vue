@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<SDialogProps>(), {
   destroyOnClose: false,
 });
 
-const DESTROY_DELAY_MS = 180;
+const DESTROY_DELAY_MS = 200;
 
 const containerStyle = computed(() => ({
   width: props.width,

@@ -2,7 +2,7 @@
 import { getContributors, type Contributor } from "@/apis/github";
 import { useUpdateStore } from "@/stores/update";
 import { openExternal } from "@/utils/url";
-import { APP_VERSION, REPO_URL, REPO_NAME, HOMEPAGE_URL, COPYRIGHT_HOLDER } from "@/utils/config";
+import { APP_VERSION, HOMEPAGE_URL, COPYRIGHT_HOLDER } from "@/utils/config";
 import IconLucideRefreshCw from "~icons/lucide/refresh-cw";
 import IconLucideGithub from "~icons/lucide/github";
 import IconLucideRss from "~icons/lucide/rss";
@@ -47,11 +47,32 @@ const dependencies: Dependency[] = [
   },
 ];
 
+/** Fork 仓库（社区入口指向本分支） */
+const FORK_REPO_URL = "https://github.com/roarrabbit/SPlayer-Next";
+
 /** 社区与资讯入口 */
 const community = computed(() => [
-  { name: REPO_NAME, url: REPO_URL, icon: IconLucideGithub },
+  { name: "SPlayer-Next Fork", url: FORK_REPO_URL, icon: IconLucideGithub },
   { name: t("settings.about.officialSite"), url: HOMEPAGE_URL, icon: IconLucideRss },
 ]);
+
+/** 展示名称（Fork 标识） */
+const displayName = "SPlayer-Next Fork";
+
+/** 二作（固定展示在 Author 右侧） */
+const FORK_DEVELOPER: Contributor & { role: string } = {
+  login: "roarrabbit",
+  htmlUrl: "https://github.com/roarrabbit",
+  avatar: "https://avatars.githubusercontent.com/u/52274334",
+  role: "Secondary Developer",
+};
+
+/** 开发者角色文案 */
+const developerRole = (login: string): string => {
+  if (login === COPYRIGHT_HOLDER) return "Author";
+  if (login === FORK_DEVELOPER.login) return FORK_DEVELOPER.role;
+  return "Contributor";
+};
 
 const developers = ref<Contributor[]>([]);
 const showAllDevelopers = ref(false);
@@ -64,9 +85,28 @@ const hasMoreDevelopers = computed(() => developers.value.length > 6);
 
 onMounted(async () => {
   try {
-    developers.value = await getContributors();
+    const list = await getContributors();
+    // Author 第一、二次开发者第二，其余去重后接上
+    const pinnedLogins = new Set([COPYRIGHT_HOLDER, FORK_DEVELOPER.login]);
+    const author =
+      list.find((d) => d.login === COPYRIGHT_HOLDER) ??
+      ({
+        login: COPYRIGHT_HOLDER,
+        htmlUrl: `https://github.com/${COPYRIGHT_HOLDER}`,
+        avatar: "",
+      } satisfies Contributor);
+    const rest = list.filter((d) => !pinnedLogins.has(d.login));
+    developers.value = [author, FORK_DEVELOPER, ...rest];
   } catch (error) {
     console.error("获取贡献者失败:", error);
+    developers.value = [
+      {
+        login: COPYRIGHT_HOLDER,
+        htmlUrl: `https://github.com/${COPYRIGHT_HOLDER}`,
+        avatar: "",
+      },
+      FORK_DEVELOPER,
+    ];
   }
 });
 </script>
@@ -84,7 +124,7 @@ onMounted(async () => {
       >
         <SLogo :size="34" />
         <div class="flex items-center gap-2 mr-auto">
-          <span class="text-lg font-logo text-on-surface">{{ REPO_NAME }}</span>
+          <span class="text-lg font-logo text-on-surface">{{ displayName }}</span>
           <STag type="primary" size="small" round>v{{ APP_VERSION }}</STag>
         </div>
         <div class="flex items-center gap-2">
@@ -152,7 +192,7 @@ onMounted(async () => {
           <div class="min-w-0">
             <div class="text-sm font-medium text-on-surface truncate">{{ dev.login }}</div>
             <div class="text-xs text-on-surface-variant/60 truncate">
-              {{ dev.login === COPYRIGHT_HOLDER ? "Author" : "Contributor" }}
+              {{ developerRole(dev.login) }}
             </div>
           </div>
         </button>

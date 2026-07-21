@@ -35,8 +35,8 @@ watchEffect(async () => {
         : [
             'w-full aspect-square rounded-[32px] overflow-hidden shrink-0',
             'shadow-[0_0_20px_10px_rgba(0,0,0,0.1)]',
-            'transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
-            isPlaying ? 'scale-100' : 'scale-90',
+            'transition-transform duration-420 ease-[cubic-bezier(0.32,0.72,0,1)]',
+            isPlaying ? 'scale-100' : 'scale-[0.94]',
           ]
     "
   >

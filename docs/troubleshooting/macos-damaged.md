@@ -62,5 +62,5 @@ softwareupdate --install-rosetta --agree-to-license
    rm -rf ~/Library/Application\ Support/SPlayer-Next
    ```
 
-2. 重新从 [GitHub Releases](https://github.com/SPlayer-Dev/SPlayer-Next/releases) 下载最新版本；
+2. 重新从 [GitHub Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 下载最新版本；
 3. 使用方法一移除隔离属性后再打开。

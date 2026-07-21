@@ -2,20 +2,39 @@
 
 <img alt="SPlayer-Next logo" width="120" height="120" src="public/icons/favicon.png" />
 
-<h2>SPlayer-Next-Fork</h2>
+<h2>SPlayer-Next Fork</h2>
 
 <p>🎵 跨平台桌面音乐播放器，支持丰富的歌词展现形式与广泛的音频格式</p>
 
-<p>「<a href="https://github.com/SPlayer-Dev/SPlayer">SPlayer</a>」的继任版本「<a href="https://github.com/SPlayer-Dev/SPlayer-Next">SPlayer-Next</a>」的Fork分支</p>
+<p>
+  本仓库是
+  「<a href="https://github.com/SPlayer-Dev/SPlayer">SPlayer</a>」继任版
+  「<a href="https://github.com/SPlayer-Dev/SPlayer-Next">SPlayer-Next</a>」
+  的 <strong>Fork</strong>，由
+  <a href="https://github.com/roarrabbit">roarrabbit</a>
+  进行二次开发与维护。
+</p>
 
-[![Stars](https://img.shields.io/github/stars/SPlayer-Dev/SPlayer-Next?style=flat)](https://github.com/SPlayer-Dev/SPlayer-Next/stargazers)
-[![Release](https://img.shields.io/github/v/release/SPlayer-Dev/SPlayer-Next)](https://github.com/SPlayer-Dev/SPlayer-Next/releases)
-[![License](https://img.shields.io/github/license/SPlayer-Dev/SPlayer-Next)](https://github.com/SPlayer-Dev/SPlayer-Next/blob/main/LICENSE)
-[![Issues](https://img.shields.io/github/issues/SPlayer-Dev/SPlayer-Next)](https://github.com/SPlayer-Dev/SPlayer-Next/issues)
+[![Stars](https://img.shields.io/github/stars/roarrabbit/SPlayer-Next?style=flat)](https://github.com/roarrabbit/SPlayer-Next/stargazers)
+[![Release](https://img.shields.io/github/v/release/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/releases)
+[![License](https://img.shields.io/github/license/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/issues)
+[![Upstream](https://img.shields.io/badge/upstream-SPlayer--Next-blue)](https://github.com/SPlayer-Dev/SPlayer-Next)
 
 </div>
 
 ---
+
+## 关于本 Fork
+
+| 角色 | 账号 |
+| --- | --- |
+| Author（上游作者） | [imsyy](https://github.com/imsyy) / [SPlayer-Dev](https://github.com/SPlayer-Dev) |
+| Secondary Developer（二次开发） | [roarrabbit](https://github.com/roarrabbit) |
+
+- **本仓库**：<https://github.com/roarrabbit/SPlayer-Next>
+- **上游仓库**：<https://github.com/SPlayer-Dev/SPlayer-Next>
+- 应用内 **设置 → 关于软件** 展示名为 **SPlayer-Next Fork**，开发人员列表中二次开发者固定排在 Author 之后。
 
 ## 功能特性
 
@@ -33,12 +52,53 @@
 - 🧩 **插件系统** —— 本地 / URL 安装音源与控制插件，可复制安装链接分享
 - 🌊 **流体播放背景** —— 封面网格流体动画，可选节拍脉动（强度与平滑可调）
 
+### Fork 交互增强
+
+- **全屏播放页**：左上角退出 / 左下角歌词开关；支持**下滑手势关闭**（跟手 + 速度判断 + 可打断弹簧）
+- **Esc 关闭播放页**：应用内快捷键（非全局）；与退出按钮同一套收起动画
+- **全局快捷键默认关闭**：出厂不占用系统级快捷键，由用户在 **设置 → 快捷键** 自行绑定
+- **动效与反馈**：弹层 / 抽屉 / Toast / 按压反馈等统一为更轻的 ease-out 与 sheet 曲线
+
 ## 开发
 
-具体见原项目：https://github.com/SPlayer-Dev/SPlayer-Next
+```bash
+# 克隆本 Fork
+git clone https://github.com/roarrabbit/SPlayer-Next.git
+cd SPlayer-Next
 
+# 安装依赖
+pnpm install
+
+# 开发（debug 构建原生模块 + Electron）
+pnpm dev
+
+# 仅界面开发可跳过 Rust
+SKIP_NATIVE_BUILD=true pnpm dev
+
+# 类型检查 / 完整构建
+pnpm typecheck
+pnpm build
+```
+
+环境要求与约定见 [贡献指南](docs/contributing.md)；原生模块见 [原生模块](docs/native.md)。上游开发文档亦可参考：<https://github.com/SPlayer-Dev/SPlayer-Next>
+
+## 使用提示
+
+- **退出全屏播放**：点击左上角下箭头，或按 **Esc**（应用内），或**下滑**面板
+- **全局快捷键**：默认未绑定；在设置中按需开启并配置
+- **应用内关闭播放页**：默认 `Esc`（可在快捷键设置中修改）
+
+更多见 [使用指南](docs/guide.md)。
 
 ## 更新日志
+
+### 1.0.1-fork
+
+- 关于页：展示 **SPlayer-Next Fork**；开发人员增加 Secondary Developer（roarrabbit）
+- 设置底部 / 社区入口指向本 Fork 仓库
+- 全屏播放页：退出与歌词按钮对调；下滑关闭（velocity + interruptible spring）；Esc 应用内关闭
+- 快捷键：默认全局绑定全部清空，交由用户选择；关闭播放页默认应用内 `Esc`
+- 交互动效：统一 ease-out / sheet 曲线，减少 ease-in 与过慢离场
 
 ### 1.0.1
 
@@ -49,7 +109,9 @@
 
 ## 致谢
 
-特别感谢以下让 SPlayer-Next 成为可能的开源项目：
+感谢上游 [SPlayer-Next](https://github.com/SPlayer-Dev/SPlayer-Next) 作者 **imsyy** 及所有贡献者。
+
+特别感谢以下开源项目：
 
 - [applemusic-like-lyrics](https://github.com/Steve-xmh/applemusic-like-lyrics) —— 类 Apple Music 歌词显示组件库
 - [NeteaseCloudMusicApiEnhanced](https://github.com/neteasecloudmusicapienhanced/api-enhanced) —— 网易云音乐 API 备份 + 增强
@@ -66,4 +128,4 @@
 
 ## 免责声明
 
-本项目仅供个人学习与研究使用，禁止用于商业及非法用途。部分功能依赖第三方 API，使用者须自行确保其使用符合相关法律法规及服务协议。对于因使用本项目而产生的任何直接或间接后果，作者不承担任何责任。
+本项目仅供个人学习与研究使用，禁止用于商业及非法用途。部分功能依赖第三方 API，使用者须自行确保其使用符合相关法律法规及服务协议。对于因使用本项目而产生的任何直接或间接后果，作者与二次开发者不承担任何责任。

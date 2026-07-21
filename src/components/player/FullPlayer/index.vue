@@ -9,6 +9,7 @@ import { useFavorite } from "@/composables/useFavorite";
 import { useDownload, buildDownloadQualityItems } from "@/composables/useDownload";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useImmersiveMode } from "@/composables/useImmersiveMode";
+import { useSheetDismiss } from "@/composables/useSheetDismiss";
 import { useTimeFormat } from "@/composables/useTimeFormat";
 import Lyrics from "@/components/player/Lyrics/index.vue";
 import AMLLLyrics from "@/components/player/Lyrics/AMLLLyrics.vue";
@@ -144,8 +145,127 @@ const onDownloadSelect = (key: string): void => {
   void enqueueDownload(media.track, key ? { quality: key as QualityLevel } : {});
 };
 
+const playerRootRef = ref<HTMLElement | null>(null);
+
+/**
+ * 面板自身可见性：与 isExpanded 解耦
+ * - isExpanded 立即 false → 主界面立刻从 opacity-0 恢复（原逻辑）
+ * - sheetOpen 等弹簧/CSS leave 结束后再 false → FullPlayer 离场不挡主界面
+ */
+const sheetOpen = ref(false);
+/** 本轮关闭是否由手势/弹簧驱动（避免 isExpanded 回写时立刻卸掉面板） */
+let sheetClosing = false;
+
+watch(
+  isExpanded,
+  (expanded) => {
+    if (expanded) {
+      sheetClosing = false;
+      sheetOpen.value = true;
+      return;
+    }
+    // 外部直接 isExpanded=false（如封面点艺术家）：走原 CSS leave
+    if (!sheetClosing && sheetOpen.value) {
+      sheetOpen.value = false;
+    }
+  },
+  { immediate: true },
+);
+
+const {
+  dragging: sheetDragging,
+  settling: sheetSettling,
+  skipLeaveTransition,
+  onPointerDown: onSheetPointerDown,
+  onPointerMove: onSheetPointerMove,
+  onPointerUp: onSheetPointerUp,
+  onPointerCancel: onSheetPointerCancel,
+  dismissAnimated,
+  resetAfterClose,
+  bindHost,
+} = useSheetDismiss({
+  open: sheetOpen,
+  onDismissStart: () => {
+    // 与原逻辑一致：主界面立刻可见，FullPlayer 继续弹簧离场
+    sheetClosing = true;
+    isExpanded.value = false;
+  },
+  onDismissEnd: () => {
+    sheetOpen.value = false;
+    sheetClosing = false;
+  },
+});
+
 const collapse = (): void => {
-  isExpanded.value = false;
+  // 按钮 / Esc：立刻恢复主界面 + 弹簧离场 FullPlayer
+  if (!sheetOpen.value || sheetClosing) return;
+  dismissAnimated();
+};
+
+/** 输入框 / 上层弹窗打开时，Esc 不关播放页 */
+const shouldIgnoreEscape = (): boolean => {
+  const el = document.activeElement as HTMLElement | null;
+  if (el) {
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT") return true;
+    if (el.isContentEditable) return true;
+  }
+  // reka Dialog / 其它 modal 打开时优先关弹层
+  if (document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]')) {
+    return true;
+  }
+  return false;
+};
+
+/** 快捷键系统 view.closePlayer 派发，走同一套 collapse */
+const onCloseFullPlayer = (): void => {
+  collapse();
+};
+
+/** 内置 Esc：即使用户仍是旧绑定 Ctrl+Esc，播放页也支持单按 Esc */
+const onPlayerKeyDown = (e: KeyboardEvent): void => {
+  if (e.key !== "Escape" || e.isComposing) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+  if (!sheetOpen.value || sheetClosing) return;
+  if (shouldIgnoreEscape()) return;
+  e.preventDefault();
+  collapse();
+};
+
+watch(
+  sheetOpen,
+  (open) => {
+    if (open) {
+      window.addEventListener("keydown", onPlayerKeyDown, true);
+      window.addEventListener("splayer:close-full-player", onCloseFullPlayer);
+    } else {
+      window.removeEventListener("keydown", onPlayerKeyDown, true);
+      window.removeEventListener("splayer:close-full-player", onCloseFullPlayer);
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onPlayerKeyDown, true);
+  window.removeEventListener("splayer:close-full-player", onCloseFullPlayer);
+});
+
+/** 手势/弹簧收起时跳过 CSS leave，避免屏外面板先弹回再滑出 */
+const onPlayerBeforeLeave = (el: Element): void => {
+  onBeforeLeave();
+  if (!skipLeaveTransition.value) return;
+  const htmlEl = el as HTMLElement;
+  htmlEl.style.transition = "none";
+};
+
+const onPlayerAfterLeave = (): void => {
+  onAfterLeave();
+  resetAfterClose();
+};
+
+const onPlayerAfterEnter = (): void => {
+  onAfterEnter();
+  if (playerRootRef.value) bindHost(playerRootRef.value);
 };
 
 const onSeekDragEnd = (value: number): void => {
@@ -181,21 +301,29 @@ const showComments = (): void => {
 <template>
   <Teleport to="body">
     <Transition
-      enter-active-class="transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"
-      leave-active-class="transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"
+      enter-active-class="transition-transform duration-420 ease-[cubic-bezier(0.32,0.72,0,1)]"
+      leave-active-class="transition-transform duration-360 ease-[cubic-bezier(0.32,0.72,0,1)]"
       enter-from-class="translate-y-full"
       leave-to-class="translate-y-full"
-      @after-enter="onAfterEnter"
-      @before-leave="onBeforeLeave"
-      @after-leave="onAfterLeave"
+      @after-enter="onPlayerAfterEnter"
+      @before-leave="onPlayerBeforeLeave"
+      @after-leave="onPlayerAfterLeave"
     >
       <div
-        v-show="isExpanded"
-        class="fixed inset-0 z-200 overflow-hidden text-cover"
-        :class="immersive ? 'cursor-none [&_*]:!cursor-none' : ''"
+        ref="playerRootRef"
+        v-show="sheetOpen"
+        class="full-player-root fixed inset-0 z-200 overflow-hidden text-cover"
+        :class="[
+          immersive ? 'cursor-none [&_*]:!cursor-none' : '',
+          sheetDragging || sheetSettling ? 'select-none' : '',
+        ]"
         style="--lp-color: rgb(var(--s-cover))"
         @mouseenter="onPlayerMouseEnter"
         @mouseleave="onPlayerMouseLeave"
+        @pointerdown="onSheetPointerDown"
+        @pointermove="onSheetPointerMove"
+        @pointerup="onSheetPointerUp"
+        @pointercancel="onSheetPointerCancel"
       >
         <!-- 背景 -->
         <PlayerBackground />
@@ -205,38 +333,30 @@ const showComments = (): void => {
         </div>
         <!-- 底部频谱 -->
         <BottomSpectrum
-          v-if="isExpanded && settings.player.enableSpectrum"
+          v-if="sheetOpen && settings.player.enableSpectrum"
           :show="isPlaying && immersive"
         />
         <!-- 顶/底栏渐变遮罩（全屏封面模式） -->
         <div
           v-if="fullscreenCover"
-          class="cover-mask-top absolute top-0 inset-x-0 h-20 z-5 pointer-events-none transition-opacity duration-400"
+          class="cover-mask-top absolute top-0 inset-x-0 h-20 z-5 pointer-events-none transition-opacity duration-240 ease-[cubic-bezier(0.16,1,0.3,1)]"
           :class="immersive ? 'opacity-0' : 'opacity-100'"
         />
         <div
           v-if="fullscreenCover"
-          class="cover-mask-bottom absolute bottom-0 inset-x-0 h-48 z-5 pointer-events-none transition-opacity duration-400"
+          class="cover-mask-bottom absolute bottom-0 inset-x-0 h-48 z-5 pointer-events-none transition-opacity duration-240 ease-[cubic-bezier(0.16,1,0.3,1)]"
           :class="immersive ? 'opacity-0' : 'opacity-100'"
         />
         <!-- 顶栏 -->
         <div
-          class="absolute top-0 inset-x-0 h-14 z-10 app-drag-region transition-opacity duration-400 flex items-center justify-between px-3"
+          class="absolute top-0 inset-x-0 h-14 z-10 app-drag-region transition-opacity duration-240 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-between px-3"
           :class="immersive ? 'opacity-0 pointer-events-none' : 'opacity-100'"
           @mouseenter="onBarEnter"
           @mouseleave="onBarLeave"
         >
           <div class="app-no-drag flex items-center gap-2">
-            <SButton
-              type="cover"
-              variant="ghost"
-              circle
-              :size="40"
-              :disabled="lyricToggleDisabled"
-              :class="lyricToggleActive ? 'opacity-100' : 'opacity-40'"
-              @click="toggleLyric"
-            >
-              <template #icon><IconLucideTextQuote /></template>
+            <SButton type="cover" variant="ghost" circle :size="40" @click="collapse">
+              <template #icon><IconLucideChevronDown /></template>
             </SButton>
           </div>
           <div class="app-no-drag flex items-center gap-3">
@@ -254,7 +374,7 @@ const showComments = (): void => {
           <!-- 左侧 -->
           <div
             v-if="!fullscreenCover"
-            class="absolute inset-y-0 left-0 w-[45%] flex items-center justify-center px-12 transition-transform duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            class="absolute inset-y-0 left-0 w-[45%] flex items-center justify-center px-12 transition-transform duration-320 ease-[cubic-bezier(0.32,0.72,0,1)]"
             :style="coverCentered ? 'transform: translateX(calc(100% * 11 / 18))' : undefined"
           >
             <div class="relative w-[clamp(200px,85%,50vh)] -translate-y-[11vh]">
@@ -270,7 +390,7 @@ const showComments = (): void => {
           </div>
           <!-- 右侧 -->
           <div
-            class="group absolute inset-y-0 right-0 pr-20 flex flex-col transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            class="group absolute inset-y-0 right-0 pr-20 flex flex-col transition-opacity duration-280 ease-[cubic-bezier(0.16,1,0.3,1)]"
             :class="[
               fullscreenCover ? 'w-1/2' : 'w-[55%]',
               coverCentered || status.fullQueueOpen
@@ -379,9 +499,9 @@ const showComments = (): void => {
             ]"
           >
             <Transition
-              enter-active-class="transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              enter-active-class="transition-opacity duration-280 ease-[cubic-bezier(0.16,1,0.3,1)]"
               enter-from-class="opacity-0"
-              leave-active-class="transition-opacity duration-600 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              leave-active-class="transition-opacity duration-280 ease-[cubic-bezier(0.16,1,0.3,1)]"
               leave-to-class="opacity-0"
             >
               <div v-if="status.fullQueueOpen" class="w-full h-full">
@@ -392,14 +512,22 @@ const showComments = (): void => {
         </div>
         <!-- 底栏 -->
         <div
-          class="absolute bottom-0 inset-x-0 h-20 z-10 flex items-center gap-4 px-4 transition-opacity duration-400"
+          class="absolute bottom-0 inset-x-0 h-20 z-10 flex items-center gap-4 px-4 transition-opacity duration-240 ease-[cubic-bezier(0.16,1,0.3,1)]"
           :class="immersive ? 'opacity-0 pointer-events-none' : 'opacity-100'"
           @mouseenter="onBarEnter"
           @mouseleave="onBarLeave"
         >
           <div class="flex-1 min-w-0 flex items-center justify-start gap-2">
-            <SButton type="cover" variant="ghost" size="large" circle @click="collapse">
-              <template #icon><IconLucideChevronDown /></template>
+            <SButton
+              type="cover"
+              variant="ghost"
+              size="large"
+              circle
+              :disabled="lyricToggleDisabled"
+              :class="lyricToggleActive ? 'opacity-100' : 'opacity-40'"
+              @click="toggleLyric"
+            >
+              <template #icon><IconLucideTextQuote /></template>
             </SButton>
             <SButton
               type="cover"
