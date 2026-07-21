@@ -4,14 +4,14 @@ const FFT_BINS = 128;
 
 const BASS_MIN_FREQ = 80;
 const BASS_MAX_FREQ = 180;
-const BASS_THRESHOLD = 0.16;
-const BASS_GAIN = 2.2;
-const BASS_CURVE = 1.05;
-const BASS_PEAK_MIX = 0.45;
+const BASS_THRESHOLD = 0.18;
+const BASS_GAIN = 1.45;
+const BASS_CURVE = 1.35;
+const BASS_PEAK_MIX = 0.28;
 const BASS_HIGH_BIN_WEIGHT = 0.65;
 
 const AMLL_VOLUME_BASE = 1;
-const AMLL_VOLUME_RANGE = 2.4;
+const AMLL_VOLUME_RANGE = 1.3;
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
@@ -86,8 +86,15 @@ export const getBassPulse = (data: readonly number[]): number => {
 
 /**
  * 将低频脉冲映射为 AMLL 背景渲染器需要的低频音量
+ * 使用轻微 ease-out，中间段更柔，减少硬顶导致的视觉顿挫
  * @param pulse - 低频脉冲强度，范围 0..1
+ * @param intensity - 跳动强度倍率，1 为默认
  * @returns AMLL 低频音量
  */
-export const toAmllLowFreqVolume = (pulse: number): number =>
-  AMLL_VOLUME_BASE + clamp01(pulse) * AMLL_VOLUME_RANGE;
+export const toAmllLowFreqVolume = (pulse: number, intensity = 1): number => {
+  const t = clamp01(pulse);
+  // easeOutCubic：起势可见，高位不过冲
+  const eased = 1 - Math.pow(1 - t, 3);
+  const range = AMLL_VOLUME_RANGE * Math.max(0.1, intensity);
+  return AMLL_VOLUME_BASE + eased * range;
+};

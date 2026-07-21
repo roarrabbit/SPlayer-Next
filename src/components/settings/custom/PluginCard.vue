@@ -5,6 +5,7 @@ import { isExternalUrl, openExternal } from "@/utils/url";
 import IconSettings2 from "~icons/lucide/settings-2";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
 import IconTrash2 from "~icons/lucide/trash-2";
+import IconCopy from "~icons/lucide/copy";
 
 const props = defineProps<{ info: PluginInfo; checking?: boolean }>();
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   (event: "check", id: string): void;
   (event: "viewUpdate", id: string): void;
   (event: "detail", id: string): void;
+  (event: "copyInstallUrl", id: string): void;
 }>();
 
 const { t } = useI18n();
@@ -43,6 +45,10 @@ const settings = computed(() =>
   props.info.status.state === "ready" ? (props.info.status.settings ?? []) : [],
 );
 
+const canCopyInstallUrl = computed(
+  () => !!(props.info.manifest.installUrl || props.info.manifest.updateUrl),
+);
+
 const menuItems = computed<DropdownMenuItem[]>(() => [
   {
     key: "check",
@@ -52,16 +58,24 @@ const menuItems = computed<DropdownMenuItem[]>(() => [
     disabled: props.checking,
   },
   {
+    key: "copyInstallUrl",
+    label: t("settings.plugins.copyInstallUrl"),
+    icon: markRaw(IconCopy),
+    show: canCopyInstallUrl.value,
+    separator: !!props.info.manifest.updateUrl,
+  },
+  {
     key: "uninstall",
     label: t("settings.plugins.uninstall"),
     icon: markRaw(IconTrash2),
-    separator: !!props.info.manifest.updateUrl,
+    separator: true,
   },
 ]);
 
 const onMenuSelect = (key: string): void => {
   const id = props.info.manifest.id;
   if (key === "check") emit("check", id);
+  else if (key === "copyInstallUrl") emit("copyInstallUrl", id);
   else if (key === "uninstall") emit("uninstall", id);
 };
 </script>

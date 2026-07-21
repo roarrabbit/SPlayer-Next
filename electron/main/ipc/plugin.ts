@@ -19,6 +19,13 @@ import { coreLog } from "@main/utils/logger";
 export const registerPluginIpc = (): void => {
   ipcMain.handle("plugin:list", (): PluginInfo[] => pluginRegistry.listInfo());
 
+  // 读取已安装插件的安装链接（供「复制安装链接」）
+  ipcMain.handle("plugin:getInstallUrl", (_evt, id: string) => {
+    const url = pluginRegistry.getInstallUrl(id);
+    if (url == null) return { ok: false as const, error: "PLUGIN_INSTALL_URL_MISSING" };
+    return { ok: true as const, url };
+  });
+
   ipcMain.handle("plugin:install", async (_evt, filePath: string) => {
     try {
       const info = await pluginRegistry.install(filePath);
@@ -67,7 +74,7 @@ export const registerPluginIpc = (): void => {
   ipcMain.handle("plugin:installFromUrl", async (_evt, url: string) => {
     try {
       const source = await fetchScript(url);
-      const info = await pluginRegistry.installFromSource(source);
+      const info = await pluginRegistry.installFromSource(source, url);
       return { ok: true, id: info.manifest.id };
     } catch (err) {
       coreLog.warn("[plugin] installFromUrl failed:", err);

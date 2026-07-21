@@ -16,6 +16,10 @@ export type CoverLayout = "default" | "fullscreen";
  */
 export type TimeFormat = "current-total" | "remaining-total" | "current-remaining";
 
+/** 歌曲列表单击播放行为 */
+export type ListClickPlayMode = "continue" | "single";
+
+
 /**
  * 歌词来源偏好
  * - auto：智能选择（按打分结果）
@@ -158,6 +162,10 @@ export interface PlayerSettings {
   playerBgFreezeOnPause: boolean;
   /** 流体背景随低频节拍脉动 */
   playerBgBeat: boolean;
+  /** 背景跳动强度，1 为默认；越大越夸张 */
+  playerBgBeatIntensity: number;
+  /** 背景跳动平滑度 0..1，越大过渡越柔、越慢 */
+  playerBgBeatSmoothness: number;
   /** 全屏播放器封面布局 */
   coverLayout: CoverLayout;
   /** 无歌词时自动居中封面并隐藏歌词区域 */
@@ -188,6 +196,8 @@ export interface PlayerSettings {
   snapToLyric: boolean;
   /** 播放时底部显示歌词而非歌手名 */
   showLyricInBar: boolean;
+  /** 歌曲列表单击：接续列表或仅当前曲（双击为另一项） */
+  listClickPlayMode: ListClickPlayMode;
 }
 
 /** 外观设置 */

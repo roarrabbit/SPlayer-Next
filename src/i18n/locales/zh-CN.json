@@ -20,10 +20,22 @@
       "subtitle": "一个现代化的桌面音乐播放器，完成几步设置即可开始享用",
       "start": "开始设置",
       "features": {
-        "local": { "title": "本地音乐库", "desc": "扫描本地目录，自动整理音乐库" },
-        "quality": { "title": "无损音质", "desc": "原生音频引擎，支持多种无损格式" },
-        "streaming": { "title": "流媒体服务器", "desc": "Subsonic / Jellyfin / Emby 等" },
-        "lyrics": { "title": "丰富歌词体验", "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词" }
+        "local": {
+          "title": "本地音乐库",
+          "desc": "扫描本地目录，自动整理音乐库"
+        },
+        "quality": {
+          "title": "无损音质",
+          "desc": "原生音频引擎，支持多种无损格式"
+        },
+        "streaming": {
+          "title": "流媒体服务器",
+          "desc": "Subsonic / Jellyfin / Emby 等"
+        },
+        "lyrics": {
+          "title": "丰富歌词体验",
+          "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词"
+        }
       }
     },
     "agreement": {
@@ -1693,10 +1705,21 @@
         "homepage": "主页"
       },
       "grant": {
-        "network": { "label": "联网", "desc": "插件可发起网络请求" },
-        "control": { "label": "控制", "desc": "插件可控制播放器" },
-        "ui": { "label": "界面", "desc": "插件可扩展或修改应用界面" }
-      }
+        "network": {
+          "label": "联网",
+          "desc": "插件可发起网络请求"
+        },
+        "control": {
+          "label": "控制",
+          "desc": "插件可控制播放器"
+        },
+        "ui": {
+          "label": "界面",
+          "desc": "插件可扩展或修改应用界面"
+        }
+      },
+      "copyInstallUrl": "复制安装链接",
+      "copyInstallUrlFailed": "暂无安装链接可复制"
     },
     "pluginManager": {
       "label": "插件管理",
@@ -1837,6 +1860,20 @@
       "button": "清空全部",
       "confirmTitle": "清空全部数据库缓存？",
       "confirmDesc": "将删除上方全部数据库缓存，操作不可恢复"
+    },
+    "listClickPlayMode": {
+      "label": "列表单击行为",
+      "description": "单击歌曲行时接续当前列表播放，或仅插播该曲；双击自动使用另一种行为",
+      "continue": "接续列表",
+      "single": "仅当前曲"
+    },
+    "playerBgBeatIntensity": {
+      "label": "跳动强度",
+      "description": "流体背景跟随节拍的幅度，1 为默认，越大越夸张"
+    },
+    "playerBgBeatSmoothness": {
+      "label": "跳动平滑",
+      "description": "节拍过渡柔和程度：偏低更跟拍，偏高更顺滑、回落更慢"
     }
   },
   "collection": {

@@ -23,7 +23,7 @@ import {
 } from "./transform";
 
 const CLIENT_NAME = "SPlayer-Next";
-const CLIENT_VERSION = "1.0.0";
+const CLIENT_VERSION = "1.0.1";
 const DEVICE_NAME = "SPlayer Desktop";
 
 /** 派生稳定 deviceId（基于 cfg.id） */

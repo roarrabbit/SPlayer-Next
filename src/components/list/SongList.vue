@@ -258,11 +258,96 @@ const tagEditorTrack = shallowRef<Track | null>(null);
 /** 下载 */
 const { enqueue: enqueueDownload } = useDownload();
 
+/**
+ * 仅插播当前曲
+ * @param track - 目标曲目
+ */
+const playSingle = (track: Track): void => {
+  void player.playNow(track);
+};
+
+/**
+ * 从当前列表位置起播：用整份列表替换队列，接续当前歌单
+ * @param track - 目标曲目
+ * @param index - 在 sortedItems 中的索引；缺省时按 id 查找
+ */
+const playContinue = (track: Track, index?: number): void => {
+  const list = sortedItems.value;
+  const idx =
+    typeof index === "number" && index >= 0 && index < list.length
+      ? index
+      : list.findIndex((item) => item.id === track.id);
+  if (idx < 0) {
+    void player.playFrom([track], 0);
+    return;
+  }
+  void player.playFrom(list, idx);
+};
+
+/**
+ * 按模式播放：continue 接续列表，single 仅当前曲
+ * @param mode - 播放模式
+ * @param track - 目标曲目
+ * @param index - 列表索引
+ */
+const playByMode = (
+  mode: "continue" | "single",
+  track: Track,
+  index?: number,
+): void => {
+  if (mode === "single") playSingle(track);
+  else playContinue(track, index);
+};
+
+/** 单击使用设置项，双击使用相反行为；延迟用于区分双击 */
+let rowClickTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearRowClickTimer = (): void => {
+  if (rowClickTimer == null) return;
+  clearTimeout(rowClickTimer);
+  rowClickTimer = null;
+};
+
+/**
+ * 行单击：遵循「列表单击行为」设置
+ * @param track - 目标曲目
+ * @param index - 列表索引
+ */
+const onRowClick = (track: Track, index: number): void => {
+  if (batch.active.value) {
+    batch.toggle(track.id);
+    return;
+  }
+  clearRowClickTimer();
+  rowClickTimer = setTimeout(() => {
+    rowClickTimer = null;
+    playByMode(settings.player.listClickPlayMode, track, index);
+  }, 250);
+};
+
+/**
+ * 行双击：使用与单击相反的行为
+ * @param track - 目标曲目
+ * @param index - 列表索引
+ */
+const onRowDblclick = (track: Track, index: number): void => {
+  if (batch.active.value) return;
+  clearRowClickTimer();
+  const opposite =
+    settings.player.listClickPlayMode === "continue" ? "single" : "continue";
+  playByMode(opposite, track, index);
+};
+
+onBeforeUnmount(() => {
+  clearRowClickTimer();
+});
+
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
   collectionType: props.collectionType,
   canRemove: props.canRemove,
+  onPlay: (track) => playByMode(settings.player.listClickPlayMode, track),
   onAddToPlaylist: (track) => openPicker([track]),
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),
@@ -524,8 +609,8 @@ defineExpose({
                     ? 'bg-primary/16 border-primary/40'
                     : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
               "
-              @click="batch.active.value ? batch.toggle(item.id) : undefined"
-              @dblclick="batch.active.value ? undefined : player.playFrom(sortedItems, index)"
+              @click="onRowClick(item, index)"
+              @dblclick="onRowDblclick(item, index)"
               @contextmenu="contextTrack = item"
             >
               <!-- 序号 / 多选 -->
@@ -544,7 +629,7 @@ defineExpose({
                     ? batch.toggle(item.id)
                     : playingId === item.id
                       ? player.togglePlay()
-                      : player.playNow(item)
+                      : playByMode(settings.player.listClickPlayMode, item, index)
                 "
               >
                 <!-- 多选模式 -->

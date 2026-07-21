@@ -144,6 +144,143 @@ const hostCall = (
   });
 };
 
+/**
+ * 插件日志限流：短窗口内超限后丢弃 info/debug，warn/error 始终放行
+ * 目标是防混淆脚本刷爆主进程日志，不改变 console API 形状（可用性优先）
+ * @returns 是否允许发送该级别日志
+ */
+const createLogRateLimiter = (): ((level: "debug" | "info" | "warn" | "error") => boolean) => {
+  const WINDOW_MS = 1000;
+  const MAX_PER_WINDOW = 40;
+  let windowStart = 0;
+  let count = 0;
+  return (level) => {
+    // warn/error 始终放行，不占用窗口配额
+    if (level === "warn" || level === "error") return true;
+    const now = Date.now();
+    if (now - windowStart >= WINDOW_MS) {
+      windowStart = now;
+      count = 0;
+    }
+    count += 1;
+    return count <= MAX_PER_WINDOW;
+  };
+};
+
+/**
+ * 构造接近浏览器/Node 的 console，避免混淆脚本对 console.group.bind 一类调用崩溃
+ * （缺方法时 `undefined.bind` 会抛 TypeError: Bind must be called on a function）
+ * @param log - 插件日志接口
+ */
+const buildSandboxConsole = (log: HostApi["log"]): Console => {
+  const allow = createLogRateLimiter();
+  const write =
+    (level: "debug" | "info" | "warn" | "error") =>
+    (...args: unknown[]): void => {
+      if (!allow(level)) return;
+      log[level](...args);
+    };
+  const noop = (..._args: unknown[]): void => {};
+  // 方法均为可 bind 的真实函数，避免混淆脚本 console.xxx.bind 崩溃
+  const consoleLike = {
+    log: write("info"),
+    info: write("info"),
+    debug: write("debug"),
+    warn: write("warn"),
+    error: write("error"),
+    // 以下为 LX 混淆脚本常用 API；无独立日志通道时降级为 info / 空操作
+    group: write("info"),
+    groupCollapsed: write("info"),
+    groupEnd: noop,
+    table: write("info"),
+    dir: write("debug"),
+    dirxml: write("debug"),
+    trace: write("debug"),
+    time: noop,
+    timeEnd: noop,
+    timeLog: noop,
+    assert: (...args: unknown[]): void => {
+      if (args[0]) return;
+      if (!allow("error")) return;
+      log.error(...args.slice(1));
+    },
+    count: noop,
+    countReset: noop,
+    clear: noop,
+  };
+  return consoleLike as unknown as Console;
+};
+
+/**
+ * 显式注入常用语言内建，降低 UtilityProcess + vm 上下文与 LX 真环境的差异
+ * Node vm 多数情况下本就可解析这些标识符；显式挂上可避免个别 Electron 版本下的游离解析差异
+ */
+const buildSandboxBuiltins = (): Record<string, unknown> => {
+  const builtins: Record<string, unknown> = {
+    Object,
+    Array,
+    String,
+    Number,
+    Boolean,
+    Math,
+    JSON,
+    Date,
+    RegExp,
+    Error,
+    TypeError,
+    RangeError,
+    SyntaxError,
+    URIError,
+    EvalError,
+    ReferenceError,
+    Function,
+    parseInt,
+    parseFloat,
+    isNaN,
+    isFinite,
+    encodeURIComponent,
+    decodeURIComponent,
+    encodeURI,
+    decodeURI,
+    escape,
+    unescape,
+    Map,
+    Set,
+    WeakMap,
+    WeakSet,
+    Symbol,
+    Proxy,
+    Reflect,
+    ArrayBuffer,
+    DataView,
+    Int8Array,
+    Uint8Array,
+    Uint8ClampedArray,
+    Int16Array,
+    Uint16Array,
+    Int32Array,
+    Uint32Array,
+    Float32Array,
+    Float64Array,
+    BigInt,
+    BigInt64Array,
+    BigUint64Array,
+    Atomics,
+    Infinity,
+    NaN,
+    undefined,
+  };
+  // 这些在个别加固环境下可能不存在，存在才注入
+  if (typeof WeakRef !== "undefined") builtins.WeakRef = WeakRef;
+  if (typeof FinalizationRegistry !== "undefined") {
+    builtins.FinalizationRegistry = FinalizationRegistry;
+  }
+  if (typeof SharedArrayBuffer !== "undefined") {
+    builtins.SharedArrayBuffer = SharedArrayBuffer;
+  }
+  return builtins;
+};
+
 /** 为某记录生成会登记句柄的定时器 API（卸载时统一清） */
 const makeTimers = (record: PluginContextRecord): Record<string, unknown> => ({
   setTimeout: (cb: (...a: unknown[]) => void, ms?: number, ...args: unknown[]): NodeJS.Timeout => {
@@ -184,7 +321,9 @@ const makeTimers = (record: PluginContextRecord): Record<string, unknown> => ({
 type LoadSpec = Extract<SandboxIn, { kind: "loadPlugin" }>;
 
 /** 构造注入某插件沙箱的 splayer 对象 */
-const buildSplayer = (record: PluginContextRecord, spec: LoadSpec): HostApi => ({
+const buildSplayer = (record: PluginContextRecord, spec: LoadSpec): HostApi => {
+  const allowLog = createLogRateLimiter();
+  return {
   pluginId: spec.pluginId,
   apiLevel: spec.apiLevel,
   locale: spec.locale,
@@ -225,34 +364,42 @@ const buildSplayer = (record: PluginContextRecord, spec: LoadSpec): HostApi => (
   },
 
   log: {
-    debug: (...args) =>
+    debug: (...args) => {
+      if (!allowLog("debug")) return;
       send({
         kind: "log",
         pluginId: record.pluginId,
         level: "debug",
         args: sanitizeForIpc(args) as unknown[],
-      }),
-    info: (...args) =>
+      });
+    },
+    info: (...args) => {
+      if (!allowLog("info")) return;
       send({
         kind: "log",
         pluginId: record.pluginId,
         level: "info",
         args: sanitizeForIpc(args) as unknown[],
-      }),
-    warn: (...args) =>
+      });
+    },
+    warn: (...args) => {
+      if (!allowLog("warn")) return;
       send({
         kind: "log",
         pluginId: record.pluginId,
         level: "warn",
         args: sanitizeForIpc(args) as unknown[],
-      }),
-    error: (...args) =>
+      });
+    },
+    error: (...args) => {
+      if (!allowLog("error")) return;
       send({
         kind: "log",
         pluginId: record.pluginId,
         level: "error",
         args: sanitizeForIpc(args) as unknown[],
-      }),
+      });
+    },
   },
 
   storage: {
@@ -288,7 +435,8 @@ const buildSplayer = (record: PluginContextRecord, spec: LoadSpec): HostApi => (
     list.push(handler);
     record.settingChangeHandlers.set(key, list);
   },
-});
+  };
+};
 
 /** 把 utils 暴露给沙箱（原生 Node 模块包装，无状态可共享） */
 const buildUtils = (): object => ({
@@ -418,6 +566,7 @@ const loadPluginIntoContext = (spec: LoadSpec): void => {
     splayer,
     Buffer,
     ...timerApi,
+    ...buildSandboxBuiltins(),
     queueMicrotask,
     Promise,
     URL,
@@ -426,13 +575,7 @@ const loadPluginIntoContext = (spec: LoadSpec): void => {
     TextDecoder,
     btoa: (str: string): string => Buffer.from(str, "binary").toString("base64"),
     atob: (str: string): string => Buffer.from(str, "base64").toString("binary"),
-    console: {
-      log: splayer.log.info,
-      info: splayer.log.info,
-      debug: splayer.log.debug,
-      warn: splayer.log.warn,
-      error: splayer.log.error,
-    },
+    console: buildSandboxConsole(splayer.log),
   };
 
   installLxShim(
@@ -457,6 +600,8 @@ const loadPluginIntoContext = (spec: LoadSpec): void => {
   );
 
   sandboxGlobal.globalThis = sandboxGlobal;
+  // 部分混淆脚本同时读 global / globalThis
+  sandboxGlobal.global = sandboxGlobal;
 
   const context = vm.createContext(sandboxGlobal, {
     name: `plugin:${spec.pluginId}`,
@@ -465,7 +610,7 @@ const loadPluginIntoContext = (spec: LoadSpec): void => {
 
   try {
     const script = new vm.Script(spec.source, { filename: `plugin-${spec.pluginId}.js` });
-    script.runInContext(context, { timeout: 5_000, breakOnSigint: false });
+    script.runInContext(context, { timeout: 15_000, breakOnSigint: false });
   } catch (err) {
     disposeRecord(record);
     plugins.delete(spec.pluginId);

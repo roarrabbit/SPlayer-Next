@@ -207,6 +207,17 @@ class PluginRegistry extends EventEmitter {
     return this.runtimes.get(id);
   }
 
+  /**
+   * 读取插件安装链接：优先用户安装时的 URL，回退脚本 @updateUrl
+   * @param id - 插件 ID
+   * @returns 安装链接；无可用链接时返回 null
+   */
+  getInstallUrl(id: string): string | null {
+    const rt = this.runtimes.get(id);
+    if (!rt) return null;
+    return rt.manifest.installUrl || rt.manifest.updateUrl || null;
+  }
+
   /** 按动作选一个已就绪的插件（优先级 → 首个 ready） */
   pickForAction(action: PluginAction, source?: string): PluginRuntime | undefined {
     const priority = store.get(`plugins.priority.${action}` as never) as string[] | undefined;
@@ -233,14 +244,22 @@ class PluginRegistry extends EventEmitter {
     return this.installFromSource(raw);
   }
 
-  /** 从脚本源码安装（供本地文件、URL 下载等入口复用） */
-  async installFromSource(raw: string): Promise<PluginInfo> {
+  /**
+   * 从脚本源码安装（供本地文件、URL 下载等入口复用）
+   * @param raw - 脚本源码
+   * @param installUrl - 用户安装时使用的原始 URL；本地文件安装不传
+   */
+  async installFromSource(raw: string, installUrl?: string): Promise<PluginInfo> {
     ensureDirs();
     const { source, manifest } = loadScript(raw, false);
     // 脚本落盘（明文）
     const fileName = `${manifest.id}.js`;
     fs.writeFileSync(path.join(scriptsDir(), fileName), source, "utf-8");
     manifest.fileName = fileName;
+    // 保留/写入安装链接：新 URL 覆盖；本地重装不传则沿用旧值
+    const prevInstallUrl = this.runtimes.get(manifest.id)?.manifest.installUrl;
+    if (installUrl) manifest.installUrl = installUrl;
+    else if (prevInstallUrl) manifest.installUrl = prevInstallUrl;
 
     // 记入 manifest.json
     const stored = readStored();
@@ -359,9 +378,10 @@ class PluginRegistry extends EventEmitter {
       });
     }
 
-    // 固定文件名、保留安装时间、补更新时间
+    // 固定文件名、保留安装时间/安装链接、补更新时间
     manifest.fileName = `${id}.js`;
     manifest.installedAt = rt.manifest.installedAt;
+    if (rt.manifest.installUrl) manifest.installUrl = rt.manifest.installUrl;
     manifest.updatedAt = Date.now();
 
     fs.writeFileSync(path.join(scriptsDir(), manifest.fileName), source, "utf-8");

@@ -2,11 +2,13 @@
 import type { PluginInfo } from "@shared/types/plugin";
 import { usePluginsStore } from "@/stores/plugins";
 import { toast } from "@/composables/useToast";
+import { useCopyText } from "@/composables/useCopyText";
 import { isExternalUrl, openExternal } from "@/utils/url";
 
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
+const { copy } = useCopyText();
 const pluginsStore = usePluginsStore();
 const { sourcePlugins, controlPlugins, loaded } = storeToRefs(pluginsStore);
 
@@ -111,6 +113,20 @@ const detailDialogInfo = computed(() => {
   const all = [...sourcePlugins.value, ...controlPlugins.value];
   return all.find((info) => info.manifest.id === detailDialogId.value) ?? null;
 });
+
+
+/**
+ * 复制已安装插件的安装链接到剪贴板
+ * @param id - 插件 ID
+ */
+const handleCopyInstallUrl = async (id: string): Promise<void> => {
+  const res = await pluginsStore.getInstallUrl(id);
+  if (!res.ok || !res.url) {
+    toast.error(t("settings.plugins.copyInstallUrlFailed"));
+    return;
+  }
+  await copy(res.url);
+};
 
 const openUninstallConfirm = (id: string): void => {
   pendingUninstallId.value = id;
@@ -236,6 +252,7 @@ const refreshMarket = async (): Promise<void> => {
             @uninstall="openUninstallConfirm"
             @configure="openSettingsDialog"
             @check="handleCheckUpdate"
+            @copy-install-url="handleCopyInstallUrl"
             @view-update="openUpdateDialog"
             @detail="openDetailDialog"
           />
@@ -257,6 +274,7 @@ const refreshMarket = async (): Promise<void> => {
             @uninstall="openUninstallConfirm"
             @configure="openSettingsDialog"
             @check="handleCheckUpdate"
+            @copy-install-url="handleCopyInstallUrl"
             @view-update="openUpdateDialog"
             @detail="openDetailDialog"
           />

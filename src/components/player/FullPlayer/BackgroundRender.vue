@@ -24,6 +24,10 @@ export interface BackgroundRenderProps {
   renderScale?: number;
   /** 是否随低频节拍脉动（默认 false，关闭则不采集 FFT） */
   enableBeat?: boolean;
+  /** 跳动强度倍率，1 为默认 */
+  beatIntensity?: number;
+  /** 跳动平滑度 0..1，越大过渡越柔 */
+  beatSmoothness?: number;
   /** 渲染器类，默认为 MeshGradientRenderer */
   renderer?: new (...args: ConstructorParameters<typeof BaseRenderer>) => BaseRenderer;
 }
@@ -35,6 +39,8 @@ const props = withDefaults(defineProps<BackgroundRenderProps>(), {
   fps: 30,
   renderScale: 0.5,
   enableBeat: false,
+  beatIntensity: 1,
+  beatSmoothness: 0.5,
   renderer: () => MeshGradientRenderer,
 });
 
@@ -76,27 +82,60 @@ const syncRendererMotion = () => {
   }
 };
 
-const BASS_ATTACK = 0.45;
-const BASS_DECAY = 0.14;
-
-// 低频平滑后脉冲
-let smoothedPulse = 0;
-let lastFftFrame: readonly number[] = [];
+/** 单帧 dt 上限，防止切后台后一帧跳变 */
+const BEAT_DT_MAX = 0.05;
 
 /**
- * 从最新 FFT 帧数据计算低频音量能量值 [0.0 - 1.0]
+ * 由平滑度得到上升/回落时间常数（秒）
+ * smoothness=0.5 时约为 0.14 / 0.38（默认观感）
+ * @param smoothness - 0..1
  */
-const updateLowFreqVolume = () => {
+const beatTauFromSmoothness = (smoothness: number): { attack: number; decay: number } => {
+  const s = Math.min(1, Math.max(0, smoothness));
+  return {
+    attack: 0.05 + s * 0.18,
+    decay: 0.16 + s * 0.44,
+  };
+};
+
+// 目标脉冲（仅在 FFT 新帧时更新）与显示脉冲（每帧时间常数逼近）
+let targetPulse = 0;
+let smoothedPulse = 0;
+let lastSmoothAt = 0;
+let lastFftFrame: readonly number[] | null = null;
+
+/**
+ * 每帧更新低频音量：FFT 只改目标，显示值用时间常数连续平滑
+ * 即使 native 只按 ~50ms 推频谱，节拍仍是过渡感而不是阶跃
+ */
+const updateLowFreqVolume = (): void => {
+  const now = performance.now();
+  if (lastSmoothAt === 0) lastSmoothAt = now;
+  const dt = Math.min(BEAT_DT_MAX, Math.max(0, (now - lastSmoothAt) / 1000));
+  lastSmoothAt = now;
+
   const data = getFftFrame();
-  if (!data || data.length === 0) return;
-  if (data === lastFftFrame) return;
-  lastFftFrame = data;
+  if (data && data.length > 0 && data !== lastFftFrame) {
+    lastFftFrame = data;
+    targetPulse = getBassPulse(data);
+  }
 
-  const pulse = getBassPulse(data);
-  const smoothFactor = pulse > smoothedPulse ? BASS_ATTACK : BASS_DECAY;
-  smoothedPulse = smoothedPulse + smoothFactor * (pulse - smoothedPulse);
+  // exp 平滑：tau 越小越贴目标；上升快、回落慢；由设置「跳动平滑」控制
+  const { attack, decay } = beatTauFromSmoothness(props.beatSmoothness);
+  const tau = targetPulse > smoothedPulse ? attack : decay;
+  const alpha = 1 - Math.exp(-dt / Math.max(1e-4, tau));
+  smoothedPulse += (targetPulse - smoothedPulse) * alpha;
+  if (smoothedPulse < 0.002) smoothedPulse = 0;
 
-  bgRenderRef.value?.setLowFreqVolume(toAmllLowFreqVolume(smoothedPulse));
+  bgRenderRef.value?.setLowFreqVolume(
+    toAmllLowFreqVolume(smoothedPulse, props.beatIntensity),
+  );
+
+  // 暂停衰减结束后停 RAF，避免空转
+  if (!props.playing && smoothedPulse === 0) {
+    pauseFftLoop();
+    lastSmoothAt = 0;
+  }
 };
 
 const { resume: resumeFftLoop, pause: pauseFftLoop } = useRafFn(updateLowFreqVolume, {
@@ -129,18 +168,40 @@ const stopFftCapture = () => {
 };
 
 /**
- * 按播放状态与跳动开关同步 FFT 采集
+ * 按播放状态与跳动开关同步 FFT 采集 / 节拍平滑
+ * - 播放且开启跳动：采 FFT + 每帧平滑
+ * - 暂停仍开跳动：停 FFT，目标归零，RAF 继续让显示值回落（避免定格在最后一拍）
+ * - 关闭跳动：立即复位
  */
-const syncFftCapture = () => {
-  if (props.playing && props.enableBeat) {
-    startFftCapture();
-  } else {
+const syncFftCapture = (): void => {
+  if (!props.enableBeat) {
     stopFftCapture();
-    if (!props.enableBeat) {
-      smoothedPulse = 0;
-      lastFftFrame = [];
-      bgRenderRef.value?.setLowFreqVolume(1.0);
-    }
+    targetPulse = 0;
+    smoothedPulse = 0;
+    lastSmoothAt = 0;
+    lastFftFrame = null;
+    bgRenderRef.value?.setLowFreqVolume(1.0);
+    return;
+  }
+
+  if (props.playing) {
+    startFftCapture();
+    return;
+  }
+
+  // 暂停：不再推新频谱，但继续平滑衰减
+  targetPulse = 0;
+  lastFftFrame = null;
+  if (fftAcquired) {
+    releaseFft();
+    fftAcquired = false;
+  }
+  if (smoothedPulse > 0.002) {
+    resumeFftLoop();
+  } else {
+    pauseFftLoop();
+    lastSmoothAt = 0;
+    bgRenderRef.value?.setLowFreqVolume(1.0);
   }
 };
 

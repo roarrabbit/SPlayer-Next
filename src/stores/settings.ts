@@ -56,6 +56,8 @@ export const useSettingsStore = defineStore(
       playerBgRenderScale: 0.5,
       playerBgFreezeOnPause: false,
       playerBgBeat: false,
+      playerBgBeatIntensity: 1,
+      playerBgBeatSmoothness: 0.5,
       coverLayout: "default",
       autoCenterCover: true,
       followCoverColor: true,
@@ -71,6 +73,7 @@ export const useSettingsStore = defineStore(
       showProgressLyric: false,
       snapToLyric: false,
       showLyricInBar: true,
+      listClickPlayMode: "continue",
     });
 
     /** 强迫症设置 */
@@ -265,9 +268,21 @@ export const useSettingsStore = defineStore(
       storage: localStorage,
       omit: ["system"],
       afterHydrate: ({ store }) => {
-        const { lyric } = store as unknown as { lyric: LyricSettings };
+        const { lyric, player } = store as unknown as {
+          lyric: LyricSettings;
+          player: PlayerSettings;
+        };
         if (typeof lyric.detectBackgroundLyrics !== "boolean") {
           lyric.detectBackgroundLyrics = true;
+        }
+        if (player.listClickPlayMode !== "continue" && player.listClickPlayMode !== "single") {
+          player.listClickPlayMode = "continue";
+        }
+        if (typeof player.playerBgBeatIntensity !== "number" || Number.isNaN(player.playerBgBeatIntensity)) {
+          player.playerBgBeatIntensity = 1;
+        }
+        if (typeof player.playerBgBeatSmoothness !== "number" || Number.isNaN(player.playerBgBeatSmoothness)) {
+          player.playerBgBeatSmoothness = 0.5;
         }
         lyric.lyricSourceOrder = reconcileOrder(lyric.lyricSourceOrder, ALL_PLATFORMS);
         lyric.lyricFormatOrder = reconcileOrder(lyric.lyricFormatOrder, DEFAULT_LYRIC_FORMAT_ORDER);

@@ -1705,10 +1705,21 @@
         "homepage": "Homepage"
       },
       "grant": {
-        "network": { "label": "Network", "desc": "Can make network requests" },
-        "control": { "label": "Control", "desc": "Can control the player" },
-        "ui": { "label": "Interface", "desc": "Can extend or modify the app interface" }
-      }
+        "network": {
+          "label": "Network",
+          "desc": "Can make network requests"
+        },
+        "control": {
+          "label": "Control",
+          "desc": "Can control the player"
+        },
+        "ui": {
+          "label": "Interface",
+          "desc": "Can extend or modify the app interface"
+        }
+      },
+      "copyInstallUrl": "Copy install URL",
+      "copyInstallUrlFailed": "No install URL to copy"
     },
     "pluginManager": {
       "label": "Plugin Manager",
@@ -1849,6 +1860,20 @@
       "button": "Clear All",
       "confirmTitle": "Clear all database caches?",
       "confirmDesc": "All database caches above will be cleared. This cannot be undone."
+    },
+    "listClickPlayMode": {
+      "label": "List click action",
+      "description": "Single-click continues the list or plays only that track; double-click uses the other action",
+      "continue": "Continue list",
+      "single": "Current track only"
+    },
+    "playerBgBeatIntensity": {
+      "label": "Beat intensity",
+      "description": "How strong the fluid background reacts to the beat; 1 is default"
+    },
+    "playerBgBeatSmoothness": {
+      "label": "Beat smoothness",
+      "description": "How soft the beat transition is: lower snaps more, higher eases more"
     }
   },
   "collection": {

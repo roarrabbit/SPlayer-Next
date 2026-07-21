@@ -139,6 +139,8 @@ export interface PluginManifest {
   hash: string;
   /** 更新检查地址（来自 @updateUrl，指向 raw .js）；宿主拉取后读其 @version 与本地比对 */
   updateUrl?: string;
+  /** 用户安装时使用的原始 URL（URL/市场安装写入；本地文件安装无此字段） */
+  installUrl?: string;
   /** 更新说明（来自 @changelog）；检查到新版时取远端这一份展示在卡片上 */
   changelog?: string;
   /** 安装时间戳（ms） */
@@ -538,6 +540,8 @@ export interface MarketPlugin {
 export interface PluginsApi {
   /** 列出所有已安装插件 */
   list: () => Promise<PluginInfo[]>;
+  /** 读取已安装插件的安装链接（用户输入或市场 URL） */
+  getInstallUrl: (id: string) => Promise<{ ok: boolean; url?: string; error?: string }>;
   /** 从指定路径导入插件（进阶：一般由 pickAndInstall 触发） */
   install: (filePath: string) => Promise<{ ok: boolean; id?: string; error?: string }>;
   /** 弹出原生文件选择框导入插件 */

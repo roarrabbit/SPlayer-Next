@@ -91,6 +91,16 @@ export const usePluginsStore = defineStore("plugins", () => {
   };
 
   /**
+   * 读取已安装插件的安装链接
+   * @param id - 插件 ID
+   */
+  const getInstallUrl = async (
+    id: string,
+  ): Promise<{ ok: boolean; url?: string; error?: string }> => {
+    return window.api.plugins.getInstallUrl(id);
+  };
+
+  /**
    * 启用或禁用指定插件
    * @param id - 插件 ID
    * @param enabled - 目标启用状态
@@ -172,6 +182,7 @@ export const usePluginsStore = defineStore("plugins", () => {
     pickAndInstall,
     installFromUrl,
     uninstall,
+    getInstallUrl,
     setEnabled,
     setSetting,
     checkUpdate,

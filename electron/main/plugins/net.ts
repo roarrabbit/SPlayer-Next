@@ -10,6 +10,7 @@ import type { HostRequestOptions, HostRequestResult, MarketPlugin } from "@share
 import {
   REQUEST_DEFAULT_TIMEOUT,
   REQUEST_MAX_TIMEOUT,
+  REQUEST_MAX_BODY_SIZE,
   INSTALL_URL_MAX_SIZE,
   INSTALL_URL_TIMEOUT,
   PLUGIN_REGISTRY_URL,
@@ -116,19 +117,43 @@ export const hostRequest = async (
       headers[key] = value;
     });
 
+    const lenHeader = resp.headers.get("content-length");
+    if (lenHeader && Number(lenHeader) > REQUEST_MAX_BODY_SIZE) {
+      throw Object.assign(new Error("response too large"), {
+        code: PluginErrorCodes.NETWORK_ERROR,
+      });
+    }
+
     let responseBody: unknown;
     const type = opts.responseType ?? "text";
     if (type === "arraybuffer") {
-      responseBody = new Uint8Array(await resp.arrayBuffer());
+      const buf = await resp.arrayBuffer();
+      if (buf.byteLength > REQUEST_MAX_BODY_SIZE) {
+        throw Object.assign(new Error("response too large"), {
+          code: PluginErrorCodes.NETWORK_ERROR,
+        });
+      }
+      responseBody = new Uint8Array(buf);
     } else if (type === "json") {
       const text = await resp.text();
+      if (text.length > REQUEST_MAX_BODY_SIZE) {
+        throw Object.assign(new Error("response too large"), {
+          code: PluginErrorCodes.NETWORK_ERROR,
+        });
+      }
       try {
         responseBody = JSON.parse(text);
       } catch {
         responseBody = text;
       }
     } else {
-      responseBody = await resp.text();
+      const text = await resp.text();
+      if (text.length > REQUEST_MAX_BODY_SIZE) {
+        throw Object.assign(new Error("response too large"), {
+          code: PluginErrorCodes.NETWORK_ERROR,
+        });
+      }
+      responseBody = text;
     }
 
     return { status: resp.status, headers, body: responseBody };

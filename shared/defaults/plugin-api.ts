@@ -19,6 +19,9 @@ export const REQUEST_MAX_TIMEOUT = 60_000;
 /** 网络请求默认超时 */
 export const REQUEST_DEFAULT_TIMEOUT = 15_000;
 
+/** 插件 request 响应体大小上限（字节）；过大响应截断前拒绝，防内存炸 */
+export const REQUEST_MAX_BODY_SIZE = 20_000_000;
+
 /** 插件加载超时（从 fork 到收到 ready） */
 export const PLUGIN_LOAD_TIMEOUT = 10_000;
 

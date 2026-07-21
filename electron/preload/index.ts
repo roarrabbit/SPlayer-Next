@@ -296,6 +296,8 @@ const api = {
   plugins: {
     // 列出所有已安装插件
     list: () => ipcRenderer.invoke("plugin:list"),
+    // 读取已安装插件的安装链接
+    getInstallUrl: (id: string) => ipcRenderer.invoke("plugin:getInstallUrl", id),
     // 从指定路径导入插件
     install: (filePath: string) => ipcRenderer.invoke("plugin:install", filePath),
     // 弹出原生文件选择框导入插件
