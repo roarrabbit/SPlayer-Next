@@ -34,7 +34,6 @@
 
 - **本仓库**：<https://github.com/roarrabbit/SPlayer-Next>
 - **上游仓库**：<https://github.com/SPlayer-Dev/SPlayer-Next>
-- 应用内 **设置 → 关于软件** 展示名为 **SPlayer-Next Fork**，开发人员列表中二次开发者固定排在 Author 之后。
 
 ## 功能特性
 
