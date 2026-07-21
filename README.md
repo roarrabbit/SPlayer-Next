@@ -10,9 +10,7 @@
   本仓库是
   「<a href="https://github.com/SPlayer-Dev/SPlayer">SPlayer</a>」继任版
   「<a href="https://github.com/SPlayer-Dev/SPlayer-Next">SPlayer-Next</a>」
-  的 <strong>Fork</strong>，由
-  <a href="https://github.com/roarrabbit">roarrabbit</a>
-  进行二次开发与维护。
+  的 <strong>Fork</strong>。
 </p>
 
 [![Stars](https://img.shields.io/github/stars/roarrabbit/SPlayer-Next?style=flat)](https://github.com/roarrabbit/SPlayer-Next/stargazers)
