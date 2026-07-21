@@ -30,7 +30,7 @@
 | 角色 | 账号 |
 | --- | --- |
 | Author（上游作者） | [imsyy](https://github.com/imsyy) / [SPlayer-Dev](https://github.com/SPlayer-Dev) |
-| Secondary Developer（二次开发） | [roarrabbit](https://github.com/roarrabbit) |
+| Secondary Author（第二作者） | [roarrabbit](https://github.com/roarrabbit) |
 
 - **本仓库**：<https://github.com/roarrabbit/SPlayer-Next>
 - **上游仓库**：<https://github.com/SPlayer-Dev/SPlayer-Next>

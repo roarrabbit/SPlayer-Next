@@ -64,7 +64,7 @@ const FORK_DEVELOPER: Contributor & { role: string } = {
   login: "roarrabbit",
   htmlUrl: "https://github.com/roarrabbit",
   avatar: "https://avatars.githubusercontent.com/u/52274334",
-  role: "Secondary Developer",
+  role: "Secondary Author",
 };
 
 /** 开发者角色文案 */
@@ -86,7 +86,7 @@ const hasMoreDevelopers = computed(() => developers.value.length > 6);
 onMounted(async () => {
   try {
     const list = await getContributors();
-    // Author 第一、二次开发者第二，其余去重后接上
+    // Author 第一、Secondary Author 第二，其余去重后接上
     const pinnedLogins = new Set([COPYRIGHT_HOLDER, FORK_DEVELOPER.login]);
     const author =
       list.find((d) => d.login === COPYRIGHT_HOLDER) ??
