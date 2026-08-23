@@ -91,10 +91,82 @@ export interface DynamicIslandApi {
   resize: (width: number) => void;
   /** 渲染端上报目标高度 */
   setHeight: (height: number) => void;
+  /** 渲染端上报目标高度（弹性动画：主进程按 easeOutBack 平滑过渡，用于灵动岛液体展开/收起） */
+  setHeightAnimated: (height: number) => void;
   /** 查询当前吸附模式（HMR 后主进程不会主动重发，需主动拉取） */
   getMode: () => Promise<"snapped" | "floating">;
   /** 订阅吸附模式变化 */
   onModeChange: (callback: (mode: "snapped" | "floating") => void) => () => void;
+  /** 查询灵动岛窗口当前是否可见（渲染端挂载时兜底初始态） */
+  getVisibility: () => Promise<boolean>;
+  /** 订阅窗口显隐变化（主进程播放/暂停推送 → 驱动 Gooey 液体弹出/收回） */
+  onVisibility: (callback: (visible: boolean) => void) => () => void;
   /** 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏） */
   onCursorInside: (callback: (inside: boolean) => void) => () => void;
+  /** 订阅主进程推送的 FFT 频谱帧（128 段对数频谱，仅播放且窗口可见时推送） */
+  onFftData: (callback: (data: number[]) => void) => () => void;
+  /** 实时下发几何调试参数到真实灵动岛窗口 */
+  setDebugGeom: (params: DynamicIslandDebugGeom) => void;
+  /** 订阅几何调试参数变化（灵动岛渲染端据此实时调整布局） */
+  onDebugGeom: (callback: (params: DynamicIslandDebugGeom) => void) => () => void;
+  /** 打开/关闭几何调试控制窗 */
+  toggleDebugPanel: () => void;
+}
+
+/** 灵动岛几何调试参数（实时驱动真实窗口布局） */
+export interface DynamicIslandDebugGeom {
+  /** 岛宽度（窗口宽度） */
+  islandW: number;
+  /** 顶部区高度（封面+频谱） */
+  topH: number;
+  /** 歌词行高度 */
+  lyricH: number;
+  /** 无歌词时岛高度（关闭歌词后收回，默认=顶部区高度） */
+  noLyricH?: number;
+  /** 歌词字号（几何调试可调，调好后落地为常量） */
+  lyricFontSize?: number;
+  /** 封面尺寸（正方形边长） */
+  coverSize: number;
+  /** 频谱画布宽度 */
+  specW: number;
+  /** 频谱画布高度 */
+  specH: number;
+  /** 频谱柱数 */
+  barCount: number;
+  /** 频谱柱间隙（px，越大柱越细） */
+  barGap: number;
+  /** 岛窗口位置 x（相对屏幕，0 表示用默认居中位置） */
+  islandX: number;
+  /** 岛窗口位置 y（相对屏幕，0 表示用默认居中位置） */
+  islandY: number;
+  /** 封面在顶部区内的左 margin（px） */
+  coverMarginLeft: number;
+  /** 封面在顶部区内的上 margin（px） */
+  coverMarginTop: number;
+  /** 频谱在顶部区内的右 margin（px） */
+  spectrumMarginRight: number;
+  /** 频谱在顶部区内的上 margin（px） */
+  spectrumMarginTop: number;
+  /** 歌词在歌词行内的左 margin（px） */
+  lyricMarginLeft: number;
+  /** 歌词在歌词行内的右 margin（px） */
+  lyricMarginRight: number;
+  /** 封面 X 偏移（px，相对 flex 默认位置；正=右，负=左） */
+  coverX: number;
+  /** 封面 Y 偏移（px；正=下，负=上） */
+  coverY: number;
+  /** 封面宽度（px） */
+  coverW: number;
+  /** 封面高度（px） */
+  coverH: number;
+  /** 频谱 X 偏移（px） */
+  specX: number;
+  /** 频谱 Y 偏移（px） */
+  specY: number;
+  /** 歌词 X 偏移（px） */
+  lyricX: number;
+  /** 歌词 Y 偏移（px） */
+  lyricY: number;
+  /** 歌词宽度（px；0=随岛宽自动） */
+  lyricW: number;
 }

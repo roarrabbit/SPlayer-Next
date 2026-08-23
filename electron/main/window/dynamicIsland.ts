@@ -8,6 +8,8 @@ import { isMac } from "@main/utils/config";
 import { setTrayDynamicIsland } from "@main/services/tray";
 import { isAppQuitting } from "@main/utils/lifecycle";
 import { DYNAMIC_ISLAND_BASE_HEIGHT } from "@shared/defaults/settings";
+import { systemLog } from "@main/utils/logger";
+import { isPlaying, isTrackLoading } from "@main/services/nowPlaying";
 
 let dynamicIslandWindow: BrowserWindow | null = null;
 
@@ -25,22 +27,23 @@ const RETINA_NOTCH_WIDTH = RETINA_NOTCH_BODY_WIDTH + NOTCH_SIDE_OVERHANG * 2;
 const RETINA_NOTCH_HEIGHT = 29;
 /** 软件黑色区域贴住屏幕顶边，避免和物理刘海之间出现缝隙 */
 const NOTCH_TOP_OFFSET = 0;
-/** 顶部额外填充：窗口上移到顶边后保持底部视觉位置不抖动 */
-const NOTCH_TOP_FILL = 3;
 /** 高度安全边界：渲染端上报值受这里 clamp，避免极端值导致窗口异常 */
 const MIN_HEIGHT = 14;
 /** 高度上限：覆盖 200% 缩放主行（80px）+ 后续双行副行余量，留足安全空间 */
 const MAX_HEIGHT = 200;
-/** 宽度上限：允许从真实刘海向两侧扩展，但避免长歌词撑成横条 */
-const MAX_WIDTH = 620;
-/** 宽度相对屏幕上限 */
-const MAX_WIDTH_RATIO = 0.55;
 /** 吸附判定阈值：拖拽释放时距顶部小于此值则重新吸附 */
 const SNAP_THRESHOLD = 8;
+/** 吸附判定用 Y 偏移：窗口贴合顶边后距屏幕顶边的真实间隙 */
+const SNAP_Y_OFFSET = 22;
+/** 灵动岛固定 Y 偏移（用户已调好，配合 BoringNotch 贴刘海；相对 wa.y+SNAP_Y_OFFSET 基准） */
+const ISLAND_FIXED_OFFSET_Y = -61;
 /** 初始宽度（渲染端上报实际宽度前的占位） */
-const INITIAL_WIDTH = 200;
+const INITIAL_WIDTH = 191;
 /** 光标位置轮询间隔（ms） */
 const CURSOR_POLL_MS = 150;
+/** 光标「悬停」判定外扩缓冲（px）：鼠标尚未进入窗口、仅在周边该距离内即预判为悬停，
+ *  提前触发隐藏，避免鼠标真正移到岛上方才突然变透明，产生「预判」的顺滑感 */
+const CURSOR_INSIDE_PAD = 70;
 
 /**
  * 权威尺寸缓存
@@ -48,9 +51,18 @@ const CURSOR_POLL_MS = 150;
  * 避免 Windows 高 DPI 下 DIP↔物理像素有损回环造成尺寸漂移
  */
 const cachedSize = { width: INITIAL_WIDTH, height: 40 };
+/** 权威尺寸缓存（供 IPC 处理器直接读写宽高，避免 getBounds 回写漂移） */
+export { cachedSize };
 
 /** 当前是否启用刘海融合，仅 macOS 生效 */
 const isNotchFusionEnabled = (): boolean => isMac && store.get("dynamicIsland").notchFusion;
+
+/**
+ * 灵动岛窗口置顶级别：
+ * macOS 用 screen-saver（屏保级，高于普通应用窗口、在菜单栏之下，配合
+ * setIgnoreMouseEvents 直通不影响菜单栏点击）；其他平台回退 floating。
+ */
+const ISLAND_AOT_LEVEL: "screen-saver" | "floating" = isMac ? "screen-saver" : "floating";
 
 /** 将任意数字 clamp 到合法高度区间 */
 const clampHeight = (h: number): number =>
@@ -64,6 +76,21 @@ const clampHeight = (h: number): number =>
 const getNotchMetrics = (
   display: Electron.Display,
 ): { width: number; height: number; topOffset: number } => {
+  // BoringNotch 方式：用系统辅助区域 API 计算真实刘海宽度/高度
+  // 这些字段属于较新 Electron 的 Display 扩展，这里做类型收窄
+  const d = display as Electron.Display & {
+    auxiliaryTopLeftArea?: { width: number };
+    auxiliaryTopRightArea?: { width: number };
+    safeAreaInsets?: { top: number };
+  };
+  const tl = d.auxiliaryTopLeftArea;
+  const tr = d.auxiliaryTopRightArea;
+  if (tl && tr) {
+    const width = Math.round(display.size.width - tl.width - tr.width + 4);
+    const height = Math.round(d.safeAreaInsets?.top || RETINA_NOTCH_HEIGHT);
+    systemLog.info(`[dynamic-island] real notch metrics: ${width}x${height}`);
+    return { width, height, topOffset: NOTCH_TOP_OFFSET };
+  }
   const scaleFactor = Math.max(1, display.scaleFactor || 1);
   if (Math.abs(scaleFactor - 2) < 0.25) {
     return {
@@ -85,15 +112,7 @@ const getNotchMetrics = (
  * @returns 合法宽度区间
  */
 const getWidthLimits = (display: Electron.Display): { min: number; max: number } => {
-  if (!isNotchFusionEnabled()) {
-    return { min: 1, max: display.workArea.width };
-  }
-  const notch = getNotchMetrics(display);
-  const max = Math.max(
-    notch.width,
-    Math.min(MAX_WIDTH, Math.floor(display.bounds.width * MAX_WIDTH_RATIO)),
-  );
-  return { min: notch.width, max };
+  return { min: 40, max: display.workArea.width };
 };
 
 /** 将任意数字 clamp 到合法宽度区间 */
@@ -152,23 +171,27 @@ const computeSnappedPos = (
   }
 
   const bounds = display.bounds;
+  const wa = display.workArea;
   const centerX = bounds.x + Math.round(bounds.width / 2);
   const leftFromCenter = centerX - Math.round(cachedSize.width / 2);
   const x = Math.max(
     bounds.x,
     Math.min(bounds.x + bounds.width - cachedSize.width, leftFromCenter),
   );
-  return { x, y: bounds.y + NOTCH_TOP_OFFSET };
+  // Y 用与调试台 setDebugGeom 完全一致的公式：wa.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y，
+  // 使切歌/初始化/重定位都落在用户固定的 islandY 位置，避免切歌时跳回默认吸附位。
+  return { x, y: wa.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y };
 };
 
 /**
  * 应用窗口置顶
+ * macOS 使用屏保级 screen-saver（高于普通窗口、菜单栏仍可点），Windows 回退 floating
  * @param alwaysOnTop 是否置顶
  */
 export const applyDynamicIslandAlwaysOnTop = (alwaysOnTop: boolean): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
-  win.setAlwaysOnTop(alwaysOnTop, "screen-saver");
+  win.setAlwaysOnTop(alwaysOnTop, ISLAND_AOT_LEVEL);
 };
 
 /**
@@ -183,7 +206,10 @@ const isCursorInsideBounds = (): boolean => {
   const cursor = screen.getCursorScreenPoint();
   const b = dynamicIslandWindow.getBounds();
   return (
-    cursor.x >= b.x && cursor.x < b.x + b.width && cursor.y >= b.y && cursor.y < b.y + b.height
+    cursor.x >= b.x - CURSOR_INSIDE_PAD &&
+    cursor.x < b.x + b.width + CURSOR_INSIDE_PAD &&
+    cursor.y >= b.y - CURSOR_INSIDE_PAD &&
+    cursor.y < b.y + b.height + CURSOR_INSIDE_PAD
   );
 };
 
@@ -312,13 +338,87 @@ export const applyDynamicIslandHeight = (height: number): void => {
   const h = clampHeight(height);
   cachedSize.height = h;
   const saved = store.get("windowStates.dynamicIsland");
-  if (saved.mode === "snapped") {
+  if (saved.mode === "snapped" || isNotchFusionEnabled()) {
     const pos = computeSnappedPos();
     win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: h });
   } else {
     const bounds = win.getBounds();
     win.setBounds({ x: bounds.x, y: bounds.y, width: cachedSize.width, height: h });
   }
+};
+
+/**
+ * 弹簧动画版高度：灵动岛展开/收起时的窗口高度动画（渲染端液体层已改"展开到位 + jelly
+ * 回弹"两段式；此处弹簧仅用于 showLyric 开关时的窗口高度弹性过渡，与液体 blob 节奏解耦）。
+ * 吸附态走 computeSnappedPos 贴合刘海；浮动态保持中心点。
+ */
+const HEIGHT_SPRING_OPEN = { omega: 7.0, zeta: 0.45 };
+const HEIGHT_SPRING_CLOSE = { omega: 9, zeta: 0.6 };
+const springStep = (t: number, omega: number, zeta: number): number => {
+  const s = Math.sqrt(Math.max(0.0001, 1 - zeta * zeta));
+  const wd = omega * s;
+  const exp = Math.exp(-zeta * omega * t);
+  return 1 - exp * (Math.cos(wd * t) + (zeta / s) * Math.sin(wd * t));
+};
+const springSettle = (omega: number, zeta: number): number => {
+  for (let t = 0.02; t < 6; t += 0.02) {
+    if (Math.abs(springStep(t, omega, zeta) - 1) < 0.001) return t;
+  }
+  return 2;
+};
+let heightAnimTimer: ReturnType<typeof setInterval> | null = null;
+
+export const applyDynamicIslandHeightAnimated = (targetHeight: number): void => {
+  const win = getDynamicIslandWindow();
+  if (!win) return;
+  const target = clampHeight(targetHeight);
+  if (heightAnimTimer) {
+    clearInterval(heightAnimTimer);
+    heightAnimTimer = null;
+  }
+  const start = cachedSize.height;
+  if (start === target) return;
+  const { omega, zeta } = target > start ? HEIGHT_SPRING_OPEN : HEIGHT_SPRING_CLOSE;
+  const settle = springSettle(omega, zeta);
+  const startTime = Date.now();
+  heightAnimTimer = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    if (elapsed >= settle) {
+      cachedSize.height = target;
+      const saved = store.get("windowStates.dynamicIsland");
+      if (saved.mode === "snapped" || isNotchFusionEnabled()) {
+        const pos = computeSnappedPos();
+        win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: target });
+      } else {
+        const b = win.getBounds();
+        win.setBounds({ x: b.x, y: b.y, width: cachedSize.width, height: target });
+      }
+      if (heightAnimTimer) clearInterval(heightAnimTimer);
+      heightAnimTimer = null;
+      return;
+    }
+    const p = springStep(elapsed, omega, zeta);
+    const h = Math.round(start + (target - start) * p);
+    cachedSize.height = h;
+    const saved = store.get("windowStates.dynamicIsland");
+    if (saved.mode === "snapped" || isNotchFusionEnabled()) {
+      const pos = computeSnappedPos();
+      win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: h });
+    } else {
+      const b = win.getBounds();
+      win.setBounds({ x: b.x, y: b.y, width: cachedSize.width, height: h });
+    }
+  }, 16);
+};
+
+/**
+ * 从配置计算窗口宽度: default=324 / wide=236(仅歌词) / custom=customWidth
+ */
+export const getDynamicIslandWidthFromConfig = (): number => {
+  const cfg = store.get("dynamicIsland") || {};
+  if (cfg.widthMode === "wide") return 236;
+  if (cfg.widthMode === "custom") return cfg.customWidth || 240;
+  return 324;
 };
 
 /**
@@ -366,10 +466,10 @@ export const moveDynamicIslandWindow = (x: number, y: number): void => {
     y: ty + Math.round(cachedSize.height / 2),
   });
   const wa = display.workArea;
-  const snapY = isNotchFusionEnabled() ? display.bounds.y + NOTCH_TOP_OFFSET : wa.y;
-  ty = Math.max(snapY, Math.min(wa.y + wa.height - cachedSize.height, ty));
+  const maxTy = wa.y + (wa.height || display.bounds.height) - cachedSize.height;
+  ty = Math.min(maxTy, ty);
   win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
-  broadcastMode(ty <= snapY ? "snapped" : "floating");
+  broadcastMode(ty <= display.bounds.y + NOTCH_TOP_OFFSET ? "snapped" : "floating");
 };
 
 /** 当前广播过的吸附模式，用于跨阈值时去抖 */
@@ -442,8 +542,7 @@ export const saveDynamicIslandState = (): void => {
 /** 创建灵动岛窗口，如果窗口已存在则显示并聚焦 */
 export const createDynamicIslandWindow = (): BrowserWindow => {
   if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) {
-    dynamicIslandWindow.show();
-    dynamicIslandWindow.focus();
+    syncDynamicIslandVisibility();
     return dynamicIslandWindow;
   }
   const config = store.get("dynamicIsland");
@@ -455,12 +554,10 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
     !fusionEnabled && saved.mode === "floating" && saved.x !== null && saved.y !== null
       ? { x: saved.x, y: saved.y }
       : null;
-  const initialNotch = getNotchMetrics(initialDisplay);
-  cachedSize.width = clampWidth(INITIAL_WIDTH, initialDisplay);
-  cachedSize.height = clampHeight(
-    (floatingPos ? 0 : fusionEnabled ? initialNotch.height + NOTCH_TOP_FILL : 0) +
-      DYNAMIC_ISLAND_BASE_HEIGHT * config.scale,
-  );
+  // 真实刘海尺寸仅用于日志/后续定位，当前高度以基准高度为准（与打包产物一致）
+  void getNotchMetrics(initialDisplay);
+  cachedSize.width = clampWidth(getDynamicIslandWidthFromConfig(), initialDisplay);
+  cachedSize.height = clampHeight(DYNAMIC_ISLAND_BASE_HEIGHT * config.scale);
 
   let initialPos: { x: number; y: number };
   if (floatingPos) {
@@ -496,6 +593,7 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
   dynamicIslandWindow = createWindow({
     width: cachedSize.width,
     height: cachedSize.height,
+    show: false,
     minWidth: 1,
     minHeight: 1,
     x: initialPos.x,
@@ -516,6 +614,9 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
     webPreferences: {
       disableDialogs: true,
       zoomFactor: 1.0,
+      // 关闭后台节流：窗口隐藏时渲染端必须继续运行，
+      // 否则 Gooey scaleY 动画/transition 在显示瞬间被判已完成 → 闪现/黑屏。
+      backgroundThrottling: false,
     },
   });
 
@@ -534,16 +635,18 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
     const currentSaved = store.get("windowStates.dynamicIsland");
     lastBroadcastMode = null;
     broadcastMode(currentSaved.mode === "floating" ? "floating" : "snapped");
+    // 同步播放态基线：窗口加载完成即视为已同步过 visibility，
+    // 避免加载期间（渲染端 onMounted 已自行弹出一次）首次 sync 再推一次
+    // visibility:true，导致"先展开 → 闪缩 → 再弹出"的重复动画。
+    lastIslandPlaying = isPlaying();
   });
 
   dynamicIslandWindow.once("ready-to-show", () => {
     if (!dynamicIslandWindow) return;
-    dynamicIslandWindow.show();
-    dynamicIslandWindow.setAlwaysOnTop(config.alwaysOnTop, "screen-saver");
-    if (config.nonOcclusive) {
-      dynamicIslandWindow.setIgnoreMouseEvents(true, { forward: true });
-      startCursorPolling();
-    }
+    // 仅非遮挡模式才忽略鼠标事件并轮询光标；无条件开启会导致普通模式
+    // 点击穿透、光标靠近即被判为悬停而整体透明（表现为无法点击/关闭）
+    applyDynamicIslandNonOcclusive(store.get("dynamicIsland").nonOcclusive === true);
+    syncDynamicIslandVisibility();
   });
 
   setTrayDynamicIsland(true);
@@ -566,6 +669,7 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
 
 /** 关闭灵动岛窗口 */
 export const closeDynamicIslandWindow = (): void => {
+  cancelIslandHide();
   if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) {
     dynamicIslandWindow.close();
   }
@@ -585,4 +689,63 @@ export const toggleDynamicIslandWindow = (): boolean => {
 export const getDynamicIslandWindow = (): BrowserWindow | null => {
   if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) return dynamicIslandWindow;
   return null;
+};
+
+// 灵动岛默认常驻：暂停不再自动隐藏窗口（由渲染端弹性缩回刘海小药丸）。
+// 保留 cancelIslandHide 兼容旧调用（空操作）。
+const cancelIslandHide = (): void => {
+  /* 常驻模式无延迟隐藏任务，保留函数以兼容旧调用点 */
+};
+/** 上一次同步时的播放态，用于让 visibility 同步幂等（避免 5Hz 进度同步重复吸附覆盖调试位置） */
+let lastIslandPlaying = false;
+
+export const syncDynamicIslandVisibility = (): void => {
+  const win = getDynamicIslandWindow();
+  if (!win || win.isDestroyed()) return;
+  const playing = isPlaying();
+  // 切歌 / 加载中的瞬态非播放态（loading 等）不算暂停：岛保持现状不切换，
+  // 基线 lastIslandPlaying 也不更新，加载完成后恢复 playing 时不会误判为「恢复播放」
+  if (!playing && isTrackLoading()) return;
+  if (playing) {
+    // 恢复播放：取消任何待隐藏，立即显示（内容由协调器在 openLead 后平滑 reveal）
+    cancelIslandHide();
+    win.showInactive();
+    win.setAlwaysOnTop(true, ISLAND_AOT_LEVEL);
+    // 仅在「非播放 → 播放」切换时吸附一次（对齐刘海）。播放中的 5Hz 进度同步会反复
+    // 调用本函数，若每次都 setBounds 会把几何调试台设置的 islandY 负偏移拉回默认值。
+    if (!lastIslandPlaying) {
+      // 通知渲染端：灵动岛出现 → Gooey 液体弹性弹出（scaleY 起跳）
+      try {
+        win.webContents.send("dynamicIsland:visibility", true);
+      } catch {
+        /* webContents 未就绪则忽略；渲染端 onMounted 会用 getVisibility 兜底 */
+      }
+      // macOS 会把位于菜单栏区域(availTop=39)内的窗口吸附到 availTop，
+      // 导致贴合的 Y 值(如36)在显示后被覆盖。显示后强制 setBounds 拉回目标位置。
+      const applySnapPos = (): void => {
+        if (!win || win.isDestroyed()) return;
+        const pos = computeSnappedPos();
+        win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: cachedSize.height });
+      };
+      applySnapPos();
+      setTimeout(applySnapPos, 150);
+    }
+  } else {
+    // 暂停：灵动岛默认常驻 —— 只通知渲染端液体缩回刘海小药丸，**不隐藏窗口**。
+    // （原自动 hide 是"黑屏几秒后闪现消失"的根源；现在岛保持打开，播放再弹出。）
+    if (win.isVisible() && lastIslandPlaying) {
+      try {
+        win.webContents.send("dynamicIsland:visibility", false);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  lastIslandPlaying = playing;
+};
+
+/** 查询灵动岛窗口当前是否可见（渲染端 onMounted 兜底初始态） */
+export const getDynamicIslandVisible = (): boolean => {
+  const win = getDynamicIslandWindow();
+  return !!win && !win.isDestroyed() && win.isVisible();
 };

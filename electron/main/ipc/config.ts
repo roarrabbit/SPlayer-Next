@@ -24,7 +24,9 @@ import {
   applyDynamicIslandSnapCentered,
   applyDynamicIslandNotchFusion,
   applyDynamicIslandNonOcclusive,
+  applyDynamicIslandWidth,
   applyTaskbarLyricLayout,
+  getDynamicIslandWidthFromConfig,
 } from "@main/window";
 import { broadcast } from "@main/utils/broadcast";
 import { isWin } from "@main/utils/config";
@@ -93,6 +95,10 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
       break;
     case "dynamicIsland.nonOcclusive":
       applyDynamicIslandNonOcclusive(value as boolean);
+      break;
+    case "dynamicIsland.widthMode":
+    case "dynamicIsland.customWidth":
+      applyDynamicIslandWidth(getDynamicIslandWidthFromConfig());
       break;
     case "taskbarLyric.position":
     case "taskbarLyric.autoMaxWidth":

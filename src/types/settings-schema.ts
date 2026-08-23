@@ -5,6 +5,7 @@ export type SettingWidgetType =
   | "switch"
   | "select"
   | "slider"
+  | "sliderInput"
   | "color"
   | "button"
   | "custom"

@@ -16,6 +16,7 @@ import type { TagEditRequest } from "@shared/types/tagEditor";
 import type { UpdateEvent } from "@shared/types/update";
 import type { CloudUploadProgress } from "@shared/types/cloudUpload";
 import type { MusicCommentQuery } from "@shared/types/comment";
+import type { DynamicIslandDebugGeom } from "@shared/types/window";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -50,6 +51,8 @@ const api = {
     pause: () => ipcRenderer.invoke("player:pause"),
     // 停止播放
     stop: () => ipcRenderer.invoke("player:stop"),
+    // 标记曲目切换中：加载瞬态不算暂停，灵动岛等保持现状不切换
+    setTrackLoading: (loading: boolean) => ipcRenderer.send("player:set-track-loading", loading),
     // 跳转到指定位置（毫秒）
     seek: (position: number) => ipcRenderer.invoke("player:seek", position),
     // 设置音量（0.0 ~ 1.0）
@@ -264,6 +267,8 @@ const api = {
     resize: (width: number) => ipcRenderer.send("dynamicIsland:resize", width),
     // 渲染端上报目标高度
     setHeight: (height: number) => ipcRenderer.send("dynamicIsland:setHeight", height),
+    // 弹性动画版高度（主进程 easeOutBack 平滑过渡，液体展开/收起用）
+    setHeightAnimated: (height: number) => ipcRenderer.send("dynamicIsland:setHeightAnimated", height),
     // 查询当前吸附模式
     getMode: () => ipcRenderer.invoke("dynamicIsland:getMode"),
     // 订阅吸附模式变化：snapped（顶部居中）/ floating（自由位置）
@@ -272,6 +277,29 @@ const api = {
     // 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏）
     onCursorInside: (callback: (inside: boolean) => void) =>
       subscribe<boolean>("dynamicIsland:cursorInside", callback),
+    // 订阅主进程推送的 FFT 频谱帧（128 段对数频谱，仅播放且窗口可见时推送）
+    onFftData: (callback: (data: number[]) => void) =>
+      subscribe<number[]>("dynamicIsland:fftData", callback),
+    // 实时下发几何调试参数到真实灵动岛窗口
+    setDebugGeom: (params: DynamicIslandDebugGeom) =>
+      ipcRenderer.send("dynamicIsland:setDebugGeom", params),
+    // 订阅几何调试参数变化（灵动岛渲染端据此实时调整布局）
+    onDebugGeom: (callback: (params: DynamicIslandDebugGeom) => void) =>
+      subscribe<DynamicIslandDebugGeom>("dynamicIsland:debugGeom", callback),
+    // 打开/关闭几何调试控制窗
+    toggleDebugPanel: () => ipcRenderer.send("dynamicIsland:toggleDebugPanel"),
+    // 一次性设置位置和尺寸（绕过所有中间逻辑）
+    setBounds: (x: number, y: number, w: number, h: number) =>
+      ipcRenderer.send("dynamicIsland:setBounds", x, y, w, h),
+    // 查询当前权威宽度（真实刘海宽度）
+    getWidth: () => ipcRenderer.invoke("dynamicIsland:getWidth"),
+    // 停止播放时隐藏 / 恢复播放时显示（只 hide/show，不销毁窗口）
+    setVisible: (visible: boolean) => ipcRenderer.send("dynamicIsland:setVisible", visible),
+    // 查询灵动岛窗口当前是否可见（初始态兜底）
+    getVisibility: () => ipcRenderer.invoke("dynamicIsland:getVisibility"),
+    // 订阅窗口显隐变化（主进程播放/暂停推送 → 驱动 Gooey 液体弹出/收回）
+    onVisibility: (callback: (visible: boolean) => void) =>
+      subscribe<boolean>("dynamicIsland:visibility", callback),
   },
   taskbarLyric: {
     // 订阅布局变化（锚定方向、是否居中、系统类型、任务栏主题）

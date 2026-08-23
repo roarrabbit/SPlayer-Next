@@ -1209,6 +1209,10 @@
       "label": "未播放颜色",
       "description": "尚未唱到部分及艺术家名的文字颜色"
     },
+    "dynamicIslandShowLyric": {
+      "label": "显示歌词",
+      "description": "关闭后隐藏歌词行并收回灵动岛下方区域"
+    },
     "dynamicIslandBackgroundColor": {
       "label": "背景颜色",
       "description": "窗口背板的颜色与透明度"
@@ -1224,6 +1228,13 @@
     "dynamicIslandSnapCentered": {
       "label": "吸附时居中",
       "description": "关闭后吸附到顶部时保留拖动到的水平位置"
+    },
+    "dynamicIslandWidthMode": {
+      "label": "窗口宽度",
+      "description": "选择灵动岛窗口的宽度模式",
+      "default": "默认（324）",
+      "wide": "仅歌词（236）",
+      "custom": "自定义"
     },
     "dynamicIslandNonOcclusive": {
       "label": "非遮挡模式",
@@ -1874,6 +1885,22 @@
     "playerBgBeatSmoothness": {
       "label": "跳动平滑",
       "description": "节拍过渡柔和程度：偏低更跟拍，偏高更顺滑、回落更慢"
+    },
+    "playerBgMultiBand": {
+      "label": "多频驱动",
+      "description": "启用后低频/中频/高频分别驱动不同视觉效果，让不同音乐类型产生差异化响应"
+    },
+    "playerBgNoiseStrength": {
+      "label": "流体噪声",
+      "description": "Simplex Noise 扰动强度，让流动更自然、更接近真实液体"
+    },
+    "playerBgLayeredCover": {
+      "label": "封面细节",
+      "description": "双层封面混合强度：在流体背景上叠加专辑细节纹理，保留封面细节"
+    },
+    "playerBgForeground": {
+      "label": "前景微粒",
+      "description": "响应高频的悬浮光点，增加空间层次感"
     }
   },
   "collection": {

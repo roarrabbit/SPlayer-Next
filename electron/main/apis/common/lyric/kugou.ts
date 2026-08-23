@@ -93,36 +93,45 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
     });
   }
 
-  const keyword = buildLyricSearchKeyword(track);
-  if (!keyword) return null;
-
-  const candidates: LyricCandidate<{ hash: string }>[] = [];
-  try {
-    const body = await callKugou("search", { keywords: keyword, limit: 25 });
-    if (body.code !== 200) return null;
-    for (const song of body.songs ?? []) {
-      candidates.push({
-        name: song.name,
-        artist: song.artist,
-        album: song.album,
-        duration: song.duration,
-        extra: { hash: song.hash },
-      });
+  const searchWith = async (keyword: string): Promise<LyricMatchResult | null> => {
+    if (!keyword) return null;
+    const candidates: LyricCandidate<{ hash: string }>[] = [];
+    try {
+      const body = await callKugou("search", { keywords: keyword, limit: 25 });
+      if (body.code !== 200) return null;
+      for (const song of body.songs ?? []) {
+        candidates.push({
+          name: song.name,
+          artist: song.artist,
+          album: song.album,
+          duration: song.duration,
+          extra: { hash: song.hash },
+        });
+      }
+    } catch (err) {
+      coreLog.warn(`[lyric:kugou] search("${keyword}") failed:`, err);
+      return null;
     }
-  } catch (err) {
-    coreLog.warn(`[lyric:kugou] search("${keyword}") failed:`, err);
-    return null;
-  }
+    const best = pickBestCandidate(candidates, track);
+    coreLog.info(
+      `[lyric:kugou] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
+    );
+    if (!best) return null;
+    setMatchedId(fingerprint, "kugou", best.extra.hash);
+    return fetchLyric({
+      hash: best.extra.hash,
+      name: best.name,
+      durationMs: best.duration,
+    });
+  };
 
-  const best = pickBestCandidate(candidates, track);
-  coreLog.info(
-    `[lyric:kugou] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
-  );
-  if (!best) return null;
-  setMatchedId(fingerprint, "kugou", best.extra.hash);
-  return fetchLyric({
-    hash: best.extra.hash,
-    name: best.name,
-    durationMs: best.duration,
-  });
+  // 先按「歌名 + 歌手」搜；本地曲名常带「01. / 歌手 - 」前缀，若合并歌手后仍搜不到，
+  // 用纯歌名兜底再搜一次，提升本地音乐命中率。
+  const keyword = buildLyricSearchKeyword(track);
+  let result = await searchWith(keyword);
+  if (!result) {
+    const titleOnly = (track.title ?? "").trim();
+    if (titleOnly && titleOnly !== keyword) result = await searchWith(titleOnly);
+  }
+  return result;
 };

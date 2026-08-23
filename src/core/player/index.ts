@@ -92,6 +92,8 @@ export type LoadOutcome = { ok: true; track: Track | null } | { ok: false; error
 const resetForLoad = (duration: number): void => {
   const status = useStatusStore();
   status.trackLoading = true;
+  // 通知主进程：切歌开始（stop 引擎 / 联网解析期间的非播放态不算暂停）
+  window.api.player.setTrackLoading(true);
   status.position = 0;
   status.duration = duration;
   playback.setCurrentTime(0, { force: true });
@@ -152,11 +154,15 @@ export const load = async (
       status.currentSource = source;
       playback.setDuration(dur);
       playback.setPlaying(autoPlay);
+      // 加载成功即解除切换态：此后的真实暂停要能正常收起灵动岛
+      window.api.player.setTrackLoading(false);
       return { ok: true, track: enriched };
     }
     status.state = "idle";
     lyricLoader.loadForTrack(null);
     if (result.error && !options.suppressErrorToast) handleError(result.error);
+    // 失败不复位切换态：交给 skipOnFailure 继续跳曲或 onQueueEnded 收尾，
+    // 中间的引擎瞬态不应让灵动岛收起
     return { ok: false, error: result.error };
   } finally {
     if (token === loadToken) status.trackLoading = false;
@@ -265,6 +271,8 @@ const loadTrack = async (track: Track | null): Promise<void> => {
     const status = useStatusStore();
     status.currentSource = null;
     status.state = "idle";
+    status.trackLoading = false;
+    // 保持主进程的切换中标记：随后的 stop 与自动跳曲不应让灵动岛收起
     void window.api.player.stop();
     useMediaStore().setLyric(null, null);
     shouldSkip = true;
@@ -284,6 +292,7 @@ const loadTrack = async (track: Track | null): Promise<void> => {
     }
   }
   if (shouldSkip) await skipOnFailure(myToken, () => trackToken);
+  else window.api.player.setTrackLoading(false);
 };
 
 /**
@@ -313,6 +322,7 @@ export const reloadCurrentTrack = async (forcePlay?: boolean): Promise<boolean> 
   if (loaded.status === "cancelled") return true;
   if (loaded.status === "unresolved") {
     status.trackLoading = false;
+    // 切换态交给 recoverFromSourceFailure 的下一首尝试衔接，这里不复位
     return false;
   }
   if (!loaded.result.ok) return false;
@@ -556,7 +566,8 @@ export const playFrom = async (items: readonly Track[], startIndex = 0): Promise
     queue.shuffleQueue(status.playIndex);
     status.playIndex = 0;
   }
-  if (isSameTrack) {
+  if (isSameTrack && status.currentSource) {
+    // 同曲跨歌单：队列已切为新上下文，音频实例与进度完全复用，仅按需恢复播放
     if (!status.isPlaying) play();
   } else {
     await loadTrack(status.currentTrack);
@@ -734,6 +745,8 @@ export const prevTrack = async (): Promise<void> => {
 const onQueueEnded = async (): Promise<void> => {
   playback.setPlaying(false);
   playback.reset();
+  // 彻底放弃播放：解除切换态，此后的停止可以让灵动岛正常收起
+  window.api.player.setTrackLoading(false);
   // 通知主进程停止音频引擎
   await window.api.player.stop();
   const status = useStatusStore();

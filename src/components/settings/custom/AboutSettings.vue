@@ -59,12 +59,12 @@ const community = computed(() => [
 /** 展示名称（Fork 标识） */
 const displayName = "SPlayer-Next Fork";
 
-/** 二作（固定展示在 Author 右侧） */
+/** Fork 维护者（固定展示在 Author 右侧） */
 const FORK_DEVELOPER: Contributor & { role: string } = {
   login: "roarrabbit",
   htmlUrl: "https://github.com/roarrabbit",
   avatar: "https://avatars.githubusercontent.com/u/52274334",
-  role: "Secondary Developer",
+  role: "Fork Maintainer",
 };
 
 /** 开发者角色文案 */
@@ -86,7 +86,7 @@ const hasMoreDevelopers = computed(() => developers.value.length > 6);
 onMounted(async () => {
   try {
     const list = await getContributors();
-    // Author 第一、二次开发者第二，其余去重后接上
+    // Author 第一、Fork Maintainer 第二，其余去重后接上
     const pinnedLogins = new Set([COPYRIGHT_HOLDER, FORK_DEVELOPER.login]);
     const author =
       list.find((d) => d.login === COPYRIGHT_HOLDER) ??
@@ -124,7 +124,7 @@ onMounted(async () => {
       >
         <SLogo :size="34" />
         <div class="flex items-center gap-2 mr-auto">
-          <span class="text-lg font-logo text-on-surface">{{ displayName }}</span>
+          <span class="text-lg font-sans text-on-surface">{{ displayName }}</span>
           <STag type="primary" size="small" round>v{{ APP_VERSION }}</STag>
         </div>
         <div class="flex items-center gap-2">

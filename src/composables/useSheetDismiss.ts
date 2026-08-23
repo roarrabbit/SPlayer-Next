@@ -314,21 +314,31 @@ export const useSheetDismiss = (options: SheetDismissOptions) => {
     hostEl = null;
   };
 
+  /**
+   * 面板打开时强制复位：停掉进行中的弹簧离场动画、清掉面板的
+   * translate3d 内联位移，让它立即回到屏幕内。
+   * 必须暴露给调用方——快速"下滑关闭再上滑打开"时 sheetOpen 一直为 true，
+   * 内部 watch 看不到值变化不会触发，面板会滞留在屏幕外并拦截所有点击。
+   */
+  const resetForOpen = (): void => {
+    skipLeaveTransition.value = false;
+    dismissStarted = false;
+    stopRaf();
+    settling.value = false;
+    dragging.value = false;
+    activated = false;
+    pointerId = null;
+    samples = [];
+    spring.setPosition(0);
+    offsetY.value = 0;
+    clearHostInline();
+  };
+
   watch(
     () => options.open.value,
     (open) => {
       if (open) {
-        skipLeaveTransition.value = false;
-        dismissStarted = false;
-        stopRaf();
-        settling.value = false;
-        dragging.value = false;
-        activated = false;
-        pointerId = null;
-        samples = [];
-        spring.setPosition(0);
-        offsetY.value = 0;
-        clearHostInline();
+        resetForOpen();
       }
     },
   );
@@ -348,6 +358,7 @@ export const useSheetDismiss = (options: SheetDismissOptions) => {
     onPointerCancel,
     dismissAnimated,
     resetAfterClose,
+    resetForOpen,
     bindHost,
   };
 };

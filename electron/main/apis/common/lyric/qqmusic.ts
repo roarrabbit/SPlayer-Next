@@ -83,32 +83,41 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
   const cached = getMatchedId(fingerprint, "qqmusic");
   if (cached) return getByPlatformId(cached.platformId, cached.extra?.mid);
 
-  const keyword = buildLyricSearchKeyword(track);
-  if (!keyword) return null;
-
-  const candidates: LyricCandidate<{ id: string; mid: string }>[] = [];
-  try {
-    const body = await callQQMusic("search", { keywords: keyword, limit: 25 });
-    if (body.code !== 200) return null;
-    for (const song of body.songs ?? []) {
-      candidates.push({
-        name: song.name,
-        artist: song.artist,
-        album: song.album,
-        duration: song.duration,
-        extra: { id: song.id, mid: song.mid },
-      });
+  const searchWith = async (keyword: string): Promise<LyricMatchResult | null> => {
+    if (!keyword) return null;
+    const candidates: LyricCandidate<{ id: string; mid: string }>[] = [];
+    try {
+      const body = await callQQMusic("search", { keywords: keyword, limit: 25 });
+      if (body.code !== 200) return null;
+      for (const song of body.songs ?? []) {
+        candidates.push({
+          name: song.name,
+          artist: song.artist,
+          album: song.album,
+          duration: song.duration,
+          extra: { id: song.id, mid: song.mid },
+        });
+      }
+    } catch (err) {
+      coreLog.warn(`[lyric:qqmusic] search("${keyword}") failed:`, err);
+      return null;
     }
-  } catch (err) {
-    coreLog.warn(`[lyric:qqmusic] search("${keyword}") failed:`, err);
-    return null;
-  }
+    const best = pickBestCandidate(candidates, track);
+    coreLog.info(
+      `[lyric:qqmusic] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
+    );
+    if (!best) return null;
+    setMatchedId(fingerprint, "qqmusic", best.extra.id, { mid: best.extra.mid });
+    return getByPlatformId(best.extra.id, best.extra.mid);
+  };
 
-  const best = pickBestCandidate(candidates, track);
-  coreLog.info(
-    `[lyric:qqmusic] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
-  );
-  if (!best) return null;
-  setMatchedId(fingerprint, "qqmusic", best.extra.id, { mid: best.extra.mid });
-  return getByPlatformId(best.extra.id, best.extra.mid);
+  // 先按「歌名 + 歌手」搜；本地曲名常带「01. / 歌手 - 」前缀，若合并歌手后仍搜不到，
+  // 用纯歌名兜底再搜一次，提升本地音乐命中率。
+  const keyword = buildLyricSearchKeyword(track);
+  let result = await searchWith(keyword);
+  if (!result) {
+    const titleOnly = (track.title ?? "").trim();
+    if (titleOnly && titleOnly !== keyword) result = await searchWith(titleOnly);
+  }
+  return result;
 };

@@ -7,6 +7,7 @@ import type {
   NowPlayingLyricOffsetSync,
 } from "@shared/types/nowPlaying";
 import { store } from "@main/store";
+import { syncDynamicIslandVisibility } from "@main/window/dynamicIsland";
 
 type NowPlayingEvents = {
   /** 歌曲切换 */
@@ -37,6 +38,11 @@ let playState: PlayerState = "idle";
 let playSpeed = 1.0;
 /** 当前曲目对应的歌词偏移（ms，正值为歌词提前） */
 let currentLyricOffsetMs = 0;
+/** 歌词是否处于加载中（切歌 / 拉取歌词时短暂为 true） */
+let currentLyricLoading = false;
+/** 曲目加载中（player:load 进行中）：加载瞬态的非播放态不算暂停，
+ *  灵动岛等依赖播放态的界面在此期间应保持现状，不做出现/收起切换 */
+let trackLoading = false;
 
 /** 内部事件总线 */
 const emitter = new EventEmitter<NowPlayingEvents>();
@@ -73,15 +79,24 @@ let currentOffsetKey = "";
  * @param lyric - 当前歌词
  * @param source - 当前歌词源
  */
-export const update = (track: Track | null, lyric: LyricLine[], source: LyricData): void => {
+export const update = (
+  track: Track | null,
+  lyric: LyricLine[],
+  source: LyricData,
+  lyricLoading?: boolean,
+): void => {
   const trackChanged = (currentTrack?.id ?? null) !== (track?.id ?? null);
   currentTrack = track;
   currentLyric = lyric;
   currentSource = source;
+  currentLyricLoading = lyricLoading === true;
   if (trackChanged) {
     // 重置播放进度
     lastPosition = 0;
     lastPositionAt = Date.now();
+    // 切歌已发起：旧曲目的播放态即刻作废。update 发生在引擎 stop 之前，
+    // 若保留旧 playing=true，快照接收端（灵动岛标题/封面时序）会把它误判为「新歌已开播」
+    playing = false;
     emitter.emit("track-change", { track });
   }
   // 曲目或歌词源任一变化都重读偏移并广播
@@ -114,6 +129,7 @@ export const onPosition = (positionMs: number, isPlaying: boolean): void => {
     speed: playSpeed,
     sendTimestamp: lastPositionAt,
   });
+  syncDynamicIslandVisibility();
 };
 
 /**
@@ -131,6 +147,7 @@ export const onPlayStateChange = (state: PlayerState): void => {
     // 暂停态接收端不补偿延迟，恢复态不能用陈旧时间戳，故取当前时刻
     sendTimestamp: Date.now(),
   });
+  syncDynamicIslandVisibility();
 };
 
 /**
@@ -184,6 +201,7 @@ export const snapshot = (): NowPlayingSnapshot => ({
   track: currentTrack,
   lyric: currentLyric,
   source: currentSource,
+  lyricLoading: currentLyricLoading,
   position: lastPosition,
   playing,
   state: playState,
@@ -192,6 +210,18 @@ export const snapshot = (): NowPlayingSnapshot => ({
   // 用 position 的成立时刻，接收端据此补偿其过期时长
   sendTimestamp: lastPositionAt || Date.now(),
 });
+
+/** 当前是否处于播放态（供其它模块如灵动岛可见性同步读取） */
+export const isPlaying = (): boolean => playing;
+
+/** 标记曲目加载状态，加载中的瞬态非播放态不应触发界面的出现/收起切换
+ * @param loading - 是否正在加载曲目 */
+export const setTrackLoading = (loading: boolean): void => {
+  trackLoading = loading;
+};
+
+/** 当前是否处于曲目加载中 */
+export const isTrackLoading = (): boolean => trackLoading;
 
 /** 清空 */
 export const clear = (): void => {

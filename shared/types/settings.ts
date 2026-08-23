@@ -164,8 +164,14 @@ export interface DynamicIslandSettings {
   doubleLine: boolean;
   /** 显示翻译 */
   showTranslation: boolean;
+  /** 显示歌词（关闭后隐藏歌词行并收回灵动岛下方区域） */
+  showLyric: boolean;
   /** 是否使用原生CSS窗口拖动 */
   useCSSDrag: boolean;
+  /** 宽度模式：default=220 / wide=302 / custom=自定义 */
+  widthMode: "default" | "wide" | "custom";
+  /** 自定义宽度（widthMode 为 custom 时生效，单位 px） */
+  customWidth: number;
 }
 
 /** 任务栏歌词位置模式 */

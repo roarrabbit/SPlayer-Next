@@ -1209,6 +1209,10 @@
       "label": "Unplayed Color",
       "description": "Color of upcoming lyric text and artist name"
     },
+    "dynamicIslandShowLyric": {
+      "label": "Show Lyrics",
+      "description": "Hide the lyric line and collapse the island's lower area when disabled"
+    },
     "dynamicIslandBackgroundColor": {
       "label": "Background Color",
       "description": "Background color and opacity of the island"
@@ -1224,6 +1228,13 @@
     "dynamicIslandSnapCentered": {
       "label": "Center When Snapped",
       "description": "When off, snapping to the top keeps the dragged horizontal position"
+    },
+    "dynamicIslandWidthMode": {
+      "label": "Window Width",
+      "description": "Choose the width mode of the island window",
+      "default": "Default (324)",
+      "wide": "Lyric Only (236)",
+      "custom": "Custom"
     },
     "dynamicIslandNonOcclusive": {
       "label": "Non-Occlusive Mode",
@@ -1874,6 +1885,22 @@
     "playerBgBeatSmoothness": {
       "label": "Beat smoothness",
       "description": "How soft the beat transition is: lower snaps more, higher eases more"
+    },
+    "playerBgMultiBand": {
+      "label": "Multi-band",
+      "description": "Bass/mid/high frequencies drive different visual effects for varied music response"
+    },
+    "playerBgNoiseStrength": {
+      "label": "Fluid noise",
+      "description": "Simplex Noise perturbation strength for more natural, liquid-like flow"
+    },
+    "playerBgLayeredCover": {
+      "label": "Cover detail",
+      "description": "Blend album detail texture over fluid background to preserve visual identity"
+    },
+    "playerBgForeground": {
+      "label": "Foreground particles",
+      "description": "Floating light particles responding to high frequencies for spatial depth"
     }
   },
   "collection": {

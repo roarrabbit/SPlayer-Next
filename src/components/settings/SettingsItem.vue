@@ -105,6 +105,36 @@ const descriptionText = computed(() =>
         >
           <template #popover="{ value }">{{ value }}</template>
         </SSlider>
+        <div
+          v-else-if="item.type === 'sliderInput'"
+          class="flex items-center gap-2 w-full"
+        >
+          <SSlider
+            :model-value="model"
+            :min="item.min ?? 0"
+            :max="item.max ?? 400"
+            :step="item.step ?? 1"
+            :disabled="isDisabled"
+            class="flex-1"
+            :thumb-size="14"
+            :track-height="4"
+            always-show-thumb
+            show-popover
+            @change="applyChange($event)"
+          >
+            <template #popover="{ value }">{{ value }}</template>
+          </SSlider>
+          <SNumberInput
+            :model-value="model"
+            :min="item.min"
+            :max="item.max"
+            :step="item.step"
+            :disabled="isDisabled"
+            update-on="blur"
+            class="w-28 shrink-0"
+            @update:model-value="applyChange($event)"
+          />
+        </div>
         <SColor
           v-else-if="item.type === 'color'"
           :model-value="model"

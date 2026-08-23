@@ -46,6 +46,7 @@ export const useMediaStore = defineStore("media", () => {
         track: track.value ? toRaw(track.value) : null,
         lyric: toRaw(parsedLyric.value),
         source: activeLyric.value ? toRaw(activeLyric.value) : null,
+        lyricLoading: lyricLoading.value,
       };
       window.api.nowPlaying.update(payload);
     } catch (error) {

@@ -1,6 +1,7 @@
 import { app, ipcMain } from "electron";
 import { store } from "@main/store";
 import { isWin } from "@main/utils/config";
+import { systemLog } from "@main/utils/logger";
 import {
   toggleDesktopLyricWindow,
   closeDesktopLyricWindow,
@@ -12,10 +13,13 @@ import {
   toggleDynamicIslandWindow,
   closeDynamicIslandWindow,
   getDynamicIslandWindow,
+  cachedSize,
   moveDynamicIslandWindow,
   saveDynamicIslandState,
   applyDynamicIslandWidth,
   applyDynamicIslandHeight,
+  applyDynamicIslandHeightAnimated,
+  getDynamicIslandVisible,
   toggleTaskbarLyricWindow,
   closeTaskbarLyricWindow,
   getTaskbarLyricWindow,
@@ -25,6 +29,7 @@ import {
   toggleFullscreenMainWindow,
   isMainWindowFullscreen,
   hideMainWindow,
+  toggleDebugGeomWindow,
 } from "@main/window";
 
 /** 窗口管理 IPC */
@@ -67,6 +72,15 @@ export const registerWindowIpc = (): void => {
   // 查询灵动岛窗口是否打开
   ipcMain.handle("window:isDynamicIslandOpen", () => !!getDynamicIslandWindow());
 
+  // 灵动岛一次性设置位置+尺寸：绕过中间拖拽逻辑，直接 setBounds
+  ipcMain.on("dynamicIsland:setBounds", (_event, x: number, y: number, w: number, h: number) => {
+    const win = getDynamicIslandWindow();
+    if (!win) return;
+    cachedSize.width = w;
+    cachedSize.height = h;
+    win.setBounds({ x, y, width: w, height: h });
+  });
+
   // 灵动岛拖拽移动
   ipcMain.on("dynamicIsland:move", (_event, x: number, y: number) => {
     moveDynamicIslandWindow(x, y);
@@ -87,10 +101,39 @@ export const registerWindowIpc = (): void => {
     applyDynamicIslandHeight(height);
   });
 
+  // 灵动岛高度变化（弹性动画版：液体展开/收起）
+  ipcMain.on("dynamicIsland:setHeightAnimated", (_event, height: number) => {
+    applyDynamicIslandHeightAnimated(height);
+  });
+
+  // 灵动岛显隐：仅 show/hide，绝不 destroy/close
+  ipcMain.on("dynamicIsland:setVisible", (_event, visible: boolean) => {
+    const win = getDynamicIslandWindow();
+    systemLog.info(`[dynamic-island] setVisible(${visible}) win=${!!win}`);
+    if (!win) return;
+    if (visible) {
+      win.show();
+      win.setAlwaysOnTop(store.get("dynamicIsland").alwaysOnTop, "screen-saver");
+    } else {
+      win.hide();
+    }
+  });
+
+  // 灵动岛查询当前宽度（权威缓存值，渲染端用它避免 getBounds 回写漂移）
+  ipcMain.handle("dynamicIsland:getWidth", () => cachedSize.width);
+
+  // 灵动岛查询当前是否可见（渲染端挂载时兜底初始态）
+  ipcMain.handle("dynamicIsland:getVisibility", () => getDynamicIslandVisible());
+
   // 灵动岛查询当前吸附模式
   ipcMain.handle("dynamicIsland:getMode", () => {
     const saved = store.get("windowStates.dynamicIsland");
     return saved.mode === "floating" ? "floating" : "snapped";
+  });
+
+  // 灵动岛几何调试控制窗开关
+  ipcMain.on("dynamicIsland:toggleDebugPanel", () => {
+    toggleDebugGeomWindow();
   });
 
   // 任务栏歌词仅在 Windows 注册

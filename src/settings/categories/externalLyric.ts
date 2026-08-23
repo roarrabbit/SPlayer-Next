@@ -1,6 +1,5 @@
 import type { SettingCategory, SettingSection } from "@/types/settings-schema";
 import { useSettingsStore } from "@/stores/settings";
-import { isMac } from "@/utils/config";
 import IconLucideMonitor from "~icons/lucide/monitor";
 
 const desktopLyricSection: SettingSection = {
@@ -153,49 +152,10 @@ const dynamicIslandSection: SettingSection = {
       defaultValue: false,
     },
     {
-      key: "dynamicIslandScale",
-      type: "slider",
-      binding: { store: "settings", path: "system.dynamicIsland.scale" },
-      min: 0.5,
-      max: 2,
-      step: 0.05,
-      defaultValue: 1,
-      marks: { 0.5: "50%", 1: "100%", 2: "200%" },
-    },
-    {
-      key: "dynamicIslandFontWeight",
-      type: "slider",
-      binding: { store: "settings", path: "system.dynamicIsland.fontWeight" },
-      min: 100,
-      max: 900,
-      step: 100,
-      defaultValue: 500,
-      marks: { 100: "100", 500: "500", 900: "900" },
-    },
-    {
-      key: "dynamicIslandWordByWord",
+      key: "dynamicIslandShowLyric",
       type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.wordByWord" },
+      binding: { store: "settings", path: "system.dynamicIsland.showLyric" },
       defaultValue: true,
-    },
-    {
-      key: "dynamicIslandDoubleLine",
-      type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.doubleLine" },
-      defaultValue: false,
-    },
-    {
-      key: "dynamicIslandShowTranslation",
-      type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.showTranslation" },
-      defaultValue: false,
-    },
-    {
-      key: "dynamicIslandPlayedColor",
-      type: "color",
-      binding: { store: "settings", path: "system.dynamicIsland.playedColor" },
-      defaultValue: "rgba(255, 255, 255, 1)",
-      showAlpha: false,
     },
     {
       key: "dynamicIslandUnplayedColor",
@@ -204,45 +164,31 @@ const dynamicIslandSection: SettingSection = {
       defaultValue: "rgba(255, 255, 255, 0.5)",
     },
     {
-      key: "dynamicIslandBackgroundColor",
-      type: "color",
-      binding: { store: "settings", path: "system.dynamicIsland.backgroundColor" },
-      defaultValue: "rgba(0, 0, 0, 1)",
-    },
-    {
-      key: "dynamicIslandAlwaysOnTop",
-      type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.alwaysOnTop" },
-      defaultValue: true,
-    },
-    ...(isMac
-      ? [
-          {
-            key: "dynamicIslandNotchFusion",
-            type: "switch" as const,
-            binding: { store: "settings" as const, path: "system.dynamicIsland.notchFusion" },
-            defaultValue: false,
-          },
-        ]
-      : []),
-    {
-      key: "dynamicIslandSnapCentered",
-      type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.snapCentered" },
-      defaultValue: true,
-      disabled: () => useSettingsStore().system.dynamicIsland.notchFusion,
-    },
-    {
       key: "dynamicIslandNonOcclusive",
       type: "switch",
       binding: { store: "settings", path: "system.dynamicIsland.nonOcclusive" },
       defaultValue: false,
     },
     {
-      key: "dynamicIslandUseCSSDrag",
-      type: "switch",
-      binding: { store: "settings", path: "system.dynamicIsland.useCSSDrag" },
-      defaultValue: false,
+      key: "dynamicIslandWidthMode",
+      type: "select",
+      binding: { store: "settings", path: "system.dynamicIsland.widthMode" },
+      options: [
+        { value: "default", labelKey: "settings.dynamicIslandWidthMode.default" },
+        { value: "wide", labelKey: "settings.dynamicIslandWidthMode.wide" },
+        { value: "custom", labelKey: "settings.dynamicIslandWidthMode.custom" },
+      ],
+      defaultValue: "default",
+    },
+    {
+      key: "dynamicIslandCustomWidth",
+      type: "sliderInput",
+      binding: { store: "settings", path: "system.dynamicIsland.customWidth" },
+      min: 160,
+      max: 400,
+      step: 1,
+      defaultValue: 240,
+      visible: () => useSettingsStore().system.dynamicIsland.widthMode === "custom",
     },
   ],
 };

@@ -58,6 +58,10 @@ export const useSettingsStore = defineStore(
       playerBgBeat: false,
       playerBgBeatIntensity: 1,
       playerBgBeatSmoothness: 0.5,
+      playerBgMultiBand: true,
+      playerBgNoiseStrength: 0.03,
+      playerBgLayeredCover: 0.5,
+      playerBgForeground: true,
       coverLayout: "default",
       autoCenterCover: true,
       followCoverColor: true,
@@ -283,6 +287,18 @@ export const useSettingsStore = defineStore(
         }
         if (typeof player.playerBgBeatSmoothness !== "number" || Number.isNaN(player.playerBgBeatSmoothness)) {
           player.playerBgBeatSmoothness = 0.5;
+        }
+        if (typeof player.playerBgMultiBand !== "boolean") {
+          player.playerBgMultiBand = true;
+        }
+        if (typeof player.playerBgNoiseStrength !== "number" || Number.isNaN(player.playerBgNoiseStrength)) {
+          player.playerBgNoiseStrength = 0.03;
+        }
+        if (typeof player.playerBgLayeredCover !== "number" || Number.isNaN(player.playerBgLayeredCover)) {
+          player.playerBgLayeredCover = 0.5;
+        }
+        if (typeof player.playerBgForeground !== "boolean") {
+          player.playerBgForeground = true;
         }
         lyric.lyricSourceOrder = reconcileOrder(lyric.lyricSourceOrder, ALL_PLATFORMS);
         lyric.lyricFormatOrder = reconcileOrder(lyric.lyricFormatOrder, DEFAULT_LYRIC_FORMAT_ORDER);

@@ -22,6 +22,19 @@
         justify-content: center;
       }
     </style>
+    <style>
+      /* 首屏 FOUC 防御：模块 CSS（含 .root 的 opacity:0 / clip 收起态）经 <link> 异步加载，
+         而 JS 为 type=module（deferred，Vue 挂载后才生成 .root）。若窗口在模块 CSS 生效前
+         被主进程 showInactive()，首帧会 paint 出未收起的完整黑条 → 闪现。
+         此处同步内联把 .root 先置为收起态，模块 CSS 生效前即不可见。
+         内联 .root 特异性(0,1,0) 低于 scoped 模块 CSS 的 .root.is-revealed[data-v](0,3,0)，
+         reveal 时仍会被正常覆盖，不影响既定动画。 */
+      .root {
+        opacity: 0;
+        clip-path: inset(0 0 100% 0);
+        transform: translateY(-6px);
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>

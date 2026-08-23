@@ -6,6 +6,8 @@ export interface NowPlayingUpdatePayload {
   track: Track | null;
   lyric: LyricLine[];
   source: LyricData;
+  /** 歌词加载中（切歌 / 拉取歌词时短暂为 true） */
+  lyricLoading: boolean;
 }
 
 /** 主进程 → 窗口：当前播放的完整快照 */
@@ -21,6 +23,8 @@ export interface NowPlayingSnapshot {
   speed: number;
   /** 当前曲目的歌词偏移（ms，正值为歌词提前） */
   lyricOffsetMs: number;
+  /** 歌词加载中（切歌 / 拉取歌词时短暂为 true） */
+  lyricLoading: boolean;
   /** position 真实成立的主进程时钟（Date.now 毫秒），接收端用于补偿其过期时长 */
   sendTimestamp: number;
 }

@@ -99,6 +99,9 @@ pub struct InnerPlayer {
     cover_cache_dir: Option<String>,
     /// 事件回调（由 lib.rs 设置，内部转发到 JS ThreadsafeFunction）
     event_callback: Option<EventEmitter>,
+    /// 空闲释放回调：播放结束/显式停止后由 lib.rs 注入的闭包触发，
+    /// 用于立即释放音频输出（结束/停止后 output 常驻同样会阻止睡眠）
+    idle_release_cb: Option<Arc<dyn Fn() + Send + Sync>>,
     /// 位置推送定时器的停止信号和线程句柄
     position_timer_stop: Option<Arc<AtomicBool>>,
     position_timer_handle: Option<JoinHandle<()>>,
@@ -123,6 +126,9 @@ pub struct InnerPlayer {
     /// commit_loaded 比对 token 与最新值，不一致则该次加载已被新加载取代，需丢弃
     /// 用于防止快速切歌时旧 IO 完成后覆盖新音频的竞态
     load_token: Arc<AtomicU64>,
+    /// 空闲释放音频输出（暂停 7s 未恢复）时记录的播放位置（秒）。
+    /// 之后 play() 走复活路径重新 load，恢复此位置继续播放
+    resume_position: Option<f64>,
 }
 
 /// 切换/seek 时要 join 的旧线程集合，全部挪到 spawn_blocking 工作线程 join，
@@ -176,7 +182,7 @@ const _: fn() = || {
 /// 分片 sleep：每 10ms 检查一次停止标志
 /// 让 stop_*_timer 的同步 join（pause/stop 都在 NAPI 主线程调用）在 ~10ms 内返回，
 /// 而不是阻塞整个推送周期（200ms）
-fn sleep_unless_stopped(flag: &AtomicBool, total: Duration) {
+pub(crate) fn sleep_unless_stopped(flag: &AtomicBool, total: Duration) {
     const SLICE: Duration = Duration::from_millis(10);
     let mut remaining = total;
     while !flag.load(Ordering::Relaxed) && !remaining.is_zero() {
@@ -216,8 +222,10 @@ impl InnerPlayer {
     }
 
     pub fn new() -> Result<Self> {
-        // 延迟初始化：构造时不要求有音频设备，load 时再打开
-        let output = AudioOutput::new(None).ok();
+        // 真正的延迟初始化：构造时不创建音频输出，首次 load 时才打开。
+        // 立即创建会让 cpal::Stream 从启动起常驻——coreaudiod 会一直持有
+        // BuiltInSpeakerDevice 断言，阻止系统睡眠（同 mpv issue #11617）
+        let output: Option<AudioOutput> = None;
         // EQ / stretch 须按播放采样率建系数；无设备时退化到 TARGET_SAMPLE_RATE，
         // load 时 configure_dsp_sample_rate 会按当时设备率纠正
         let initial_rate = output
@@ -258,6 +266,8 @@ impl InnerPlayer {
                 initial_rate,
             ))),
             load_token: Arc::new(AtomicU64::new(0)),
+            resume_position: None,
+            idle_release_cb: None,
         })
     }
 
@@ -279,6 +289,12 @@ impl InnerPlayer {
         self.stop_fft_timer();
         self.cancel_fade();
         self.event_callback = Some(cb);
+    }
+
+    /// 注册空闲释放回调：播放结束/中断时由 position timer 线程触发，
+    /// 通知 lib.rs 释放音频输出（闭包须以 Weak 捕获 InnerPlayer，避免循环引用）
+    pub fn set_idle_release_cb(&mut self, cb: Arc<dyn Fn() + Send + Sync>) {
+        self.idle_release_cb = Some(cb);
     }
 
     /// 发射事件
@@ -343,6 +359,9 @@ impl InnerPlayer {
         };
         let seek_base = self.seek_base;
         let duration = self.duration();
+        // 播放结束 / 音源中断 → 通知 lib.rs 释放音频输出
+        // （否则 Stopped 态下 output 常驻，coreaudiod 断言持续阻止睡眠）
+        let idle_release_cb = self.idle_release_cb.clone();
 
         let handle = thread::spawn(move || {
             // 停滞检测：消费计数连续 STALL_THRESHOLD_TICKS 次未变 + 缓冲区非空 → sink 静默死亡
@@ -370,6 +389,10 @@ impl InnerPlayer {
                     cb(PlayerEvent::StateChanged {
                         state: PlayerState::Stopped,
                     });
+                    // 播放已结束/中断：立即释放音频输出，不再等空闲定时器
+                    if let Some(release) = &idle_release_cb {
+                        release();
+                    }
                     break;
                 }
 
@@ -739,6 +762,8 @@ impl InnerPlayer {
         self.decoder_thread = Some(decode_handle);
         self.seek_base = 0.0;
         self.current_source = Some(source.to_string());
+        // 新歌从头开始，清掉空闲释放遗留的恢复位置，避免 play 复活时误 seek
+        self.resume_position = None;
 
         self.audio_sample_rate = metadata.sample_rate;
         self.audio_channels = metadata.channels;
@@ -807,6 +832,8 @@ impl InnerPlayer {
         self.decoder_thread = Some(decode_handle);
         self.seek_base = 0.0;
         self.current_source = Some(source.to_string());
+        // 新歌从头开始，清掉空闲释放遗留的恢复位置
+        self.resume_position = None;
 
         // 缓存 seek 需要的 Copy 字段，cover_raw 单独取出
         self.audio_sample_rate = metadata.sample_rate;
@@ -849,10 +876,18 @@ impl InnerPlayer {
                 // 先取消未完成的渐出：否则其完成回调可能在 sink.play() 之后执行
                 // sink.pause()，导致状态 Playing 但实际无声
                 self.cancel_fade();
+                // 输出已被空闲释放（暂停超时）：sink 已不存在，走复活路径，
+                // 由 lib.rs 重新 load 并按 resume_position seek 回原位
+                if self.output.is_none() {
+                    return Ok(self.current_source.clone());
+                }
+                // 输出未被空闲释放：sink 仍持有设备，直接渐入恢复
                 if let Some(ref sink) = self.sink {
                     sink.set_volume(0.0);
                     sink.play();
                 }
+                // 正常恢复：位置由 sink 保持，无需 seek，清掉可能残留的恢复位置
+                self.resume_position = None;
 
                 self.state = PlayerState::Playing;
                 self.emit(PlayerEvent::StateChanged {
@@ -911,6 +946,8 @@ impl InnerPlayer {
         self.stop_internal();
         self.current_source = None;
         self.state = PlayerState::Stopped;
+        // 显式停止：立即释放音频输出，避免 coreaudiod 断言常驻阻止睡眠
+        self.output = None;
         self.emit(PlayerEvent::StateChanged {
             state: PlayerState::Stopped,
         });
@@ -941,6 +978,53 @@ impl InnerPlayer {
         self.shared = None;
         self.cover_raw = None;
         self.seek_base = 0.0;
+    }
+
+    /// 暂停空闲超时后释放音频输出（mpv ao_coreaudio 同款策略）。
+    ///
+    /// 暂停只停了 rodio Sink 的数据流，底层 `cpal::Stream`（AudioUnit）仍活跃，
+    /// coreaudiod 会持续持有 BuiltInSpeakerDevice 断言阻止系统睡眠。
+    /// 本方法在后台线程调用：记录恢复位置 → 释放 sink/解码线程 → drop `AudioOutput`，
+    /// cpal::Stream 在专用 owner 线程上销毁，coreaudiod 断言随之释放。
+    /// 之后 play() 检测到 output 为 None，走复活路径重新 load + seek 回原位。
+    pub fn release_output_after_idle(&mut self) {
+        // 只有仍持有输出才释放；期间被 play/load 打断则放弃
+        if self.output.is_none() {
+            return;
+        }
+        match self.state {
+            PlayerState::Paused => {
+                // 先记录位置：stop_internal 会清 seek_base / shared，之后无法再取
+                self.resume_position = Some(self.position());
+                info!(position = ?self.resume_position, "暂停空闲超时，释放音频输出");
+                self.stop_internal();
+                self.output = None;
+            }
+            // 播放已结束/中断（ended 回调从 position timer 线程内触发，
+            // 不能在此 stop_internal——stop_position_timer 会 join 当前线程造成死锁；
+            // sink/decoder 已在收尾，由下次 load/play/stop 清理即可）
+            PlayerState::Stopped => {
+                info!("播放已结束/中断，释放音频输出");
+                self.output = None;
+            }
+            _ => {}
+        }
+    }
+
+    /// 取走空闲释放时记录的恢复位置（秒），取走后清空，避免下次复活误 seek
+    pub fn take_resume_position(&mut self) -> Option<f64> {
+        self.resume_position.take()
+    }
+
+    /// 是否处于"输出已被空闲释放"的暂停态：暂停中且 output 已被释放，
+    /// seek 等操作不能作用于 cpal stream，应改写 resume_position
+    pub fn is_output_released(&self) -> bool {
+        self.state == PlayerState::Paused && self.output.is_none()
+    }
+
+    /// 直接设置恢复位置（输出已释放时的 seek 落到这里，播放时再真正 seek）
+    pub fn set_resume_position(&mut self, position: f64) {
+        self.resume_position = Some(position);
     }
 
     /// seek 失败时的回退：从头重新 load 当前源，保留 seek 前的播放/暂停状态

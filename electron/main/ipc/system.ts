@@ -1,4 +1,4 @@
-import { app, ipcMain, shell } from "electron";
+import { app, ipcMain, Menu, MenuItem, shell } from "electron";
 import { writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, basename } from "node:path";
@@ -18,6 +18,34 @@ import { testNetworkProxy } from "@main/utils/proxy";
  * 注册系统相关的 IPC 事件
  */
 export const registerSystemIpc = (): void => {
+  // macOS 标准快捷键 Cmd/Ctrl+, 打开设置：在 app 菜单的 About 之后插入"设置…"。
+  // Electron 菜单 accelerator 即使菜单栏隐藏/无焦点也全局生效，天然覆盖所有窗口。
+  const openSettings = (): void => {
+    focusMainWindow();
+    getMainWindow()?.webContents.send("system:openSettings", {});
+  };
+  try {
+    const menu = Menu.getApplicationMenu();
+    const appSubmenu = menu?.items[0]?.submenu;
+    if (menu && appSubmenu) {
+      const idx = Math.max(
+        1,
+        appSubmenu.items.findIndex((i) => i.role === "about") + 1,
+      );
+      appSubmenu.insert(
+        idx,
+        new MenuItem({
+          label: "设置…",
+          accelerator: "CmdOrCtrl+,",
+          click: openSettings,
+        }),
+      );
+      Menu.setApplicationMenu(menu);
+    }
+  } catch (err) {
+    systemLog.warn("[system] install preferences menu failed", err);
+  }
+
   ipcMain.on("ping", () => systemLog.debug("pong"));
 
   // 渲染层拉取冷启动暂存的 orpheus 唤起 URL

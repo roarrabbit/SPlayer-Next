@@ -166,6 +166,14 @@ export interface PlayerSettings {
   playerBgBeatIntensity: number;
   /** 背景跳动平滑度 0..1，越大过渡越柔、越慢 */
   playerBgBeatSmoothness: number;
+  /** 启用多频驱动 (低频+中频+高频独立响应) */
+  playerBgMultiBand: boolean;
+  /** Simplex Noise 噪声扰动强度 */
+  playerBgNoiseStrength: number;
+  /** 双层封面混合强度 (0~1) */
+  playerBgLayeredCover: number;
+  /** 启用前景微粒 */
+  playerBgForeground: boolean;
   /** 全屏播放器封面布局 */
   coverLayout: CoverLayout;
   /** 无歌词时自动居中封面并隐藏歌词区域 */

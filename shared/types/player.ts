@@ -203,6 +203,8 @@ export interface PlayerApi {
   pause: () => Promise<IpcResponse>;
   /** 停止播放 */
   stop: () => Promise<IpcResponse>;
+  /** 标记曲目切换中：加载瞬态不算暂停，灵动岛等保持现状不切换 */
+  setTrackLoading: (loading: boolean) => void;
   /** 跳转到指定位置（毫秒） */
   seek: (positionMs: number) => Promise<IpcResponse>;
   /** 设置音量（0.0 ~ 1.0） */

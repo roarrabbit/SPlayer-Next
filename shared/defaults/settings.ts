@@ -73,8 +73,13 @@ export const defaultSystemConfig: SystemConfig = {
     notchFusion: false,
     nonOcclusive: false,
     doubleLine: false,
-    showTranslation: false,
+    showTranslation: true,
+    // 灵动岛歌词默认关闭（需要时用户手动开启）
+    showLyric: false,
     useCSSDrag: false,
+    // 宽度模式: "default"=324 / "wide"=236(仅歌词模式) / "custom"=自定义
+    widthMode: "default",
+    customWidth: 240,
   },
   taskbarLyric: {
     position: "auto",
@@ -175,7 +180,8 @@ export const defaultSystemConfig: SystemConfig = {
       mode: "snapped",
       x: null,
       y: null,
-      visible: false,
+      // 灵动岛默认打开：启动即创建并显示（贴刘海小药丸），播放时弹性弹出
+      visible: true,
     },
     taskbarLyric: {
       visible: false,

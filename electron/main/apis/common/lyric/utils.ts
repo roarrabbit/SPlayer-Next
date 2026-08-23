@@ -117,26 +117,27 @@ export const pickBestCandidate = <E>(
     const candAlbum = normalize(candidate.album);
 
     const nameExact = candName.length > 0 && candName === trackName;
+    const nameContains = candName.length > 0 && bothContains(candName, trackName);
+    if (!nameExact && !nameContains) continue;
+
+    const artist = artistMatches(candidate.artist, trackArtists);
+    const durClose = durationClose(candidate.duration, trackDuration);
+
+    // 子串命中但极短、且没有任何佐证的，视为巧合丢弃；
+    // 但只要有歌手或时长佐证（前缀型本地曲名如「07. 周杰伦 - 晴天」常命中于此），就保留候选。
     if (!nameExact) {
-      if (!bothContains(candName, trackName)) continue;
       const longer = Math.max(candName.length, trackName.length);
       const shorter = Math.min(candName.length, trackName.length);
-      if (shorter / longer < NAME_CONTAIN_MIN_RATIO) continue;
+      if (shorter / longer < NAME_CONTAIN_MIN_RATIO && !artist.exact && !artist.contains && !durClose) {
+        continue;
+      }
     }
 
     if (durationFar(candidate.duration, trackDuration)) continue;
 
-    const artist = artistMatches(candidate.artist, trackArtists);
     if (trackArtists.length > 0 && !artist.exact && !artist.contains) continue;
     // 置信度地板：name 仅子串命中时必须有 artist 或时长佐证，否则视为巧合 substring 丢弃
-    if (
-      !nameExact &&
-      !artist.exact &&
-      !artist.contains &&
-      !durationClose(candidate.duration, trackDuration)
-    ) {
-      continue;
-    }
+    if (!nameExact && !artist.exact && !artist.contains && !durClose) continue;
 
     let score = nameExact ? 10 : 4;
     if (artist.exact) score += 5;

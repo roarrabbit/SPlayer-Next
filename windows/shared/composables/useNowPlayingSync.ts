@@ -24,6 +24,7 @@ export interface NowPlayingSync {
   lyric: ShallowRef<LyricLine[]>;
   playing: Ref<boolean>;
   primaryIndex: Ref<number>;
+  lyricLoading: Ref<boolean>;
 }
 
 /**
@@ -37,6 +38,7 @@ export const useNowPlayingSync = (options: NowPlayingSyncOptions): NowPlayingSyn
   const lyric = shallowRef<LyricLine[]>([]);
   const playing = ref(false);
   const primaryIndex = ref(-1);
+  const lyricLoading = ref(false);
 
   let anchorPos = 0;
   let anchorPerf = 0;
@@ -86,6 +88,7 @@ export const useNowPlayingSync = (options: NowPlayingSyncOptions): NowPlayingSyn
     const mainLines = snap.lyric.filter((line) => !line.isBG);
     lyric.value = clampLastLineEnd(mainLines, snap.track?.duration);
     playing.value = snap.playing;
+    lyricLoading.value = snap.lyricLoading === true;
     speed = snap.speed;
     lyricOffsetMs = snap.lyricOffsetMs;
     primaryIndex.value = -1;
@@ -112,13 +115,9 @@ export const useNowPlayingSync = (options: NowPlayingSyncOptions): NowPlayingSyn
   const unsubscribers: Array<() => void> = [];
 
   onMounted(async () => {
-    try {
-      const snap = await window.api.nowPlaying.requestSnapshot();
-      applySnapshot(snap);
-    } catch (error) {
-      console.error(`[${logTag}] requestSnapshot failed`, error);
-    }
-
+    // 先订阅再拉快照：若先 await 快照，拉取期间到达的 lyric-change 会因未订阅而
+    // 永久丢失（窗口加载/HMR 重载期快速切歌时表现为停留在旧曲）。主进程对同一
+    // webContents 的 IPC 按 FIFO 投递，订阅先行后快照必然不晚于其后发生的更新。
     unsubscribers.push(
       window.api.nowPlaying.onLyricChange((snap) => {
         applySnapshot(snap);
@@ -136,6 +135,13 @@ export const useNowPlayingSync = (options: NowPlayingSyncOptions): NowPlayingSyn
       }),
     );
 
+    try {
+      const snap = await window.api.nowPlaying.requestSnapshot();
+      applySnapshot(snap);
+    } catch (error) {
+      console.error(`[${logTag}] requestSnapshot failed`, error);
+    }
+
     kickTick();
   });
 
@@ -147,5 +153,5 @@ export const useNowPlayingSync = (options: NowPlayingSyncOptions): NowPlayingSyn
     for (const off of unsubscribers) off();
   });
 
-  return { track, lyric, playing, primaryIndex };
+  return { track, lyric, playing, primaryIndex, lyricLoading };
 };

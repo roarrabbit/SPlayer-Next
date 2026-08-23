@@ -139,6 +139,10 @@ onBeforeUnmount(() => {
         :enable-beat="settings.player.playerBgBeat"
         :beat-intensity="settings.player.playerBgBeatIntensity"
         :beat-smoothness="settings.player.playerBgBeatSmoothness"
+        :enable-multi-band="settings.player.playerBgMultiBand"
+        :noise-strength="settings.player.playerBgNoiseStrength"
+        :layered-cover-strength="settings.player.playerBgLayeredCover"
+        :enable-foreground="settings.player.playerBgForeground"
       />
     </div>
   </Transition>

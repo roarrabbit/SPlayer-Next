@@ -35,15 +35,21 @@ export {
   closeDynamicIslandWindow,
   toggleDynamicIslandWindow,
   getDynamicIslandWindow,
+  cachedSize,
   applyDynamicIslandAlwaysOnTop,
   applyDynamicIslandHeight,
+  applyDynamicIslandHeightAnimated,
   applyDynamicIslandWidth,
   applyDynamicIslandSnapCentered,
   applyDynamicIslandNotchFusion,
   applyDynamicIslandNonOcclusive,
   moveDynamicIslandWindow,
   saveDynamicIslandState,
+  getDynamicIslandWidthFromConfig,
+  getDynamicIslandVisible,
+  syncDynamicIslandVisibility,
 } from "./dynamicIsland";
+export { toggleDebugGeomWindow } from "./debugGeom";
 export {
   createTaskbarLyricWindow,
   closeTaskbarLyricWindow,

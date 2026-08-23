@@ -56,6 +56,8 @@ export interface LyricLine {
   words: LyricWord[];
   /** 该行的翻译歌词，将会显示在主歌词行的下方 */
   translatedLyric: string;
+  /** 该行翻译（灵动岛等消费方直接跟随歌词数据读取，可选） */
+  translation?: string;
   /** 该行的音译歌词，将会显示在翻译歌词行的下方 */
   romanLyric: string;
   /** 句子的起始时间，单位为毫秒 */

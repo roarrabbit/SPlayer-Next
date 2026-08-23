@@ -20,7 +20,7 @@ import {
   setTrayLikeState,
 } from "@main/services/tray";
 import { setTaskbarThumbnailCover } from "@main/services/thumbnail";
-import { getMainWindow, setTaskbarProgress } from "@main/window";
+import { getMainWindow, getDynamicIslandWindow, setTaskbarProgress, syncDynamicIslandVisibility } from "@main/window";
 import { store } from "@main/store";
 import { appName, getSongCacheDir } from "@main/utils/config";
 import * as songCache from "@main/services/songCache";
@@ -151,6 +151,11 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
       case "fftData": {
         const fftEvent = { type: "fftData", data: event.fftData ?? [] };
         if (getMainWindow()?.isVisible()) sendToMain("player:event", fftEvent);
+        // 推送到灵动岛窗口（仅可见时，避免隐藏时白白推送）
+        const diWin = getDynamicIslandWindow();
+        if (diWin && !diWin.isDestroyed() && diWin.isVisible()) {
+          diWin.webContents.send("dynamicIsland:fftData", event.fftData ?? []);
+        }
         wsBroadcast(fftEvent);
         break;
       }
@@ -187,6 +192,8 @@ export const registerPlayerIpc = (): void => {
     // 非本地音源
     const isRemote = authoritative != null && authoritative.source !== "local";
     const seq = ++loadSeq;
+    // 标记加载中：加载瞬态的非播放态不算暂停，灵动岛保持现状不切换
+    nowPlaying.setTrackLoading(true);
     try {
       const inst = getPlayer();
       const loadingEvent = {
@@ -300,9 +307,13 @@ export const registerPlayerIpc = (): void => {
         },
       };
       playerLog.debug(`加载成功: ${displayTitle}`);
+      if (seq === loadSeq) nowPlaying.setTrackLoading(false);
       return { success: true, data };
     } catch (error) {
-      if (seq === loadSeq) activeCueRange = null;
+      if (seq === loadSeq) {
+        activeCueRange = null;
+        nowPlaying.setTrackLoading(false);
+      }
       const msg = error instanceof Error ? error.message : String(error);
       // 被更新的 load/stop 取代是正常竞态结果，不能按源类型误判为网络/解码错误
       //（那两类是可跳曲错误，会让用户的停止操作变成自动跳下一曲）
@@ -324,12 +335,18 @@ export const registerPlayerIpc = (): void => {
     }
   });
 
+  // 曲目切换中标记：渲染端在发起切歌（stop 引擎 / 解析音源）前置位，
+  // load 完成或放弃后复位；期间的非播放态不算暂停
+  ipcMain.on("player:set-track-loading", (_event, loading: boolean) => {
+    nowPlaying.setTrackLoading(Boolean(loading));
+    syncDynamicIslandVisibility();
+  });
+
   // 恢复播放
   ipcMain.handle("player:play", async () => {
     try {
       await getPlayer().play();
-      return { success: true };
-    } catch (error) {
+      return { success: true };    } catch (error) {
       return fail(ErrorCode.DEVICE_NOT_FOUND, error);
     }
   });
@@ -500,9 +517,35 @@ export const registerPlayerIpc = (): void => {
   });
 
   // 启用/禁用 FFT 频谱推送（前端组件挂载时启用，卸载时禁用）
-  ipcMain.handle("player:setFftEnabled", (_event, enabled: boolean) => {
+  // 跨窗口引用计数：每个渲染窗口（主窗口 / 灵动岛）独立申请/释放，
+  // 任一窗口需要即保持原生 FFT 推送，全部释放后才关闭。
+  const fftConsumers = new Set<number>();
+  /** 已挂过 destroyed 清理监听的 webContents：setFftEnabled 反复调用时避免重复注册累积监听 */
+  const fftCleanupAttached = new WeakSet<Electron.WebContents>();
+  ipcMain.handle("player:setFftEnabled", (event, enabled: boolean) => {
     try {
-      getPlayer().setFftEnabled(enabled);
+      const wcId = event.sender.id;
+      if (enabled) {
+        fftConsumers.add(wcId);
+      } else {
+        fftConsumers.delete(wcId);
+      }
+      if (!fftCleanupAttached.has(event.sender)) {
+        fftCleanupAttached.add(event.sender);
+        // 发送方 webContents 销毁（窗口关闭/崩溃）时清理，防止泄漏导致 FFT 永不关闭
+        event.sender.once("destroyed", () => {
+          const wasLast = fftConsumers.size <= 1 && fftConsumers.has(wcId);
+          fftConsumers.delete(wcId);
+          if (wasLast || fftConsumers.size === 0) {
+            try {
+              getPlayer().setFftEnabled(false);
+            } catch {
+              /* noop */
+            }
+          }
+        });
+      }
+      getPlayer().setFftEnabled(fftConsumers.size > 0);
       return { success: true };
     } catch (error) {
       return fail(ErrorCode.UNKNOWN, error);

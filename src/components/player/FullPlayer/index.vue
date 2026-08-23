@@ -156,22 +156,6 @@ const sheetOpen = ref(false);
 /** 本轮关闭是否由手势/弹簧驱动（避免 isExpanded 回写时立刻卸掉面板） */
 let sheetClosing = false;
 
-watch(
-  isExpanded,
-  (expanded) => {
-    if (expanded) {
-      sheetClosing = false;
-      sheetOpen.value = true;
-      return;
-    }
-    // 外部直接 isExpanded=false（如封面点艺术家）：走原 CSS leave
-    if (!sheetClosing && sheetOpen.value) {
-      sheetOpen.value = false;
-    }
-  },
-  { immediate: true },
-);
-
 const {
   dragging: sheetDragging,
   settling: sheetSettling,
@@ -182,6 +166,7 @@ const {
   onPointerCancel: onSheetPointerCancel,
   dismissAnimated,
   resetAfterClose,
+  resetForOpen,
   bindHost,
 } = useSheetDismiss({
   open: sheetOpen,
@@ -191,10 +176,71 @@ const {
     isExpanded.value = false;
   },
   onDismissEnd: () => {
+    // 仅当关闭过程中面板被重新打开（isExpanded 又为 true）才复位回屏幕内；
+    // 正常下滑关闭时 isExpanded 已是 false，应正常卸载面板（sheetOpen=false）。
+    if (sheetOpen.value && isExpanded.value) {
+      animateReopen();
+      sheetClosing = false;
+      return;
+    }
     sheetOpen.value = false;
     sheetClosing = false;
   },
 });
+
+/**
+ * 快速重新打开（下滑关闭的弹簧离场中/刚结束就再次上滑）时，带动画回到原位。
+ * 此时 sheetOpen 一直是 true，内部 watch 看不到值变化，面板可能仍滞留在屏幕外
+ * （translate3d 未清、z-200 全屏拦截点击 → 白屏）。先复位，再手动模拟一次
+ * enter：放到底部 → reflow → CSS 过渡滑入，与正常打开的 <Transition> 动画一致。
+ */
+const animateReopen = (): void => {
+  resetForOpen();
+  const el = playerRootRef.value;
+  if (!el) return;
+  el.style.transition = "none";
+  el.style.transform = "translate3d(0, 100%, 0)";
+  // 强制 reflow，让起始位移先落地
+  void el.offsetHeight;
+  el.style.transition = "transform 420ms cubic-bezier(0.32, 0.72, 0, 1)";
+  el.style.transform = "";
+  el.addEventListener(
+    "transitionend",
+    () => {
+      if (playerRootRef.value === el) {
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.touchAction = "";
+      }
+    },
+    { once: true },
+  );
+};
+
+// 注意：此 watch 须在 useSheetDismiss 解构之后定义，否则 immediate 回调
+// 会访问尚未初始化的 resetForOpen（TDZ 错误）
+watch(
+  isExpanded,
+  (expanded) => {
+    if (expanded) {
+      sheetClosing = false;
+      // 若 sheetOpen 值未变（弹簧离场进行中已被重新打开），面板可能仍滞留在
+      // 屏幕外（translate3d 未清、z-200 全屏拦截点击 → 白屏）。此时带滑入动画
+      // 复位；正常 false→true 打开则交给 Vue <Transition> enter 动画，不干预。
+      if (sheetOpen.value) {
+        animateReopen();
+      } else {
+        sheetOpen.value = true;
+      }
+      return;
+    }
+    // 外部直接 isExpanded=false（如封面点艺术家）：走原 CSS leave
+    if (!sheetClosing && sheetOpen.value) {
+      sheetOpen.value = false;
+    }
+  },
+  { immediate: true },
+);
 
 const collapse = (): void => {
   // 按钮 / Esc：立刻恢复主界面 + 弹簧离场 FullPlayer
@@ -355,16 +401,16 @@ const showComments = (): void => {
           @mouseleave="onBarLeave"
         >
           <div class="app-no-drag flex items-center gap-2">
-            <SButton type="cover" variant="ghost" circle :size="40" @click="collapse">
-              <template #icon><IconLucideChevronDown /></template>
-            </SButton>
-          </div>
-          <div class="app-no-drag flex items-center gap-3">
             <SButton type="cover" variant="ghost" circle :size="40" @click="toggleFullscreen">
               <template #icon>
                 <IconLucideMinimize v-if="isFullscreen" />
                 <IconLucideMaximize v-else />
               </template>
+            </SButton>
+          </div>
+          <div class="app-no-drag flex items-center gap-3">
+            <SButton type="cover" variant="ghost" circle :size="40" @click="collapse">
+              <template #icon><IconLucideChevronDown /></template>
             </SButton>
             <WindowControls cover />
           </div>

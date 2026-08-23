@@ -21,6 +21,7 @@ mod tempo;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Once};
 use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use napi::bindgen_prelude::*;
 use napi::threadsafe_function::ThreadsafeFunctionCallMode;
@@ -47,6 +48,18 @@ static SCAN_CANCEL: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 /// load 被更新的 load/stop 取代时的错误文案
 /// 主进程 IPC 按此文案识别并映射为 LOAD_SUPERSEDED（正常竞态，前端静默），改动需同步
 const LOAD_SUPERSEDED_REASON: &str = "load 已被更新的 load 取代";
+
+/// 暂停空闲超时后释放音频输出的等待时长（秒）。
+/// 对齐 mpv ao_coreaudio 的 IDLE_TIME=7s：太短会打断快速暂停/恢复，太长则睡眠被阻塞更久
+const IDLE_RELEASE_SECS: u64 = 7;
+
+/// 空闲释放定时器：暂停后延迟释放音频输出，让 coreaudiod 释放睡眠断言
+struct IdleRelease {
+    /// 取消标志（play/load/seek 等操作时置位）
+    stop: Arc<AtomicBool>,
+    /// 定时器线程句柄（join 保证释放动作完成后才继续）
+    handle: JoinHandle<()>,
+}
 
 /// anyhow::Error → napi::Error 统一转换。
 ///
@@ -169,6 +182,8 @@ fn state_to_str(state: PlayerState) -> &'static str {
 #[napi]
 pub struct AudioPlayer {
     inner: Arc<Mutex<InnerPlayer>>,
+    /// 暂停空闲超时定时器：暂停后 IDLE_RELEASE_SECS 未恢复则释放音频输出
+    idle_release: Mutex<Option<IdleRelease>>,
 }
 
 #[napi]
@@ -177,16 +192,60 @@ impl AudioPlayer {
     #[napi(constructor)]
     pub fn new() -> Result<Self> {
         let inner = InnerPlayer::new().into_napi()?;
+        // 注入空闲释放回调（Weak 捕获避免循环引用）：
+        // 播放结束/中断时由 position timer 线程触发，立即释放音频输出
+        let inner = Arc::new(Mutex::new(inner));
+        let weak = Arc::downgrade(&inner);
+        let idle_cb: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
+            if let Some(arc) = weak.upgrade() {
+                arc.lock().release_output_after_idle();
+            }
+        });
+        inner.lock().set_idle_release_cb(idle_cb);
         info!("AudioPlayer 实例已创建");
         Ok(Self {
-            inner: Arc::new(Mutex::new(inner)),
+            inner,
+            idle_release: Mutex::new(None),
         })
+    }
+
+    /// 暂停后启动空闲释放定时器：IDLE_RELEASE_SECS 秒后若仍暂停则释放音频输出
+    /// （mpv ao_coreaudio 同款策略，详见 InnerPlayer::release_output_after_idle）
+    fn arm_idle_release(&self) {
+        // 取消旧的定时器，避免重复触发
+        self.cancel_idle_release();
+
+        let stop = Arc::new(AtomicBool::new(false));
+        let inner = Arc::clone(&self.inner);
+        let stop_for_thread = Arc::clone(&stop);
+        let handle = thread::spawn(move || {
+            // 分片 sleep，便于 play/load 等操作及时取消
+            player::sleep_unless_stopped(&stop_for_thread, Duration::from_secs(IDLE_RELEASE_SECS));
+            if stop_for_thread.load(Ordering::Relaxed) {
+                return;
+            }
+            inner.lock().release_output_after_idle();
+        });
+
+        *self.idle_release.lock() = Some(IdleRelease { stop, handle });
+    }
+
+    /// 取消空闲释放定时器（play/load/seek/stop/设备切换等操作时调用）
+    fn cancel_idle_release(&self) {
+        if let Some(idle) = self.idle_release.lock().take() {
+            idle.stop.store(true, Ordering::Relaxed);
+            // join 等待释放动作完成：若已触发 release_output_after_idle，
+            // 确保其持有 inner 锁的释放动作结束，避免与后续操作交错
+            let _ = idle.handle.join();
+        }
     }
 
     /// 重新初始化音频输出设备（系统休眠唤醒后调用）
     #[napi]
     pub fn reinit_output(&self) -> Result<()> {
         info!("重新初始化音频输出设备");
+        // 重建输出属于主动操作：取消空闲释放定时器，避免新输出被误释放
+        self.cancel_idle_release();
         self.inner.lock().reinit_output().into_napi()
     }
 
@@ -258,6 +317,9 @@ impl AudioPlayer {
 
         let auto_play = auto_play.unwrap_or(true);
         info!(source = %source, auto_play, "加载音频源");
+
+        // 用户主动加载新源：取消空闲释放定时器
+        self.cancel_idle_release();
 
         let (old_threads, token, cover_dir, normalization_enabled, output_sample_rate) = {
             let mut player = self.inner.lock();
@@ -335,9 +397,36 @@ impl AudioPlayer {
     /// 恢复播放。如果已停止或播放结束，自动从头重新加载
     #[napi]
     pub async fn play(&self) -> Result<()> {
+        // 用户主动恢复播放：取消空闲释放定时器
+        self.cancel_idle_release();
+        // 取走空闲释放时记录的恢复位置（有值说明输出曾被释放，需 seek 回原位）
+        let resume_position = self.inner.lock().take_resume_position();
         let revival_source = self.inner.lock().play().into_napi()?;
         if let Some(source) = revival_source {
             let is_remote = source.starts_with("http://") || source.starts_with("https://");
+            // 空闲释放后的恢复：先以暂停态加载（避免 seek 前播出开头片段），
+            // seek 回原位，再触发一次 play 渐入恢复
+            if let Some(pos) = resume_position {
+                if let Err(e) = self.load(source, Some(false)).await {
+                    // 复活加载被更新的 load/stop 取代不是错误：已有更新的操作接管播放
+                    if e.reason == LOAD_SUPERSEDED_REASON {
+                        return Ok(());
+                    }
+                    // 远端源复活失败（多半 URL 过期）：发 sourceError 交 JS 重解析
+                    if is_remote {
+                        self.inner.lock().emit_source_error();
+                        return Ok(());
+                    }
+                    return Err(e);
+                }
+                if pos > 0.5 {
+                    self.seek(pos).await?;
+                }
+                // load(false) + seek 后处于 Paused，这里触发渐入恢复
+                self.inner.lock().play().into_napi()?;
+                return Ok(());
+            }
+            // 普通复活：从头自动播放
             if let Err(e) = self.load(source, Some(true)).await {
                 // 复活加载被更新的 load/stop 取代不是错误：已有更新的操作接管播放
                 if e.reason == LOAD_SUPERSEDED_REASON {
@@ -358,11 +447,15 @@ impl AudioPlayer {
     #[napi]
     pub fn pause(&self) {
         self.inner.lock().pause();
+        // 暂停后启动空闲释放定时器：长时间未恢复则释放音频输出，允许系统睡眠
+        self.arm_idle_release();
     }
 
     /// 停止播放并释放资源
     #[napi]
     pub fn stop(&self) {
+        // 用户主动停止：取消空闲释放定时器
+        self.cancel_idle_release();
         self.inner.lock().stop();
     }
 
@@ -377,6 +470,9 @@ impl AudioPlayer {
     pub async fn seek(&self, position: f64) -> Result<()> {
         use crate::shared::Shared;
 
+        // 用户主动 seek：取消空闲释放定时器
+        self.cancel_idle_release();
+
         let take = {
             let mut player = self.inner.lock();
             player.take_for_async_seek()
@@ -385,6 +481,10 @@ impl AudioPlayer {
         // 此时 seek 无意义，且绝不能走回退重载——current_source 仍指向旧曲，
         // 重载会顶掉在途的新歌加载、复活旧曲
         let Some(take) = take else {
+            // 输出已被空闲释放的暂停态：直接改写 resume_position，播放复活时生效
+            if self.inner.lock().is_output_released() {
+                self.inner.lock().set_resume_position(position);
+            }
             return Ok(());
         };
 
@@ -619,6 +719,8 @@ impl AudioPlayer {
     #[napi]
     pub fn set_output_device(&self, device_name: Option<String>) -> Result<()> {
         info!(device = ?device_name, "切换输出设备");
+        // 切换设备会重建输出：取消空闲释放定时器，避免新输出被误释放
+        self.cancel_idle_release();
         self.inner.lock().set_output_device(device_name).into_napi()
     }
 

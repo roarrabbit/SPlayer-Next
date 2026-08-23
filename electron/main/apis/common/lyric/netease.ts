@@ -94,36 +94,47 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
   const cached = getMatchedId(fingerprint, "netease");
   if (cached) return getByPlatformId(cached.platformId);
 
-  const keyword = buildLyricSearchKeyword(track);
-  if (!keyword) return null;
-  // 搜索 + 归一化
-  const candidates: LyricCandidate<{ id: string }>[] = [];
-  try {
-    const { status, body } = await callNetease("search", {
-      keywords: keyword,
-      type: 1,
-      limit: 20,
-    });
-    if (status !== 200) return null;
-    const songs = body.result?.songs ?? [];
-    for (const song of songs) {
-      candidates.push({
-        name: song.name,
-        artist: (song.artists ?? []).map((artist: { name: string }) => artist.name).join(" / "),
-        album: song.album?.name,
-        duration: song.duration,
-        extra: { id: String(song.id) },
+  const searchWith = async (keyword: string): Promise<LyricMatchResult | null> => {
+    if (!keyword) return null;
+    // 搜索 + 归一化
+    const candidates: LyricCandidate<{ id: string }>[] = [];
+    try {
+      const { status, body } = await callNetease("search", {
+        keywords: keyword,
+        type: 1,
+        limit: 20,
       });
+      if (status !== 200) return null;
+      const songs = body.result?.songs ?? [];
+      for (const song of songs) {
+        candidates.push({
+          name: song.name,
+          artist: (song.artists ?? []).map((artist: { name: string }) => artist.name).join(" / "),
+          album: song.album?.name,
+          duration: song.duration,
+          extra: { id: String(song.id) },
+        });
+      }
+    } catch (err) {
+      coreLog.warn(`[lyric:netease] search("${keyword}") failed:`, err);
+      return null;
     }
-  } catch (err) {
-    coreLog.warn(`[lyric:netease] search("${keyword}") failed:`, err);
-    return null;
+    const best = pickBestCandidate(candidates, track);
+    coreLog.info(
+      `[lyric:netease] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
+    );
+    if (!best) return null;
+    setMatchedId(fingerprint, "netease", best.extra.id);
+    return getByPlatformId(best.extra.id);
+  };
+
+  // 先按「歌名 + 歌手」搜；本地曲名常带「01. / 歌手 - 」前缀，若合并歌手后仍搜不到，
+  // 用纯歌名兜底再搜一次，提升本地音乐命中率。
+  const keyword = buildLyricSearchKeyword(track);
+  let result = await searchWith(keyword);
+  if (!result) {
+    const titleOnly = (track.title ?? "").trim();
+    if (titleOnly && titleOnly !== keyword) result = await searchWith(titleOnly);
   }
-  const best = pickBestCandidate(candidates, track);
-  coreLog.info(
-    `[lyric:netease] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,
-  );
-  if (!best) return null;
-  setMatchedId(fingerprint, "netease", best.extra.id);
-  return getByPlatformId(best.extra.id);
+  return result;
 };
