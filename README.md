@@ -25,10 +25,15 @@
 
 类 iPhone 灵动岛的桌面悬浮播放器：封面、歌词、频谱随音乐流动呈现，液体动效贴合 macOS 质感。
 
-<!-- 将你录制的灵动岛演示 GIF 放到 docs/public/dynamic-island.gif -->
-
 <p align="center">
   <img src="docs/public/dynamic-island.gif" alt="灵动岛播放器演示" width="520" />
+</p>
+### 🌊 流体动效
+
+GLSL 流体背景升级为 fbm / domain-warp 网格扭曲，支持随音乐律动的节拍脉动，强度与平滑均可调。
+
+<p align="center">
+  <img src="docs/public/player-page.gif" alt="灵动岛播放器演示" width="520" />
 </p>
 
 ### 🍎 macOS 适配
@@ -42,10 +47,6 @@
 ### 🎛️ 按键布局优化
 
 重新梳理播放页与全局的按键布局及交互逻辑，常用操作更顺手、层级更清晰。
-
-### 🌊 流体动效
-
-GLSL 流体背景升级为 fbm / domain-warp 网格扭曲，支持随音乐律动的节拍脉动，强度与平滑均可调。
 
 ## 🎼 上游核心功能
 
