@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import { defineConfig } from "electron-vite";
+import { loadEnv } from "vite";
 import UnoCSS from "unocss/vite";
 import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
@@ -10,8 +11,18 @@ import RekaResolver from "reka-ui/resolver";
 import Components from "unplugin-vue-components/vite";
 import pkg from "./package.json" with { type: "json" };
 
+// Last.fm 应用凭据：构建期从 .env.local / 环境变量注入（.env.local 不入库），
+// 未配置时为空字符串，运行期 Last.fm client 会抛"未配置"并自动禁用该功能。
+const lastfmEnv = loadEnv("", __dirname, ["LASTFM_"]);
+const LASTFM_API_KEY = lastfmEnv.LASTFM_API_KEY ?? "";
+const LASTFM_API_SECRET = lastfmEnv.LASTFM_API_SECRET ?? "";
+
 export default defineConfig({
   main: {
+    define: {
+      __LASTFM_API_KEY__: JSON.stringify(LASTFM_API_KEY),
+      __LASTFM_API_SECRET__: JSON.stringify(LASTFM_API_SECRET),
+    },
     publicDir: resolve(__dirname, "public"),
     build: {
       rollupOptions: {

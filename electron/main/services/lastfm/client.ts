@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { LASTFM_API_KEY, LASTFM_API_SECRET } from "./apiCredentials";
 
 /**
  * Last.fm 底层签名 HTTP 客户端
@@ -6,10 +7,6 @@ import { createHash } from "node:crypto";
  */
 
 const API_URL = "https://ws.audioscrobbler.com/2.0/";
-
-// 应用级凭证
-const LASTFM_API_KEY = "LASTFM_API_KEY_REDACTED";
-const LASTFM_API_SECRET = "LASTFM_API_SECRET_REDACTED";
 
 /** Last.fm JSON 响应中我们关心的字段 */
 interface LastfmResponse {
@@ -57,6 +54,10 @@ const buildParams = (
   params: Record<string, string>,
   signed: boolean,
 ): URLSearchParams => {
+  // 凭据守护：未注入 key/secret 时直接失败，避免带着空签名请求 Last.fm 返回难懂错误
+  if (!LASTFM_API_KEY || !LASTFM_API_SECRET) {
+    throw new Error("Last.fm API 未配置（缺少 LASTFM_API_KEY / LASTFM_API_SECRET）");
+  }
   const base: Record<string, string> = { method, api_key: LASTFM_API_KEY, ...params };
   if (signed) base.api_sig = sign(base);
   base.format = "json";

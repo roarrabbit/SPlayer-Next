@@ -28,6 +28,7 @@
     "pnpm": ">=10"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write .",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --fix .",
