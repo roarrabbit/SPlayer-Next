@@ -7,7 +7,7 @@
 🎵 桌面音乐播放器 —— 在上游基础上重新打磨的独立版本
 
 [![Release](https://img.shields.io/github/v/release/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/releases)
-[![License](https://img.shields.io/github/license/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/blob/dev/LICENSE)
 [![Upstream](https://img.shields.io/badge/upstream-SPlayer--Next-blue)](https://github.com/SPlayer-Dev/SPlayer-Next)
 [![Platform](https://img.shields.io/badge/platform-macOS-9cf)]()
 
