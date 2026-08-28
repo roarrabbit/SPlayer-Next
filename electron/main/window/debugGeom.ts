@@ -70,9 +70,30 @@ const GROUPS=[
     {k:"lyricY",l:"歌词 Y",min:-40,max:40,step:1},
     {k:"lyricW",l:"歌词 宽(0=自动)",min:0,max:340,step:1},
     {k:"lyricMarginLeft",l:"左 margin",min:-40,max:40,step:1},
-    {k:"lyricMarginRight",l:"右 margin",min:-40,max:40,step:1}]}
+    {k:"lyricMarginRight",l:"右 margin",min:-40,max:40,step:1}]},
+  {g:"圆角 / 刘海拟合（吸附态轮廓）",items:[
+    {k:"clipTopX",l:"顶角水平外扩",min:0,max:40,step:0.2},
+    {k:"clipTopY",l:"顶角下垂深度",min:0,max:30,step:0.5},
+    {k:"expandTopR",l:"展开态顶角圆角(贴刘海)",min:0,max:30,step:0.5},
+    {k:"clipBotRx",l:"底角水平延伸",min:0,max:80,step:0.5},
+    {k:"clipBotRy",l:"底角垂直半径",min:0,max:60,step:0.5},
+    {k:"gooNotchR",l:"液体刘海 blob 底角",min:0,max:40,step:0.5},
+    {k:"gooBodyR",l:"液体主体 blob 底角",min:0,max:60,step:0.5},
+    {k:"pillR",l:"收起药丸圆角",min:0,max:30,step:0.5}]},
+  {g:"岛整体位置（对照物理刘海）",items:[
+    {k:"islandDX",l:"岛整体 X 偏移",min:-150,max:150,step:0.5},
+    {k:"islandDY",l:"岛整体 Y 偏移",min:-40,max:40,step:0.5},
+    {k:"heightOverride",l:"岛总高(0=两态自动)",min:0,max:200,step:1}]},
+  {g:"刘海底缘参考框（先对准真机刘海；宽 0=隐藏）",items:[
+    {k:"guideW",l:"参考框 宽",min:0,max:400,step:2},
+    {k:"guideH",l:"参考框 高",min:4,max:60,step:1},
+    {k:"guideR",l:"参考框 底角",min:0,max:30,step:0.5},
+    {k:"guideX",l:"参考框 X 偏移",min:-150,max:150,step:1}]}
 ];
-const P={islandW:324,islandX:0,islandY:-61,topH:37,coverSize:28,specW:25,specH:20,barCount:5,barGap:2.5,coverMarginLeft:0,coverMarginTop:0,spectrumMarginRight:0,spectrumMarginTop:0,lyricH:28,noLyricH:39,lyricMarginLeft:-6,lyricMarginRight:-6,lyricFontSize:12,coverX:7,coverY:0,coverW:28,coverH:28,specX:-8,specY:0,lyricX:9,lyricY:0,lyricW:0};
+const P={islandW:324,islandX:0,islandY:-61,topH:37,coverSize:26,specW:25,specH:18,barCount:5,barGap:2.5,coverMarginLeft:0,coverMarginTop:0,spectrumMarginRight:0,spectrumMarginTop:0,lyricH:28,noLyricH:39,lyricMarginLeft:-6,lyricMarginRight:20,lyricFontSize:12,coverX:13,coverY:0,coverW:26,coverH:26,specX:-13,specY:0,lyricX:12,lyricY:-1,lyricW:242,
+clipTopX:16.6,clipTopY:8.5,clipBotRx:18,clipBotRy:17,gooNotchR:10,gooBodyR:18.5,pillR:18,expandTopR:7,
+islandDX:0,islandDY:0,heightOverride:0,
+guideW:0,guideH:26,guideR:12.5,guideX:0};
 const all=[];
 const scroll=document.getElementById("scroll");
 GROUPS.forEach(function(gp){
@@ -122,7 +143,13 @@ function upd(){
     "lyricX="+P.lyricX+" lyricY="+P.lyricY+" lyricW="+P.lyricW+"  // 歌词 xy/w(0=自动)\\n"+
     "lyricH="+P.lyricH+" lyricFontSize="+P.lyricFontSize+"  // 歌词行高/字号\\n"+
     "lyricMarginLeft="+P.lyricMarginLeft+" lyricMarginRight="+P.lyricMarginRight+"  // 歌词 margin\\n"+
-    "noLyricH="+P.noLyricH+"  // 无歌词高";
+    "noLyricH="+P.noLyricH+"  // 无歌词高\\n"+
+    "// 圆角 / 刘海拟合（RADIUS_CFG 默认值）\\n"+
+    "refW=380  topX="+P.clipTopX+"  topY="+P.clipTopY+"  botRx="+P.clipBotRx+"  botRy="+P.clipBotRy+"\\n"+
+    "notchR="+P.gooNotchR+"  gooBodyR="+P.gooBodyR+"  pillR="+P.pillR+"  expandTopR="+P.expandTopR+"\\n"+
+    "islandDX="+P.islandDX+"  islandDY="+P.islandDY+"  heightOverride="+P.heightOverride+"\\n"+
+    "// 参考框（guideW 0=隐藏）\\n"+
+    "guideW="+P.guideW+" guideH="+P.guideH+" guideR="+P.guideR+" guideX="+P.guideX;
 }
 for(let k=0;k<all.length;k++){
   (function(kk){

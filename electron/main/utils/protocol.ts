@@ -2,6 +2,9 @@ import path from "node:path";
 import { net, protocol, session } from "electron";
 import { getAppCacheDir } from "./config";
 
+/** 主进程 session partition 标识 */
+export const MAIN_PARTITION = "persist:main";
+
 /** cache:// 协议方案名 */
 const SCHEME = "cache";
 

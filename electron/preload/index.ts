@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
-import type { TaskbarLyricSettings } from "@shared/types/settings";
-import type {
+import type { TaskbarLyricSettings } from "@shared/types/settings";import type {
   PluginInfo,
   PluginResolveUrlArgs,
   PluginInvokeMenuArgs,
@@ -9,8 +8,8 @@ import type {
   PluginMatchCoverArgs,
 } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
-import type { LoadOptions, TrackSource } from "@shared/types/player";
-import type { StreamingServerConfig } from "@shared/types/streaming";
+import type { LoadOptions, TrackSource, FftData } from "@shared/types/player";
+import type { StreamingServerInput } from "@shared/types/streaming";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 import type { TagEditRequest } from "@shared/types/tagEditor";
 import type { UpdateEvent } from "@shared/types/update";
@@ -93,8 +92,11 @@ const api = {
     // 获取系统默认输出设备名称
     getDefaultDeviceName: () => ipcRenderer.invoke("player:getDefaultDeviceName"),
     // 切换输出设备（传 null 使用系统默认）
-    setOutputDevice: (deviceName: string | null) =>
-      ipcRenderer.invoke("player:setOutputDevice", deviceName),
+    setOutputDevice: (deviceName: string | null, pauseBeforeSwitch = false) =>
+      ipcRenderer.invoke("player:setOutputDevice", deviceName, pauseBeforeSwitch),
+    // 切换输出设备时是否自动暂停
+    setPauseOnDeviceSwitch: (enabled: boolean) =>
+      ipcRenderer.invoke("player:setPauseOnDeviceSwitch", enabled),
     // 获取当前选择的输出设备名称
     getSelectedDeviceName: () => ipcRenderer.invoke("player:getSelectedDeviceName"),
     // 获取当前歌曲的原始高清封面（base64 data URL）
@@ -277,9 +279,9 @@ const api = {
     // 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏）
     onCursorInside: (callback: (inside: boolean) => void) =>
       subscribe<boolean>("dynamicIsland:cursorInside", callback),
-    // 订阅主进程推送的 FFT 频谱帧（128 段对数频谱，仅播放且窗口可见时推送）
-    onFftData: (callback: (data: number[]) => void) =>
-      subscribe<number[]>("dynamicIsland:fftData", callback),
+    // 订阅主进程推送的 FFT 频谱帧（双声道 128 段对数频谱，仅播放且窗口可见时推送）
+    onFftData: (callback: (data: FftData) => void) =>
+      subscribe<FftData>("dynamicIsland:fftData", callback),
     // 实时下发几何调试参数到真实灵动岛窗口
     setDebugGeom: (params: DynamicIslandDebugGeom) =>
       ipcRenderer.send("dynamicIsland:setDebugGeom", params),
@@ -478,13 +480,95 @@ const api = {
     },
   },
   streaming: {
-    // 加载服务器配置（密码已解密）
+    /** 读取不包含凭据的服务器视图 */
     loadServers: () => ipcRenderer.invoke("streaming:loadServers"),
-    // 持久化服务器配置（密码经 safeStorage 加密）
-    saveServers: (payload: {
-      servers: StreamingServerConfig[];
-      activeServerId: string | null;
-    }): Promise<void> => ipcRenderer.invoke("streaming:saveServers", payload),
+    /**
+     * 新增服务器
+     * @param input - 服务器表单
+     * @returns 新服务器视图
+     */
+    addServer: (input: StreamingServerInput) => ipcRenderer.invoke("streaming:addServer", input),
+    /**
+     * 更新服务器
+     * @param serverId - 服务器 ID
+     * @param input - 服务器表单
+     * @returns 更新后的服务器视图
+     */
+    updateServer: (serverId: string, input: StreamingServerInput) =>
+      ipcRenderer.invoke("streaming:updateServer", serverId, input),
+    /**
+     * 删除服务器
+     * @param serverId - 服务器 ID
+     * @returns 删除完成
+     */
+    removeServer: (serverId: string) => ipcRenderer.invoke("streaming:removeServer", serverId),
+    /**
+     * 保存激活服务器
+     * @param serverId - 激活服务器 ID
+     * @returns 保存完成
+     */
+    setActiveServer: (serverId: string | null) =>
+      ipcRenderer.invoke("streaming:setActiveServer", serverId),
+    /**
+     * 测试服务器连接
+     * @param input - 服务器表单
+     * @param serverId - 编辑服务器 ID
+     * @returns 连通性结果
+     */
+    testConnection: (input: StreamingServerInput, serverId?: string) =>
+      ipcRenderer.invoke("streaming:testConnection", input, serverId),
+    /**
+     * 连接服务器
+     * @param serverId - 服务器 ID
+     * @returns 连接结果
+     */
+    connect: (serverId: string) => ipcRenderer.invoke("streaming:connect", serverId),
+    /**
+     * 断开服务器会话
+     * @param serverId - 服务器 ID
+     * @returns 断开完成
+     */
+    disconnect: (serverId: string) => ipcRenderer.invoke("streaming:disconnect", serverId),
+    getSnapshot: (serverId: string) => ipcRenderer.invoke("streaming:getSnapshot", serverId),
+    sync: (serverId: string, force?: boolean): Promise<boolean> =>
+      ipcRenderer.invoke("streaming:sync", serverId, force),
+    /**
+     * 订阅媒体库更新
+     * @param callback - 收到更新的服务器 ID
+     * @returns 取消订阅函数
+     */
+    onLibraryUpdated: (callback: (serverId: string) => void) => {
+      ipcRenderer.removeAllListeners("streaming:libraryUpdated");
+      return subscribe<string>("streaming:libraryUpdated", callback);
+    },
+    search: (serverId: string, query: string) =>
+      ipcRenderer.invoke("streaming:search", serverId, query),
+    getAlbumSongs: (serverId: string, albumId: string) =>
+      ipcRenderer.invoke("streaming:getAlbumSongs", serverId, albumId),
+    getPlaylistSongs: (serverId: string, playlistId: string) =>
+      ipcRenderer.invoke("streaming:getPlaylistSongs", serverId, playlistId),
+    getArtistAlbums: (serverId: string, artistId: string) =>
+      ipcRenderer.invoke("streaming:getArtistAlbums", serverId, artistId),
+    getArtistSongs: (serverId: string, artistId: string) =>
+      ipcRenderer.invoke("streaming:getArtistSongs", serverId, artistId),
+    /**
+     * 请求主进程生成播放地址
+     * @param serverId - 服务器 ID
+     * @param trackId - 服务端歌曲 ID
+     * @param playSessionId - 播放会话 ID
+     * @returns 播放地址
+     */
+    getStreamUrl: (serverId: string, trackId: string, playSessionId?: string) =>
+      ipcRenderer.invoke("streaming:getStreamUrl", serverId, trackId, playSessionId),
+    /**
+     * 请求主进程读取歌词
+     * @param serverId - 服务器 ID
+     * @param trackId - 服务端歌曲 ID
+     * @param hint - 旧 Subsonic 歌词端点使用的歌曲信息
+     * @returns 原始歌词文本
+     */
+    getLyrics: (serverId: string, trackId: string, hint?: { artist?: string; title?: string }) =>
+      ipcRenderer.invoke("streaming:getLyrics", serverId, trackId, hint),
   },
   lastfm: {
     // 发起授权
@@ -526,6 +610,16 @@ const api = {
     getStatsSummary: () => ipcRenderer.invoke("stats:getStatsSummary"),
     // 取最常播放的曲目
     getTopTracks: (limit: number) => ipcRenderer.invoke("stats:getTopTracks", limit),
+    // 取音乐库统计概览
+    getLibraryStats: () => ipcRenderer.invoke("stats:getLibraryStats"),
+    // 取最近 N 天（含今天）的每日播放统计
+    getPlayHistoryDaily: (days: number) => ipcRenderer.invoke("stats:getPlayHistoryDaily", days),
+    // 取各小时的累计播放统计
+    getPlayHistoryHourly: () => ipcRenderer.invoke("stats:getPlayHistoryHourly"),
+    // 取最常播放的专辑
+    getTopAlbums: (limit: number) => ipcRenderer.invoke("stats:getTopAlbums", limit),
+    // 取最常播放的歌手
+    getTopArtists: (limit: number) => ipcRenderer.invoke("stats:getTopArtists", limit),
   },
   hotkey: {
     getAll: () => ipcRenderer.invoke("hotkey:getAll"),

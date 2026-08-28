@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { LASTFM_API_KEY, LASTFM_API_SECRET } from "./apiCredentials";
+import { LASTFM_API_KEY, LASTFM_API_SECRET } from "./credentials";
 
 /**
  * Last.fm 底层签名 HTTP 客户端

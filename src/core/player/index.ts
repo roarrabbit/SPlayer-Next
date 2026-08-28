@@ -538,12 +538,11 @@ export const refreshDevices = async (): Promise<void> => {
  * @param deviceName - 设备名称，传 null 跟随系统默认
  */
 export const switchDevice = async (deviceName: string | null): Promise<void> => {
-  const result = await window.api.player.setOutputDevice(deviceName);
-  if (!result.success) return;
   const settings = useSettingsStore();
-  settings.player.outputDevice = deviceName;
-  // 是否暂停播放
-  if (settings.player.pauseOnDeviceSwitch && useStatusStore().state === "playing") await pause();
+  const pauseBeforeSwitch =
+    settings.player.pauseOnDeviceSwitch && useStatusStore().state === "playing";
+  const result = await window.api.player.setOutputDevice(deviceName, pauseBeforeSwitch);
+  if (result.success) settings.player.outputDevice = deviceName;
 };
 
 /**
@@ -688,9 +687,15 @@ export const nextTrack = async (manual = false): Promise<void> => {
   if (status.fmMode) {
     const next = await fm.next();
     if (next) await loadTrack(next);
+    // 拉取失败无 load 跟随：解除切换态（主进程 ended 已置位），让停止态正常收起灵动岛
+    else window.api.player.setTrackLoading(false);
     return;
   }
-  if (queue.queueLength.value === 0) return;
+  if (queue.queueLength.value === 0) {
+    // 队列已空，无 load 跟随：解除切换态，让停止态正常收起灵动岛
+    window.api.player.setTrackLoading(false);
+    return;
+  }
   // 到末尾了
   if (status.playIndex >= queue.queueLength.value - 1) {
     // 列表循环 / 单曲循环，或用户手动点下一曲
@@ -972,6 +977,7 @@ export const initPlayer = async (): Promise<void> => {
   }
   // 刷新设备列表并恢复上次选择的输出设备
   await refreshDevices();
+  await window.api.player.setPauseOnDeviceSwitch(settings.player.pauseOnDeviceSwitch);
   if (settings.player.outputDevice) {
     await window.api.player.setOutputDevice(settings.player.outputDevice);
   }

@@ -1,4 +1,6 @@
 packages: []
+overrides:
+  "node-abi@<4.33": ^4.33.0
 allowBuilds:
   "@parcel/watcher": false
   better-sqlite3: true

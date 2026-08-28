@@ -80,6 +80,10 @@ export class LyricRenderer {
   private userScrollOffset = 0;
   /** 是否处于用户滚动状态 */
   private isUserScrolling = false;
+  /** 布局快照：可见歌词内容的顶部 y（用于用户滚动边界钳制） */
+  private contentTopY = 0;
+  /** 布局快照：可见歌词内容的底部 y（含末行高度，用于用户滚动边界钳制） */
+  private contentBottomY = 0;
   /** 鼠标是否悬停在容器上（悬停时抑制模糊） */
   private isHovering = false;
   /** 滚动回弹定时器 ID */
@@ -695,6 +699,9 @@ export class LyricRenderer {
     // 置顶背景行延后到下一轮迭代摆放，记录其槽位
     let pendingBgIdx = -1;
     let pendingBgY = 0;
+    // 可见内容范围快照（滚动钳制边界）
+    let contentTop = Infinity;
+    let contentBottom = -Infinity;
 
     for (let i = 0; i < lineCount; i++) {
       const posSpring = this.positionSprings[i];
@@ -749,6 +756,12 @@ export class LyricRenderer {
         scaleSpring.setTargetPosition(targetScale, cascadeDelay);
       }
 
+      if (!collapsedBG) {
+        const h = this.lineHeights[i] || 40;
+        if (lineY < contentTop) contentTop = lineY;
+        if (lineY + h > contentBottom) contentBottom = lineY + h;
+      }
+
       position += advance;
 
       if (position >= 0 && !this.isUserScrolling) {
@@ -761,6 +774,10 @@ export class LyricRenderer {
     const bottomY = position + dotsGap;
     if (syncImmediate) this.bottomLineSpring.setPosition(bottomY);
     else this.bottomLineSpring.setTargetPosition(bottomY, cascadeDelay);
+
+    // 记录可见内容范围，供用户滚动钳制
+    this.contentTopY = contentTop === Infinity ? 0 : contentTop;
+    this.contentBottomY = contentBottom === -Infinity ? 0 : contentBottom;
   };
 
   /**
@@ -1029,12 +1046,20 @@ export class LyricRenderer {
 
   /**
    * 应用用户滚动偏移并设置回弹定时器
+   * 边界基于「基准布局」（从快照还原偏移平移）计算，不随当前滚动状态收缩：
+   * 首行顶边不越过视口顶部、末行底边不越过视口底部
    * @param deltaY - 滚动偏移量
    */
   private applyUserScroll = (deltaY: number) => {
     // 首次进入滚动时清理残留动画，减少合成开销
     if (!this.isUserScrolling) this.lineAnimations.cleanupInactive();
-    this.userScrollOffset += deltaY;
+    const baseTop = this.contentTopY + this.userScrollOffset;
+    const baseBottom = this.contentBottomY + this.userScrollOffset;
+    const maxOffset = Math.max(0, baseBottom - this.containerHeight);
+    const minOffset = Math.min(0, baseTop);
+    const next = Math.min(maxOffset, Math.max(minOffset, this.userScrollOffset + deltaY));
+    if (next === this.userScrollOffset && this.isUserScrolling) return;
+    this.userScrollOffset = next;
     this.isUserScrolling = true;
     this.calculateLayout(false);
     clearTimeout(this.scrollResetTimerId);

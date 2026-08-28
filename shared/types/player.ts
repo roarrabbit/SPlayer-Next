@@ -13,6 +13,21 @@ export type ShuffleMode = "off" | "on";
 /** 歌曲来源：本地 / 流媒体 / 在线平台 */
 export type TrackSource = "local" | "streaming" | Platform;
 
+/** 播放来源类型 */
+export type PlaybackOriginType = "track" | "playlist" | "album" | "artist" | "radio" | "page";
+
+/** 本次播放的来源上下文 */
+export interface PlaybackContext {
+  /** 平台资源所属来源 */
+  provider?: TrackSource;
+  /** 来源资源或页面标识 */
+  originId: string;
+  /** 来源资源类型 */
+  originType: PlaybackOriginType;
+  /** 来源资源名称 */
+  originName?: string;
+}
+
 /** 歌手 */
 export interface Artist {
   id?: string;
@@ -57,12 +72,13 @@ export interface AudioQuality {
 }
 
 /**
- * 付费等级
+ * 付费标记，遵循网易云 fee 规范
  * - 0: 免费
  * - 1: VIP
- * - 2: 需购买（数字专辑等）
+ * - 4: 需购买（数字专辑等）
+ * - 8: 受限音质
  */
-export type TrackFee = 0 | 1 | 2;
+export type TrackFee = 0 | 1 | 4 | 8;
 
 /** 歌曲信息 */
 export interface Track {
@@ -124,6 +140,12 @@ export interface TrackDetail {
   externalLyrics: { format: LyricFormat; path: string }[];
 }
 
+/** 播放队列项，将曲目元数据与本次播放上下文分离 */
+export interface PlaybackQueueItem {
+  track: Track;
+  context?: PlaybackContext;
+}
+
 /** 播放器加载后从音频流提取出的可覆盖元数据 */
 export interface MediaInfo {
   /** 时长（毫秒） */
@@ -150,6 +172,8 @@ export interface LoadOptions {
    * streaming/online 源应当下发；本地源缺省时主进程回退到引擎解析的 tag。
    */
   meta?: Track;
+  /** 本次播放的来源上下文 */
+  context?: PlaybackContext;
 }
 
 /** 播放器状态快照 */
@@ -181,9 +205,15 @@ export type PlayerEvent =
   | { type: "setShuffle"; data: { mode: ShuffleMode } }
   | { type: "setRepeat"; data: { mode: RepeatMode } }
   | { type: "toggleLike" }
-  | { type: "fftData"; data: number[] }
+  | { type: "fftData"; data: FftData }
   | { type: "error"; error: string }
   | { type: "deviceChanged"; data: { defaultDevice: string | null } };
+
+/** FFT 数据 */
+export interface FftData {
+  ldata: number[];
+  rdata: number[];
+}
 
 /** IPC 响应包装 */
 export interface IpcResponse<T = void> {
@@ -216,7 +246,7 @@ export interface PlayerApi {
   /** 设置 FFT 频谱推送 */
   setFftEnabled: (enabled: boolean) => Promise<IpcResponse>;
   /** 获取 FFT 频谱数据 */
-  getFftData: () => Promise<IpcResponse<number[]>>;
+  getFftData: () => Promise<IpcResponse<FftData>>;
   /** 设置渐入渐出时长（毫秒） */
   setFadeDuration: (ms: number) => Promise<IpcResponse>;
   /** 获取渐入渐出时长（毫秒） */
@@ -245,8 +275,10 @@ export interface PlayerApi {
   getOutputDevices: () => Promise<IpcResponse<AudioDevice[]>>;
   /** 获取系统默认输出设备名称 */
   getDefaultDeviceName: () => Promise<IpcResponse<string | null>>;
-  /** 切换输出设备（传 null 使用系统默认） */
-  setOutputDevice: (deviceName: string | null) => Promise<IpcResponse>;
+  /** 切换输出设备（传 null 使用系统默认；可选在切换前立即暂停） */
+  setOutputDevice: (deviceName: string | null, pauseBeforeSwitch?: boolean) => Promise<IpcResponse>;
+  /** 设置输出设备切换时是否暂停播放 */
+  setPauseOnDeviceSwitch: (enabled: boolean) => Promise<IpcResponse>;
   /** 获取当前选择的输出设备名称 */
   getSelectedDeviceName: () => Promise<IpcResponse<string | null>>;
   /** 同步播放模式到托盘 */

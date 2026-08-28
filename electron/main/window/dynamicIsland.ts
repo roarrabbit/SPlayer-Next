@@ -33,6 +33,10 @@ const MIN_HEIGHT = 14;
 const MAX_HEIGHT = 200;
 /** 吸附判定阈值：拖拽释放时距顶部小于此值则重新吸附 */
 const SNAP_THRESHOLD = 8;
+/** 贴顶轨道高度：拖拽中窗口顶边进入吸附线上方该范围即锁定贴顶并施加中央磁吸 */
+const TOP_TRACK_PX = 24;
+/** 中央磁吸区半宽：窗口中心距锚点中心小于该值时自动吸附居中 */
+const MAGNET_HALF_RANGE = 90;
 /** 吸附判定用 Y 偏移：窗口贴合顶边后距屏幕顶边的真实间隙 */
 const SNAP_Y_OFFSET = 22;
 /** 灵动岛固定 Y 偏移（用户已调好，配合 BoringNotch 贴刘海；相对 wa.y+SNAP_Y_OFFSET 基准） */
@@ -149,23 +153,38 @@ const getCurrentDisplay = (): Electron.Display => {
  * @param display - 当前窗口所在显示器
  * @returns 吸附后的左上角坐标
  */
+/**
+ * 拖拽中是否处于中央磁吸（松手保存时决定 snapped 态清空坐标还是保留贴顶位置）
+ */
+let dragSnappedCentered = false;
+
+/**
+ * 解析当前平台的吸附线 Y：fusion 嵌入刘海区（与 computeSnappedPos 公式一致），其余平台贴工作区顶
+ * @param display - 目标显示器
+ */
+const resolveSnapY = (display: Electron.Display): number => {
+  if (!isNotchFusionEnabled()) return display.workArea.y;
+  return display.workArea.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y + debugOffsetY;
+};
+
 const computeSnappedPos = (
   display: Electron.Display = getCurrentDisplay(),
 ): { x: number; y: number } => {
+  const saved = store.get("windowStates.dynamicIsland");
+  // 用户贴顶横移/磁吸后的记忆位优先（x 非空即显式选择）；否则回到默认家位
+  if (saved.x !== null) {
+    const bounds = display.bounds;
+    const leftFromCenter = saved.x - Math.round(cachedSize.width / 2);
+    const x = Math.max(
+      bounds.x,
+      Math.min(bounds.x + bounds.width - cachedSize.width, leftFromCenter),
+    );
+    return { x, y: resolveSnapY(display) };
+  }
   if (!isNotchFusionEnabled()) {
-    const config = store.get("dynamicIsland");
-    const saved = store.get("windowStates.dynamicIsland");
     const wa = display.workArea;
-    if (config.snapCentered || saved.x === null) {
-      return {
-        x: wa.x + Math.round((wa.width - cachedSize.width) / 2),
-        y: wa.y,
-      };
-    }
-    const savedX = saved.x;
-    const leftFromCenter = savedX - Math.round(cachedSize.width / 2);
     return {
-      x: Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, leftFromCenter)),
+      x: wa.x + Math.round((wa.width - cachedSize.width) / 2),
       y: wa.y,
     };
   }
@@ -180,7 +199,29 @@ const computeSnappedPos = (
   );
   // Y 用与调试台 setDebugGeom 完全一致的公式：wa.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y，
   // 使切歌/初始化/重定位都落在用户固定的 islandY 位置，避免切歌时跳回默认吸附位。
-  return { x, y: wa.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y };
+  // debugOffsetX/Y 是几何调试台的实时微调，叠加后所有重定位路径保持一致。
+  return { x: x + debugOffsetX, y: wa.y + SNAP_Y_OFFSET + ISLAND_FIXED_OFFSET_Y + debugOffsetY };
+};
+
+/** 几何调试台的岛整体偏移（px；吸附态重定位时持续生效） */
+let debugOffsetX = 0;
+let debugOffsetY = 0;
+
+/**
+ * 应用几何调试台的岛整体 X/Y 偏移
+ * @param dx - 相对默认吸附位的水平偏移（px）
+ * @param dy - 相对默认吸附位的垂直偏移（px）
+ */
+export const applyDynamicIslandDebugOffset = (dx: number, dy: number): void => {
+  debugOffsetX = dx;
+  debugOffsetY = dy;
+  const saved = store.get("windowStates.dynamicIsland");
+  if (saved.mode !== "snapped") return;
+  const win = getDynamicIslandWindow();
+  if (!win || win.isDestroyed()) return;
+  const pos = computeSnappedPos();
+  const bounds = win.getBounds();
+  win.setBounds({ x: pos.x, y: pos.y, width: bounds.width, height: bounds.height });
 };
 
 /**
@@ -338,7 +379,7 @@ export const applyDynamicIslandHeight = (height: number): void => {
   const h = clampHeight(height);
   cachedSize.height = h;
   const saved = store.get("windowStates.dynamicIsland");
-  if (saved.mode === "snapped" || isNotchFusionEnabled()) {
+  if (saved.mode === "snapped") {
     const pos = computeSnappedPos();
     win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: h });
   } else {
@@ -352,8 +393,8 @@ export const applyDynamicIslandHeight = (height: number): void => {
  * 回弹"两段式；此处弹簧仅用于 showLyric 开关时的窗口高度弹性过渡，与液体 blob 节奏解耦）。
  * 吸附态走 computeSnappedPos 贴合刘海；浮动态保持中心点。
  */
-const HEIGHT_SPRING_OPEN = { omega: 7.0, zeta: 0.45 };
-const HEIGHT_SPRING_CLOSE = { omega: 9, zeta: 0.6 };
+const HEIGHT_SPRING_OPEN = { omega: 7.0, zeta: 0.7 };
+const HEIGHT_SPRING_CLOSE = { omega: 7.0, zeta: 0.7 };
 const springStep = (t: number, omega: number, zeta: number): number => {
   const s = Math.sqrt(Math.max(0.0001, 1 - zeta * zeta));
   const wd = omega * s;
@@ -382,11 +423,17 @@ export const applyDynamicIslandHeightAnimated = (targetHeight: number): void => 
   const settle = springSettle(omega, zeta);
   const startTime = Date.now();
   heightAnimTimer = setInterval(() => {
+    // 窗口可能在动画期间被关闭/销毁（关岛、退出、主进程重启），先于 setBounds 检查
+    if (!win || win.isDestroyed()) {
+      if (heightAnimTimer) clearInterval(heightAnimTimer);
+      heightAnimTimer = null;
+      return;
+    }
     const elapsed = (Date.now() - startTime) / 1000;
     if (elapsed >= settle) {
       cachedSize.height = target;
       const saved = store.get("windowStates.dynamicIsland");
-      if (saved.mode === "snapped" || isNotchFusionEnabled()) {
+      if (saved.mode === "snapped") {
         const pos = computeSnappedPos();
         win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: target });
       } else {
@@ -401,7 +448,7 @@ export const applyDynamicIslandHeightAnimated = (targetHeight: number): void => 
     const h = Math.round(start + (target - start) * p);
     cachedSize.height = h;
     const saved = store.get("windowStates.dynamicIsland");
-    if (saved.mode === "snapped" || isNotchFusionEnabled()) {
+    if (saved.mode === "snapped") {
       const pos = computeSnappedPos();
       win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: h });
     } else {
@@ -412,11 +459,11 @@ export const applyDynamicIslandHeightAnimated = (targetHeight: number): void => 
 };
 
 /**
- * 从配置计算窗口宽度: default=324 / wide=236(仅歌词) / custom=customWidth
+ * 从配置计算窗口宽度: default=324 / wide=242(仅歌词) / custom=customWidth
  */
 export const getDynamicIslandWidthFromConfig = (): number => {
   const cfg = store.get("dynamicIsland") || {};
-  if (cfg.widthMode === "wide") return 236;
+  if (cfg.widthMode === "wide") return 242;
   if (cfg.widthMode === "custom") return cfg.customWidth || 240;
   return 324;
 };
@@ -450,26 +497,50 @@ export const applyDynamicIslandWidth = (width: number): void => {
 };
 
 /**
- * 移动窗口到指定位置
- * 尺寸始终用权威 cachedSize 写回；拖拽过程保持自由移动
- * 仅约束 y 不上下越界，x 允许超出屏幕（迁移到副屏或半隐都可）
- * 过程中根据距顶部距离实时广播视觉 mode，让圆角随拖拽平滑切换
+ * 移动窗口到指定位置（拖拽过程高频调用）
+ * 形态状态机：
+ * - 窗口顶边进入吸附线上方 TOP_TRACK_PX 范围 → 锁定贴顶（y=吸附线），x 跟随；
+ *   窗口中心接近屏/工作区中心 MAGNET_HALF_RANGE 内自动磁吸居中
+ * - 拖离轨道 → floating 自由移动
+ * 全程实时广播视觉 mode，圆角随形态平滑切换；跨平台：fusion 用屏幕 bounds，
+ * 其余平台用 workArea，Windows/Linux 贴顶即"刘海风格药丸"
  */
 export const moveDynamicIslandWindow = (x: number, y: number): void => {
   const win = getDynamicIslandWindow();
   if (!win) return;
-  const tx = Math.round(x);
-  let ty = Math.round(y);
-  // 用窗口中心点找最近显示器，避免越界后 getDisplayMatching 选错屏
+  let tx = Math.round(x);
   const display = screen.getDisplayNearestPoint({
     x: tx + Math.round(cachedSize.width / 2),
-    y: ty + Math.round(cachedSize.height / 2),
+    y: Math.round(y) + Math.round(cachedSize.height / 2),
   });
   const wa = display.workArea;
+  const snapY = resolveSnapY(display);
+
+  if (Math.round(y) <= snapY + TOP_TRACK_PX) {
+    dragSnappedCentered = false;
+    tx = Math.max(
+      display.bounds.x,
+      Math.min(display.bounds.x + display.bounds.width - cachedSize.width, tx),
+    );
+    const anchorCenterX = isNotchFusionEnabled()
+      ? display.bounds.x + Math.round(display.bounds.width / 2)
+      : wa.x + Math.round(wa.width / 2);
+    const centerX = tx + Math.round(cachedSize.width / 2);
+    if (Math.abs(centerX - anchorCenterX) <= MAGNET_HALF_RANGE) {
+      tx = anchorCenterX - Math.round(cachedSize.width / 2);
+      dragSnappedCentered = true;
+    }
+    win.setBounds({ x: tx, y: snapY, width: cachedSize.width, height: cachedSize.height });
+    broadcastMode("snapped");
+    return;
+  }
+
+  dragSnappedCentered = false;
+  // 自由区：仅约束 y 不越出屏幕底部，x 允许超出屏幕（迁移副屏或半隐）
   const maxTy = wa.y + (wa.height || display.bounds.height) - cachedSize.height;
-  ty = Math.min(maxTy, ty);
+  const ty = Math.min(maxTy, Math.round(y));
   win.setBounds({ x: tx, y: ty, width: cachedSize.width, height: cachedSize.height });
-  broadcastMode(ty <= display.bounds.y + NOTCH_TOP_OFFSET ? "snapped" : "floating");
+  broadcastMode("floating");
 };
 
 /** 当前广播过的吸附模式，用于跨阈值时去抖 */
@@ -484,9 +555,10 @@ const broadcastMode = (mode: "snapped" | "floating"): void => {
 };
 
 /**
- * 拖拽结束时判定吸附
- * 落点 y 距离顶部 < SNAP_THRESHOLD 则吸附
- * 否则记录 floating + 当前坐标
+ * 拖拽结束时保存形态
+ * 落点在贴顶轨道内（距吸附线 ≤ SNAP_THRESHOLD）→ snapped：
+ *   磁吸居中的松手清空坐标（回默认家位），否则保留横移位置（存窗口中心 x）
+ * 否则 → floating，记录自由坐标
  */
 export const saveDynamicIslandState = (): void => {
   const win = getDynamicIslandWindow();
@@ -497,13 +569,11 @@ export const saveDynamicIslandState = (): void => {
     x: b.x + Math.round(b.width / 2),
     y: b.y + Math.round(b.height / 2),
   });
-  const wa = display.workArea;
-  const snapY = isNotchFusionEnabled() ? display.bounds.y + NOTCH_TOP_OFFSET : wa.y;
+  const snapY = resolveSnapY(display);
   if (b.y - snapY <= SNAP_THRESHOLD) {
-    const config = store.get("dynamicIsland");
-    if (isNotchFusionEnabled() || config.snapCentered) {
+    if (dragSnappedCentered) {
       const pos = computeSnappedPos(display);
-      win.setBounds({ x: pos.x, y: pos.y, width: cachedSize.width, height: cachedSize.height });
+      win.setBounds({ x: pos.x, y: snapY, width: cachedSize.width, height: cachedSize.height });
       store.set("windowStates.dynamicIsland", {
         ...store.get("windowStates.dynamicIsland"),
         mode: "snapped",
@@ -511,12 +581,15 @@ export const saveDynamicIslandState = (): void => {
         y: null,
       });
     } else {
-      // 保留拖到的水平位置；存中心点而非左上角，让后续宽度变化围绕中心点对称伸缩
-      const clampedLeftX = Math.max(wa.x, Math.min(wa.x + wa.width - cachedSize.width, b.x));
+      // 原位贴顶：存中心点而非左上角，让后续宽度变化围绕中心点对称伸缩
+      const clampedLeftX = Math.max(
+        display.bounds.x,
+        Math.min(display.bounds.x + display.bounds.width - cachedSize.width, b.x),
+      );
       const centerX = clampedLeftX + Math.round(cachedSize.width / 2);
       win.setBounds({
         x: clampedLeftX,
-        y: wa.y,
+        y: snapY,
         width: cachedSize.width,
         height: cachedSize.height,
       });
@@ -524,11 +597,13 @@ export const saveDynamicIslandState = (): void => {
         ...store.get("windowStates.dynamicIsland"),
         mode: "snapped",
         x: centerX,
-        y: wa.y,
+        y: snapY,
       });
     }
+    dragSnappedCentered = false;
     broadcastMode("snapped");
   } else {
+    dragSnappedCentered = false;
     store.set("windowStates.dynamicIsland", {
       ...store.get("windowStates.dynamicIsland"),
       mode: "floating",
@@ -550,8 +625,9 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
   const fusionEnabled = isNotchFusionEnabled();
 
   const initialDisplay = fusionEnabled ? screen.getPrimaryDisplay() : getCurrentDisplay();
+  // floating 是用户的显式选择（拖离贴顶轨道），fusion 下同样恢复，不再强制回刘海
   const floatingPos =
-    !fusionEnabled && saved.mode === "floating" && saved.x !== null && saved.y !== null
+    saved.mode === "floating" && saved.x !== null && saved.y !== null
       ? { x: saved.x, y: saved.y }
       : null;
   // 真实刘海尺寸仅用于日志/后续定位，当前高度以基准高度为准（与打包产物一致）
@@ -572,7 +648,8 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
       y: Math.max(wa.y, Math.min(wa.y + wa.height - cachedSize.height, floatingPos.y)),
     };
   } else {
-    if (fusionEnabled) {
+    if (fusionEnabled && !(saved.mode === "snapped" && saved.x !== null)) {
+      // fusion 无显式横移位置时归位刘海家位；有横移记忆则保留
       store.set("windowStates.dynamicIsland", {
         ...saved,
         mode: "snapped",
@@ -667,12 +744,27 @@ export const createDynamicIslandWindow = (): BrowserWindow => {
   return dynamicIslandWindow;
 };
 
-/** 关闭灵动岛窗口 */
+/** 关闭前收起动画时长：与渲染端 goo「收回 + jelly」总节奏一致 */
+const ISLAND_CLOSE_ANIM_MS = 1200;
+let islandCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 关闭灵动岛窗口：先播液体缩回刘海的收起动画，播完再销毁（避免瞬间消失） */
 export const closeDynamicIslandWindow = (): void => {
   cancelIslandHide();
-  if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) {
-    dynamicIslandWindow.close();
+  const win = dynamicIslandWindow;
+  if (!win || win.isDestroyed()) return;
+  if (islandCloseTimer) return;
+  try {
+    win.webContents.send("dynamicIsland:visibility", false);
+  } catch {
+    /* webContents 未就绪则跳过动画，仅走下方延时关闭 */
   }
+  islandCloseTimer = setTimeout(() => {
+    islandCloseTimer = null;
+    if (dynamicIslandWindow && !dynamicIslandWindow.isDestroyed()) {
+      dynamicIslandWindow.close();
+    }
+  }, ISLAND_CLOSE_ANIM_MS);
 };
 
 /** 切换灵动岛窗口 */

@@ -677,6 +677,7 @@
       "hotkeys": "快捷键配置",
       "services": "网络与服务",
       "mediaSource": "媒体源配置",
+      "mediaServerManagement": "媒体源管理",
       "download": "下载配置",
       "localCache": "本地与缓存",
       "plugins": "插件管理",
@@ -838,6 +839,10 @@
       "label": "频谱条宽度",
       "description": "数值越小柱条越细越密"
     },
+    "reverseSpectrum": {
+      "label": "频谱反向",
+      "description": "启用后频率从中间向两侧递减，否则递增"
+    },
     "lyricSourcePreference": {
       "label": "歌词来源偏好",
       "description": "匹配在线歌词时的平台优先级",
@@ -942,7 +947,8 @@
         "openPlayer": "打开播放界面",
         "closePlayer": "关闭播放界面",
         "togglePlaylist": "展开 / 收起播放列表",
-        "openSearch": "打开搜索"
+        "openSearch": "打开搜索",
+        "searchInPage": "页面内搜索"
       }
     },
     "engine": {
@@ -1322,6 +1328,10 @@
       "label": "暂停时冻结",
       "description": "暂停播放时同时停止流体背景动画"
     },
+    "playerBgPauseOnBlur": {
+      "label": "失焦时暂停",
+      "description": "窗口失去焦点后先保持 1 秒，再用 2 秒缓缓静止流体背景以降低后台功耗；关闭则动效常驻"
+    },
     "playerBgBeat": {
       "label": "背景跳动",
       "description": "使流体背景随音乐低频节拍产生脉动效果"
@@ -1402,6 +1412,10 @@
     "sidebarPlaylistCover": {
       "label": "歌单显示封面",
       "description": "侧边栏的歌单项以歌单封面替代默认图标"
+    },
+    "showStatsInSidebar": {
+      "label": "显示播放统计入口",
+      "description": "在侧边栏显示播放统计页面入口"
     },
     "showQualitySwitch": {
       "label": "显示快捷音质切换",
@@ -1929,6 +1943,29 @@
     "unsubscribe": "取消收藏",
     "privacy": {
       "private": "设为私密"
+    },
+    "context": {
+      "more": "更多操作",
+      "album": {
+        "copyTitle": "复制专辑名称",
+        "copyId": "复制专辑 ID",
+        "copyUrl": "分享专辑链接"
+      },
+      "playlist": {
+        "copyTitle": "复制歌单名称",
+        "copyId": "复制歌单 ID",
+        "copyUrl": "分享歌单链接"
+      },
+      "radio": {
+        "copyTitle": "复制电台名称",
+        "copyId": "复制电台 ID",
+        "copyUrl": "分享电台链接"
+      },
+      "cloud": {
+        "copyTitle": "复制云盘名称",
+        "copyId": "复制云盘 ID",
+        "copyUrl": "分享云盘链接"
+      }
     }
   },
   "artist": {
@@ -1943,6 +1980,34 @@
   "folder": {
     "label": "文件夹",
     "totalFolders": "共 {count} 个"
+  },
+  "stats": {
+    "label": "统计",
+    "songs": "歌曲",
+    "albums": "专辑",
+    "artists": "歌手",
+    "totalDuration": "总时长",
+    "totalSize": "总大小",
+    "topSongs": "最常听的歌曲",
+    "topAlbums": "最常听的专辑",
+    "topArtists": "最常听的歌手",
+    "plays": "{count} 次播放",
+    "playsUnit": "次播放",
+    "noData": "暂无播放数据",
+    "noDataHint": "暂无数据，去听一些歌吧",
+    "unknown": "未知",
+    "less": "少",
+    "more": "多",
+    "audioQuality": "音频格式",
+    "formatCount": "{count} 种格式",
+    "losslessRatio": "无损占比",
+    "trackUnit": "首",
+    "listeningHours": "播放时段",
+    "peakListening": "最常播放",
+    "favoriteHour": "你最喜欢在 {hour}:00 听歌，共计 {count} 首",
+    "noPlayHistory": "暂无播放时段数据",
+    "listeningActivity": "聆听足迹",
+    "last90Days": "近 90 天"
   },
   "errors": {
     "dialogTitle": "出错了",

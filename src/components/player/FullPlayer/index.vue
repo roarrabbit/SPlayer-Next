@@ -356,8 +356,8 @@ const showComments = (): void => {
       @after-leave="onPlayerAfterLeave"
     >
       <div
-        ref="playerRootRef"
         v-show="sheetOpen"
+        ref="playerRootRef"
         class="full-player-root fixed inset-0 z-200 overflow-hidden text-cover"
         :class="[
           immersive ? 'cursor-none [&_*]:!cursor-none' : '',

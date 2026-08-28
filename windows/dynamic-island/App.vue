@@ -19,17 +19,17 @@ import {
   type CoverPalette,
 } from "./composables/useCoverColor";
 
-// 窗口宽度模式: default=324 / wide=236(仅歌词模式) / custom=自定义 customWidth（岛宽固定，歌词过长时滚动而非扩宽）
+// 窗口宽度模式: default=324 / wide=242(仅歌词模式) / custom=自定义 customWidth（岛宽固定，歌词过长时滚动而非扩宽）
 const DEFAULT_WIDTH = 324;
-const WIDE_WIDTH = 236;
+const WIDE_WIDTH = 242;
 const DEFAULT_CUSTOM_WIDTH = 240;
 const BAR_HEIGHT = 28; // 歌词行高度（不变）
 // 顶部封面/频谱区高度：≈刘海高度，封面频谱贴屏幕最顶、左右分列、垂直居中
 const TOP_HEIGHT = 37;
 // 封面尺寸 / 频谱尺寸与柱数（与组件默认值一致，可被调试参数覆盖）
-const COVER_SIZE = 28;
+const COVER_SIZE = 26;
 const SPEC_W = 25;
-const SPEC_H = 20;
+const SPEC_H = 18;
 const SPEC_BARS = 5;
 
 // 几何调试参数：已按调试控制台最终参数固定（控制台入口已移除，以下为常量）。
@@ -53,19 +53,19 @@ const geom = reactive<DynamicIslandDebugGeom>({
   spectrumMarginRight: 0,
   spectrumMarginTop: 0,
   lyricMarginLeft: -6,
-  lyricMarginRight: -6,
+  lyricMarginRight: 20,
   /** 歌词字号（几何调试可调，调好后落地为常量） */
-  lyricFontSize: 13,
+  lyricFontSize: 12,
   /** 封面/频谱/歌词 独立 xy 偏移与宽高（调试台最终参数，固定为常量） */
-  coverX: 12,
+  coverX: 13,
   coverY: 0,
   coverW: COVER_SIZE,
   coverH: COVER_SIZE,
-  specX: -12,
+  specX: -13,
   specY: 0,
   lyricX: 12,
-  lyricY: 0,
-  lyricW: 0,
+  lyricY: -1,
+  lyricW: 242,
 });
 
 // 一次性 Marquee 参数：静止 → 滚动 → 末尾停留 → 平滑回程 → 停止（不循环）
@@ -156,10 +156,13 @@ const FACE_SINK_RATIO = 88;
 /** 弹出段时长：结束后立即进入 jelly 回弹（750→500，回弹提早 250ms 出现） */
 const GOO_EXPAND_MS = 500;
 const GOO_JELLY_MS = 700;
-const GOO_COLLAPSE_MS = 400;
+/** 收回段时长：与展开主段一致，随后接同款 jelly 回弹（总节奏与展开对等） */
+const GOO_COLLAPSE_MS = 500;
+/** 收起 jelly 幅度：缩入后液体微微再探出又收回（取绝对值保证不过零翻转） */
+const GOO_COLLAPSE_JELLY_AMP = 0.35;
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
-/** jelly 回弹：1 + A·e^(−k·t)·sin(ω·t)，从 1 开始衰减振荡 */
-const jelly = (t: number): number => 1 + 0.045 * Math.exp(-6 * t) * Math.sin(14 * t);
+/** jelly 回弹：1 + A·e^(−k·t)·sin(ω·t)，从 1 开始衰减振荡（A=过冲幅度） */
+const jelly = (t: number): number => 1 + 0.022 * Math.exp(-6 * t) * Math.sin(14 * t);
 let gooRaf = 0;
 /** 当前展开进度：0=收起小药丸，1=完全展开（jelly 阶段允许轻微 >1） */
 let gooProgress = 0;
@@ -181,11 +184,13 @@ const setGoo = (prog: number): void => {
   }
   const guard = gooGuardRef.value;
   if (guard) {
-    // 顶部锐边盖板：宽度随 notch 同步撑开；顶部圆角收起=胶囊、展开=贴刘海直边
+    // 顶部锐边盖板：宽度随 notch 同步撑开；顶角圆角在「收起药丸 pillR」与
+    // 「展开贴刘海 expandTopR」间随进度插值（展开态可拟合物理刘海的圆弧）
     const gx = 0.42 + 0.58 * prog;
-    const topR = (1 - Math.min(1, Math.max(0, prog))) * 18;
+    const cProg = Math.min(1, Math.max(0, prog));
+    const topR = (1 - cProg) * RADIUS_CFG.pillR + cProg * RADIUS_CFG.expandTopR;
     guard.style.transform = `scaleX(${gx.toFixed(4)})`;
-    guard.style.borderRadius = `${topR.toFixed(1)}px ${topR.toFixed(1)}px 18px 18px`;
+    guard.style.borderRadius = `${topR.toFixed(1)}px ${topR.toFixed(1)}px ${RADIUS_CFG.pillR}px ${RADIUS_CFG.pillR}px`;
   }
   // 前景内容：贴液面运动（随灵动岛整体进退，而非原地被裁/独立淡出）——
   //   内层 translateY = 液体收缩量 × FACE_SINK_RATIO（内容像放在液面上被拖入刘海）；
@@ -208,6 +213,123 @@ const setGoo = (prog: number): void => {
     faceMove.style.transform = `translateY(${((1 - cProg) * FACE_SINK_RATIO).toFixed(2)}%)`;
   }
 };
+
+/* ===== 圆角 / 刘海拟合参数（托盘「灵动岛几何调试台」实时下发）=====
+   吸附态轮廓由像素语义参数生成单条归一化 path，参考高取「当前实际窗口高度」——
+   开/关歌词只是底边向上收缩、高度变化时形状语义（顶角/底角弧度）保持一致；
+   液体层与兜底圆角经 CSS 变量下发。调好后从控制台「复制参数」，把数值写回
+   本对象作为新默认值。 */
+const BOT_CTRL_RATIO = 0.6429;
+const RADIUS_CFG = reactive({
+  /** 归一化参考宽度（换算基准，一般不动） */
+  refW: 380,
+  /** 顶角水平外扩 */
+  topX: 16.6,
+  /** 顶角下垂深度 */
+  topY: 8.5,
+  /** 底角总水平延伸 */
+  botRx: 18,
+  /** 底角垂直半径 */
+  botRy: 17,
+  /** 刘海 blob 底角 */
+  notchR: 10,
+  /** 主体 blob 底角 */
+  gooBodyR: 18.5,
+  /** 收起态药丸圆角（guard 盖板） */
+  pillR: 18,
+  /** 展开态顶角圆角（guard 盖板贴刘海的两角；拟合物理刘海圆弧） */
+  expandTopR: 7,
+});
+const f5 = (n: number): string => n.toFixed(5);
+const genSnappedD = (hRef: number): string => {
+  const { refW, topX, topY, botRx, botRy } = RADIUS_CFG;
+  const nx = topX / refW;
+  const ny = topY / hRef;
+  const by = 1 - botRy / hRef;
+  const ex = nx + botRx / refW;
+  const cx = nx + BOT_CTRL_RATIO * (ex - nx);
+  return [
+    "M0 0",
+    `C0 0 ${f5(nx)} 0 ${f5(nx)} ${f5(ny)}`,
+    `L${f5(nx)} ${f5(by)}`,
+    `C${f5(nx)} 1 ${f5(cx)} 1 ${f5(ex)} 1`,
+    `L${f5(1 - ex)} 1`,
+    `C${f5(1 - cx)} 1 ${f5(1 - nx)} 1 ${f5(1 - nx)} ${f5(by)}`,
+    `L${f5(1 - nx)} ${f5(ny)}`,
+    `C${f5(1 - nx)} 0 1 0 1 0 Z`,
+  ].join(" ");
+};
+const snappedD = computed(() => genSnappedD(computeIslandHeight()));
+
+/** 刘海底缘参考框：先拖到与真机刘海重合，再照着调岛的上圆角 */
+const notchGuide = reactive({ show: false, w: 226, h: 32, r: 10, x: 0 });
+
+watchEffect(() => {
+  const s = document.documentElement.style;
+  s.setProperty("--di-r-notch", `${RADIUS_CFG.notchR}px`);
+  s.setProperty("--di-r-goo-body", `${RADIUS_CFG.gooBodyR}px`);
+  s.setProperty("--di-r-snap-b", `${RADIUS_CFG.botRy}px`);
+});
+
+onMounted(() => {
+  window.api.dynamicIsland.onDebugGeom((p) => {
+    // 布局几何全量应用（封面/频谱/歌词 xy、宽高、margin 等）
+    const geomKeys = [
+      "topH",
+      "lyricH",
+      "noLyricH",
+      "lyricFontSize",
+      "coverSize",
+      "specW",
+      "specH",
+      "barCount",
+      "barGap",
+      "coverMarginLeft",
+      "coverMarginTop",
+      "spectrumMarginRight",
+      "spectrumMarginTop",
+      "lyricMarginLeft",
+      "lyricMarginRight",
+      "coverX",
+      "coverY",
+      "coverW",
+      "coverH",
+      "specX",
+      "specY",
+      "lyricX",
+      "lyricY",
+      "lyricW",
+    ] as const;
+    let geomDirty = false;
+    for (const k of geomKeys) {
+      if (p[k] != null) {
+        geom[k] = p[k];
+        geomDirty = true;
+      }
+    }
+    // 圆角 / 刘海拟合参数
+    if (p.clipTopX != null) RADIUS_CFG.topX = p.clipTopX;
+    if (p.clipTopY != null) RADIUS_CFG.topY = p.clipTopY;
+    if (p.clipBotRx != null) RADIUS_CFG.botRx = p.clipBotRx;
+    if (p.clipBotRy != null) RADIUS_CFG.botRy = p.clipBotRy;
+    if (p.gooNotchR != null) RADIUS_CFG.notchR = p.gooNotchR;
+    if (p.gooBodyR != null) RADIUS_CFG.gooBodyR = p.gooBodyR;
+    if (p.pillR != null) RADIUS_CFG.pillR = p.pillR;
+    if (p.expandTopR != null) RADIUS_CFG.expandTopR = p.expandTopR;
+    if (p.guideW != null) {
+      notchGuide.w = p.guideW;
+      notchGuide.show = p.guideW > 0;
+    }
+    if (p.guideH != null) notchGuide.h = p.guideH;
+    if (p.guideR != null) notchGuide.r = p.guideR;
+    if (p.guideX != null) notchGuide.x = p.guideX;
+    // 高度相关字段变化时重新上报窗口总高（topH/lyricH/noLyricH 即总高来源）
+    if (p.heightOverride != null) heightOverride.value = p.heightOverride;
+    if (geomDirty || p.heightOverride != null) {
+      window.api.dynamicIsland.setHeight(computeIslandHeight());
+    }
+  });
+});
 const animateGoo = (to: number): void => {
   if (gooRaf) cancelAnimationFrame(gooRaf);
   const from = gooProgress;
@@ -230,12 +352,21 @@ const animateGoo = (to: number): void => {
         }
       }
     } else {
-      // 收起：平滑收回。prog 是插值比例（0→1），v = from + (to-from)*prog 从当前值降到 0。
+      // 收起：与展开对等的两段节奏——主体平滑收回 → 同款 jelly 微微探出再缩回。
+      // prog 是插值比例（0→1），v = from + (to-from)*prog 从当前值降到 0；
+      // 尾段取 |sin| 保证 prog ≤ 1（v ≥ 0，避免负 scale 镜像翻转）。
       // （此前误写 1-easeOutCubic：t=0 时 prog=1 → v 瞬间归零，随后又随 prog 递减涨回展开态，
       //   导致"暂停与播放一样 + 停在全展开黑条"。）
-      const t = Math.min(1, elapsed / GOO_COLLAPSE_MS);
-      prog = easeOutCubic(t);
-      if (t >= 1) done = true;
+      if (elapsed < GOO_COLLAPSE_MS) {
+        prog = easeOutCubic(elapsed / GOO_COLLAPSE_MS);
+      } else {
+        const t = (elapsed - GOO_COLLAPSE_MS) / 1000;
+        prog = 1 - GOO_COLLAPSE_JELLY_AMP * Math.exp(-6 * t) * Math.abs(Math.sin(14 * t));
+        if (elapsed >= GOO_COLLAPSE_MS + GOO_JELLY_MS) {
+          prog = 1;
+          done = true;
+        }
+      }
     }
     const v = from + (to - from) * prog;
     gooProgress = v;
@@ -343,7 +474,11 @@ watch(
 );
 
 // 歌词文字色：主色与白混合（保留色相、提亮保可读性）
-const lyricColor = computed(() => mixWithWhite(coverPalette.value.primary, 0.42));
+// 歌词 / 间奏点 与 频谱 统一为封面主色，保证三处同色：
+//   已播 = 主色（= 频谱顶色）；未播 = 同色系偏暗；间奏点 = 主色。
+const accentColor = computed(() => coverPalette.value.primary);
+const lyricPlayedColor = computed(() => coverPalette.value.primary); // 已播：与频谱顶色一致
+const lyricUnplayedColor = computed(() => mixWithWhite(coverPalette.value.primary, 0.55)); // 未播：同色系偏暗
 
 // 频谱双色：直接来自封面调色板（extractColorPalette 内部已 ensureSpectrumVisible）
 const spectrumColors = computed(() => ({
@@ -581,13 +716,13 @@ let morphAnim: Animation | null = null;
 
 const measure = (): void => {
   // 用当前文本 span 的精确渲染宽度（最后一个字右边缘），
-  // 而非 .lyric-morph 的 scrollWidth（后者含 inline 尾部空隙，会滚过头产生右侧空白）
-  if (lyricEnterRef.value) {
+  // 而非 .lyric-morph 的 scrollWidth（后者含 inline 尾部空隙，会滚过头产生右侧空白）。
+  // 间奏态渲染的是圆点 span（enter span 已被 v-else 卸载），须测量圆点自身宽度——
+  // 轨道里还叠着退场旧句（absolute leave 层），回退到 track.scrollWidth 会把圆点误判为超宽而滚动
+  const target = lyricEnterRef.value ?? dotsRef.value;
+  if (target) {
     lyricWidth.value =
-      lyricEnterRef.value.getBoundingClientRect().width ||
-      lyricEnterRef.value.offsetWidth ||
-      lyricEnterRef.value.scrollWidth ||
-      0;
+      target.getBoundingClientRect().width || target.offsetWidth || target.scrollWidth || 0;
   } else if (lyricTrackRef.value) {
     lyricWidth.value = lyricTrackRef.value.scrollWidth || 0;
   }
@@ -731,14 +866,16 @@ watch(
 );
 
 const rootStyle = computed(() => ({
-  "--di-played": config.playedColor,
-  "--di-unplayed": config.unplayedColor,
+  // 歌词已播/未播双色：跟随封面主色（与频谱统一），不再用固定白色
+  "--di-played": lyricPlayedColor.value,
+  "--di-unplayed": lyricUnplayedColor.value,
   "--di-bg": config.backgroundColor,
   "--di-font-weight": config.fontWeight,
-  // 封面主色：驱动频谱柱、封面光晕；歌词文字色跟随封面（与白混合保可读）
-  "--di-accent": coverPalette.value.primary,
+  // 封面主色：驱动频谱柱、封面光晕、间奏点、歌词渐变（与频谱同色）
+  "--di-accent": accentColor.value,
+  // 封面辅色：与 primary 组成频谱同款垂直渐变，供歌词/间奏点复用
+  "--di-accent-2": coverPalette.value.secondary,
   "--di-accent-soft": hexToRgba(coverPalette.value.primary, 0.35),
-  "--di-lyric": lyricColor.value,
   // 几何调试驱动的歌词行高（line-height 跟随）
   "--di-lyric-h": geom.lyricH + "px",
   // 几何调试驱动的歌词字号（font-size 跟随）
@@ -754,27 +891,20 @@ const rootStyle = computed(() => ({
 // macOS 会把位于菜单栏区域的窗口吸附到 availTop(39)，窗口每次 resize 都会
 // 触发一次吸附，导致贴刘海的位置被顶下来。固定窗口高度后仅 goo 层在窗口内
 // 缩成顶部小药丸，尺寸不变 → 位置稳定贴顶。
+/** 几何调试台的岛总高覆盖（px；0=按开/关歌词两态自动） */
+const heightOverride = ref(0);
 const computeIslandHeight = (): number => {
+  // 调试台高度覆盖：非 0 时锁定总高，忽略开/关歌词两态公式
+  if (heightOverride.value > 0) return heightOverride.value;
   if (!config.showLyric) return geom.noLyricH ?? 0;
   return geom.lyricH + geom.topH;
 };
-let lyricHeightTimer: ReturnType<typeof setTimeout> | null = null;
 watch(
   () => config.showLyric,
-  (show) => {
-    if (lyricHeightTimer) {
-      clearTimeout(lyricHeightTimer);
-      lyricHeightTimer = null;
-    }
-    if (show) {
-      // 展示歌词：先展开高度（弹性动画，主进程弹簧 → 液体滴落），歌词行上滑进入（CSS 300ms）
-      window.api.dynamicIsland.setHeightAnimated(computeIslandHeight());
-    } else {
-      // 关闭歌词：歌词行先下滑（CSS 300ms），再收回高度（弹性动画，液体收回）
-      lyricHeightTimer = setTimeout(() => {
-        window.api.dynamicIsland.setHeightAnimated(computeIslandHeight());
-      }, 320);
-    }
+  () => {
+    // 开/关歌词：窗口高度弹性动画与歌词行上滑/下滑（CSS 300ms）同时进行，
+    // 收缩不再等待歌词淡出
+    window.api.dynamicIsland.setHeightAnimated(computeIslandHeight());
   },
   { flush: "post" },
 );
@@ -847,10 +977,6 @@ onBeforeUnmount(() => {
   stopMsLoop();
   if (marqueeAnim) marqueeAnim.cancel();
   if (morphAnim) morphAnim.cancel();
-  if (lyricHeightTimer) {
-    clearTimeout(lyricHeightTimer);
-    lyricHeightTimer = null;
-  }
   if (titleTimer) {
     clearTimeout(titleTimer);
     titleTimer = null;
@@ -878,11 +1004,8 @@ onBeforeUnmount(() => {
        二者均随实际窗口高度平滑缩放。 -->
   <svg class="island-clip-defs" width="0" height="0" aria-hidden="true">
     <defs>
-      <clipPath id="islandSnappedClipLyric" clipPathUnits="objectBoundingBox">
-        <path d="M0 0 C0 0 0.0331 0 0.0331 0.15385 L0.0331 0.56923 C0.0331 1 0.09272 1 0.12583 1 L0.87417 1 C0.90728 1 0.96689 1 0.96689 0.56923 L0.96689 0.15385 C0.96689 0 1 0 1 0 Z" />
-      </clipPath>
-      <clipPath id="islandSnappedClipNolyric" clipPathUnits="objectBoundingBox">
-        <path d="M0 0 C0 0 0.0331 0 0.0331 0.25641 L0.0331 0.28205 C0.0331 1 0.09272 1 0.12583 1 L0.87417 1 C0.90728 1 0.96689 1 0.96689 0.28205 L0.96689 0.25641 C0.96689 0 1 0 1 0 Z" />
+      <clipPath id="islandSnappedClip" clipPathUnits="objectBoundingBox">
+        <path :d="snappedD" />
       </clipPath>
       <!-- Gooey 液体滤镜（Metaball）：feGaussianBlur 柔化 + feColorMatrix 高对比阈值，
            让 notch blob / neck blob / body blob 三者融合成"液体"形变。
@@ -899,6 +1022,17 @@ onBeforeUnmount(() => {
       </filter>
     </defs>
   </svg>
+  <!-- 刘海底缘参考框（调试台控制显隐）：对准真机刘海后作为上圆角拟合基准 -->
+  <div
+    v-if="notchGuide.show"
+    class="notch-guide"
+    :style="{
+      width: notchGuide.w + 'px',
+      height: notchGuide.h + 'px',
+      borderRadius: `0 0 ${notchGuide.r}px ${notchGuide.r}px`,
+      transform: `translateX(calc(-50% + ${notchGuide.x}px))`,
+    }"
+  ></div>
   <div
     class="root"
     :class="[
@@ -1120,22 +1254,13 @@ onBeforeUnmount(() => {
    - 歌词态用 islandSnappedClipLyric（65px 参考，底 28px），无歌词态用 islandSnappedClipNolyric（39px 参考，同比例）。
    - 融合模式(.is-notch-fusion)全宽黑条同样套用（顶直底圆），不 excluded（否则融合开启时整条不生效→纯直）。
    - transform: translateZ(0) 强制独立合成层（GPU 加速）；border-radius 兜底，切片失效也至少底部圆角，绝不纯直。 */
-.root.is-snapped:not(.is-nolyric) {
-  -webkit-clip-path: url(#islandSnappedClipLyric);
-  clip-path: url(#islandSnappedClipLyric);
+.root.is-snapped {
+  -webkit-clip-path: url(#islandSnappedClip);
+  clip-path: url(#islandSnappedClip);
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  border-bottom-right-radius: 28px;
-  border-bottom-left-radius: 28px;
-  transform: translateZ(0);
-}
-.root.is-snapped.is-nolyric {
-  -webkit-clip-path: url(#islandSnappedClipNolyric);
-  clip-path: url(#islandSnappedClipNolyric);
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 28px;
-  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: var(--di-r-snap-b, 28px);
+  border-bottom-left-radius: var(--di-r-snap-b, 28px);
   transform: translateZ(0);
 }
 .root.is-floating {
@@ -1187,7 +1312,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: var(--di-goo-notch-h, 37px);
-  border-radius: 0 0 18px 18px;
+  border-radius: 0 0 var(--di-r-notch, 18px) var(--di-r-notch, 18px);
   transform: scaleX(0.42);
   transform-origin: top center;
   will-change: transform;
@@ -1201,7 +1326,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: 0 0 32px 32px;
+  border-radius: 0 0 var(--di-r-goo-body, 32px) var(--di-r-goo-body, 32px);
   transform: scale(0.42, 0.15);
   transform-origin: top center;
   will-change: transform;
@@ -1279,11 +1404,21 @@ onBeforeUnmount(() => {
 .lyric-text {
   font-size: var(--di-lyric-font-size, 12px);
   font-weight: 500;
-  /* 文字色跟随封面主色（与白混合保可读性），无封面时回退白 */
-  color: var(--di-lyric, rgba(255, 255, 255, 0.75));
+  /* 渐变文字：与频谱柱同款垂直渐变（顶 primary / 底 secondary），跟随封面。
+     background-clip:text 需要 -webkit-text-fill-color 透明（该属性可被子元素继承） */
+  background: linear-gradient(
+    180deg,
+    var(--di-accent, rgba(255, 255, 255, 0.78)) 0%,
+    var(--di-accent-2, rgba(255, 255, 255, 0.45)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
   line-height: var(--di-lyric-h, 28px);
   letter-spacing: 0.01em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  /* text-shadow 会透过裁切文字糊底，改用 drop-shadow 作用于最终渲染像素 */
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 /* 间奏圆点：复刻大播放器默认效果（整体正弦呼吸 + 依次点亮，由 JS 按间奏进度驱动） */
 .interlude-dots {
@@ -1292,14 +1427,21 @@ onBeforeUnmount(() => {
   gap: 5px;
   height: 28px;
   opacity: 0; /* 初始隐藏，由 JS 按入场进度淡入 */
-  transform-origin: center;
+  /* 改为 left center：缩放只向右扩展，最左点左缘固定不动，
+     不会被 .marquee-wrap 的 overflow:hidden 向左裁切（解决「左边缺一块」） */
+  transform-origin: left center;
   will-change: transform, opacity;
 }
 .interlude-dots > i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.78);
+  /* 与频谱/歌词同款垂直渐变（顶 primary / 底 secondary），跟随封面 */
+  background: linear-gradient(
+    180deg,
+    var(--di-accent, rgba(255, 255, 255, 0.78)) 0%,
+    var(--di-accent-2, rgba(255, 255, 255, 0.45)) 100%
+  );
   display: inline-block;
 }
 
@@ -1314,6 +1456,15 @@ onBeforeUnmount(() => {
   font-weight: 400;
   opacity: 0.55;
   letter-spacing: 0.005em;
+  /* opacity 生成独立合成层，父级的 background-clip 无法覆盖到这里，
+     自带同款渐变裁切（同一行高，垂直渐变视觉连续） */
+  background: linear-gradient(
+    180deg,
+    var(--di-accent, rgba(255, 255, 255, 0.78)) 0%,
+    var(--di-accent-2, rgba(255, 255, 255, 0.45)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 /* 暂停态：歌词轻微变暗（生命周期连续，不重建/不收起内容）。
@@ -1323,5 +1474,16 @@ onBeforeUnmount(() => {
 }
 .di-content.is-paused .lyric-morph {
   opacity: 0.5;
+}
+
+/* 刘海底缘参考框：红色虚线，顶边贴屏幕上缘；对准真机刘海后作为拟合基准 */
+.notch-guide {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 99;
+  border: 1px dashed rgba(255, 82, 82, 0.85);
+  border-top: none;
+  pointer-events: none;
 }
 </style>

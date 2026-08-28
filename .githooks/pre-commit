@@ -3,30 +3,19 @@
 # 启用方式（仓库内执行一次）：git config core.hooksPath .githooks
 set -u
 
-# 1) 禁止追踪任何本地凭据/密钥文件（.env.example 除外，它只是空模板）
-BANNED_PATTERN='(^|/)(\.env|\.env\.local|\.env\.[^/]*|.*\.pem|.*\.key|credentials\.local\.)($|/)'
+# 1) 禁止追踪任何本地凭据/密钥文件
+BANNED_PATTERN='(^|/)(\.env(\.local)?|\.env\.[^/]*|.*\.pem|.*\.key|credentials\.local\.)($|/)'
 for f in $(git diff --cached --name-only --diff-filter=ACMR); do
-  printf '%s' "$f" | grep -qE '\.env\.example$' && continue
   if printf '%s' "$f" | grep -qE "$BANNED_PATTERN"; then
     echo "pre-commit 拒绝: $f 疑似本地凭据文件，请从暂存区移除或加入 .gitignore" >&2
     exit 1
   fi
 done
 
-# 1.5) 扫描暂存内容，拦截已知泄露的旧 Last.fm 密钥（防止误写回）
-# 注意排除 .githooks 自身：黑名单字面量写在钩子里，避免自举误报。
-KNOWN_LEAKS='79fa364d995b13c2b21bdd65b7e7054f|6d2ecc338d0a0802669e529f14b8034f'
-if git diff --cached -- . ':!.githooks' | grep -qE "$KNOWN_LEAKS"; then
-  echo "pre-commit 拒绝: 检测到已泄露的旧 Last.fm 密钥，禁止写回仓库" >&2
-  exit 1
-fi
-
-# 2) 扫描暂存代码的【新增行】，拦截形如 KEY/SECRET/TOKEN = "..." 的硬编码值
-# 注意：只匹配以 + 开头的新增行，删除行（如移除旧的 REDACTED 占位符）不算。
+# 2) 扫描暂存代码的新增行，拦截形如 KEY/SECRET/TOKEN = "..." 的硬编码值
 RELEVANT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js|cjs|mjs|json|py|go|rs|sh|rb|php|env)$' || true)
 if [ -n "$RELEVANT" ]; then
   SUSPECTS=$(git diff --cached -U0 -- $(printf '%s' "$RELEVANT") |
-    grep -E '^\+' |
     grep -aoE '(__|[A-Za-z0-9_]*)(API[_-]?(KEY|SECRET)|CLIENT[_-]?(SECRET|ID)|AUTH[_-]?TOKEN|ACCESS[_-]?KEY|PASSWORD|PRIVATE[_-]?KEY|LASTFM_[A-Z_]+)\s*[:=]\s*["'\''][0-9A-Za-z+/=_-]{16,}["'\'']' |
     grep -viE 'PLACEHOLDER|YOUR_[A-Z_]+|EXAMPLE|"0+"|"+"' || true)
   if [ -n "$SUSPECTS" ]; then

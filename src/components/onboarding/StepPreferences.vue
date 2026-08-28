@@ -99,6 +99,15 @@ const isColorActive = (hex: string): boolean =>
           <span class="text-sm shrink-0">{{ t("onboarding.preferences.colorLabel") }}</span>
           <div class="shrink-0 flex flex-wrap items-center gap-1.5 justify-end">
             <SButton
+              :type="source === 'cover' ? 'primary' : 'default'"
+              :variant="source === 'cover' ? 'secondary' : 'tertiary'"
+              size="small"
+              round
+              @click="theme.setSource('cover')"
+            >
+              {{ t("settings.themeSource.cover") }}
+            </SButton>
+            <SButton
               v-for="hex in PRESET_COLORS"
               :key="hex"
               variant="text"
@@ -114,15 +123,6 @@ const isColorActive = (hex: string): boolean =>
               <template v-if="isColorActive(hex)" #icon>
                 <IconCheck class="text-white drop-shadow" />
               </template>
-            </SButton>
-            <SButton
-              :type="source === 'cover' ? 'primary' : 'default'"
-              :variant="source === 'cover' ? 'secondary' : 'tertiary'"
-              size="small"
-              round
-              @click="theme.setSource('cover')"
-            >
-              {{ t("settings.themeSource.cover") }}
             </SButton>
           </div>
         </div>

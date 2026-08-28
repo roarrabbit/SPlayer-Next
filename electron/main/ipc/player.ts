@@ -11,7 +11,13 @@ import * as lastfm from "@main/services/lastfm";
 import * as neteaseScrobble from "@main/services/neteaseScrobble";
 import { fetchBytes } from "@main/utils/fetchBytes";
 import { getPlayer, resetPlayer, onPlayerCreated } from "@main/services/engine";
-import { startDevicePolling, stopDevicePolling } from "@main/services/device";
+import {
+  cancelPendingReinit,
+  setPauseOnDeviceSwitch,
+  startDeviceMonitoring,
+  stopDeviceMonitoring,
+  requestReinit,
+} from "@main/services/device";
 import { getThumbar } from "@main/services/thumbar";
 import {
   setTraySongName,
@@ -69,14 +75,36 @@ const fail = (code: ErrorCode, error?: unknown) => {
   return { success: false as const, error: code };
 };
 
+const isNativeDeviceError = (error: unknown): boolean => String(error).includes("[Device]");
+const isNativeSourceNotFoundError = (error: unknown): boolean =>
+  String(error).includes("[SourceNotFound]");
+const isNativeNetworkError = (error: unknown): boolean =>
+  String(error).includes("[NetworkUnreachable]");
+const isNativeCancelledError = (error: unknown): boolean => String(error).includes("[Cancelled]");
+
+/** 根据原生错误特征和音源类型，将异常分类为标准 ErrorCode */
+const classifyLoadError = (error: unknown, source: string): ErrorCode => {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (isNativeCancelledError(error)) {
+    return ErrorCode.LOAD_SUPERSEDED;
+  }
+  if (isNativeDeviceError(error) || /output device|NoDevice|DeviceNotAvailable/i.test(msg)) {
+    return ErrorCode.DEVICE_NOT_FOUND;
+  }
+  if (isNativeSourceNotFoundError(error)) {
+    return ErrorCode.FILE_NOT_FOUND;
+  }
+  if (isNativeNetworkError(error) || /^https?:\/\//i.test(source)) {
+    return ErrorCode.NETWORK_ERROR;
+  }
+  return ErrorCode.FILE_DECODE_ERROR;
+};
+
 /**
  * 播放器原生事件回调
  * @param inst 播放器实例
  */
 const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"]>): void => {
-  // 自动重建输出的冷却时间戳
-  let lastReinitAt = 0;
-  const REINIT_COOLDOWN_MS = 5000;
   inst.onEvent((event: JsPlayerEvent) => {
     switch (event.type) {
       case "stateChanged": {
@@ -115,6 +143,10 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "ended": {
+        // 自然播放结束 → 引擎紧接着发 StateChanged(Stopped)（background.rs 先 Ended 后 Stopped）。
+        // 先置切换态，避免 stopped 瞬态把灵动岛收起（自动切歌应原地过渡，不收起不重弹）；
+        // 复位由后续 load 成功/失败或渲染端各早退路径负责
+        nowPlaying.setTrackLoading(true);
         sendToMain("player:event", { type: "ended" });
         wsBroadcast({ type: "ended" });
         mediaService.setPlayState({ status: "Paused" });
@@ -149,26 +181,26 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "fftData": {
-        const fftEvent = { type: "fftData", data: event.fftData ?? [] };
+        const fftEvent = { type: "fftData", data: event.fftData ?? { ldata: [], rdata: [] } };
         if (getMainWindow()?.isVisible()) sendToMain("player:event", fftEvent);
         // 推送到灵动岛窗口（仅可见时，避免隐藏时白白推送）
         const diWin = getDynamicIslandWindow();
         if (diWin && !diWin.isDestroyed() && diWin.isVisible()) {
-          diWin.webContents.send("dynamicIsland:fftData", event.fftData ?? []);
+          diWin.webContents.send("dynamicIsland:fftData", event.fftData ?? { ldata: [], rdata: [] });
         }
         wsBroadcast(fftEvent);
         break;
       }
+      case "outputFailed": {
+        // 运行期流错误（CPAL/Rodio），重建输出流恢复播放
+        playerLog.warn("检测到音频输出流错误，触发恢复");
+        requestReinit(inst);
+        break;
+      }
       case "outputStalled": {
-        const now = Date.now();
-        if (now - lastReinitAt < REINIT_COOLDOWN_MS) break;
-        lastReinitAt = now;
-        playerLog.warn("检测到音频输出停滞，自动重建");
-        try {
-          inst.reinitOutput();
-        } catch (error) {
-          playerLog.error("自动重建音频输出失败:", error);
-        }
+        // 看门狗：无流错误但长期未消费样本
+        playerLog.warn("检测到音频输出停滞，触发恢复");
+        requestReinit(inst);
         break;
       }
     }
@@ -182,9 +214,10 @@ let loadSeq = 0;
 export const registerPlayerIpc = (): void => {
   // 注册实例创建/重建时的回调
   onPlayerCreated(registerNativeEvents);
-  onPlayerCreated(() => startDevicePolling());
+  onPlayerCreated(startDeviceMonitoring);
   // 加载音频文件
   ipcMain.handle("player:load", async (_event, source: string, options: LoadOptions = {}) => {
+    cancelPendingReinit();
     const autoPlay = options.autoPlay ?? true;
     const authoritative = options.meta ?? null;
     const cueRange = cueRangeFromTrack(authoritative);
@@ -314,19 +347,7 @@ export const registerPlayerIpc = (): void => {
         activeCueRange = null;
         nowPlaying.setTrackLoading(false);
       }
-      const msg = error instanceof Error ? error.message : String(error);
-      // 被更新的 load/stop 取代是正常竞态结果，不能按源类型误判为网络/解码错误
-      //（那两类是可跳曲错误，会让用户的停止操作变成自动跳下一曲）
-      if (msg.includes("已被更新的 load 取代")) {
-        return fail(ErrorCode.LOAD_SUPERSEDED);
-      }
-      const isDeviceError = /output device|NoDevice|DeviceNotAvailable/i.test(msg);
-      const isNetwork = source.startsWith("http://") || source.startsWith("https://");
-      const code = isDeviceError
-        ? ErrorCode.DEVICE_NOT_FOUND
-        : isNetwork
-          ? ErrorCode.NETWORK_ERROR
-          : ErrorCode.FILE_DECODE_ERROR;
+      const code = classifyLoadError(error, source);
       // 解码失败的源指向歌曲缓存目录 → 文件已损坏，把这条缓存项作废
       if (code === ErrorCode.FILE_DECODE_ERROR && source.startsWith(getSongCacheDir())) {
         void songCache.invalidate(source);
@@ -346,7 +367,8 @@ export const registerPlayerIpc = (): void => {
   ipcMain.handle("player:play", async () => {
     try {
       await getPlayer().play();
-      return { success: true };    } catch (error) {
+      return { success: true };
+    } catch (error) {
       return fail(ErrorCode.DEVICE_NOT_FOUND, error);
     }
   });
@@ -400,6 +422,11 @@ export const registerPlayerIpc = (): void => {
     }
   });
 
+  ipcMain.handle("player:setPauseOnDeviceSwitch", (_event, enabled: boolean) => {
+    setPauseOnDeviceSwitch(enabled);
+    return { success: true };
+  });
+
   // 获取当前音量
   ipcMain.handle("player:getVolume", () => {
     return { success: true, data: getPlayer().getVolume() };
@@ -436,12 +463,15 @@ export const registerPlayerIpc = (): void => {
   });
 
   // 重建音频输出设备
-  ipcMain.handle("player:reinit", () => {
+  ipcMain.handle("player:reinit", async () => {
     try {
-      getPlayer().reinitOutput();
+      await getPlayer().reinitOutput();
       return { success: true };
     } catch (error) {
-      return fail(ErrorCode.UNKNOWN, error);
+      return fail(
+        isNativeDeviceError(error) ? ErrorCode.DEVICE_INIT_FAILED : ErrorCode.UNKNOWN,
+        error,
+      );
     }
   });
 
@@ -617,14 +647,22 @@ export const registerPlayerIpc = (): void => {
   });
 
   // 切换输出设备（传 null 使用系统默认）
-  ipcMain.handle("player:setOutputDevice", (_event, deviceName: string | null) => {
-    try {
-      getPlayer().setOutputDevice(deviceName ?? undefined);
-      return { success: true };
-    } catch (error) {
-      return fail(ErrorCode.UNKNOWN, error);
-    }
-  });
+  ipcMain.handle(
+    "player:setOutputDevice",
+    async (_event, deviceName: string | null, pauseBeforeSwitch = false) => {
+      try {
+        cancelPendingReinit();
+        if (pauseBeforeSwitch) getPlayer().pauseImmediately();
+        await getPlayer().setOutputDevice(deviceName ?? undefined);
+        return { success: true };
+      } catch (error) {
+        return fail(
+          isNativeDeviceError(error) ? ErrorCode.DEVICE_INIT_FAILED : ErrorCode.UNKNOWN,
+          error,
+        );
+      }
+    },
+  );
 
   // 获取当前选择的输出设备名称
   ipcMain.handle("player:getSelectedDeviceName", () => {
@@ -702,7 +740,7 @@ export const registerPlayerIpc = (): void => {
     for (let i = 0; i < MAX_RETRIES; i++) {
       await new Promise((r) => setTimeout(r, RETRY_DELAYS[i]));
       try {
-        inst.reinitOutput();
+        await inst.reinitOutput();
         playerLog.info(`唤醒后重建音频输出成功（第 ${i + 1} 次尝试）`);
         return;
       } catch (error) {
@@ -712,7 +750,7 @@ export const registerPlayerIpc = (): void => {
     // 全部重试失败，销毁损坏的实例
     playerLog.error("重建音频输出全部失败，销毁播放器实例");
     resetPlayer();
-    stopDevicePolling();
+    stopDeviceMonitoring();
     const stoppedEvent = {
       type: "status",
       data: { state: "stopped", position: 0, duration: 0, volume: 1, isFinished: false },
@@ -721,6 +759,6 @@ export const registerPlayerIpc = (): void => {
     wsBroadcast(stoppedEvent);
   };
   powerMonitor.on("resume", resumeHandler);
-  // 退出前停止设备轮询
-  app.on("before-quit", stopDevicePolling);
+  // 退出前停止设备监听
+  app.on("before-quit", stopDeviceMonitoring);
 };

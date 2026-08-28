@@ -37,8 +37,12 @@ const finishCurrentTrack = async (): Promise<void> => {
     const repeatOne = status.repeatMode === "one" && !status.fmMode;
     // 结算播放统计
     playStats.onTrackEnded(repeatOne && !stopByTimer);
-    // 定时关闭"等本曲结束"模式
-    if (stopByTimer) return;
+    // 定时关闭"等本曲结束"模式：主进程 ended 已置切换态，此处主动停且不再有
+    // load 跟随，须显式复位，让引擎 Stopped 正常收起灵动岛
+    if (stopByTimer) {
+      window.api.player.setTrackLoading(false);
+      return;
+    }
     // 单曲循环：seek 回开头继续播放
     if (repeatOne) {
       await seek(0);
@@ -98,7 +102,7 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
       break;
     }
     case "fftData":
-      playback.setFftFrame(event.data);
+      playback.setFftFrame(event.data.ldata, event.data.rdata);
       break;
     case "ended": {
       await finishCurrentTrack();

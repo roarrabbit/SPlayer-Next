@@ -15,13 +15,13 @@ export const useThemeStore = defineStore(
   "theme",
   () => {
     /** 主题模式 */
-    const mode = ref<ThemeMode>("system");
-    /** 颜色来源 */
-    const source = ref<ThemeSource>("default");
+    const mode = ref<ThemeMode>("dark");
+    /** 颜色来源（cover = 跟随专辑封面的全局动态着色） */
+    const source = ref<ThemeSource>("cover");
     /** 自定义主色 HEX */
     const customColor = ref(DEFAULT_PRIMARY);
     /** 全局着色 */
-    const globalTint = ref(false);
+    const globalTint = ref(true);
     /** 封面取色 HEX */
     const coverColor = ref<string | null>(null);
     /** 外观风格 */

@@ -136,6 +136,53 @@ export const initDatabase = (): void => {
       finished_at INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_download_tasks_created ON download_tasks(created_at);
+    CREATE TABLE IF NOT EXISTS remote_tracks (
+      server_id TEXT NOT NULL,
+      remote_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      title TEXT NOT NULL,
+      search_text TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (server_id, remote_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_remote_tracks_title
+      ON remote_tracks(server_id, title);
+    CREATE INDEX IF NOT EXISTS idx_remote_tracks_search
+      ON remote_tracks(server_id, search_text);
+    CREATE TABLE IF NOT EXISTS remote_albums (
+      server_id TEXT NOT NULL,
+      remote_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      name TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (server_id, remote_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_remote_albums_name
+      ON remote_albums(server_id, name);
+    CREATE TABLE IF NOT EXISTS remote_artists (
+      server_id TEXT NOT NULL,
+      remote_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      name TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (server_id, remote_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_remote_artists_name
+      ON remote_artists(server_id, name);
+    CREATE TABLE IF NOT EXISTS remote_playlists (
+      server_id TEXT NOT NULL,
+      remote_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      name TEXT NOT NULL,
+      generation INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (server_id, remote_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_remote_playlists_name
+      ON remote_playlists(server_id, name);
   `);
   migrate(db);
   libraryLog.info(`数据库已初始化: ${dbPath}`);
@@ -163,6 +210,7 @@ export {
   getArtistList,
   getAlbumTracks,
   getArtistTracks,
+  getLibraryStats,
   getTracksByIds,
   getRandomTrack,
   getRandomTracks,

@@ -4,18 +4,23 @@
 
 # SPlayer-Next (Fork)
 
-🎵 跨平台桌面音乐播放器 —— 在上游基础上重新打磨的独立版本
+🎵 桌面音乐播放器 —— 在上游基础上重新打磨的独立版本
 
 [![Release](https://img.shields.io/github/v/release/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/releases)
 [![License](https://img.shields.io/github/license/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/blob/main/LICENSE)
 [![Upstream](https://img.shields.io/badge/upstream-SPlayer--Next-blue)](https://github.com/SPlayer-Dev/SPlayer-Next)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![Platform](https://img.shields.io/badge/platform-macOS-9cf)]()
 
 </div>
 
 > [!IMPORTANT]
 > 本项目是 [SPlayer-Dev/SPlayer-Next](https://github.com/SPlayer-Dev/SPlayer-Next) 的 **Fork 版本**，由 [roarrabbit](https://github.com/roarrabbit) 独立维护。
 > 它不是上游的镜像，而是带有自己独特功能与交互设计的分支版本，与上游独立演进。
+
+> [!WARNING]
+> 本 Fork **仅针对 macOS 适配**（含灵动岛、媒体控制、窗口行为等系统级集成）。
+> Windows / Linux 平台未做适配，任务栏歌词、SMTC / MPRIS 等平台特性无法保证可用，体验不佳。
+> **其他平台的用户请使用 [上游版本](https://github.com/SPlayer-Dev/SPlayer-Next)。**
 
 ## ✨ 这个 Fork 有什么不同
 
@@ -26,19 +31,28 @@
 类 iPhone 灵动岛的桌面悬浮播放器：封面、歌词、频谱随音乐流动呈现，液体动效贴合 macOS 质感。
 
 <p align="center">
-  <img src="docs/public/dynamic-island.gif" alt="灵动岛播放器演示" width="520" />
+  <img src="docs/public/dynamic-island-noLyric.gif" alt="灵动岛播放器演示" width="520" />
 </p>
+
+
+<p align="center">
+  <img src="docs/public/dynamic-island-withLyric.gif" alt="灵动岛播放器演示" width="520" />
+</p>
+
+
 ### 🌊 流体动效
 
 GLSL 流体背景升级为 fbm / domain-warp 网格扭曲，支持随音乐律动的节拍脉动，强度与平滑均可调。
 
 <p align="center">
-  <img src="docs/public/player-page.gif" alt="灵动岛播放器演示" width="520" />
+  <img src="docs/public/splayer-page.gif" alt="灵动岛播放器演示" width="520" />
 </p>
+
 
 ### 🍎 macOS 适配
 
-针对 macOS 完成系统性适配：窗口行为、媒体控制、原生交互细节全面对齐平台习惯。
+本 Fork **只适配 macOS**：灵动岛（Notch）播放器、窗口行为、媒体控制（Now Playing）、原生交互细节全面对齐 macOS 平台习惯。
+Windows / Linux 适配性不佳，相关平台功能以[上游版本](https://github.com/SPlayer-Dev/SPlayer-Next)为准。
 
 ### 🔓 音乐解锁
 
@@ -53,7 +67,7 @@ GLSL 流体背景升级为 fbm / domain-warp 网格扭曲，支持随音乐律�
 - 🎵 广泛格式支持（MP3 / FLAC / WAV / AAC / OGG / APE…），FFmpeg + Rust 高性能解码
 - 📝 丰富歌词：LRC / QRC / YRC / TTML，逐字高亮、翻译，支持桌面歌词 / 灵动岛 / 任务栏歌词
 - 🌐 流媒体：Subsonic / Navidrome / Jellyfin / Emby 多服务器管理
-- 🖥️ Windows / macOS / Linux 跨平台 + SMTC / MPRIS / Now Playing / Discord RPC
+- 🖥️ 上游为 Windows / macOS / Linux 跨平台（SMTC / MPRIS / Now Playing / Discord RPC）；**本 Fork 仅适配 macOS**
 - 🎚️ 实时 FFT 音乐频谱、🏷️ 元信息编辑、⬇️ 下载管理、📈 Last.fm Scrobble
 - 🧩 插件系统：本地 / URL 安装音源与控制插件，可复制安装链接分享
 - 🎨 封面取色自适应主题，Light / Dark / Auto
@@ -62,7 +76,7 @@ GLSL 流体背景升级为 fbm / domain-warp 网格扭曲，支持随音乐律�
 
 ## 🚀 快速开始
 
-前往 [Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 下载对应平台的安装包。
+前往 [Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 下载 macOS 安装包。
 
 ### 开发构建
 
@@ -82,6 +96,15 @@ pnpm build          # 完整构建
 环境要求见 [贡献指南](docs/contributing.md)，原生模块说明见 [原生模块](docs/native.md)。
 
 ## 📋 更新日志
+
+### 1.0.3
+
+- **灵动岛打磨**
+  - 频谱渲染重构：频段线性等分 + 乘法高频补偿 + 幂次软化 + 双向 LERP 平滑（上升快、回落缓，帧率无关，60/120Hz 手感一致），消除瞬态高跳的剧烈闪烁
+  - 歌词 / 翻译 / 间奏点统一为频谱同款封面主色渐变（并修复间奏点左缘被裁切）
+  - 切歌与暂停行为修复：自动切歌不再闪收闪弹，暂停时可正常收起灵动岛
+- **播放页面暂停**：新增「窗口失焦时自动暂停流体背景」开关（默认开启），背景与节拍脉动随失焦平滑渐停、回焦自动恢复；修复失焦冻结态下切歌不变色
+- **自动更新**：本地版本高于更新源时的 downgrade 误报映射为「已是最新」，网络超时给出中文友好提示
 
 ### 1.0.2
 

@@ -4,7 +4,6 @@ import type { Platform } from "@shared/types/platform";
 import { isPlatform } from "@shared/types/platform";
 import { detectFormat } from "@/utils/lyric/parse";
 import { useSettingsStore } from "@/stores/settings";
-import { useStreamingStore } from "@/stores/streaming";
 import { usePluginsStore } from "@/stores/plugins";
 import { DEFAULT_LYRIC_FORMAT_ORDER, DEFAULT_LYRIC_SOURCE_ORDER } from "@/types/settings";
 
@@ -266,7 +265,15 @@ export const resolvePluginLyric = async (track: Track): Promise<ResolvedLyric | 
  * @param track - 歌曲信息
  */
 export const resolveStreamingServerLyric = async (track: Track): Promise<ResolvedLyric | null> => {
-  const text = await useStreamingStore().getLyrics(track);
-  if (!text?.trim()) return null;
-  return { source: { source: "external", format: detectFormat(text) }, input: { content: text } };
+  if (!track.serverId || !track.originalId) return null;
+  try {
+    const text = await window.api.streaming.getLyrics(track.serverId, track.originalId, {
+      artist: track.artists?.[0]?.name,
+      title: track.title,
+    });
+    if (!text?.trim()) return null;
+    return { source: { source: "external", format: detectFormat(text) }, input: { content: text } };
+  } catch {
+    return null;
+  }
 };

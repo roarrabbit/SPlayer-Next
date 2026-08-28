@@ -1,4 +1,5 @@
 import type { DesktopLyricSettings, DynamicIslandSettings, TaskbarLyricSettings } from "./settings";
+import type { FftData } from "./player";
 
 /** 窗口管理 API */
 export interface WindowApi {
@@ -103,8 +104,8 @@ export interface DynamicIslandApi {
   onVisibility: (callback: (visible: boolean) => void) => () => void;
   /** 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏） */
   onCursorInside: (callback: (inside: boolean) => void) => () => void;
-  /** 订阅主进程推送的 FFT 频谱帧（128 段对数频谱，仅播放且窗口可见时推送） */
-  onFftData: (callback: (data: number[]) => void) => () => void;
+  /** 订阅主进程推送的 FFT 频谱帧（双声道 128 段对数频谱，仅播放且窗口可见时推送） */
+  onFftData: (callback: (data: FftData) => void) => () => void;
   /** 实时下发几何调试参数到真实灵动岛窗口 */
   setDebugGeom: (params: DynamicIslandDebugGeom) => void;
   /** 订阅几何调试参数变化（灵动岛渲染端据此实时调整布局） */
@@ -169,4 +170,34 @@ export interface DynamicIslandDebugGeom {
   lyricY: number;
   /** 歌词宽度（px；0=随岛宽自动） */
   lyricW: number;
+  /** 圆角：顶角水平外扩 */
+  clipTopX?: number;
+  /** 圆角：顶角下垂深度 */
+  clipTopY?: number;
+  /** 圆角：底角水平延伸 */
+  clipBotRx?: number;
+  /** 圆角：底角垂直半径 */
+  clipBotRy?: number;
+  /** 液体刘海 blob 底角 */
+  gooNotchR?: number;
+  /** 液体主体 blob 底角 */
+  gooBodyR?: number;
+  /** 收起态药丸圆角 */
+  pillR?: number;
+  /** 展开态顶角圆角（贴刘海） */
+  expandTopR?: number;
+  /** 参考框宽度（0=隐藏） */
+  guideW?: number;
+  /** 参考框高度 */
+  guideH?: number;
+  /** 参考框底角 */
+  guideR?: number;
+  /** 参考框 X 偏移 */
+  guideX?: number;
+  /** 岛总高覆盖（0=按开/关歌词两态自动） */
+  heightOverride?: number;
+  /** 岛整体 X 偏移 */
+  islandDX?: number;
+  /** 岛整体 Y 偏移 */
+  islandDY?: number;
 }

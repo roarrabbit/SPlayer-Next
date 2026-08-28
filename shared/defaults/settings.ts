@@ -40,15 +40,15 @@ export const defaultSystemConfig: SystemConfig = {
     scanDirs: [],
   },
   desktopLyric: {
-    fontSize: 24,
-    fontWeight: 600,
+    fontSize: 25,
+    fontWeight: 700,
     fontFamily: "",
     showTranslation: true,
     doubleLine: true,
-    align: "center",
+    align: "left",
     wordByWord: true,
     autoGenerateWordByWord: true,
-    playedColor: "rgb(254, 121, 113)",
+    playedColor: "rgb(255, 120, 112)",
     unplayedColor: "rgb(255, 255, 255)",
     strokeColor: "rgba(0, 0, 0, 0.5)",
     backgroundMask: false,
@@ -70,16 +70,17 @@ export const defaultSystemConfig: SystemConfig = {
     backgroundColor: "rgba(0, 0, 0, 1)",
     alwaysOnTop: true,
     snapCentered: true,
-    notchFusion: false,
-    nonOcclusive: false,
+    // 刘海融合与非遮挡为 mac 体验基线（非 mac 平台由 isMac 守卫自动降级）
+    notchFusion: true,
+    nonOcclusive: true,
     doubleLine: false,
-    showTranslation: true,
-    // 灵动岛歌词默认关闭（需要时用户手动开启）
+    showTranslation: false,
+    // 灵动岛歌词默认关闭（隐藏歌词行并收回灵动岛下方区域，露出频谱/封面）
     showLyric: false,
     useCSSDrag: false,
-    // 宽度模式: "default"=324 / "wide"=236(仅歌词模式) / "custom"=自定义
+    // 宽度模式: "default"=324 / "wide"=242(仅歌词模式) / "custom"=自定义
     widthMode: "default",
-    customWidth: 240,
+    customWidth: 242,
   },
   taskbarLyric: {
     position: "auto",
@@ -96,7 +97,7 @@ export const defaultSystemConfig: SystemConfig = {
     fontFamily: "",
   },
   lyric: {
-    enableOnlineTTMLLyric: false,
+    enableOnlineTTMLLyric: true,
     amllDbServer: "https://amlldb.bikonoo.com/%p/%s.ttml",
   },
   localLyric: {
@@ -106,7 +107,7 @@ export const defaultSystemConfig: SystemConfig = {
   cache: {
     dir: null,
     songCache: {
-      enabled: false,
+      enabled: true,
       sizeLimitGb: 10,
     },
   },
@@ -114,14 +115,14 @@ export const defaultSystemConfig: SystemConfig = {
     enabled: false,
     dir: null,
     quality: "lossless",
-    usePlaybackForDownload: false,
+    usePlaybackForDownload: true,
     fileTemplate: "{artist} - {title}",
     folderScheme: "none",
     overwritePolicy: "rename",
     embedCover: true,
     embedMeta: true,
     embedLyric: true,
-    writeLrc: false,
+    writeLrc: true,
     saveTtml: false,
     lyricFileFormat: "enhanced-lrc",
   },

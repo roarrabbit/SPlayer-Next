@@ -5,6 +5,8 @@ import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { loadCollection as loadCollectionService } from "@/services/collectionLoader";
 import { useCollectionSubscribe } from "@/composables/collection/useCollectionSubscribe";
 import { usePlaylistManage } from "@/composables/collection/usePlaylistManage";
+import { useCopyText } from "@/composables/useCopyText";
+import { getCollectionShareUrl } from "@/utils/format/shareUrl";
 import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
 import * as player from "@/core/player";
@@ -15,10 +17,12 @@ import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucideHourglass from "~icons/lucide/hourglass";
 import IconLucideCalendar from "~icons/lucide/calendar";
 import IconLucideUser from "~icons/lucide/user";
+import IconLucideLink from "~icons/lucide/link";
 import IconMaterialSymbolsFavoriteRounded from "~icons/material-symbols/favorite-rounded";
 import IconMaterialSymbolsFavoriteOutlineRounded from "~icons/material-symbols/favorite-outline-rounded";
 
 const { t } = useI18n();
+const { copy } = useCopyText();
 const route = useRoute();
 const router = useRouter();
 
@@ -155,6 +159,13 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => {
       separator: true,
     });
   }
+  if (getCollectionShareUrl(collection.value)) {
+    list.push({
+      key: "copyUrl",
+      label: t(`collection.context.${type}.copyUrl`),
+      icon: IconLucideLink,
+    });
+  }
   return list;
 });
 
@@ -168,6 +179,9 @@ const handleMoreMenu = (key: string) => {
       break;
     case "delete":
       manage.openDelete();
+      break;
+    case "copyUrl":
+      copy(getCollectionShareUrl(collection.value));
       break;
   }
 };
@@ -299,6 +313,7 @@ onBeforeUnmount(() => {
               clearable
               round
               class="w-40 focus-within:w-56"
+              data-search-input
             >
               <template #prefix>
                 <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />

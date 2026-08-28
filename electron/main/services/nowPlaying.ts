@@ -139,6 +139,9 @@ export const onPosition = (positionMs: number, isPlaying: boolean): void => {
 export const onPlayStateChange = (state: PlayerState): void => {
   playState = state;
   playing = state === "playing";
+  // 播放恢复即代表过渡结束（自动切歌新曲开播 / 单曲循环原地续播）：
+  // 解除切换态，此后的真实暂停可以正常收起灵动岛
+  if (playing && trackLoading) trackLoading = false;
   emitter.emit("position-sync", {
     position: lastPosition,
     playing,

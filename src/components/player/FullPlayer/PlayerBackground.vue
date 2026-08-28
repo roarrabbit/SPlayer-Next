@@ -13,9 +13,11 @@ const bgType = computed(() => settings.player.playerBgType as string);
 
 /**
  * 背景是否就绪
- * 展开后延迟 500ms 再挂载，收起后延迟 500ms 卸载以释放 WebGL 上下文 / 模糊位图
+ * 展开后延迟 500ms 再挂载；挂载过就常驻（收起只隐藏不卸载），
+ * 保留 WebGL 流体画面状态，重开不再随机重生成
  */
-const bgReady = ref(false);
+const bgMounted = ref(false);
+const bgShown = ref(false);
 let bgReadyTimer: ReturnType<typeof setTimeout> | undefined;
 
 watch(
@@ -23,16 +25,17 @@ watch(
   (expanded) => {
     clearTimeout(bgReadyTimer);
     if (expanded) {
-      // 已就绪（快速收起后又展开）则保留，避免无谓地卸载重建
-      if (!bgReady.value) {
+      bgShown.value = true;
+      if (!bgMounted.value) {
+        // 首次延迟挂载，避开展开动画期间的 GPU 峰值
         bgReadyTimer = setTimeout(() => {
-          bgReady.value = true;
+          bgMounted.value = true;
         }, 500);
       }
     } else {
-      // 等收起动画结束后再卸载
+      // 等收起动画结束后仅隐藏（渲染器 pause 由 playing prop 驱动）
       bgReadyTimer = setTimeout(() => {
-        bgReady.value = false;
+        bgShown.value = false;
       }, 500);
     }
   },
@@ -115,7 +118,11 @@ onBeforeUnmount(() => {
   </div>
   <!-- 模糊背景 -->
   <Transition v-if="bgType === 'blur'" name="bg-fade">
-    <div v-if="bgReady" class="absolute inset-0 overflow-hidden -z-1 bg-blur-wrap">
+    <div
+      v-if="bgMounted"
+      v-show="bgShown"
+      class="absolute inset-0 overflow-hidden -z-1 bg-blur-wrap"
+    >
       <img
         v-for="(layer, index) in blurLayers"
         :key="index"
@@ -128,7 +135,7 @@ onBeforeUnmount(() => {
   </Transition>
   <!-- 流体背景 -->
   <Transition v-else-if="bgType === 'animation'" name="bg-fade">
-    <div v-if="bgReady" class="absolute inset-0 overflow-hidden -z-1">
+    <div v-if="bgMounted" v-show="bgShown" class="absolute inset-0 overflow-hidden -z-1">
       <BackgroundRender
         :album="media.track?.cover || DEFAULT_COVER"
         :playing="bgPlaying"
@@ -140,9 +147,9 @@ onBeforeUnmount(() => {
         :beat-intensity="settings.player.playerBgBeatIntensity"
         :beat-smoothness="settings.player.playerBgBeatSmoothness"
         :enable-multi-band="settings.player.playerBgMultiBand"
-        :noise-strength="settings.player.playerBgNoiseStrength"
         :layered-cover-strength="settings.player.playerBgLayeredCover"
         :enable-foreground="settings.player.playerBgForeground"
+        :pause-on-blur="settings.player.playerBgPauseOnBlur"
       />
     </div>
   </Transition>

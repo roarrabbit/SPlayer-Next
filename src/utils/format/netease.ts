@@ -1,4 +1,4 @@
-import type { Album, Artist, AudioQuality, Playlist, Track, TrackFee } from "@shared/types/player";
+import type { Album, Artist, AudioQuality, Playlist, Track } from "@shared/types/player";
 import type { UserSubcount } from "@/types/user";
 import type { NeteaseSong } from "@/types/netease";
 
@@ -18,22 +18,6 @@ export const ensureOk = <T>(body: T): T => {
     throw new Error(meta?.message ?? meta?.msg ?? "");
   }
   return body;
-};
-
-/**
- * fee → 应用层 TrackFee（仅驱动 VIP/EP 标签，不影响播放）
- * 网易云原始 fee：
- * - 0: 免费
- * - 1: VIP（非会员不可完整播放）
- * - 4: 需购买数字专辑
- * - 8: 非会员可免费播低音质，会员可高音质/下载 —— 不当作 VIP 标签
- * @param fee - 原始 fee
- */
-const toTrackFee = (fee: number | undefined): TrackFee | undefined => {
-  if (fee === 0 || fee === 8) return 0;
-  if (fee === 1) return 1;
-  if (fee === 4) return 2;
-  return undefined;
 };
 
 /**
@@ -107,7 +91,7 @@ export const songToTrack = (song: NeteaseSong): Track => {
     cover,
     coverOriginal,
     quality: pickQuality(song),
-    fee: toTrackFee(song.fee),
+    fee: song.fee,
     cloud: song.pc != null ? true : undefined,
   };
 };

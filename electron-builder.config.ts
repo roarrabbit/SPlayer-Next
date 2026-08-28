@@ -36,6 +36,11 @@ const config: Configuration = {
       filter: ["*.node"],
     },
     {
+      from: "native/audio-capture",
+      to: "native",
+      filter: ["*.node"],
+    },
+    {
       from: "native/media-ctrl",
       to: "native",
       filter: ["*.node"],

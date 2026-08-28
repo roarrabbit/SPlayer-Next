@@ -677,6 +677,7 @@
       "hotkeys": "Hotkey Settings",
       "services": "Services",
       "mediaSource": "Media Sources",
+      "mediaServerManagement": "Media Server Management",
       "download": "Downloads",
       "localCache": "Local & Cache",
       "plugins": "Plugin Manager",
@@ -838,6 +839,10 @@
       "label": "Bar Width",
       "description": "Smaller values give thinner, denser bars"
     },
+    "reverseSpectrum": {
+      "label": "Reverse Spectrum",
+      "description": "When enabled, the frequency of the bars decreases from the center toward the sides; otherwise it increases."
+    },
     "lyricSourcePreference": {
       "label": "Lyric Source Preference",
       "description": "Platform priority when matching online lyrics",
@@ -942,7 +947,8 @@
         "openPlayer": "Open player view",
         "closePlayer": "Close player view",
         "togglePlaylist": "Show / hide playlist",
-        "openSearch": "Open search"
+        "openSearch": "Open search",
+        "searchInPage": "Search in page"
       }
     },
     "engine": {
@@ -1322,6 +1328,10 @@
       "label": "Freeze When Paused",
       "description": "Stop the fluid background animation while playback is paused"
     },
+    "playerBgPauseOnBlur": {
+      "label": "Pause When Unfocused",
+      "description": "After the window loses focus, keep the fluid background running for 1s, then ease it to a stop over 2s to reduce background power draw; turn off to keep it always running"
+    },
     "playerBgBeat": {
       "label": "Beat Pulse",
       "description": "Make the fluid background pulse with the low-frequency beat of the music"
@@ -1402,6 +1412,10 @@
     "sidebarPlaylistCover": {
       "label": "Show Playlist Covers",
       "description": "Show playlist covers instead of default icons in the sidebar"
+    },
+    "showStatsInSidebar": {
+      "label": "Show Play Stats Entry",
+      "description": "Show the play statistics page entry in the sidebar"
     },
     "showQualitySwitch": {
       "label": "Show Quick Quality Switch",
@@ -1929,6 +1943,29 @@
     "unsubscribe": "Unsubscribe",
     "privacy": {
       "private": "Make private"
+    },
+    "context": {
+      "more": "More",
+      "album": {
+        "copyTitle": "Copy Album Title",
+        "copyId": "Copy Album ID",
+        "copyUrl": "Share Album Link"
+      },
+      "playlist": {
+        "copyTitle": "Copy Playlist Title",
+        "copyId": "Copy Playlist ID",
+        "copyUrl": "Share Playlist Link"
+      },
+      "radio": {
+        "copyTitle": "Copy Radio Title",
+        "copyId": "Copy Radio ID",
+        "copyUrl": "Share Radio Link"
+      },
+      "cloud": {
+        "copyTitle": "Copy Cloud Title",
+        "copyId": "Copy Cloud ID",
+        "copyUrl": "Share Cloud Link"
+      }
     }
   },
   "artist": {
@@ -1943,6 +1980,34 @@
   "folder": {
     "label": "Folders",
     "totalFolders": "{count} folders"
+  },
+  "stats": {
+    "label": "Stats",
+    "songs": "Songs",
+    "albums": "Albums",
+    "artists": "Artists",
+    "totalDuration": "Total Duration",
+    "totalSize": "Total Size",
+    "topSongs": "Most Played Songs",
+    "topAlbums": "Most Played Albums",
+    "topArtists": "Most Played Artists",
+    "plays": "{count} plays",
+    "playsUnit": "plays",
+    "noData": "No play data yet",
+    "noDataHint": "No data yet, go listen to some songs",
+    "unknown": "Unknown",
+    "less": "Less",
+    "more": "More",
+    "audioQuality": "Audio Formats",
+    "formatCount": "{count} formats",
+    "losslessRatio": "Lossless",
+    "trackUnit": "tracks",
+    "listeningHours": "Listening Hours",
+    "peakListening": "Most played",
+    "favoriteHour": "You listen most often at {hour}:00, with {count} tracks in total",
+    "noPlayHistory": "No listening-hour data yet",
+    "listeningActivity": "Listening Activity",
+    "last90Days": "Last 90 days"
   },
   "errors": {
     "dialogTitle": "Something went wrong",

@@ -11,19 +11,18 @@ docs/.vitepress/cache
 docs/.vitepress/dist
 skills-lock.json
 *.log*
+*.bak-*
 .vscode/settings.json
 .idea
 
 # Rust build artifacts
 **/target
 native/*/*.node
+native/.*napi-*/
 # native/*/index.d.ts
 package-lock.json
 
-# 手动备份残留
-*.bak-*
-
-# 本地凭据（不入库！）
+# 本地凭据（勿提交；构建期经 electron-vite define 注入）
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local

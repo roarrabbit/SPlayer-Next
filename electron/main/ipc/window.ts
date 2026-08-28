@@ -20,6 +20,8 @@ import {
   applyDynamicIslandHeight,
   applyDynamicIslandHeightAnimated,
   getDynamicIslandVisible,
+  toggleDebugGeomWindow,
+  applyDynamicIslandDebugOffset,
   toggleTaskbarLyricWindow,
   closeTaskbarLyricWindow,
   getTaskbarLyricWindow,
@@ -29,7 +31,6 @@ import {
   toggleFullscreenMainWindow,
   isMainWindowFullscreen,
   hideMainWindow,
-  toggleDebugGeomWindow,
 } from "@main/window";
 
 /** 窗口管理 IPC */
@@ -119,6 +120,22 @@ export const registerWindowIpc = (): void => {
     }
   });
 
+  // 灵动岛几何调试控制窗开关
+  ipcMain.on("dynamicIsland:toggleDebugPanel", () => {
+    toggleDebugGeomWindow();
+  });
+
+  // 几何调试参数转发到灵动岛渲染端实时应用；岛整体偏移由主进程直接移动窗口
+  ipcMain.on("dynamicIsland:setDebugGeom", (_event, params) => {
+    if (typeof params?.islandDX === "number" || typeof params?.islandDY === "number") {
+      applyDynamicIslandDebugOffset(params.islandDX ?? 0, params.islandDY ?? 0);
+    }
+    const win = getDynamicIslandWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("dynamicIsland:debugGeom", params);
+    }
+  });
+
   // 灵动岛查询当前宽度（权威缓存值，渲染端用它避免 getBounds 回写漂移）
   ipcMain.handle("dynamicIsland:getWidth", () => cachedSize.width);
 
@@ -129,11 +146,6 @@ export const registerWindowIpc = (): void => {
   ipcMain.handle("dynamicIsland:getMode", () => {
     const saved = store.get("windowStates.dynamicIsland");
     return saved.mode === "floating" ? "floating" : "snapped";
-  });
-
-  // 灵动岛几何调试控制窗开关
-  ipcMain.on("dynamicIsland:toggleDebugPanel", () => {
-    toggleDebugGeomWindow();
   });
 
   // 任务栏歌词仅在 Windows 注册

@@ -44,7 +44,7 @@ GET /api/info
 **响应**
 
 ```json
-{ "name": "SPlayer-Next", "version": "1.0.2", "wsClients": 0 }
+{ "name": "SPlayer-Next", "version": "1.0.1", "wsClients": 0 }
 ```
 
 ### 获取播放状态

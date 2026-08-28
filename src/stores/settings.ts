@@ -37,10 +37,11 @@ export const useSettingsStore = defineStore(
 
     /** 外观 */
     const appearance = reactive<AppearanceSettings>({
-      layoutMode: "default",
-      routeTransition: "fade",
+      layoutMode: "sidebar-full",
+      routeTransition: "slide",
       sidebarCollapsed: false,
       sidebarPlaylistCover: false,
+      showStatsInSidebar: true,
       showQualitySwitch: false,
       closeAction: "hide",
       rememberCloseChoice: false,
@@ -50,18 +51,20 @@ export const useSettingsStore = defineStore(
 
     /** 播放器 */
     const player = reactive<PlayerSettings>({
-      playerBgType: "blur",
+      playerBgType: "animation",
       playerBgFps: 30,
-      playerBgFlowSpeed: 4,
-      playerBgRenderScale: 0.5,
-      playerBgFreezeOnPause: false,
-      playerBgBeat: false,
+      // 流体背景调校基线：略快的流动 + 更柔的节拍平滑（原 1 / 0.8）
+      playerBgFlowSpeed: 2.3,
+      playerBgRenderScale: 0.6,
+      playerBgFreezeOnPause: true,
+      playerBgBeat: true,
       playerBgBeatIntensity: 1,
-      playerBgBeatSmoothness: 0.5,
+      playerBgBeatSmoothness: 0.95,
       playerBgMultiBand: true,
       playerBgNoiseStrength: 0.03,
       playerBgLayeredCover: 0.5,
       playerBgForeground: true,
+      playerBgPauseOnBlur: true,
       coverLayout: "default",
       autoCenterCover: true,
       followCoverColor: true,
@@ -70,12 +73,13 @@ export const useSettingsStore = defineStore(
       pauseOnDeviceSwitch: false,
       enableSpectrum: false,
       spectrumBarWidth: 4,
+      reverseSpectrum: false,
       songLevel: "hq",
       allowTrialPlay: false,
       timeFormat: "current-total",
       showProgressTooltip: true,
-      showProgressLyric: false,
-      snapToLyric: false,
+      showProgressLyric: true,
+      snapToLyric: true,
       showLyricInBar: true,
       listClickPlayMode: "continue",
     });
@@ -83,7 +87,7 @@ export const useSettingsStore = defineStore(
     /** 强迫症设置 */
     const preset = reactive<PresetSettings>({
       fuckDjMode: false,
-      uncensorProfanity: false,
+      uncensorProfanity: true,
       hideVipTag: false,
       hideQualityTag: false,
       showSubtitle: true,
@@ -94,7 +98,7 @@ export const useSettingsStore = defineStore(
       lyricSourcePreference: "auto",
       lyricSourceOrder: [...DEFAULT_LYRIC_SOURCE_ORDER],
       lyricFormatOrder: [...DEFAULT_LYRIC_FORMAT_ORDER],
-      smartPreferOnline: false,
+      smartPreferOnline: true,
       detectBackgroundLyrics: true,
       adaptiveFontSize: true,
       fontSize: 48,
@@ -106,8 +110,8 @@ export const useSettingsStore = defineStore(
       amllShowLineRomanization: true,
       amllShowWordRomanization: true,
       enableWordHighlight: true,
-      enableFloatAnimation: false,
-      enableEmphasizeEffect: false,
+      enableFloatAnimation: true,
+      enableEmphasizeEffect: true,
       enableBlur: false,
       hidePassedLines: false,
       springPreset: "default",
@@ -282,23 +286,38 @@ export const useSettingsStore = defineStore(
         if (player.listClickPlayMode !== "continue" && player.listClickPlayMode !== "single") {
           player.listClickPlayMode = "continue";
         }
-        if (typeof player.playerBgBeatIntensity !== "number" || Number.isNaN(player.playerBgBeatIntensity)) {
+        if (
+          typeof player.playerBgBeatIntensity !== "number" ||
+          Number.isNaN(player.playerBgBeatIntensity)
+        ) {
           player.playerBgBeatIntensity = 1;
         }
-        if (typeof player.playerBgBeatSmoothness !== "number" || Number.isNaN(player.playerBgBeatSmoothness)) {
+        if (
+          typeof player.playerBgBeatSmoothness !== "number" ||
+          Number.isNaN(player.playerBgBeatSmoothness)
+        ) {
           player.playerBgBeatSmoothness = 0.5;
         }
         if (typeof player.playerBgMultiBand !== "boolean") {
           player.playerBgMultiBand = true;
         }
-        if (typeof player.playerBgNoiseStrength !== "number" || Number.isNaN(player.playerBgNoiseStrength)) {
+        if (
+          typeof player.playerBgNoiseStrength !== "number" ||
+          Number.isNaN(player.playerBgNoiseStrength)
+        ) {
           player.playerBgNoiseStrength = 0.03;
         }
-        if (typeof player.playerBgLayeredCover !== "number" || Number.isNaN(player.playerBgLayeredCover)) {
+        if (
+          typeof player.playerBgLayeredCover !== "number" ||
+          Number.isNaN(player.playerBgLayeredCover)
+        ) {
           player.playerBgLayeredCover = 0.5;
         }
         if (typeof player.playerBgForeground !== "boolean") {
           player.playerBgForeground = true;
+        }
+        if (typeof player.playerBgPauseOnBlur !== "boolean") {
+          player.playerBgPauseOnBlur = true;
         }
         lyric.lyricSourceOrder = reconcileOrder(lyric.lyricSourceOrder, ALL_PLATFORMS);
         lyric.lyricFormatOrder = reconcileOrder(lyric.lyricFormatOrder, DEFAULT_LYRIC_FORMAT_ORDER);

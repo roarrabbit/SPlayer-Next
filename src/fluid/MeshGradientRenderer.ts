@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- 反向移植产物，暂无法补全类型
 // @ts-nocheck
 // SPlayer-Next 1.0.1 流体背景渲染器（MeshGradientRenderer）。
 // 从 1.0.1 构建产物反向移植，用于还原 1.0.2 之前的干净流体背景效果。
@@ -39,7 +40,7 @@ class Mat4 extends Float32Array {
       case 2:
         super(values[0], values[1], 16);
         break;
-      case 1:
+      case 1: {
         const v2 = values[0];
         if (typeof v2 === "number") {
           super([
@@ -64,6 +65,7 @@ class Mat4 extends Float32Array {
           super(v2, 0, 16);
         }
         break;
+      }
       default:
         super(IDENTITY_4X4);
         break;
@@ -117,7 +119,7 @@ class Mat4 extends Float32Array {
   /**
    * Alias for {@link Mat4.multiply}
    */
-  mul(b2) {
+  mul(_b2) {
     return this;
   }
   /**
@@ -601,7 +603,7 @@ class Mat4 extends Float32Array {
    * Alias for {@link Mat4.multiply}
    * @category Static
    */
-  static mul(out, a2, b2) {
+  static mul(out, _a2, _b2) {
     return out;
   }
   /**
@@ -761,16 +763,16 @@ class Mat4 extends Float32Array {
    * @returns `out`
    */
   static rotateX(out, a2, rad) {
-    let s2 = Math.sin(rad);
-    let c2 = Math.cos(rad);
-    let a10 = a2[4];
-    let a11 = a2[5];
-    let a12 = a2[6];
-    let a13 = a2[7];
-    let a20 = a2[8];
-    let a21 = a2[9];
-    let a22 = a2[10];
-    let a23 = a2[11];
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    const a10 = a2[4];
+    const a11 = a2[5];
+    const a12 = a2[6];
+    const a13 = a2[7];
+    const a20 = a2[8];
+    const a21 = a2[9];
+    const a22 = a2[10];
+    const a23 = a2[11];
     if (a2 !== out) {
       out[0] = a2[0];
       out[1] = a2[1];
@@ -801,16 +803,16 @@ class Mat4 extends Float32Array {
    * @returns `out`
    */
   static rotateY(out, a2, rad) {
-    let s2 = Math.sin(rad);
-    let c2 = Math.cos(rad);
-    let a00 = a2[0];
-    let a01 = a2[1];
-    let a02 = a2[2];
-    let a03 = a2[3];
-    let a20 = a2[8];
-    let a21 = a2[9];
-    let a22 = a2[10];
-    let a23 = a2[11];
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    const a00 = a2[0];
+    const a01 = a2[1];
+    const a02 = a2[2];
+    const a03 = a2[3];
+    const a20 = a2[8];
+    const a21 = a2[9];
+    const a22 = a2[10];
+    const a23 = a2[11];
     if (a2 !== out) {
       out[4] = a2[4];
       out[5] = a2[5];
@@ -841,16 +843,16 @@ class Mat4 extends Float32Array {
    * @returns `out`
    */
   static rotateZ(out, a2, rad) {
-    let s2 = Math.sin(rad);
-    let c2 = Math.cos(rad);
-    let a00 = a2[0];
-    let a01 = a2[1];
-    let a02 = a2[2];
-    let a03 = a2[3];
-    let a10 = a2[4];
-    let a11 = a2[5];
-    let a12 = a2[6];
-    let a13 = a2[7];
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
+    const a00 = a2[0];
+    const a01 = a2[1];
+    const a02 = a2[2];
+    const a03 = a2[3];
+    const a10 = a2[4];
+    const a11 = a2[5];
+    const a12 = a2[6];
+    const a13 = a2[7];
     if (a2 !== out) {
       out[8] = a2[8];
       out[9] = a2[9];
@@ -992,8 +994,8 @@ class Mat4 extends Float32Array {
    * @returns `out`
    */
   static fromXRotation(out, rad) {
-    let s2 = Math.sin(rad);
-    let c2 = Math.cos(rad);
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
     out[0] = 1;
     out[1] = 0;
     out[2] = 0;
@@ -1025,8 +1027,8 @@ class Mat4 extends Float32Array {
    * @returns `out`
    */
   static fromYRotation(out, rad) {
-    let s2 = Math.sin(rad);
-    let c2 = Math.cos(rad);
+    const s2 = Math.sin(rad);
+    const c2 = Math.cos(rad);
     out[0] = c2;
     out[1] = 0;
     out[2] = -s2;
@@ -1146,7 +1148,7 @@ class Mat4 extends Float32Array {
     const ay = a2[5];
     const az = a2[6];
     const aw = a2[7];
-    let magnitude = bx * bx + by * by + bz * bz + bw * bw;
+    const magnitude = bx * bx + by * by + bz * bz + bw * bw;
     if (magnitude > 0) {
       tmpVec3[0] = (ax * bw + aw * bx + ay * bz - az * by) * 2 / magnitude;
       tmpVec3[1] = (ay * bw + aw * by + az * bx - ax * bz) * 2 / magnitude;
@@ -1642,7 +1644,7 @@ class Mat4 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Mat4.frustumNO} or {@link Mat4.frustumZO} explicitly
    */
-  static frustum(out, left, right, bottom, top, near, far = Infinity) {
+  static frustum(out, left, right, bottom, top, near, _far = Infinity) {
     return out;
   }
   /**
@@ -1733,7 +1735,7 @@ class Mat4 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Mat4.perspectiveNO} or {@link Mat4.perspectiveZO} explicitly
    */
-  static perspective(out, fovy, aspect, near, far = Infinity) {
+  static perspective(out, fovy, aspect, near, _far = Infinity) {
     return out;
   }
   /**
@@ -1856,7 +1858,7 @@ class Mat4 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Mat4.orthoNO} or {@link Mat4.orthoZO} explicitly
    */
-  static ortho(out, left, right, bottom, top, near, far) {
+  static ortho(out, _left, _right, _bottom, _top, _near, _far) {
     return out;
   }
   /**
@@ -2098,7 +2100,7 @@ class Mat4 extends Float32Array {
    * Alias for {@link Mat4.subtract}
    * @category Static
    */
-  static sub(out, a2, b2) {
+  static sub(out, _a2, _b2) {
     return out;
   }
   /**
@@ -2411,7 +2413,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.subtract}
    */
-  sub(b2) {
+  sub(_b2) {
     return this;
   }
   /**
@@ -2430,7 +2432,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.multiply}
    */
-  mul(b2) {
+  mul(_b2) {
     return this;
   }
   /**
@@ -2449,7 +2451,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.divide}
    */
-  div(b2) {
+  div(_b2) {
     return this;
   }
   /**
@@ -2492,7 +2494,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.distance}
    */
-  dist(b2) {
+  dist(_b2) {
     return 0;
   }
   /**
@@ -2508,7 +2510,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.squaredDistance}
    */
-  sqrDist(b2) {
+  sqrDist(_b2) {
     return 0;
   }
   /**
@@ -2596,16 +2598,16 @@ class Vec3 extends Float32Array {
    * @returns Magnitude of a
    */
   static magnitude(a2) {
-    let x2 = a2[0];
-    let y2 = a2[1];
-    let z = a2[2];
+    const x2 = a2[0];
+    const y2 = a2[1];
+    const z = a2[2];
     return Math.sqrt(x2 * x2 + y2 * y2 + z * z);
   }
   /**
    * Alias for {@link Vec3.magnitude}
    * @category Static
    */
-  static mag(a2) {
+  static mag(_a2) {
     return 0;
   }
   /**
@@ -2617,7 +2619,7 @@ class Vec3 extends Float32Array {
    * @returns length of a
    */
   // @ts-ignore: Length conflicts with Function.length
-  static length(a2) {
+  static length(_a2) {
     return 0;
   }
   /**
@@ -2625,7 +2627,7 @@ class Vec3 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Vec3.mag}
    */
-  static len(a2) {
+  static len(_a2) {
     return 0;
   }
   /**
@@ -2704,7 +2706,7 @@ class Vec3 extends Float32Array {
    * Alias for {@link Vec3.subtract}
    * @category Static
    */
-  static sub(out, a2, b2) {
+  static sub(_out, _a2, _b2) {
     return [0, 0, 0];
   }
   /**
@@ -2726,7 +2728,7 @@ class Vec3 extends Float32Array {
    * Alias for {@link Vec3.multiply}
    * @category Static
    */
-  static mul(out, a2, b2) {
+  static mul(_out, _a2, _b2) {
     return [0, 0, 0];
   }
   /**
@@ -2748,7 +2750,7 @@ class Vec3 extends Float32Array {
    * Alias for {@link Vec3.divide}
    * @category Static
    */
-  static div(out, a2, b2) {
+  static div(_out, _a2, _b2) {
     return [0, 0, 0];
   }
   /**
@@ -2871,7 +2873,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.distance}
    */
-  static dist(a2, b2) {
+  static dist(_a2, _b2) {
     return 0;
   }
   /**
@@ -2891,7 +2893,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.squaredDistance}
    */
-  static sqrDist(a2, b2) {
+  static sqrDist(_a2, _b2) {
     return 0;
   }
   /**
@@ -2910,7 +2912,7 @@ class Vec3 extends Float32Array {
   /**
    * Alias for {@link Vec3.squaredLength}
    */
-  static sqrLen(a2, b2) {
+  static sqrLen(_a2, _b2) {
     return 0;
   }
   /**
@@ -3139,7 +3141,7 @@ class Vec3 extends Float32Array {
    * @returns `out`
    */
   static transformMat3(out, a2, m2) {
-    let x2 = a2[0], y2 = a2[1], z = a2[2];
+    const x2 = a2[0], y2 = a2[1], z = a2[2];
     out[0] = x2 * m2[0] + y2 * m2[3] + z * m2[6];
     out[1] = x2 * m2[1] + y2 * m2[4] + z * m2[7];
     out[2] = x2 * m2[2] + y2 * m2[5] + z * m2[8];
@@ -3499,7 +3501,7 @@ class Vec4 extends Float32Array {
   /**
    * Alias for {@link Vec4.subtract}
    */
-  sub(b2) {
+  sub(_b2) {
     return this;
   }
   /**
@@ -3519,7 +3521,7 @@ class Vec4 extends Float32Array {
   /**
    * Alias for {@link Vec4.multiply}
    */
-  mul(b2) {
+  mul(_b2) {
     return this;
   }
   /**
@@ -3539,7 +3541,7 @@ class Vec4 extends Float32Array {
   /**
    * Alias for {@link Vec4.divide}
    */
-  div(b2) {
+  div(_b2) {
     return this;
   }
   /**
@@ -3584,7 +3586,7 @@ class Vec4 extends Float32Array {
   /**
    * Alias for {@link Vec4.distance}
    */
-  dist(b2) {
+  dist(_b2) {
     return 0;
   }
   /**
@@ -3600,7 +3602,7 @@ class Vec4 extends Float32Array {
   /**
    * Alias for {@link Vec4.squaredDistance}
    */
-  sqrDist(b2) {
+  sqrDist(_b2) {
     return 0;
   }
   /**
@@ -3765,7 +3767,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.subtract}
    * @category Static
    */
-  static sub(out, a2, b2) {
+  static sub(out, _a2, _b2) {
     return out;
   }
   /**
@@ -3788,7 +3790,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.multiply}
    * @category Static
    */
-  static mul(out, a2, b2) {
+  static mul(out, _a2, _b2) {
     return out;
   }
   /**
@@ -3811,7 +3813,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.divide}
    * @category Static
    */
-  static div(out, a2, b2) {
+  static div(out, _a2, _b2) {
     return out;
   }
   /**
@@ -3943,7 +3945,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.distance}
    * @category Static
    */
-  static dist(a2, b2) {
+  static dist(_a2, _b2) {
     return 0;
   }
   /**
@@ -3965,7 +3967,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.squaredDistance}
    * @category Static
    */
-  static sqrDist(a2, b2) {
+  static sqrDist(_a2, _b2) {
     return 0;
   }
   /**
@@ -3986,7 +3988,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.magnitude}
    * @category Static
    */
-  static mag(a2) {
+  static mag(_a2) {
     return 0;
   }
   /**
@@ -3995,7 +3997,7 @@ class Vec4 extends Float32Array {
    * @deprecated Use {@link Vec4.magnitude} to avoid conflicts with builtin `length` methods/attribs
    */
   // @ts-ignore: Length conflicts with Function.length
-  static length(a2) {
+  static length(_a2) {
     return 0;
   }
   /**
@@ -4003,7 +4005,7 @@ class Vec4 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Vec4.mag}
    */
-  static len(a2) {
+  static len(_a2) {
     return 0;
   }
   /**
@@ -4024,7 +4026,7 @@ class Vec4 extends Float32Array {
    * Alias for {@link Vec4.squaredLength}
    * @category Static
    */
-  static sqrLen(a2) {
+  static sqrLen(_a2) {
     return 0;
   }
   /**
@@ -4464,7 +4466,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.subtract}
    */
-  sub(b2) {
+  sub(_b2) {
     return this;
   }
   /**
@@ -4482,7 +4484,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.multiply}
    */
-  mul(b2) {
+  mul(_b2) {
     return this;
   }
   /**
@@ -4500,7 +4502,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.divide}
    */
-  div(b2) {
+  div(_b2) {
     return this;
   }
   /**
@@ -4541,7 +4543,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.distance}
    */
-  dist(b2) {
+  dist(_b2) {
     return 0;
   }
   /**
@@ -4557,7 +4559,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.squaredDistance}
    */
-  sqrDist(b2) {
+  sqrDist(_b2) {
     return 0;
   }
   /**
@@ -4704,7 +4706,7 @@ class Vec2 extends Float32Array {
    * Alias for {@link Vec2.subtract}
    * @category Static
    */
-  static sub(out, a2, b2) {
+  static sub(_out, _a2, _b2) {
     return [0, 0];
   }
   /**
@@ -4725,7 +4727,7 @@ class Vec2 extends Float32Array {
    * Alias for {@link Vec2.multiply}
    * @category Static
    */
-  static mul(out, a2, b2) {
+  static mul(_out, _a2, _b2) {
     return [0, 0];
   }
   /**
@@ -4746,7 +4748,7 @@ class Vec2 extends Float32Array {
    * Alias for {@link Vec2.divide}
    * @category Static
    */
-  static div(out, a2, b2) {
+  static div(_out, _a2, _b2) {
     return [0, 0];
   }
   /**
@@ -4860,7 +4862,7 @@ class Vec2 extends Float32Array {
    * Alias for {@link Vec2.distance}
    * @category Static
    */
-  static dist(a2, b2) {
+  static dist(_a2, _b2) {
     return 0;
   }
   /**
@@ -4880,7 +4882,7 @@ class Vec2 extends Float32Array {
    * Alias for {@link Vec2.distance}
    * @category Static
    */
-  static sqrDist(a2, b2) {
+  static sqrDist(_a2, _b2) {
     return 0;
   }
   /**
@@ -4891,15 +4893,15 @@ class Vec2 extends Float32Array {
    * @returns Magnitude of a
    */
   static magnitude(a2) {
-    let x2 = a2[0];
-    let y2 = a2[1];
+    const x2 = a2[0];
+    const y2 = a2[1];
     return Math.sqrt(x2 * x2 + y2 * y2);
   }
   /**
    * Alias for {@link Vec2.magnitude}
    * @category Static
    */
-  static mag(a2) {
+  static mag(_a2) {
     return 0;
   }
   /**
@@ -4911,7 +4913,7 @@ class Vec2 extends Float32Array {
    * @returns length of a
    */
   // @ts-ignore: Length conflicts with Function.length
-  static length(a2) {
+  static length(_a2) {
     return 0;
   }
   /**
@@ -4919,7 +4921,7 @@ class Vec2 extends Float32Array {
    * @category Static
    * @deprecated Use {@link Vec2.mag}
    */
-  static len(a2) {
+  static len(_a2) {
     return 0;
   }
   /**
@@ -4937,7 +4939,7 @@ class Vec2 extends Float32Array {
   /**
    * Alias for {@link Vec2.squaredLength}
    */
-  static sqrLen(a2, b2) {
+  static sqrLen(_a2, _b2) {
     return 0;
   }
   /**
@@ -5193,12 +5195,12 @@ class Vec2 extends Float32Array {
 }
 
 
-var AbstractBaseRenderer = class {
+const AbstractBaseRenderer = class {
 };
 function clamp1(x2) {
   return Math.max(1, x2);
 }
-var BaseRenderer = class extends AbstractBaseRenderer {
+const BaseRenderer = class extends AbstractBaseRenderer {
   observer;
   flowSpeed = 1;
   currerntRenderScale = 0.75;
@@ -5396,7 +5398,7 @@ function clamp$1(x2, min2, max2) {
 function clamp01$1(x2) {
   return clamp$1(x2, 0, 1);
 }
-function clampPositive(x2) {
+function _clampPositive(x2) {
   return Math.max(0, x2);
 }
 const p = (cx, cy, x2, y2, ur = 0, vr = 0, up = 1, vp = 1) => Object.freeze({
@@ -5704,8 +5706,8 @@ function generateControlPoints(width, height, variationFraction = randomRange(0.
   smoothifyControlPoints(conf, w2, h2, smoothIters, smoothFactor, smoothModifier);
   return preset(w2, h2, conf);
 }
-var mesh_frag_default = "precision highp float;\n\nvarying vec3 v_color;\nvarying vec2 v_uv;\nuniform sampler2D u_texture;\nuniform float u_time;\nuniform float u_volume;\nuniform float u_beatPulse;\nuniform float u_alpha;\n\n// 预计算常量\nconst float INV_255 = 1.0 / 255.0;\nconst float HALF_INV_255 = 0.5 / 255.0;\nconst float GRADIENT_NOISE_A = 52.9829189;\nconst vec2 GRADIENT_NOISE_B = vec2(0.06711056, 0.00583715);\n\n// 基础流动保持恒速，节拍只在局部窗口内轻推流场。\nconst float BASE_DISTORTION = 0.016;\nconst float BEAT_DISTORTION = 0.16;\nconst float GLOBAL_SCALE_AMOUNT = 0.025;\nconst float WARP_FREQ = 2.2;\nconst float WARP_SPEED = 0.65;\nconst vec2 BEAT_ANCHOR = vec2(0.48, 0.55);\n\nfloat gradientNoise(in vec2 uv) {\n    return fract(GRADIENT_NOISE_A * fract(dot(uv, GRADIENT_NOISE_B)));\n}\n\n// 优化的旋转函数，避免重复计算 sin/cos\nvec2 rot(vec2 v, float angle) {\n    float s = sin(angle);\n    float c = cos(angle);\n    return vec2(c * v.x - s * v.y, s * v.x + c * v.y);\n}\n\n// 平滑 value noise（用于连续低频 domain warp，破除同心圆 / 规则径向扩张）\nfloat hash21(vec2 p) {\n    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);\n}\nfloat vnoise(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f);\n    float a = hash21(i);\n    float b = hash21(i + vec2(1.0, 0.0));\n    float c = hash21(i + vec2(0.0, 1.0));\n    float d = hash21(i + vec2(1.0, 1.0));\n    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);\n}\nfloat fbm(vec2 p) {\n    float v = 0.0;\n    float amp = 0.5;\n    for (int k = 0; k < 3; k++) {\n        v += amp * vnoise(p);\n        p *= 2.0;\n        amp *= 0.5;\n    }\n    return v;\n}\n\n// 连续、低频、缓慢运动的 domain warp（以 flowTime 连续驱动，Bass 增强幅度）\nvec2 domainWarp(vec2 uv, float t) {\n    vec2 w = vec2(\n        fbm(uv * WARP_FREQ + vec2(t * WARP_SPEED, 0.0)),\n        fbm(uv * WARP_FREQ + vec2(0.0, t * WARP_SPEED) + vec2(5.2, 1.3))\n    ) - 0.5;\n    // 第二倍频，增加有机细节但仍保持低频\n    w += 0.5 * (vec2(\n        fbm(uv * WARP_FREQ * 2.1 + vec2(t * WARP_SPEED * 1.7 + 3.1, 0.0)),\n        fbm(uv * WARP_FREQ * 2.1 + vec2(0.0, t * WARP_SPEED * 1.7) + vec2(7.7, 9.2))\n    ) - 0.5);\n    return w;\n}\n\nvoid main() {\n    float flowTime = u_time;\n    float energy = u_volume;\n\n    float dither = INV_255 * gradientNoise(gl_FragCoord.xy) - HALF_INV_255;\n    vec2 centeredUV = v_uv - vec2(0.2);\n\n    vec2 warp = domainWarp(centeredUV, flowTime);\n    vec2 beatOffset = (v_uv - BEAT_ANCHOR) * vec2(1.0, 0.86);\n    float beatWindow = exp(-dot(beatOffset, beatOffset) * 7.0);\n    vec2 beatWarp = warp * (u_beatPulse * BEAT_DISTORTION * beatWindow);\n    vec2 rotatedUV = rot(centeredUV, flowTime * 0.35);\n    float scale = 1.0 - energy * GLOBAL_SCALE_AMOUNT;\n    vec2 finalUV = rotatedUV * scale + vec2(0.5) + warp * BASE_DISTORTION + beatWarp;\n\n    vec4 result = texture2D(u_texture, finalUV);\n\n    float alphaVolumeFactor = u_alpha * (0.88 + energy * 0.08);\n    result.rgb *= v_color * alphaVolumeFactor;\n    result.a *= alphaVolumeFactor;\n\n    result.rgb += vec3(dither);\n\n    float dist = distance(v_uv, vec2(0.5));\n    float vignette = smoothstep(0.8, 0.3, dist);\n    float mask = 0.6 + vignette * 0.4;\n    result.rgb *= mask;\n\n    gl_FragColor = result;\n}\n";
-var mesh_vert_default = "precision highp float;\n\nattribute vec2 a_pos;\nattribute vec3 a_color;\nattribute vec2 a_uv;\nvarying vec3 v_color;\nvarying vec2 v_uv;\n\nuniform float u_aspect;\n\nvoid main() {\n    v_color = a_color;\n    v_uv = a_uv;\n    vec2 pos = a_pos;\n    if (u_aspect > 1.0) {\n        pos.y *= u_aspect;\n    } else {\n        pos.x /= u_aspect;\n    }\n    gl_Position = vec4(pos, 0.0, 1.0);\n}\n";
+const mesh_frag_default = "precision highp float;\n\nvarying vec3 v_color;\nvarying vec2 v_uv;\nuniform sampler2D u_texture;\nuniform float u_time;\nuniform float u_volume;\nuniform float u_beatPulse;\nuniform float u_alpha;\n\n// 预计算常量\nconst float INV_255 = 1.0 / 255.0;\nconst float HALF_INV_255 = 0.5 / 255.0;\nconst float GRADIENT_NOISE_A = 52.9829189;\nconst vec2 GRADIENT_NOISE_B = vec2(0.06711056, 0.00583715);\n\n// 基础流动保持恒速，节拍只在局部窗口内轻推流场。\nconst float BASE_DISTORTION = 0.016;\nconst float BEAT_DISTORTION = 0.16;\nconst float GLOBAL_SCALE_AMOUNT = 0.025;\nconst float WARP_FREQ = 2.2;\nconst float WARP_SPEED = 0.65;\nconst vec2 BEAT_ANCHOR = vec2(0.48, 0.55);\n\nfloat gradientNoise(in vec2 uv) {\n    return fract(GRADIENT_NOISE_A * fract(dot(uv, GRADIENT_NOISE_B)));\n}\n\n// 优化的旋转函数，避免重复计算 sin/cos\nvec2 rot(vec2 v, float angle) {\n    float s = sin(angle);\n    float c = cos(angle);\n    return vec2(c * v.x - s * v.y, s * v.x + c * v.y);\n}\n\n// 平滑 value noise（用于连续低频 domain warp，破除同心圆 / 规则径向扩张）\nfloat hash21(vec2 p) {\n    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);\n}\nfloat vnoise(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    vec2 u = f * f * (3.0 - 2.0 * f);\n    float a = hash21(i);\n    float b = hash21(i + vec2(1.0, 0.0));\n    float c = hash21(i + vec2(0.0, 1.0));\n    float d = hash21(i + vec2(1.0, 1.0));\n    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);\n}\nfloat fbm(vec2 p) {\n    float v = 0.0;\n    float amp = 0.5;\n    for (int k = 0; k < 3; k++) {\n        v += amp * vnoise(p);\n        p *= 2.0;\n        amp *= 0.5;\n    }\n    return v;\n}\n\n// 连续、低频、缓慢运动的 domain warp（以 flowTime 连续驱动，Bass 增强幅度）\nvec2 domainWarp(vec2 uv, float t) {\n    vec2 w = vec2(\n        fbm(uv * WARP_FREQ + vec2(t * WARP_SPEED, 0.0)),\n        fbm(uv * WARP_FREQ + vec2(0.0, t * WARP_SPEED) + vec2(5.2, 1.3))\n    ) - 0.5;\n    // 第二倍频，增加有机细节但仍保持低频\n    w += 0.5 * (vec2(\n        fbm(uv * WARP_FREQ * 2.1 + vec2(t * WARP_SPEED * 1.7 + 3.1, 0.0)),\n        fbm(uv * WARP_FREQ * 2.1 + vec2(0.0, t * WARP_SPEED * 1.7) + vec2(7.7, 9.2))\n    ) - 0.5);\n    return w;\n}\n\nvoid main() {\n    float flowTime = u_time;\n    float energy = u_volume;\n\n    float dither = INV_255 * gradientNoise(gl_FragCoord.xy) - HALF_INV_255;\n    vec2 centeredUV = v_uv - vec2(0.2);\n\n    vec2 warp = domainWarp(centeredUV, flowTime);\n    vec2 beatOffset = (v_uv - BEAT_ANCHOR) * vec2(1.0, 0.86);\n    float beatWindow = exp(-dot(beatOffset, beatOffset) * 7.0);\n    vec2 beatWarp = warp * (u_beatPulse * BEAT_DISTORTION * beatWindow);\n    vec2 rotatedUV = rot(centeredUV, flowTime * 0.35);\n    float scale = 1.0 - energy * GLOBAL_SCALE_AMOUNT;\n    vec2 finalUV = rotatedUV * scale + vec2(0.5) + warp * BASE_DISTORTION + beatWarp;\n\n    vec4 result = texture2D(u_texture, finalUV);\n\n    float alphaVolumeFactor = u_alpha * (0.88 + energy * 0.08);\n    result.rgb *= v_color * alphaVolumeFactor;\n    result.a *= alphaVolumeFactor;\n\n    result.rgb += vec3(dither);\n\n    float dist = distance(v_uv, vec2(0.5));\n    float vignette = smoothstep(0.8, 0.3, dist);\n    float mask = 0.6 + vignette * 0.4;\n    result.rgb *= mask;\n\n    gl_FragColor = result;\n}\n";
+const mesh_vert_default = "precision highp float;\n\nattribute vec2 a_pos;\nattribute vec3 a_color;\nattribute vec2 a_uv;\nvarying vec3 v_color;\nvarying vec2 v_uv;\n\nuniform float u_aspect;\n\nvoid main() {\n    v_color = a_color;\n    v_uv = a_uv;\n    vec2 pos = a_pos;\n    if (u_aspect > 1.0) {\n        pos.y *= u_aspect;\n    } else {\n        pos.x /= u_aspect;\n    }\n    gl_Position = vec4(pos, 0.0, 1.0);\n}\n";
 const quadVertShader = `
 attribute vec2 a_pos;
 varying vec2 v_uv;
@@ -5727,7 +5729,7 @@ void main() {
 function easeInOutSine(x2) {
   return -(Math.cos(Math.PI * x2) - 1) / 2;
 }
-var GLProgram2 = class {
+const GLProgram2 = class {
   gl;
   program;
   vertexShader;
@@ -5808,7 +5810,7 @@ var GLProgram2 = class {
     gl.deleteProgram(this.program);
   }
 };
-var Mesh = class {
+const Mesh = class {
   vertexWidth = 0;
   vertexHeight = 0;
   vertexBuffer;
@@ -5957,7 +5959,7 @@ var Mesh = class {
     this.gl.deleteBuffer(this.indexBuffer);
   }
 };
-var ControlPoint = class {
+const ControlPoint = class {
   color = Vec3.fromValues(1, 1, 1);
   location = Vec2.fromValues(0, 0);
   uTangent = Vec2.fromValues(0, 0);
@@ -6039,7 +6041,7 @@ function colorCoefficients(p00, p01, p10, p11, axis, output = Mat4.create()) {
   output[5] = c2(p11);
   return output;
 }
-var Map2D = class {
+const Map2D = class {
   _width = 0;
   _height = 0;
   _data = [];
@@ -6065,7 +6067,7 @@ var Map2D = class {
     return this._height;
   }
 };
-var BHPMesh = class extends Mesh {
+const BHPMesh = class extends Mesh {
   /**
   * 细分级别，越大曲线越平滑，但是性能消耗也越大
   */
@@ -6230,7 +6232,7 @@ var BHPMesh = class extends Mesh {
     this.update();
   }
 };
-var GLTexture2 = class {
+const GLTexture2 = class {
   tex;
   constructor(gl, albumImageData) {
     this.gl = gl;
@@ -6259,7 +6261,7 @@ function createOffscreenCanvas(width, height) {
   canvas.height = height;
   return canvas;
 }
-export var MeshGradientRenderer = class extends BaseRenderer {
+export const MeshGradientRenderer = class extends BaseRenderer {
   gl;
   lastFrameTime = 0;
   frameTime = 0;
@@ -6484,6 +6486,8 @@ export var MeshGradientRenderer = class extends BaseRenderer {
       this.tickHandle = 0;
     }
     this.paused = true;
+    // 标记时间戳失效：恢复后首帧 frameDelta 归零，避免停转时长被计入动画时间造成画面跳变
+    this.lastFrameTime = NaN;
   }
   resume() {
     this.paused = false;
@@ -6601,7 +6605,9 @@ export var MeshGradientRenderer = class extends BaseRenderer {
     this.beatPulse = Math.min(1, Math.max(0, pulse));
     this.requestTick();
   }
+  // 接口占位：渲染器不接受歌词状态，保留 setter 与外部调用方对齐
   setHasLyric(_hasLyric) {
+    return undefined;
   }
   dispose() {
     super.dispose();
@@ -6640,7 +6646,7 @@ export var MeshGradientRenderer = class extends BaseRenderer {
     }
   }
 };
-export var BackgroundRender2 = class BackgroundRender2 {
+export const BackgroundRender2 = class BackgroundRender2 {
   element;
   renderer;
   constructor(renderer, canvas) {

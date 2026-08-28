@@ -10,6 +10,7 @@ import {
   toggleDynamicIslandWindow,
   toggleTaskbarLyricWindow,
   focusMainWindow,
+  toggleDebugGeomWindow,
 } from "@main/window";
 
 type PlayState = "playing" | "paused";
@@ -125,6 +126,10 @@ const buildMenu = (): Menu => {
       label: dynamicIslandOpen ? t("closeDynamicIsland") : t("openDynamicIsland"),
       icon: menuIcon("lyric"),
       click: () => toggleDynamicIslandWindow(),
+    },
+    {
+      label: "灵动岛几何调试台",
+      click: () => toggleDebugGeomWindow(),
     },
     // 任务栏歌词
     ...(isWin

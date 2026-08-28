@@ -48,6 +48,7 @@ export {
   getDynamicIslandWidthFromConfig,
   getDynamicIslandVisible,
   syncDynamicIslandVisibility,
+  applyDynamicIslandDebugOffset,
 } from "./dynamicIsland";
 export { toggleDebugGeomWindow } from "./debugGeom";
 export {

@@ -28,6 +28,28 @@ let intervalTimer: ReturnType<typeof setInterval> | null = null;
 const emit = (event: UpdateEvent): void => sendToMain("update:event", event);
 
 /**
+ * 把底层错误文案转成用户友好的提示
+ * - 网络超时 / 无法连接 → 提示检查网络后重试，而不是抛出原始 net 错误
+ */
+const userFriendlyMessage = (message: string): string => {
+  if (/ERR_CONNECTION_TIMED_OUT|ETIMEDOUT|getaddrinfo|ENOTFOUND/i.test(message)) {
+    return "更新服务器连接超时，请检查网络后重试";
+  }
+  if (/ECONNREFUSED|ERR_CONNECTION_REFUSED/i.test(message)) {
+    return "无法连接更新服务器，请稍后重试";
+  }
+  return message;
+};
+
+/**
+ * 判断错误是否为"本地版本高于已发布版本"导致的降级提示
+ * electron-updater 在 allowDowngrade=false 且远端版本低于本地时会抛出该错误，
+ * 这并非真正的故障，等价于"已是最新版本"
+ */
+const isDowngradeOrNotAvailable = (message: string): boolean =>
+  /downgrade is disallowed|is not available/i.test(message);
+
+/**
  * 规范化更新日志格式
  * @param notes 更新日志，可能是字符串或数组
  * @returns 规范化后的更新日志字符串
@@ -74,8 +96,16 @@ const bindEvents = (): void => {
   autoUpdater.on("update-downloaded", (info) => emit({ type: "downloaded", meta: toMeta(info) }));
   autoUpdater.on("error", (error) => {
     checking = false;
+    const message = error?.message ?? String(error);
+    // 本地版本高于已发布版本时，electron-updater 会抛 "downgrade is disallowed"，
+    // 这并非真正的错误，等价于已是最新，避免向用户展示为"更新出错"
+    if (isDowngradeOrNotAvailable(message)) {
+      updaterLog.info("当前已是最新（本地版本高于已发布版本）", message);
+      emit({ type: "notAvailable", manual: manualCheck });
+      return;
+    }
     updaterLog.error("更新出错", error);
-    emit({ type: "error", message: error?.message ?? String(error), manual: manualCheck });
+    emit({ type: "error", message: userFriendlyMessage(message), manual: manualCheck });
   });
 };
 

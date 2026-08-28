@@ -170,6 +170,12 @@ const playerCategory: SettingCategory = {
               defaultValue: false,
             },
             {
+              key: "playerBgPauseOnBlur",
+              type: "switch",
+              binding: { store: "settings", path: "player.playerBgPauseOnBlur" },
+              defaultValue: true,
+            },
+            {
               key: "playerBgBeat",
               type: "switch",
               binding: { store: "settings", path: "player.playerBgBeat" },
@@ -313,6 +319,12 @@ const playerCategory: SettingCategory = {
               defaultValue: 4,
               marks: { 1: "1", 4: "4", 8: "8", 12: "12" },
             },
+            {
+              key: "reverseSpectrum",
+              type: "switch",
+              binding: { store: "settings", path: "player.reverseSpectrum" },
+              defaultValue: false,
+            },
           ],
         },
       ],
@@ -331,6 +343,8 @@ const playerCategory: SettingCategory = {
           type: "switch",
           binding: { store: "settings", path: "player.pauseOnDeviceSwitch" },
           defaultValue: false,
+          action: (enabled) =>
+            window.api.player.setPauseOnDeviceSwitch(Boolean(enabled)).then(() => {}),
         },
       ],
     },

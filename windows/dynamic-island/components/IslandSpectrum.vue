@@ -2,7 +2,7 @@
 // 灵动岛右侧实时频谱：6 根柱（中间向上下对称），由主进程推送的 128 段 FFT 驱动。
 // 颜色取自封面主色（由父组件传入）。
 // 播放时申请 FFT 推送（主进程跨窗口引用计数），暂停/卸载时释放。
-import { mixWithWhite, DEFAULT_PALETTE } from "../composables/useCoverColor";
+import { DEFAULT_PALETTE } from "../composables/useCoverColor";
 
 interface Props {
   /** 频谱柱双色（垂直渐变：primary 顶/secondary 底），#RRGGBB */
@@ -30,29 +30,38 @@ const props = withDefaults(defineProps<Props>(), {
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const FFT_SIZE = 128;
-/** 极低频噪声多，跳过前 8 段 */
-const SKIP_LOW = 8;
+/** 次声隆隆噪声集中在 40~50Hz，跳过前 5 段 */
+const SKIP_LOW = 5;
 const BAR_RADIUS = 1.5;
 /** 后端推送间隔（ms），用于时间插值 */
-const PUSH_INTERVAL = 50;
-// —— 频谱感知映射与动态响应参数（仅影响数据→高度链路，不改 UI/颜色/圆角/尺寸）——
-const COMPRESS_K = 2.2; // 感知动态范围压缩增益：1 - exp(-K*x)
-const ATTACK_TAU = 0.045; // 上升时间常数 ~45ms（快但不瞬跳）
-const RELEASE_TAU = 0.19; // 下降时间常数 ~190ms（平滑回落）
-const RELEASE_TAU_FAST = 0.07; // 接近静音时更快回落，避免悬停
-const SILENCE_FLOOR = 0.02; // 判定为静音的阈值
-const NEIGHBOR_SMOOTH = 0.12; // 相邻频段极轻平滑（须足够低，避免 5 柱同步）
+const PUSH_INTERVAL = 16;
+// —— 频段聚合 ——
+/** 段内聚合权重：峰值为主、均值为辅（纯均值会抹平镲片/齿音瞬态） */
+const PEAK_WEIGHT = 0.75;
+/** 高频倾斜增益（乘法）：按柱序号放大高频视觉权重，对冲音乐 -3~-6dB/oct 的天然衰减 */
+const TILT_GAINS = [1.0, 1.1, 1.25, 1.5, 1.8];
+/** 幂次软化指数（Dynamic Knee）：<1 提升低能量弹感、抑制高能量频繁触顶 */
+const KNEE_EXP = 0.85;
+// —— 双向 LERP 平滑（快攻慢回弹）——
+// 系数为 60fps 等效值；rAF 中按 dt 折算，ProMotion 120Hz 下手感一致、不会加速一倍
+const ATTACK_LERP = 0.35; // 上升插值系数：连续快速上升（到位 ~90ms），不再接近跳变
+const DECAY_LERP = 0.82; // 下降衰减系数：稍利落的回落，减轻拖尾
+// —— 静音门限迟滞（hysteresis）——
+// 两个方向用不同阈值，中间 [0.015, 0.03] 为保持区：门限附近的能量波动
+// 不再导致柱子在「归零」和「上升」两种状态间反复翻转（消除小幅抖振）
+const SILENCE_RISE = 0.03; // 上升触发阈值：静音柱须越过此值才重新起跳
+const SILENCE_FALL = 0.015; // 下降归零阈值：活动柱低于此值才判静音归零
 
 /** 上一帧推送 */
 const prev = new Float32Array(FFT_SIZE);
 /** 当前帧推送 */
 const curr = new Float32Array(FFT_SIZE);
-/** 实际渲染显示值（经过 attack/decay 包络平滑），长度随柱数变化 */
+/** 实际渲染显示值（经过双向 LERP 平滑），长度随柱数变化 */
 let display = new Float32Array(props.barCount);
-/** 每频段 RMS 压缩后能量（每帧重算） */
+/** 每柱静音迟滞状态：1 = 已判静音（保持 0，直到能量越过 SILENCE_RISE） */
+let gated = new Uint8Array(props.barCount);
+/** 每频段聚合能量（每帧重算，未经倾斜增益/软化） */
 let bandEnergies = new Float32Array(props.barCount);
-/** 邻域平滑后的目标值（每帧重算） */
-let bandTargets = new Float32Array(props.barCount);
 /** 上一次推送到达时间戳 */
 let lastUpdate = 0;
 /** 上一帧时间戳（帧率无关包络用） */
@@ -65,23 +74,22 @@ let fftOn = false;
 let bandEdges: Array<{ start: number; end: number }> = [];
 const computeBands = (): void => {
   const n = props.barCount;
-  // 感知频段分组：在频率轴（bin 索引 ∝ 频率）上做对数划分，
-  // 低频分得细、高频分得宽。5 根柱分别覆盖
-  // Sub-Bass/Bass → Low-Mid → Mid → High-Mid → High。
+  // 等八度划分：Rust 侧输出的 128 个 bin 已经是「频率对数轴」，
+  // 前端直接线性平分即可得到等八度、等宽 bin 数的频段（5 柱时各 ~25 bin，
+  // 覆盖 50–146 / 146–411 / 411–1.2k / 1.2k–3.4k / 3.4k–10k Hz）。
+  // 注意：不要对 bin 索引再取一次对数——那会让最右柱吃掉近一半 bin 而彻底瘫痪。
   const lo = SKIP_LOW;
-  const hi = FFT_SIZE;
-  const logLo = Math.log(lo);
-  const logHi = Math.log(hi);
+  const span = (FFT_SIZE - lo) / n;
   bandEdges = [];
   for (let i = 0; i < n; i++) {
-    const s = Math.round(Math.exp(logLo + (logHi - logLo) * (i / n)));
-    const e = Math.round(Math.exp(logLo + (logHi - logLo) * ((i + 1) / n)));
-    bandEdges.push({ start: Math.max(lo, s), end: Math.max(s + 1, e) });
+    const start = Math.round(lo + span * i);
+    const end = Math.round(lo + span * (i + 1));
+    bandEdges.push({ start, end: Math.max(start + 1, end) });
   }
   if (display.length !== n) {
     display = new Float32Array(n);
     bandEnergies = new Float32Array(n);
-    bandTargets = new Float32Array(n);
+    gated = new Uint8Array(n);
   }
 };
 computeBands();
@@ -120,9 +128,9 @@ const release = (): void => {
 
 const subscribeFft = (): void => {
   if (unsubFft) return;
-  unsubFft = window.api.dynamicIsland.onFftData((data: number[]) => {
+  unsubFft = window.api.dynamicIsland.onFftData((data) => {
     prev.set(curr);
-    for (let i = 0; i < FFT_SIZE; i++) curr[i] = data[i] ?? 0;
+    for (let i = 0; i < FFT_SIZE; i++) curr[i] = data.ldata[i] ?? 0;
     lastUpdate = performance.now();
   });
 };
@@ -142,39 +150,54 @@ const draw = (): void => {
   // 时间插值：prev → curr 之间按推送间隔平滑，消除 stair-step
   const t = Math.min((now - lastUpdate) / PUSH_INTERVAL, 1);
   const n = props.barCount;
-  // 1. 每频段 RMS 能量（频域线性插值 + 能量聚合，替代简单算术平均）
+  // 1. 段内聚合：峰值为主 + 均值兜底（纯均值会把瞬态抹平）
   for (let i = 0; i < n; i++) {
     const { start, end } = bandEdges[i];
-    let sumSq = 0;
+    let peak = 0;
+    let sum = 0;
     let cnt = 0;
     for (let j = start; j < end; j++) {
       const v = prev[j] + (curr[j] - prev[j]) * t;
-      sumSq += v * v;
+      if (v > peak) peak = v;
+      sum += v;
       cnt++;
     }
-    const rms = cnt > 0 ? Math.sqrt(sumSq / cnt) : 0;
-    // 感知动态范围压缩：弱信号抬升可见、强瞬态不顶满
-    bandEnergies[i] = 1 - Math.exp(-COMPRESS_K * rms);
+    const mean = cnt > 0 ? sum / cnt : 0;
+    bandEnergies[i] = PEAK_WEIGHT * peak + (1 - PEAK_WEIGHT) * mean;
   }
-  // 2. 极轻邻域平滑，让整体更连续但不致 5 柱完全同步
+  // 2. 能量整形：乘法高频增益 → 幂次软化 → 硬限幅 → 底噪门限
+  //    乘法增益在 0 能量处自然归零（无加法补偿的"悬空"问题）
+  //    柱数超出 TILT_GAINS 时复用最高档增益（调试台可改柱数）
+  // 3. 统一双向 LERP：上升平滑插值跟进（不再一帧贴顶），下降纯指数衰减（重力感）。
+  //    系数为 60fps 等效值，按 dt 折算成逐帧系数，帧率无关
+  const riseCoef = 1 - Math.pow(1 - ATTACK_LERP, dt * 60);
+  const fallFactor = Math.pow(DECAY_LERP, dt * 60);
   for (let i = 0; i < n; i++) {
-    const left = bandEnergies[Math.max(0, i - 1)];
-    const right = bandEnergies[Math.min(n - 1, i + 1)];
-    bandTargets[i] =
-      bandEnergies[i] * (1 - NEIGHBOR_SMOOTH) + (left + right) * 0.5 * NEIGHBOR_SMOOTH;
-  }
-  // 3. 帧率无关的非对称 attack / release 包络平滑
-  for (let i = 0; i < n; i++) {
-    const target = bandTargets[i];
-    let tau = RELEASE_TAU;
-    if (target > display[i]) tau = ATTACK_TAU;
-    else if (target < SILENCE_FLOOR) tau = RELEASE_TAU_FAST;
-    const coef = 1 - Math.exp(-dt / tau);
-    display[i] += (target - display[i]) * coef;
+    const gain = TILT_GAINS[Math.min(i, TILT_GAINS.length - 1)];
+    let target = Math.min(Math.pow(bandEnergies[i] * gain, KNEE_EXP), 1);
+    // 静音迟滞：状态翻转各走各的阈值，[SILENCE_FALL, SILENCE_RISE] 为保持区。
+    // 已归零的柱须能量 > 0.03 才重新起跳；活动柱须能量 < 0.015 才判静音归零。
+    // 门限附近的能量波动只会让柱子保持原状态，不再 0 ↔ 非 0 反复抖动。
+    if (gated[i]) {
+      if (target > SILENCE_RISE) {
+        gated[i] = 0;
+      } else {
+        target = 0;
+      }
+    } else if (target < SILENCE_FALL) {
+      gated[i] = 1;
+      target = 0;
+    }
+    if (target > display[i]) {
+      display[i] += (target - display[i]) * riseCoef;
+    } else {
+      display[i] *= fallFactor;
+    }
     if (display[i] < 0) display[i] = 0;
+    else if (display[i] > 1) display[i] = 1;
   }
 
-  // 4. 绘制（圆角 / 颜色 / 尺寸 / 布局保持原样，仅使用压缩后的高度）
+  // 4. 绘制（圆角 / 颜色 / 尺寸 / 布局保持原样）
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
@@ -187,22 +210,15 @@ const draw = (): void => {
   const maxHalf = h / 2;
   for (let i = 0; i < n; i++) {
     const v = Math.min(1, display[i]);
-    const halfH = Math.max(1, Math.min(maxHalf, v * maxHalf * 1.3));
+    // 整体高度 +1px（仍截断在 maxHalf 内，满格时不会溢出画布）
+    const halfH = Math.max(1, Math.min(maxHalf, v * maxHalf + 1));
     const x = i * slot + gap / 2;
     const topY = centerY - halfH;
     const barH = halfH * 2;
 
-    // 动态高度高亮：振幅爆表（v>0.7）时按超出量掺白（最多 0.6），
-    // 仅作用于柱子顶部色，产生高亮/发光瞬间（动感翻倍）
-    let topColor = props.colors.primary;
-    let bottomColor = props.colors.secondary;
-    if (v > 0.7) {
-      const whiteRatio = Math.min(0.6, (v - 0.7) * 2);
-      topColor = mixWithWhite(topColor, whiteRatio);
-      bottomColor = mixWithWhite(bottomColor, whiteRatio * 0.5);
-    }
-
     // 每根柱子：底部 secondary → 顶部 primary 的垂直渐变（圆角矩形）
+    const topColor = props.colors.primary;
+    const bottomColor = props.colors.secondary;
     const grad = ctx.createLinearGradient(0, centerY + halfH, 0, topY);
     grad.addColorStop(0, bottomColor); // 底部：深辅色
     grad.addColorStop(1, topColor); // 顶部：亮主色（发光感）
@@ -224,8 +240,9 @@ const stopLoop = (): void => {
     cancelAnimationFrame(rafId);
     rafId = null;
   }
-  // 归零，下次启动从静默开始
+  // 归零，下次启动从静默开始（迟滞状态一并复位）
   display.fill(0);
+  gated.fill(0);
   prev.fill(0);
   curr.fill(0);
 };

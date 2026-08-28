@@ -199,3 +199,23 @@ export const getTrack = (index: number): Track | null => {
 export const findTrackIndex = (trackId: string): number => {
   return queue.value.findIndex((track) => track.id === trackId);
 };
+
+/**
+ * 移除指定服务器的全部流媒体歌曲
+ * @param serverId - 服务器 ID
+ */
+export const removeServerTracks = (serverId: string): void => {
+  const belongsToServer = (track: Track): boolean =>
+    track.source === "streaming" && track.serverId === serverId;
+  const next = queue.value.filter((track) => !belongsToServer(track));
+  const nextOriginal = originalQueue.value?.filter((track) => !belongsToServer(track)) ?? null;
+  if (
+    next.length === queue.value.length &&
+    nextOriginal?.length === originalQueue.value?.length
+  ) {
+    return;
+  }
+  queue.value = next;
+  originalQueue.value = nextOriginal;
+  save();
+};

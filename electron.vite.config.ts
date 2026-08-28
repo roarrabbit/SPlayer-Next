@@ -38,6 +38,7 @@ export default defineConfig({
         "@main": resolve(__dirname, "electron/main"),
         "@shared": resolve(__dirname, "shared"),
         "@splayer/audio-engine": resolve(__dirname, "native/audio-engine"),
+        "@splayer/audio-capture": resolve(__dirname, "native/audio-capture"),
         "@splayer/media-ctrl": resolve(__dirname, "native/media-ctrl"),
         "@splayer/taskbar-lyric": resolve(__dirname, "native/taskbar-lyric"),
         "@splayer/taskbar-thumbnail": resolve(__dirname, "native/taskbar-thumbnail"),

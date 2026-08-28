@@ -14,6 +14,7 @@ import IconLucideMusic from "~icons/lucide/music";
 import IconLucideUser from "~icons/lucide/user";
 import IconLucideDisc3 from "~icons/lucide/disc-3";
 import IconLucideFolder from "~icons/lucide/folder";
+import IconLucideChartPie from "~icons/lucide/chart-pie";
 import IconLucideServer from "~icons/lucide/server";
 import IconLucideListMusic from "~icons/lucide/list-music";
 import IconMaterialSymbolsFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
@@ -139,15 +140,24 @@ const subscribedItems = computed<SMenuItem[]>(() => {
   }));
 });
 
-const menuItems = computed<SMenuItem[]>(() => [
-  // 本地音乐分组
-  { key: "/", label: t("nav.home"), icon: markRaw(IconLucideHome) },
-  { key: "/library", label: t("nav.library"), icon: markRaw(IconLucideMusic) },
-  { key: "/artists/local", label: t("artist.label"), icon: markRaw(IconLucideUser) },
-  { key: "/albums/local", label: t("album.label"), icon: markRaw(IconLucideDisc3) },
-  { key: "/folders", label: t("folder.label"), icon: markRaw(IconLucideFolder) },
-  // 个人歌曲
-  { key: "divider-personal", type: "divider" },
+const menuItems = computed<SMenuItem[]>(() => {
+  const items: SMenuItem[] = [
+    // 本地音乐分组
+    { key: "/", label: t("nav.home"), icon: markRaw(IconLucideHome) },
+    { key: "/library", label: t("nav.library"), icon: markRaw(IconLucideMusic) },
+    { key: "/artists/local", label: t("artist.label"), icon: markRaw(IconLucideUser) },
+    { key: "/albums/local", label: t("album.label"), icon: markRaw(IconLucideDisc3) },
+    { key: "/folders", label: t("folder.label"), icon: markRaw(IconLucideFolder) },
+  ];
+
+  if (appearance.showStatsInSidebar) {
+    items.push({ key: "/stats", label: t("stats.label"), icon: markRaw(IconLucideChartPie) });
+  }
+
+  return [
+    ...items,
+    // 个人歌曲
+    { key: "divider-personal", type: "divider" },
   {
     key: "/liked",
     label: t("nav.liked"),
@@ -209,7 +219,8 @@ const menuItems = computed<SMenuItem[]>(() => [
         ...subscribedItems.value,
       ] satisfies SMenuItem[])
     : []),
-]);
+  ];
+});
 
 const activeKey = computed(() => {
   // 流媒体
