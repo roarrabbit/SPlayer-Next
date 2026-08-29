@@ -172,6 +172,8 @@ export interface DynamicIslandSettings {
   widthMode: "default" | "wide" | "custom";
   /** 自定义宽度（widthMode 为 custom 时生效，单位 px） */
   customWidth: number;
+  /** 歌词字号（单位 px） */
+  lyricFontSize: number;
 }
 
 /** 任务栏歌词位置模式 */

@@ -81,6 +81,8 @@ export const defaultSystemConfig: SystemConfig = {
     // 宽度模式: "default"=324 / "wide"=242(仅歌词模式) / "custom"=自定义
     widthMode: "default",
     customWidth: 242,
+    // 歌词字号（px）
+    lyricFontSize: 13,
   },
   taskbarLyric: {
     position: "auto",

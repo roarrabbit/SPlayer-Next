@@ -55,7 +55,7 @@ const geom = reactive<DynamicIslandDebugGeom>({
   lyricMarginLeft: -6,
   lyricMarginRight: 20,
   /** 歌词字号（几何调试可调，调好后落地为常量） */
-  lyricFontSize: 12,
+  lyricFontSize: 13,
   /** 封面/频谱/歌词 独立 xy 偏移与宽高（调试台最终参数，固定为常量） */
   coverX: 13,
   coverY: 0,
@@ -104,6 +104,7 @@ const config = reactive<DynamicIslandSettings>({
   useCSSDrag: false,
   widthMode: "default",
   customWidth: DEFAULT_CUSTOM_WIDTH,
+  lyricFontSize: 13,
 });
 
 // 根据宽度模式计算窗口宽度（默认 220 / 宽屏 302 / 自定义 customWidth）
@@ -278,7 +279,6 @@ onMounted(() => {
       "topH",
       "lyricH",
       "noLyricH",
-      "lyricFontSize",
       "coverSize",
       "specW",
       "specH",
@@ -307,6 +307,8 @@ onMounted(() => {
         geomDirty = true;
       }
     }
+    // 歌词字号：调试台覆写为运行时改 config（设置项才是持久化来源）
+    if (p.lyricFontSize != null) config.lyricFontSize = p.lyricFontSize;
     // 圆角 / 刘海拟合参数
     if (p.clipTopX != null) RADIUS_CFG.topX = p.clipTopX;
     if (p.clipTopY != null) RADIUS_CFG.topY = p.clipTopY;
@@ -878,8 +880,8 @@ const rootStyle = computed(() => ({
   "--di-accent-soft": hexToRgba(coverPalette.value.primary, 0.35),
   // 几何调试驱动的歌词行高（line-height 跟随）
   "--di-lyric-h": geom.lyricH + "px",
-  // 几何调试驱动的歌词字号（font-size 跟随）
-  "--di-lyric-font-size": geom.lyricFontSize + "px",
+  // 歌词字号：设置项驱动（调试台提供运行时覆写）
+  "--di-lyric-font-size": config.lyricFontSize + "px",
   // Gooey 层顶部刘海 blob 高度（= 顶部区高度）
   "--di-goo-notch-h": geom.topH + "px",
   fontFamily: config.fontFamily || undefined,

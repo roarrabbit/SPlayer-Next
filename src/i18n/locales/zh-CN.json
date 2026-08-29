@@ -1219,6 +1219,10 @@
       "label": "显示歌词",
       "description": "关闭后隐藏歌词行并收回灵动岛下方区域"
     },
+    "dynamicIslandLyricFontSize": {
+      "label": "歌词字号",
+      "description": "灵动岛歌词文字的大小（10–20px）"
+    },
     "dynamicIslandBackgroundColor": {
       "label": "背景颜色",
       "description": "窗口背板的颜色与透明度"

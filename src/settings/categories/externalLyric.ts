@@ -158,6 +158,15 @@ const dynamicIslandSection: SettingSection = {
       defaultValue: true,
     },
     {
+      key: "dynamicIslandLyricFontSize",
+      type: "sliderInput",
+      binding: { store: "settings", path: "system.dynamicIsland.lyricFontSize" },
+      min: 10,
+      max: 20,
+      step: 1,
+      defaultValue: 13,
+    },
+    {
       key: "dynamicIslandUnplayedColor",
       type: "color",
       binding: { store: "settings", path: "system.dynamicIsland.unplayedColor" },

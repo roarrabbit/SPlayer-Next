@@ -1219,6 +1219,10 @@
       "label": "Show Lyrics",
       "description": "Hide the lyric line and collapse the island's lower area when disabled"
     },
+    "dynamicIslandLyricFontSize": {
+      "label": "Lyric Font Size",
+      "description": "Font size of the Dynamic Island lyrics (10–20px)"
+    },
     "dynamicIslandBackgroundColor": {
       "label": "Background Color",
       "description": "Background color and opacity of the island"
