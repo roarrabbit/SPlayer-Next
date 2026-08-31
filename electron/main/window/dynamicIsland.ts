@@ -783,10 +783,16 @@ export const getDynamicIslandWindow = (): BrowserWindow | null => {
   return null;
 };
 
-// 灵动岛默认常驻：暂停不再自动隐藏窗口（由渲染端弹性缩回刘海小药丸）。
-// 保留 cancelIslandHide 兼容旧调用（空操作）。
+// 暂停/无播放时自动隐藏窗口（先让渲染端播完液体缩回动画，再 win.hide()）。
+// 隐藏而非销毁：恢复播放时无需重建窗口，showInactive + visibility:true 即可平滑弹出。
+// 窗口隐藏期间渲染端继续运行（backgroundThrottling 已关），状态不丢失。
+let islandHideTimer: ReturnType<typeof setTimeout> | null = null;
+
 const cancelIslandHide = (): void => {
-  /* 常驻模式无延迟隐藏任务，保留函数以兼容旧调用点 */
+  if (islandHideTimer) {
+    clearTimeout(islandHideTimer);
+    islandHideTimer = null;
+  }
 };
 /** 上一次同步时的播放态，用于让 visibility 同步幂等（避免 5Hz 进度同步重复吸附覆盖调试位置） */
 let lastIslandPlaying = false;
@@ -823,14 +829,24 @@ export const syncDynamicIslandVisibility = (): void => {
       setTimeout(applySnapPos, 150);
     }
   } else {
-    // 暂停：灵动岛默认常驻 —— 只通知渲染端液体缩回刘海小药丸，**不隐藏窗口**。
-    // （原自动 hide 是"黑屏几秒后闪现消失"的根源；现在岛保持打开，播放再弹出。）
+    // 暂停/停止：先通知渲染端液体缩回刘海（弹性收起动画），动画播完后再隐藏窗口。
+    // 仅在「播放 → 非播放」切换沿触发一次；5Hz 进度同步的重复调用由
+    // lastIslandPlaying 门限去抖，不会反复重发/重排定时器。
     if (win.isVisible() && lastIslandPlaying) {
       try {
         win.webContents.send("dynamicIsland:visibility", false);
       } catch {
         /* ignore */
       }
+      cancelIslandHide();
+      islandHideTimer = setTimeout(() => {
+        islandHideTimer = null;
+        const w = getDynamicIslandWindow();
+        // 定时器触发时若已恢复播放（期间 cancelIslandHide 未及执行等竞态），不隐藏
+        if (w && !w.isDestroyed() && !isPlaying()) {
+          w.hide();
+        }
+      }, ISLAND_CLOSE_ANIM_MS);
     }
   }
   lastIslandPlaying = playing;
