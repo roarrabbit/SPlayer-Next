@@ -13,11 +13,22 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR); do
 done
 
 # 2) 扫描暂存代码的新增行，拦截形如 KEY/SECRET/TOKEN = "..." 的硬编码值
-RELEVANT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js|cjs|mjs|json|py|go|rs|sh|rb|php|env)$' || true)
+#    注意：必须显式列出 vue（Vue 项目主力文件类型），否则 .vue 内的密钥会整类漏过
+RELEVANT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js|cjs|mjs|vue|json|py|go|rs|sh|rb|php|env)$' || true)
 if [ -n "$RELEVANT" ]; then
   SUSPECTS=$(git diff --cached -U0 -- $(printf '%s' "$RELEVANT") |
     grep -aoE '(__|[A-Za-z0-9_]*)(API[_-]?(KEY|SECRET)|CLIENT[_-]?(SECRET|ID)|AUTH[_-]?TOKEN|ACCESS[_-]?KEY|PASSWORD|PRIVATE[_-]?KEY|LASTFM_[A-Z_]+)\s*[:=]\s*["'\''][0-9A-Za-z+/=_-]{16,}["'\'']' |
     grep -viE 'PLACEHOLDER|YOUR_[A-Z_]+|EXAMPLE|"0+"|"+"' || true)
+  # 2b) 知名厂商令牌形态（前缀固定，命中即高危）
+  #     注意：模式以 "-" 开头，必须用 -e 传入，否则被 grep 当成选项；且不使用 \b / (?:)（BSD grep 支持不稳）
+  TOKEN_PAT='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|AIza[0-9A-Za-z_-]{35}|xox[abposr]-[A-Za-z0-9-]{10,}'
+  TOKENS=$(git diff --cached -U0 -- $(printf '%s' "$RELEVANT") |
+    grep -aoE -e "$TOKEN_PAT" || true)
+  if [ -n "$TOKENS" ]; then
+    echo "pre-commit 拒绝：检测到知名厂商令牌/私钥，绝不能入库：" >&2
+    printf '%s\n' "$TOKENS" | sort -u >&2
+    exit 1
+  fi
   if [ -n "$SUSPECTS" ]; then
     echo "pre-commit 拒绝：检测到疑似硬编码密钥，请改用环境变量/构建期注入（.env.local + define）：" >&2
     printf '%s\n' "$SUSPECTS" | sort -u >&2
