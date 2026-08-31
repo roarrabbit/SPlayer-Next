@@ -1143,6 +1143,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .root {
   position: relative;
+  /* 宽度必须显式 100%：root 内所有子元素（.di-goo / .di-goo-guard / .di-face）都是
+     position:absolute，绝对定位元素不参与父级内在尺寸计算。若用 fit-content，root 会
+     塌缩成 0 宽 → 整岛（含 goo 黑底与内容）完全不可见。
+     该路径正是「非刘海融合」态：Windows/Linux 全平台默认如此（isMac 守卫关掉融合），
+     macOS 关闭刘海融合或拖成浮动态时也走这里。 */
+  width: 100%;
   height: 100%;
   overflow: hidden;
   box-sizing: border-box;
@@ -1237,9 +1243,10 @@ onBeforeUnmount(() => {
   transition: opacity 240ms ease-out;
 }
 /* snapped 态的黑色由 Gooey 背景层 .di-goo 提供（root 透明 + blob 黑色），
-   这样液体形变才可见；浮动态/刘海融合仍由 root 自身背景兜底 */
+   这样液体形变才可见；浮动态/刘海融合仍由 root 自身背景兜底
+   注意：这里不能再写 width: fit-content（root 子元素全为绝对定位 → 塌缩 0 宽，
+   非融合平台整岛不可见），宽度统一由 .root 的 width:100% 提供。 */
 .root:not(.is-notch-fusion) {
-  width: fit-content;
   background: transparent;
 }
 /* 灵动岛吸附态形状（boring.notch 风格：顶部外凸 ∩ 弧 + 底部大圆角）
