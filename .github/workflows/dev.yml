@@ -81,7 +81,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
             libasound2-dev libdbus-1-dev pkg-config clang \
-            rpm libarchive-tools
+            rpm libarchive-tools libpipewire-0.3-dev
 
       # 清理旧构建产物
       - name: Clean workspace on Windows
