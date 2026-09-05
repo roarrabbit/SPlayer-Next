@@ -20,6 +20,9 @@ export const isLinux = process.platform === "linux";
 /** 是否为便携版 */
 export const isPortable = !!process.env.PORTABLE_EXECUTABLE_DIR;
 
+/** 是否为 Windows 商店（AppX）安装 */
+export const isAppX = isWin && process.execPath.includes("WindowsApps");
+
 /**
  * 软件版本
  * @returns string

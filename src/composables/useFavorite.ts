@@ -1,6 +1,7 @@
 import type { Track } from "@shared/types/player";
 import { useLibraryStore } from "@/stores/library";
 import { useUserStore } from "@/stores/user";
+import { usePlaylistStore } from "@/stores/playlist";
 import { useSettingsStore } from "@/stores/settings";
 import { toast } from "@/composables/useToast";
 import i18n from "@/i18n";
@@ -20,10 +21,12 @@ const recordFavoriteChange = (track: Track, liked: boolean): void => {
  * 返回的 `isLiked` 在模板里直接调用即可保持响应式
  * - local: useLibraryStore.toggleLike
  * - netease: useUserStore.toggleLike
+ * - qqmusic / kugou: 本地爱心歌单缓冲（usePlaylistStore.toggleHeart）
  */
 export const useFavorite = () => {
   const library = useLibraryStore();
   const user = useUserStore();
+  const playlist = usePlaylistStore();
   const settings = useSettingsStore();
   const t = (key: string): string => i18n.global.t(key);
 
@@ -48,6 +51,9 @@ export const useFavorite = () => {
     if (!track) return false;
     if (track.source === "local") return library.isLiked(track.id);
     if (track.source === "netease") return user.isLiked(track.id);
+    if (track.source === "qqmusic" || track.source === "kugou") {
+      return playlist.isHeartLoved(track.id);
+    }
     return false;
   };
 
@@ -60,6 +66,7 @@ export const useFavorite = () => {
     if (!track) return false;
     if (track.source === "local") return true;
     if (track.source === "netease") return user.isLoggedIn;
+    if (track.source === "qqmusic" || track.source === "kugou") return playlist.heartReady;
     return false;
   };
 
@@ -91,6 +98,17 @@ export const useFavorite = () => {
       recordFavoriteChange(track, !wasLiked);
       syncLastfmLove(track, !wasLiked);
       toast.success(t(wasLiked ? "liked.toast.removed" : "liked.toast.added"));
+      return;
+    }
+    if (track.source === "qqmusic" || track.source === "kugou") {
+      try {
+        const loved = await playlist.toggleHeart(track);
+        recordFavoriteChange(track, loved);
+        syncLastfmLove(track, loved);
+        toast.success(t(loved ? "liked.toast.added" : "liked.toast.removed"));
+      } catch {
+        toast.error(t("liked.toast.failed"));
+      }
       return;
     }
     toast.warning(t("liked.toast.unsupported"));

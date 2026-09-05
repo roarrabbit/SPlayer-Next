@@ -2,6 +2,8 @@
 import type { LyricLine } from "@shared/types/lyrics";
 import { LyricPlayer as CoreLyricPlayer } from "@applemusic-like-lyrics/core";
 import { useSettingsStore } from "@/stores/settings";
+import { useStatusStore } from "@/stores/status";
+import { getCurrentTime } from "@/services/playback";
 import "@applemusic-like-lyrics/core/style.css";
 import "./renderer.css";
 
@@ -49,15 +51,26 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const settings = useSettingsStore();
+const status = useStatusStore();
+
 const wrapperRef = ref<HTMLDivElement | null>(null);
 const playerRef = ref<CoreLyricPlayer>();
 const bottomLineEl = ref<HTMLElement>();
 const clockInitialized = ref(false);
-
-// 是否被父组件冻结
+// 播放器是否已初始化完成
+const initialized = ref(false);
+const contentVisible = ref(false);
+// 父组件的冻结标志
 const isFrozen = ref(false);
 // 冻结期间缓存的待应用歌词
 let pendingLyrics: LyricLine[] | null = null;
+// 页面隐藏状态的响应式跟踪
+const isPageHidden = ref(false);
+// 之前隐藏的标记，用于检测从隐藏恢复的时刻
+const isPreviousHidden = ref(false);
+
+const nextFrame = (): Promise<void> =>
+  new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
 // 处理多语言显隐及音译偏好的本地高效清洗
 const processedLyrics = computed(() => {
@@ -91,6 +104,53 @@ const handleLineClick = (e: Event) => {
   }
 };
 
+// 为所有主歌词行设置 html lang 属性
+const processLyricLanguage = (player = playerRef.value) => {
+  const lyricGroups = player?.currentLyricGroups;
+  if (!Array.isArray(lyricGroups) || lyricGroups.length === 0) return;
+
+  for (const group of lyricGroups) {
+    for (const line of [group.mainLine, group.bgLine]) {
+      const lyricLine = line?.getLine();
+      const lyricLineElement = line?.getElement();
+      if (!lyricLine || !lyricLineElement) continue;
+
+      const lyricMainLineElement = lyricLineElement.firstChild;
+      if (lyricMainLineElement instanceof HTMLElement) {
+        const language = (lyricLine as LyricLine).language;
+        if (language) lyricMainLineElement.lang = language;
+        else lyricMainLineElement.removeAttribute("lang");
+      }
+    }
+  }
+};
+
+/** 同步播放器配置 */
+const syncPlayerOptions = (player = playerRef.value): void => {
+  if (!player) return;
+  player.setAlignPosition(props.alignPosition);
+  player.setAlignAnchor(props.alignPosition > 0.4 ? "center" : "top");
+  player.setWordFadeWidth(props.wordFadeWidth);
+  player.setHidePassedLines(props.hidePassedLines);
+  player.setEnableBlur(props.enableBlur);
+
+  const useSpring = settings.lyric.useAMSpring;
+  player.setEnableSpring(useSpring);
+  player.setEnableScale(useSpring);
+  player.setLinePosYSpringParams({
+    mass: settings.lyric.amllVerticalSpringMass,
+    damping: settings.lyric.amllVerticalSpringDamping,
+    stiffness: settings.lyric.amllVerticalSpringStiffness,
+    soft: settings.lyric.amllVerticalSpringSoft,
+  });
+  player.setLineScaleSpringParams({
+    mass: settings.lyric.amllScaleSpringMass,
+    damping: settings.lyric.amllScaleSpringDamping,
+    stiffness: settings.lyric.amllScaleSpringStiffness,
+    soft: settings.lyric.amllScaleSpringSoft,
+  });
+};
+
 const { resume: resumeRaf, pause: pauseRaf } = useRafFn(
   ({ delta }) => {
     playerRef.value?.update(delta);
@@ -98,54 +158,83 @@ const { resume: resumeRaf, pause: pauseRaf } = useRafFn(
   { immediate: false },
 );
 
-// 页面隐藏时停止渲染循环
+// 页面隐藏时停止渲染循环，恢复时校准时间线
 const handleVisibility = () => {
-  if (document.hidden) {
+  const hidden = document.hidden;
+  isPageHidden.value = hidden; // 更新响应式隐藏状态
+  if (hidden) {
     pauseRaf();
     playerRef.value?.pause();
-  } else if (!isFrozen.value) {
-    if (props.playing) {
-      playerRef.value?.resume();
-    } else {
-      playerRef.value?.pause();
-    }
-    resumeRaf();
+    isPreviousHidden.value = true;
+  } else if (isPreviousHidden.value && !isFrozen.value && playerRef.value) {
+    // 从隐藏恢复：校准 Core 内部时钟到当前播放位置，避免逐词效果从头开始
+    const currentTime = getCurrentTime() + status.lyricOffsetMs;
+    playerRef.value.setCurrentTime(currentTime, true);
+    isPreviousHidden.value = false;
+    // 恢复后根据当前状态决定 resume/pause（由 watchEffect 处理，这里只需确保 state sync）
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   if (!wrapperRef.value) return;
-  // 创建 AMLL Core 歌词播放器实例
-  playerRef.value = new CoreLyricPlayer();
+  const player = new CoreLyricPlayer();
+  playerRef.value = player;
 
-  // 挂载到容器中
-  const el = playerRef.value.getElement();
+  const el = player.getElement();
   el.style.width = "100%";
   el.style.height = "100%";
   wrapperRef.value.appendChild(el);
 
-  // 获取底栏 DOM 节点
-  const bottomEl = playerRef.value.getBottomLineElement();
+  const bottomEl = player.getBottomLineElement();
   if (bottomEl) {
     bottomEl.classList.add("lp-line", "lp-credit");
     bottomLineEl.value = bottomEl;
   }
 
-  // 绑定行点击事件
-  playerRef.value.addEventListener("line-click", handleLineClick);
+  player.addEventListener("line-click", handleLineClick);
+
+  player.setOptimizeOptions({
+    cleanUnintentionalOverlaps: settings.lyric.amllCleanUnintentionalOverlaps,
+    tryAdvanceStartTime: settings.lyric.amllTryAdvanceStartTime,
+    convertExcessiveBackgroundLines: settings.lyric.amllConvertExcessiveBackgroundLines,
+    syncMainAndBackgroundLines: settings.lyric.amllSyncMainAndBackgroundLines,
+    normalizeSpaces: settings.lyric.amllNormalizeSpaces,
+    resetLineTimestamps: settings.lyric.amllResetLineTimestamps,
+  });
+  syncPlayerOptions(player);
+  document.addEventListener("visibilitychange", handleVisibility);
+
+  await nextTick();
+  await nextFrame();
+  if (playerRef.value !== player) return;
 
   if (processedLyrics.value.length > 0) {
-    playerRef.value.setLyricLines(processedLyrics.value, props.initialTime);
+    player.setLyricLines(processedLyrics.value, props.initialTime);
+    processLyricLanguage(player);
   } else if (Number.isFinite(props.initialTime) && props.initialTime >= 0) {
-    playerRef.value.setCurrentTime(props.initialTime, true);
+    player.setCurrentTime(props.initialTime, true);
   }
 
-  document.addEventListener("visibilitychange", handleVisibility);
+  await nextFrame();
+  if (playerRef.value !== player) return;
+  if (pendingLyrics) {
+    player.setLyricLines(pendingLyrics, getCurrentTime() + status.lyricOffsetMs);
+    pendingLyrics = null;
+    processLyricLanguage(player);
+    await nextFrame();
+    if (playerRef.value !== player) return;
+  }
+  player.setCurrentTime(getCurrentTime() + status.lyricOffsetMs, true);
+  player.update(0);
+  initialized.value = true;
+  contentVisible.value = true;
 });
 
 onUnmounted(() => {
   document.removeEventListener("visibilitychange", handleVisibility);
   pauseRaf();
+  initialized.value = false;
+  contentVisible.value = false;
   if (playerRef.value) {
     playerRef.value.removeEventListener("line-click", handleLineClick);
     playerRef.value.dispose();
@@ -154,65 +243,87 @@ onUnmounted(() => {
   }
 });
 
-// 播放/暂停/冻结状态变化时同步渲染循环与 Core 内部时钟
+// 同步播放/冻结状态到 Core 及渲染循环
 watchEffect(() => {
   const player = playerRef.value;
-  if (!player) return;
+  if (!player || !initialized.value) return;
+
+  // 首次运行时校准一次（避免重复）
   if (!clockInitialized.value) {
-    player.resume();
     player.update(0);
     clockInitialized.value = true;
   }
-  if (!isFrozen.value && !document.hidden) {
-    if (props.playing) {
+
+  const playing = props.playing;
+  const frozen = isFrozen.value;
+  const hidden = isPageHidden.value; // 使用响应式隐藏状态
+
+  if (!frozen && !hidden) {
+    // 只要未冻结且可见，就持续运行 RAF 维持渲染（即使暂停也要保持画面）
+    resumeRaf();
+    if (playing) {
       player.resume();
     } else {
       player.pause();
     }
-    resumeRaf();
   } else {
     pauseRaf();
     player.pause();
   }
 });
 
-// 监听其他配置项变动并同步到底层 Core 实例
-watchEffect(() => {
-  if (playerRef.value) {
-    playerRef.value.setAlignPosition(props.alignPosition);
-    playerRef.value.setAlignAnchor(props.alignPosition > 0.4 ? "center" : "top");
-    playerRef.value.setWordFadeWidth(props.wordFadeWidth);
-    playerRef.value.setHidePassedLines(props.hidePassedLines);
-    playerRef.value.setEnableBlur(props.enableBlur);
-
-    const useSpring = settings.lyric.useAMSpring;
-    playerRef.value.setEnableSpring(useSpring);
-    playerRef.value.setEnableScale(useSpring);
-
-    playerRef.value.setLinePosYSpringParams({
-      mass: settings.lyric.amllVerticalSpringMass,
-      damping: settings.lyric.amllVerticalSpringDamping,
-      stiffness: settings.lyric.amllVerticalSpringStiffness,
-      soft: settings.lyric.amllVerticalSpringSoft,
-    });
-    playerRef.value.setLineScaleSpringParams({
-      mass: settings.lyric.amllScaleSpringMass,
-      damping: settings.lyric.amllScaleSpringDamping,
-      stiffness: settings.lyric.amllScaleSpringStiffness,
-      soft: settings.lyric.amllScaleSpringSoft,
-    });
-  }
-});
+watch(
+  () => [
+    props.alignPosition,
+    props.wordFadeWidth,
+    props.hidePassedLines,
+    props.enableBlur,
+    settings.lyric.useAMSpring,
+    settings.lyric.amllVerticalSpringMass,
+    settings.lyric.amllVerticalSpringDamping,
+    settings.lyric.amllVerticalSpringStiffness,
+    settings.lyric.amllVerticalSpringSoft,
+    settings.lyric.amllScaleSpringMass,
+    settings.lyric.amllScaleSpringDamping,
+    settings.lyric.amllScaleSpringStiffness,
+    settings.lyric.amllScaleSpringSoft,
+  ],
+  () => syncPlayerOptions(),
+);
 
 // 监听处理完的歌词数据变动
 watch(processedLyrics, (newLyrics) => {
   if (!playerRef.value) return;
-  if (isFrozen.value) {
+  if (!initialized.value || isFrozen.value) {
     pendingLyrics = newLyrics;
   } else {
-    playerRef.value.setLyricLines(newLyrics, props.initialTime);
+    const currentTime = getCurrentTime() + status.lyricOffsetMs;
+    playerRef.value.setLyricLines(newLyrics, currentTime);
+    processLyricLanguage();
   }
 });
+
+// 监听歌词优化配置变动并更新 Core
+watch(
+  () => ({
+    cleanUnintentionalOverlaps: settings.lyric.amllCleanUnintentionalOverlaps,
+    tryAdvanceStartTime: settings.lyric.amllTryAdvanceStartTime,
+    convertExcessiveBackgroundLines: settings.lyric.amllConvertExcessiveBackgroundLines,
+    syncMainAndBackgroundLines: settings.lyric.amllSyncMainAndBackgroundLines,
+    normalizeSpaces: settings.lyric.amllNormalizeSpaces,
+    resetLineTimestamps: settings.lyric.amllResetLineTimestamps,
+  }),
+  (options) => {
+    if (!playerRef.value) return;
+    playerRef.value.setOptimizeOptions(options);
+    if (processedLyrics.value.length > 0 && !isFrozen.value) {
+      const currentTime = getCurrentTime() + status.lyricOffsetMs;
+      playerRef.value.setLyricLines(processedLyrics.value, currentTime);
+      processLyricLanguage();
+    }
+  },
+  { deep: true },
+);
 
 // 主播放器事件驱动的时间同步接口
 const setCurrentTime = (time: number, isSeek?: boolean) => {
@@ -226,8 +337,14 @@ const freeze = () => {
 
 // 恢复播放和滚动测量
 const resume = () => {
+  if (!initialized.value) {
+    isFrozen.value = false;
+    return;
+  }
   if (pendingLyrics) {
-    playerRef.value?.setLyricLines(pendingLyrics);
+    const currentTime = getCurrentTime() + status.lyricOffsetMs;
+    playerRef.value?.setLyricLines(pendingLyrics, currentTime);
+    processLyricLanguage();
     pendingLyrics = null;
   }
   isFrozen.value = false;
@@ -242,7 +359,7 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="wrapperRef" class="amll-lyrics-container" />
+  <div ref="wrapperRef" class="amll-lyrics-container" :class="contentVisible ? 'is-visible' : ''" />
   <Teleport v-if="bottomLineEl" :to="bottomLineEl">
     <slot name="bottom" />
   </Teleport>
@@ -255,6 +372,12 @@ defineExpose({
   position: relative;
   overflow: hidden;
   user-select: none;
+  opacity: 0;
+  transition: opacity 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.amll-lyrics-container.is-visible {
+  opacity: 1;
 }
 
 :deep(.amll-lyric-player) {
@@ -262,6 +385,22 @@ defineExpose({
   --amll-lp-color: var(--lp-color, #fff);
   width: 100%;
   height: 100%;
+}
+
+:deep(:lang(zh)) {
+  font-family: var(--lyric-font-zh, inherit);
+}
+
+:deep(:lang(ja)) {
+  font-family: var(--lyric-font-ja, inherit);
+}
+
+:deep(:lang(ko)) {
+  font-family: var(--lyric-font-ko, inherit);
+}
+
+:deep(:lang(und-Latn)) {
+  font-family: var(--lyric-font-latin, inherit);
 }
 
 :deep(.lp-line.lp-credit) {

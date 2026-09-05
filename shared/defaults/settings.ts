@@ -87,15 +87,18 @@ export const defaultSystemConfig: SystemConfig = {
   taskbarLyric: {
     position: "auto",
     autoMaxWidth: true,
+    autoAdjustOccupiedSpace: false,
     maxWidth: 400,
     leftMargin: 0,
     rightMargin: 0,
     colorMode: "taskbar",
+    showBackground: false,
     doubleLine: true,
     showTranslation: true,
     showCover: true,
     wordByWord: true,
     fontSize: 14,
+    fontWeight: 400,
     fontFamily: "",
   },
   lyric: {
@@ -109,7 +112,8 @@ export const defaultSystemConfig: SystemConfig = {
   cache: {
     dir: null,
     songCache: {
-      enabled: true,
+      enabled: false,
+      cacheStreaming: false,
       sizeLimitGb: 10,
     },
   },
@@ -117,14 +121,14 @@ export const defaultSystemConfig: SystemConfig = {
     enabled: false,
     dir: null,
     quality: "lossless",
-    usePlaybackForDownload: true,
+    usePlaybackForDownload: false,
     fileTemplate: "{artist} - {title}",
     folderScheme: "none",
     overwritePolicy: "rename",
     embedCover: true,
     embedMeta: true,
     embedLyric: true,
-    writeLrc: true,
+    writeLrc: false,
     saveTtml: false,
     lyricFileFormat: "enhanced-lrc",
   },
@@ -143,8 +147,14 @@ export const defaultSystemConfig: SystemConfig = {
     allowLan: false,
     port: 14558,
   },
+  mcp: {
+    enabled: false,
+    port: 14559,
+    accessKey: "",
+  },
   update: {
     autoCheck: true,
+    channel: "stable",
   },
   system: {
     rememberWindowState: true,
@@ -155,6 +165,7 @@ export const defaultSystemConfig: SystemConfig = {
     onboardingCompleted: false,
     agreedAgreementVersion: 1,
     neteaseRealIp: false,
+    kugouLoginVersion: "standard",
     networkProxy: {
       protocol: "off",
       host: "127.0.0.1",

@@ -7,24 +7,25 @@ import {
   closeDesktopLyricWindow,
   getDesktopLyricWindow,
   applyDesktopLyricHeight,
-  applyDesktopLyricMouseIgnore,
+  applyDesktopLyricUnlockButtonBounds,
   moveDesktopLyricWindow,
   saveDesktopLyricState,
   toggleDynamicIslandWindow,
   closeDynamicIslandWindow,
   getDynamicIslandWindow,
-  cachedSize,
   moveDynamicIslandWindow,
   saveDynamicIslandState,
   applyDynamicIslandWidth,
   applyDynamicIslandHeight,
   applyDynamicIslandHeightAnimated,
+  cachedSize,
   getDynamicIslandVisible,
   toggleDebugGeomWindow,
   applyDynamicIslandDebugOffset,
   toggleTaskbarLyricWindow,
   closeTaskbarLyricWindow,
   getTaskbarLyricWindow,
+  updateTaskbarLyricContentWidth,
   minimizeMainWindow,
   toggleMaximizeMainWindow,
   isMainWindowMaximized,
@@ -49,9 +50,9 @@ export const registerWindowIpc = (): void => {
     applyDesktopLyricHeight(height);
   });
 
-  // 锁定态下切换鼠标穿透
-  ipcMain.on("desktopLyric:setMouseIgnore", (_event, ignore: boolean) => {
-    applyDesktopLyricMouseIgnore(ignore);
+  // 更新锁定态下唯一可交互的解锁按钮区域
+  ipcMain.on("desktopLyric:setUnlockButtonBounds", (_event, bounds) => {
+    applyDesktopLyricUnlockButtonBounds(bounds);
   });
 
   // 拖拽移动；只传位置，尺寸由主进程权威 cachedSize 写回
@@ -73,15 +74,6 @@ export const registerWindowIpc = (): void => {
   // 查询灵动岛窗口是否打开
   ipcMain.handle("window:isDynamicIslandOpen", () => !!getDynamicIslandWindow());
 
-  // 灵动岛一次性设置位置+尺寸：绕过中间拖拽逻辑，直接 setBounds
-  ipcMain.on("dynamicIsland:setBounds", (_event, x: number, y: number, w: number, h: number) => {
-    const win = getDynamicIslandWindow();
-    if (!win) return;
-    cachedSize.width = w;
-    cachedSize.height = h;
-    win.setBounds({ x, y, width: w, height: h });
-  });
-
   // 灵动岛拖拽移动
   ipcMain.on("dynamicIsland:move", (_event, x: number, y: number) => {
     moveDynamicIslandWindow(x, y);
@@ -97,14 +89,23 @@ export const registerWindowIpc = (): void => {
     applyDynamicIslandWidth(width);
   });
 
+  // 灵动岛高度变化（弹性动画版：液体展开/收起）
+  ipcMain.on("dynamicIsland:setHeightAnimated", (_event, height: number) => {
+    applyDynamicIslandHeightAnimated(height);
+  });
+
   // 灵动岛高度变化
   ipcMain.on("dynamicIsland:setHeight", (_event, height: number) => {
     applyDynamicIslandHeight(height);
   });
 
-  // 灵动岛高度变化（弹性动画版：液体展开/收起）
-  ipcMain.on("dynamicIsland:setHeightAnimated", (_event, height: number) => {
-    applyDynamicIslandHeightAnimated(height);
+  // 灵动岛一次性设置位置+尺寸：绕过中间拖拽逻辑，直接 setBounds
+  ipcMain.on("dynamicIsland:setBounds", (_event, x: number, y: number, w: number, h: number) => {
+    const win = getDynamicIslandWindow();
+    if (!win) return;
+    cachedSize.width = w;
+    cachedSize.height = h;
+    win.setBounds({ x, y, width: w, height: h });
   });
 
   // 灵动岛显隐：仅 show/hide，绝不 destroy/close
@@ -156,6 +157,9 @@ export const registerWindowIpc = (): void => {
     ipcMain.handle("window:closeTaskbarLyric", () => closeTaskbarLyricWindow());
     // 查询任务栏歌词窗口是否打开
     ipcMain.handle("window:isTaskbarLyricOpen", () => !!getTaskbarLyricWindow());
+    ipcMain.on("taskbarLyric:setContentWidth", (_event, width: number) => {
+      updateTaskbarLyricContentWidth(width);
+    });
   } else {
     ipcMain.handle("window:toggleTaskbarLyric", () => false);
     ipcMain.handle("window:closeTaskbarLyric", () => undefined);

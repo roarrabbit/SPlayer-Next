@@ -20,16 +20,21 @@ export const usePlaylistPicker = () => {
 
   /**
    * 打开添加到歌单弹窗
-   * @param items - 待添加曲目，需同源（local 或 netease）
+   * 网易云歌曲走在线歌单；其余（本地/QQ/酷狗）走本地歌单，
+   * 混选时本地模式会剔除网易云歌曲（网易云不入本地缓冲）
+   * @param items - 待添加曲目
    */
   const openPicker = (items: Track[]): void => {
     if (items.length === 0) return;
     const scope: ContentScope = items[0].source === "netease" ? "online" : "local";
+    const selected =
+      scope === "local" ? items.filter((track) => track.source !== "netease") : items;
+    if (selected.length === 0) return;
     if (scope === "online" && !user.isLoggedIn) {
       toast.warning(t("liked.toast.needLogin"));
       return;
     }
-    tracks.value = items;
+    tracks.value = selected;
     mode.value = scope;
     open.value = true;
   };

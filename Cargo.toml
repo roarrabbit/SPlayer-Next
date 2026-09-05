@@ -5,6 +5,7 @@ members = [
   "./native/media-ctrl",
   "./native/taskbar-lyric",
   "./native/taskbar-thumbnail",
+  "./native/opencc",
 ]
 resolver = "3"
 
@@ -32,3 +33,4 @@ redundant_pattern_matching = "allow"
 [profile.release]
 lto = true
 strip = "symbols"
+

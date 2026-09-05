@@ -1,6 +1,6 @@
 import type { Ref } from "vue";
 import type { Collection } from "@/types/collection";
-import { usePlaylistStore } from "@/stores/playlist";
+import { usePlaylistStore, HEART_PLAYLIST_ID } from "@/stores/playlist";
 import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
 
@@ -30,7 +30,7 @@ export const usePlaylistManage = (
   const canManage = computed(() => {
     const current = collection.value;
     if (!current || current.type !== "playlist") return false;
-    if (current.source === "local") return true;
+    if (current.source === "local") return current.id !== HEART_PLAYLIST_ID;
     if (current.source !== "netease") return false;
     const isCreated = userStore.createdPlaylists.some((item) => item.id === current.id);
     const isLiked = userStore.likedPlaylistId === current.id;

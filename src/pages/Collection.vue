@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { TrackSource } from "@shared/types/player";
+import type { PlaybackContext, TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
-import { loadCollection as loadCollectionService } from "@/services/collectionLoader";
+import { loadCollection as loadCollectionService } from "@/services/collection";
+import { getCollectionShareUrl } from "@/utils/format/shareUrl";
+import { useCopyText } from "@/composables/useCopyText";
+import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useCollectionSubscribe } from "@/composables/collection/useCollectionSubscribe";
 import { usePlaylistManage } from "@/composables/collection/usePlaylistManage";
-import { useCopyText } from "@/composables/useCopyText";
-import { getCollectionShareUrl } from "@/utils/format/shareUrl";
+import { useSettingsStore } from "@/stores/settings";
+import { HEART_PLAYLIST_ID } from "@/stores/playlist";
 import SongList from "@/components/list/SongList.vue";
 import { formatTime } from "@/utils/time";
 import * as player from "@/core/player";
@@ -17,27 +20,36 @@ import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucideHourglass from "~icons/lucide/hourglass";
 import IconLucideCalendar from "~icons/lucide/calendar";
 import IconLucideUser from "~icons/lucide/user";
-import IconLucideLink from "~icons/lucide/link";
-import IconMaterialSymbolsFavoriteRounded from "~icons/material-symbols/favorite-rounded";
-import IconMaterialSymbolsFavoriteOutlineRounded from "~icons/material-symbols/favorite-outline-rounded";
+import IconMoreHorizontal from "~icons/lucide/more-horizontal";
+import IconCopy from "~icons/lucide/copy";
 
 const { t } = useI18n();
-const { copy } = useCopyText();
 const route = useRoute();
 const router = useRouter();
+const { copy } = useCopyText();
+const { openPicker } = usePlaylistPicker();
 
 const source = route.params.source as TrackSource;
 const type = route.params.type as CollectionType;
 const id = route.params.id as string;
 
+// 记录歌单最近打开时间，供侧边栏「我的歌单」按打开时间排序（爱心歌单固定置顶，不参与）
+if (type === "playlist" && id !== HEART_PLAYLIST_ID) {
+  useSettingsStore().appearance.sidebarPlaylistLastOpened[id] = Date.now();
+}
+
 const collection = shallowRef<Collection | null>(null);
 /** 正在加载 */
 const loading = ref(false);
+/** 错误信息 */
+const error = ref("");
 /** 取消当次加载 */
 let loadAbort: AbortController | null = null;
 
 /** 折叠状态 */
 const collapsed = ref(false);
+/** 简介弹窗 */
+const descriptionOpen = ref(false);
 
 /** 滚动超过阈值折叠 */
 const handleListScroll = (event: Event) => {
@@ -56,6 +68,7 @@ const loadCollection = async (): Promise<void> => {
   const myAbort = new AbortController();
   loadAbort = myAbort;
   loading.value = true;
+  error.value = "";
 
   try {
     await loadCollectionService(source, type, id, {
@@ -66,6 +79,9 @@ const loadCollection = async (): Promise<void> => {
         collection.value = next;
       },
     });
+  } catch (err) {
+    if (myAbort.signal.aborted) return;
+    error.value = err instanceof Error ? err.message : String(err);
   } finally {
     if (!myAbort.signal.aborted) loading.value = false;
   }
@@ -96,6 +112,11 @@ const typeLabel = computed(() => {
   return map[type] ?? "";
 });
 
+/** 合集所属范围 */
+const scopeLabel = computed(() =>
+  t(source === "local" ? "collection.scope.local" : "collection.scope.online"),
+);
+
 /** 总时长 */
 const totalDuration = computed(() => {
   if (!collection.value) return "";
@@ -109,10 +130,9 @@ const artistText = computed(() => {
   return collection.value.artists.map((a) => a.name).join(" / ");
 });
 
-/** 创建者（歌单作者） */
+/** 歌手或创建者 */
 const creatorText = computed(() => {
-  if (collection.value?.artists?.length) return "";
-  return collection.value?.creator ?? "";
+  return artistText.value || collection.value?.creator || "";
 });
 
 /** 更新时间文本 */
@@ -121,9 +141,20 @@ const updateTimeText = computed(() => {
   return new Date(collection.value.updateTime).toLocaleDateString();
 });
 
+const playbackContext = computed<PlaybackContext | undefined>(() => {
+  const current = collection.value;
+  if (!current || current.type === "cloud") return undefined;
+  return {
+    provider: current.source,
+    originId: current.id,
+    originType: current.type,
+    originName: current.title,
+  };
+});
+
 const handlePlayAll = () => {
   if (!collection.value?.tracks.length) return;
-  player.playFrom(collection.value.tracks, 0);
+  player.playFrom(collection.value.tracks, 0, playbackContext.value);
 };
 
 const searchQuery = ref("");
@@ -147,25 +178,51 @@ const manage = usePlaylistManage(collection, {
 const editLabel = computed(() => t("collection.edit", { type: typeLabel.value }));
 
 const moreMenuItems = computed<DropdownMenuItem[]>(() => {
+  const isOnline = source !== "local" && source !== "streaming";
+  const isLocal = source === "local";
+  // QQ/酷狗等无账号歌单体系的来源：提供整单导入本地歌单（在线 Track JSON 缓冲）
+  const canImportToLocal = isOnline && source !== "netease";
   const list: DropdownMenuItem[] = [
     { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
-  ];
-  if (manage.canManage.value) {
-    list.push({ key: "edit", label: editLabel.value, icon: IconLucidePencil });
-    list.push({
+    { key: "edit", label: editLabel.value, icon: IconLucidePencil, show: manage.canManage.value },
+    {
       key: "delete",
       label: t("collection.delete", { type: typeLabel.value }),
       icon: IconLucideTrash2,
       separator: true,
-    });
-  }
-  if (getCollectionShareUrl(collection.value)) {
-    list.push({
-      key: "copyUrl",
-      label: t(`collection.context.${type}.copyUrl`),
-      icon: IconLucideLink,
-    });
-  }
+      show: manage.canManage.value,
+    },
+    {
+      key: "importToLocal",
+      label: t("collection.importToLocal"),
+      icon: IconLucideListMusic,
+      show: canImportToLocal,
+    },
+    {
+      key: "more",
+      label: t("collection.context.more"),
+      icon: markRaw(IconMoreHorizontal),
+      children: [
+        {
+          key: "copyTitle",
+          label: t(`collection.context.${type}.copyTitle`),
+          icon: markRaw(IconCopy),
+        },
+        {
+          key: "copyId",
+          label: t(`collection.context.${type}.copyId`),
+          icon: markRaw(IconCopy),
+          show: !isLocal,
+        },
+        {
+          key: "copyUrl",
+          label: t(`collection.context.${type}.copyUrl`),
+          icon: markRaw(IconCopy),
+          show: isOnline && type !== "cloud",
+        },
+      ],
+    },
+  ];
   return list;
 });
 
@@ -174,11 +231,20 @@ const handleMoreMenu = (key: string) => {
     case "batchManage":
       songListRef.value?.enterBatch();
       break;
+    case "importToLocal":
+      if (collection.value?.tracks.length) openPicker(collection.value.tracks);
+      break;
     case "edit":
       manage.openEdit();
       break;
     case "delete":
       manage.openDelete();
+      break;
+    case "copyTitle":
+      copy(collection.value?.title);
+      break;
+    case "copyId":
+      copy(collection.value?.id);
       break;
     case "copyUrl":
       copy(getCollectionShareUrl(collection.value));
@@ -216,24 +282,60 @@ onBeforeUnmount(() => {
             class="flex flex-col transition-[gap] duration-300"
             :class="collapsed ? 'gap-0.5' : 'gap-2'"
           >
-            <h1
-              class="font-bold text-on-surface truncate lh-normal transition-[font-size,line-height] duration-300"
-              :class="collapsed ? 'text-xl' : 'text-3xl'"
-            >
-              {{ collection.title }}
-            </h1>
+            <div class="flex min-w-0 items-center gap-3">
+              <h1
+                class="min-w-0 flex-1 font-bold text-on-surface truncate lh-normal transition-[font-size,line-height] duration-300"
+                :class="collapsed ? 'text-xl' : 'text-3xl'"
+              >
+                {{ collection.title }}
+              </h1>
+              <div
+                class="flex shrink-0 items-center gap-1 text-primary"
+                :aria-label="`${scopeLabel} · ${typeLabel}`"
+              >
+                <STooltip :content="scopeLabel">
+                  <span class="inline-flex size-6 cursor-default items-center justify-center">
+                    <IconLucideHardDrive v-if="source === 'local'" class="size-4" />
+                    <IconLucideGlobe2 v-else class="size-4" />
+                  </span>
+                </STooltip>
+                <SDivider vertical />
+                <STooltip :content="typeLabel">
+                  <span
+                    class="inline-flex size-6 cursor-default items-center justify-center text-primary/65"
+                  >
+                    <IconLucideDisc3 v-if="type === 'album'" class="size-4" />
+                    <IconLucideListMusic v-else-if="type === 'playlist'" class="size-4" />
+                    <IconLucideRadio v-else-if="type === 'radio'" class="size-4" />
+                    <IconLucideCloud v-else class="size-4" />
+                  </span>
+                </STooltip>
+              </div>
+            </div>
             <div
               class="grid transition-[grid-template-rows,opacity] duration-300"
               :class="collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'"
             >
               <div class="overflow-hidden flex flex-col gap-2">
-                <!-- 歌手 -->
-                <div v-if="artistText" class="text-sm text-on-surface-variant/70 truncate">
-                  {{ artistText }}
-                </div>
-                <!-- 描述 -->
-                <p v-if="type !== 'album'" class="text-sm text-on-surface-variant/70 truncate">
-                  {{ collection.description || t("collection.noDescription") }}
+                <!-- 简介 -->
+                <SButton
+                  v-if="collection.description"
+                  variant="text"
+                  size="auto"
+                  block
+                  static
+                  class="group max-w-full overflow-hidden text-left text-sm"
+                  :aria-label="t('collection.viewIntroduction')"
+                  @click="descriptionOpen = true"
+                >
+                  <span
+                    class="min-w-0 truncate text-on-surface-variant/70 transition-colors duration-200 group-hover:text-on-surface-variant group-focus-visible:text-on-surface-variant"
+                  >
+                    {{ collection.description }}
+                  </span>
+                </SButton>
+                <p v-else class="text-sm text-on-surface-variant/70 truncate">
+                  {{ t("collection.noDescription") }}
                 </p>
                 <div
                   class="flex items-center gap-3 text-sm leading-none text-on-surface-variant/50"
@@ -324,7 +426,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <Transition name="fade" mode="out-in" :duration="150">
-      <!-- 歌曲列表（首批到位即渲染，剩余批次会自动追加） -->
       <div
         v-if="collection && collection.tracks.length > 0"
         :key="collection.id"
@@ -339,6 +440,7 @@ onBeforeUnmount(() => {
           :source="source"
           :collection-type="type"
           :collection-id="id"
+          :playback-context="playbackContext"
           :can-remove="manage.canManage.value"
           enable-sort
           @scroll="handleListScroll"
@@ -352,6 +454,18 @@ onBeforeUnmount(() => {
           <div class="text-sm">{{ t("common.loading") }}</div>
         </div>
       </div>
+      <!-- 错误态 -->
+      <div v-else-if="error" key="error" class="flex-1 flex items-center justify-center px-6">
+        <div class="text-center text-red-500/85">
+          <IconLucideTriangleAlert class="size-14 mx-auto mb-4 opacity-50" />
+          <div class="text-sm font-medium mb-1">{{ t("search.errorTitle") }}</div>
+          <div class="text-xs opacity-80 break-all max-w-xs mb-4">{{ error }}</div>
+          <SButton type="primary" variant="secondary" @click="loadCollection">
+            <template #icon><IconLucideRefreshCw /></template>
+            {{ t("common.retry") }}
+          </SButton>
+        </div>
+      </div>
       <!-- 空状态 -->
       <div v-else-if="collection" key="empty" class="flex-1 flex items-center justify-center">
         <div class="text-center text-on-surface-variant/50">
@@ -360,6 +474,16 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </Transition>
+    <!-- 简介全文 -->
+    <SDialog
+      v-model:open="descriptionOpen"
+      :title="t('collection.introduction', { type: typeLabel })"
+      width="min(520px, calc(100vw - 40px))"
+    >
+      <p class="whitespace-pre-wrap break-words leading-6 text-on-surface-variant">
+        {{ collection?.description }}
+      </p>
+    </SDialog>
     <!-- 编辑弹窗 -->
     <SDialog v-model:open="manage.editOpen.value" :title="editLabel" width="400px">
       <div class="flex flex-col gap-4">

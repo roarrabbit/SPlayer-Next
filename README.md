@@ -4,9 +4,10 @@
 
 # SPlayer-Next (Fork)
 
-🎵 桌面音乐播放器 —— 在上游基础上重新打磨的独立版本
+🎵 桌面音乐播放器 —— 基于官方 v1.1.0 重新打磨的独立版本（v1.1.0-fork）
 
 [![Release](https://img.shields.io/github/v/release/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/releases)
+[![Version](https://img.shields.io/badge/version-v1.1.0--fork-9cf)]()
 [![License](https://img.shields.io/github/license/roarrabbit/SPlayer-Next)](https://github.com/roarrabbit/SPlayer-Next/blob/dev/LICENSE)
 [![Upstream](https://img.shields.io/badge/upstream-SPlayer--Next-blue)](https://github.com/SPlayer-Dev/SPlayer-Next)
 [![Platform](https://img.shields.io/badge/platform-macOS-9cf)]()
@@ -52,6 +53,11 @@
 
 优化旧版本内置音乐插件与沙盒，配合插件系统匹配食用音源。
 
+> [!NOTE]
+> **音源歌单支持说明（当前版本）**
+> - **WY**：完整支持在线歌单（加载、管理与播放）
+> - **QM** / **KG**：目前仅支持**本地存储**（即本机已有的歌曲 / 缓存），暂不支持在线歌单
+
 ### 🎛️ 按键布局优化
 
 重新梳理播放页与全局的按键布局及交互逻辑，常用操作更顺手、层级更清晰。
@@ -87,9 +93,17 @@ pnpm typecheck      # 类型检查
 pnpm build          # 完整构建
 ```
 
-环境要求见 [贡献指南](docs/contributing.md)，原生模块说明见 [原生模块](docs/native.md)。
+环境要求见 [贡献指南](docs/contributing.md)，原生模块见 [原生模块](docs/native.md)。
 
 ## 📋 更新日志
+
+### v1.1.0-fork
+
+- 由于官方更新了多源搜索所以决定带着fork的独立功能额外迁移更新，保留了原有内容的同时增加了一些喜欢的体验功能点
+- **基座升级**：迁移至官方 SPlayer-Next v1.1.0，官方新特性与修复随基座一并带入（歌词页面隐藏恢复校准、侧边栏自定义重构、播放来源展示/预加载下一曲等新设置项、错误码补全等）
+- **版本与渠道**：版本号调整为 v1.1.0-fork；发布与自动更新渠道切换至本仓库（roarrabbit/SPlayer-Next）
+
+---
 
 ### 1.0.3
 
@@ -123,7 +137,7 @@ pnpm build          # 完整构建
 特别感谢以下开源项目：
 
 - [applemusic-like-lyrics](https://github.com/Steve-xmh/applemusic-like-lyrics) —— 类 Apple Music 歌词显示组件库
-- [NeteaseCloudMusicApiEnhanced](https://github.com/neteasecloudmusicapienhanced/api-enhanced) —— 网易云音乐 API 备份 + 增强
+- [NeteaseCloudMusicApiEnhanced](https://github.com/neteasecloudmusicapienhanced/api-enhanced) —— 在线音乐 API 备份 + 增强
 
 ## 📄 开源许可
 

@@ -217,6 +217,28 @@ export const snapshot = (): NowPlayingSnapshot => ({
 /** 当前是否处于播放态（供其它模块如灵动岛可见性同步读取） */
 export const isPlaying = (): boolean => playing;
 
+/** 获取不含完整歌词正文的轻量播放快照（官方 1.1 新增，供 HTTP API / MCP 消费） */
+export const lightSnapshot = () => ({
+  track: currentTrack,
+  position: lastPosition,
+  playing,
+  state: playState,
+  speed: playSpeed,
+  lyricOffsetMs: currentLyricOffsetMs,
+  lyricLoading: currentLyricLoading,
+  lyricAvailable: currentLyric.length > 0,
+  lyricLineCount: currentLyric.length,
+  sendTimestamp: lastPositionAt || Date.now(),
+});
+
+/** 获取当前曲目的完整歌词快照（官方 1.1 新增，供 HTTP API / MCP 消费） */
+export const lyricSnapshot = () => ({
+  trackId: currentTrack?.id ?? null,
+  lyric: currentLyric,
+  source: currentSource,
+  lyricOffsetMs: currentLyricOffsetMs,
+});
+
 /** 标记曲目加载状态，加载中的瞬态非播放态不应触发界面的出现/收起切换
  * @param loading - 是否正在加载曲目 */
 export const setTrackLoading = (loading: boolean): void => {

@@ -164,7 +164,7 @@ export interface DynamicIslandSettings {
   doubleLine: boolean;
   /** 显示翻译 */
   showTranslation: boolean;
-  /** 显示歌词（关闭后隐藏歌词行并收回灵动岛下方区域） */
+  /** 显示歌词（关闭后隐藏歌词行并收回灵动岛下方区域，露出频谱/封面） */
   showLyric: boolean;
   /** 是否使用原生CSS窗口拖动 */
   useCSSDrag: boolean;
@@ -188,6 +188,8 @@ export interface TaskbarLyricSettings {
   position: TaskbarLyricPosition;
   /** 宽度自动：开启时占满可用空间，关闭时按 maxWidth 限制 */
   autoMaxWidth: boolean;
+  /** 根据当前歌词与悬浮控件动态调整真实窗口宽度 */
+  autoAdjustOccupiedSpace: boolean;
   /** 最大宽度（逻辑像素）；仅在 autoMaxWidth 关闭时生效；超出可用空间时仍以可用空间为准 */
   maxWidth: number;
   /** 左边距（逻辑像素），从可用空间左侧扣除 */
@@ -196,6 +198,8 @@ export interface TaskbarLyricSettings {
   rightMargin: number;
   /** 配色模式 */
   colorMode: TaskbarLyricColorMode;
+  /** 获焦时显示半透明背景 */
+  showBackground: boolean;
   /** 双行显示（歌词 + 翻译 / 下一行） */
   doubleLine: boolean;
   /** 显示翻译（doubleLine 开启时，副行优先显示翻译，没有翻译则回退到下一行） */
@@ -206,6 +210,8 @@ export interface TaskbarLyricSettings {
   wordByWord: boolean;
   /** 字号（逻辑像素） */
   fontSize: number;
+  /** 字重 */
+  fontWeight: number;
   /** 字体 */
   fontFamily: string;
 }
@@ -232,6 +238,16 @@ export interface ExternalApiSettings {
   allowLan: boolean;
   /** 监听端口 */
   port: number;
+}
+
+/** MCP 服务配置 */
+export interface McpSettings {
+  /** 服务开关 */
+  enabled: boolean;
+  /** 仅本机监听的端口 */
+  port: number;
+  /** 本机客户端连接密钥，由主进程首次使用时生成 */
+  accessKey: string;
 }
 
 /** 网络代理协议 */
@@ -261,6 +277,38 @@ export interface ExternalApiStatus {
   error: { code: string; message: string } | null;
 }
 
+/** MCP 服务运行时状态 */
+export interface McpStatus {
+  /** 是否正在监听 */
+  listening: boolean;
+  /** 实际监听端口 */
+  port: number | null;
+  /** 上次启动失败的错误 */
+  error: { code: string; message: string } | null;
+}
+
+/** 生成 AI 客户端配置所需的动态参数 */
+export interface McpClientConfigParams {
+  /** MCP 服务实际使用或即将使用的端口 */
+  port: number;
+  /** 本机客户端连接密钥 */
+  accessKey: string;
+}
+
+/** 外部 AI Agent MCP 客户端应用 */
+export interface McpAgentApp {
+  /** 客户端应用标识 */
+  id: string;
+  /** 外部 AI Agent MCP 客户端应用显示名称 */
+  name: string;
+  /** 配置文件路径 */
+  configPath: string;
+  /** 是否已配置 splayer-next */
+  configured: boolean;
+  /** 是否支持自动写入配置 */
+  injectable: boolean;
+}
+
 /** 在线歌词服务配置 */
 export interface OnlineLyricSettings {
   /** 启用在线 TTML 歌词 */
@@ -279,8 +327,10 @@ export interface LocalLyricSettings {
 
 /** 歌曲缓存配置 */
 export interface SongCacheSettings {
-  /** 开关：开启后播放远程歌曲会异步下载落盘，下次播放命中本地 */
+  /** 歌曲缓存总开关 */
   enabled: boolean;
+  /** 是否缓存个人流媒体服务器歌曲 */
+  cacheStreaming: boolean;
   /** 上限（GB），0 表示不限制；超限按 LRU 淘汰 */
   sizeLimitGb: number;
 }
@@ -365,14 +415,22 @@ export interface WindowStates {
   taskbarLyric: TaskbarLyricWindowState;
 }
 
+/** 应用更新通道 */
+export type UpdateChannel = "stable" | "beta" | "alpha";
+
 /** 应用更新配置 */
 export interface AppUpdateSettings {
   /** 自动检查更新 */
   autoCheck: boolean;
+  /** 更新通道：stable 正式通道 / beta 预览通道 / alpha 内测通道 */
+  channel: UpdateChannel;
 }
 
-/** 网易云听歌打卡上报方式 */
+/** NCM 听歌打卡上报方式 */
 export type NeteaseScrobbleMode = "legacy" | "ncbl";
+
+/** KG 登录版本 */
+export type KugouLoginVersion = "standard" | "concept";
 
 /** 后端配置汇总 */
 export interface SystemConfig {
@@ -402,6 +460,8 @@ export interface SystemConfig {
   lastfm: LastfmSettings;
   /** 外部 API 服务（HTTP + WS） */
   externalApi: ExternalApiSettings;
+  /** AI 集成使用的 MCP 服务 */
+  mcp: McpSettings;
   /** 应用更新配置 */
   update: AppUpdateSettings;
   /** 系统配置 */
@@ -422,6 +482,8 @@ export interface SystemConfig {
     agreedAgreementVersion: number;
     /** NCM请求注入国内 IP（X-Real-IP/X-Forwarded-For） */
     neteaseRealIp: boolean;
+    /** KG 登录版本（standard 标准版 / concept 概念版） */
+    kugouLoginVersion: KugouLoginVersion;
     /** 网络代理配置 */
     networkProxy: NetworkProxySettings;
     /** 听歌打卡开关 */

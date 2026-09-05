@@ -31,4 +31,4 @@ Windows 7 默认不启用 TLS 1.2，可能导致部分网络请求失败。请�
 
 Windows 7 已于 2020 年 1 月结束支持，不再收到安全更新。强烈建议升级到 Windows 10 / 11，以获得安全性、兼容性与 SMTC 等现代能力。
 
-如确需在旧系统使用，可在 [GitHub Releases](https://github.com/roarrabbit/SPlayer-Next/releases) 查找较早的版本，但旧版本可能存在已知安全问题。
+如确需在旧系统使用，可在 [GitHub Releases](https://github.com/SPlayer-Dev/SPlayer-Next/releases) 查找较早的版本，但旧版本可能存在已知安全问题。

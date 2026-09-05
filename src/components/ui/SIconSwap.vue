@@ -25,13 +25,13 @@ defineProps<{
 <style scoped>
 .s-icon-swap {
   transition:
-    opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .s-icon-swap-hidden {
   opacity: 0;
-  transform: scale(0.6);
+  transform: scale(0.25);
   pointer-events: none;
 }
 </style>

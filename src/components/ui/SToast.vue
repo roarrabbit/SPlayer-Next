@@ -34,17 +34,17 @@ const onBeforeLeave = (el: Element): void => {
       class="fixed bottom-24 inset-x-0 z-999 flex flex-col items-center gap-2 pointer-events-none"
     >
       <TransitionGroup
-        enter-active-class="transition-[opacity,transform] duration-220 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        leave-active-class="transition-[opacity,transform] duration-160 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        enter-from-class="translate-y-2 scale-[0.96] opacity-0"
-        leave-to-class="translate-y-2 scale-[0.96] opacity-0"
-        move-class="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        enter-active-class="transition-[opacity,transform] duration-250 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        leave-active-class="transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.4,0,1,1)]"
+        enter-from-class="scale-95 opacity-0"
+        leave-to-class="scale-95 opacity-0"
+        move-class="transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
         @before-leave="onBeforeLeave"
       >
         <div
           v-for="item in toasts"
           :key="item.id"
-          class="pointer-events-auto border border-solid border-outline-variant/30 rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 text-sm bg-surface-bright text-on-surface shadow-lg whitespace-nowrap "
+          class="pointer-events-auto border border-solid border-outline-variant/30 rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 text-sm bg-surface-bright text-on-surface shadow-lg whitespace-nowrap will-change-transform"
         >
           <!-- 图标 -->
           <template v-if="item.icon !== false">

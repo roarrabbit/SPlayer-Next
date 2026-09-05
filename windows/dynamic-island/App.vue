@@ -700,8 +700,8 @@ const displayLyric = computed(() => {
   if (!line) return "";
   let text = lineText(line);
   // 灵动岛翻译：直接跟随歌词数据，不再依赖 config.showTranslation（该开关会被 app 重启写回 false 而失效）。
-  // 译文字段以 translatedLyric 为准（所有歌词解析器都填充它）；translation 为可选兜底字段。
-  const translation = line.translatedLyric || line.translation;
+  // 官方 1.1 起 LyricLine 仅保留 translatedLyric（所有歌词解析器都填充它）
+  const translation = line.translatedLyric;
   if (translation) text += `（${translation}）`;
   return text;
 });

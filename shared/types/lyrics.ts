@@ -48,6 +48,9 @@ export interface LyricWord extends LyricSpan {
 }
 
 /** 一行歌词 */
+/** 歌词行语言；und-Latn 表示语言未知的拉丁文字 */
+export type LyricLanguage = "ja" | "ko" | "zh-CN" | "und-Latn";
+
 export interface LyricLine {
   /**
    * 该行的所有单词
@@ -56,6 +59,8 @@ export interface LyricLine {
   words: LyricWord[];
   /** 该行的翻译歌词，将会显示在主歌词行的下方 */
   translatedLyric: string;
+  /** 主歌词语言，用于字形选择与 HTML lang */
+  language?: LyricLanguage;
   /** 该行翻译（灵动岛等消费方直接跟随歌词数据读取，可选） */
   translation?: string;
   /** 该行的音译歌词，将会显示在翻译歌词行的下方 */

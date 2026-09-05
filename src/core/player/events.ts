@@ -1,7 +1,6 @@
 import type { PlayerEvent } from "@shared/types/player";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
-import { useSettingsStore } from "@/stores/settings";
 import { useFavorite } from "@/composables/useFavorite";
 import * as playback from "@/services/playback";
 import * as autoClose from "@/services/autoClose";
@@ -10,11 +9,13 @@ import * as cacheScheduler from "@/services/cacheScheduler";
 import * as playStats from "./stats";
 import {
   hasReachedSeekTarget,
+  insertManyToQueue,
   isSeeking,
   markSeek,
   nextTrack,
   pause,
   play,
+  playNow,
   prevTrack,
   recoverFromSourceFailure,
   refreshDevices,
@@ -72,6 +73,10 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
       }
       status.duration = event.data.duration;
       status.volume = event.data.volume;
+      if (event.data.speed != null) {
+        status.speed = event.data.speed;
+        playback.setSpeed(event.data.speed);
+      }
       playback.setDuration(event.data.duration);
       playback.setPlaying(event.data.state === "playing");
       break;
@@ -115,11 +120,14 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
     case "play":
       await play();
       break;
+    case "playTrack":
+      await playNow(event.data.track);
+      break;
     case "pause":
       await pause();
       break;
     case "next":
-      await nextTrack(true);
+      await nextTrack();
       break;
     case "prev":
       await prevTrack();
@@ -130,19 +138,14 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
     case "setRepeat":
       setRepeatMode(event.data.mode);
       break;
+    case "addToQueue":
+      insertManyToQueue(event.data.tracks, event.data.position);
+      break;
     case "toggleLike":
       await useFavorite().toggle(useMediaStore().track);
       break;
     case "deviceChanged": {
       refreshDevices();
-      const settings = useSettingsStore();
-      if (
-        settings.player.pauseOnDeviceSwitch &&
-        settings.player.outputDevice === null &&
-        status.state === "playing"
-      ) {
-        await pause();
-      }
       break;
     }
   }

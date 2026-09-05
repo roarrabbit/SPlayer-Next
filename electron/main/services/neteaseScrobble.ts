@@ -110,7 +110,12 @@ const progress = createPlayProgress<NeteaseScrobbleTrack>({
  * @param durationMs - 引擎确认后的时长
  * @param autoPlay - 是否自动播放
  */
-export const onTrackLoaded = (track: Track | null, durationMs: number, autoPlay: boolean): void => {
+export const onTrackLoaded = (
+  track: Track | null,
+  _context: unknown,
+  durationMs: number,
+  autoPlay: boolean,
+): void => {
   cycleId++;
   current = toScrobbleTrack(track, durationMs);
   progress.load(current?.durationSec ?? 0, current, autoPlay);

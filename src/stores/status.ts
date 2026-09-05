@@ -7,7 +7,10 @@ import type {
 } from "@shared/types/player";
 import type { Platform } from "@shared/types/platform";
 import type { ContentScope } from "@/types/collection";
+import type { SortField, SortOrder } from "@/types/list";
+import type { PersonalFmOptions } from "@/types/netease";
 export type { RepeatMode, ShuffleMode } from "@shared/types/player";
+export type { SortField, SortOrder } from "@/types/list";
 import * as queue from "./queue";
 
 export const useStatusStore = defineStore(
@@ -27,8 +30,8 @@ export const useStatusStore = defineStore(
     const outputDevices = ref<AudioDevice[]>([]);
     /** 歌曲加载 */
     const trackLoading = ref(false);
-    /** 菜单折叠状态 */
-    const isExpanded = ref(false);
+    /** 全屏播放器展开状态 */
+    const isPlayerExpanded = ref(false);
     /** 外层播放队列 */
     const outerQueueOpen = ref(false);
     /** 播放器播放队列 */
@@ -51,6 +54,8 @@ export const useStatusStore = defineStore(
     const heartMode = ref(false);
     /** 私人 FM 模式 */
     const fmMode = ref(false);
+    /** 私人 FM 选项偏好 */
+    const fmOptions = ref<PersonalFmOptions>({ mode: "DEFAULT" });
     /** 播放速度（0.5 ~ 2.0） */
     const speed = ref(1.0);
     /** 音调偏移（半音 -12 ~ 12） */
@@ -81,6 +86,10 @@ export const useStatusStore = defineStore(
     const likedPageTab = ref<ContentScope>("local");
     /** 设置弹窗上次手动选择的大分类 */
     const settingsCategory = ref("");
+    /** 歌曲列表排序字段 */
+    const sortField = ref<SortField>("none");
+    /** 歌曲列表排序方向 */
+    const sortOrder = ref<SortOrder>("asc");
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */
@@ -95,6 +104,8 @@ export const useStatusStore = defineStore(
      * media.track 在 load 成功后才更新，用于组件显示已加载完成的歌曲信息
      */
     const currentTrack = computed(() => queue.getTrack(playIndex.value));
+    /** 当前队列项对应的播放来源上下文 */
+    const currentPlaybackContext = computed(() => queue.getQueueItem(playIndex.value)?.context);
 
     /** 打开指定歌曲评论 */
     const showComments = (track: Track): void => {
@@ -113,7 +124,7 @@ export const useStatusStore = defineStore(
       isLoading,
       progress,
       trackLoading,
-      isExpanded,
+      isPlayerExpanded,
       outerQueueOpen,
       fullQueueOpen,
       searchOpen,
@@ -126,6 +137,7 @@ export const useStatusStore = defineStore(
       shuffleMode,
       heartMode,
       fmMode,
+      fmOptions,
       speed,
       pitch,
       pitchSync,
@@ -136,7 +148,10 @@ export const useStatusStore = defineStore(
       myPlaylistSource,
       likedPageTab,
       settingsCategory,
+      sortField,
+      sortOrder,
       currentTrack,
+      currentPlaybackContext,
       showComments,
     };
   },
@@ -148,12 +163,15 @@ export const useStatusStore = defineStore(
         "repeatMode",
         "shuffleMode",
         "heartMode",
+        "fmOptions",
         "volume",
         "position",
         "searchPlatform",
         "myPlaylistSource",
         "likedPageTab",
         "settingsCategory",
+        "sortField",
+        "sortOrder",
       ],
     },
   },

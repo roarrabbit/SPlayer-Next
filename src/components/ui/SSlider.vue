@@ -302,9 +302,9 @@ const onPointerUp = (): void => {
         "
       />
       <div
-        class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150"
         :class="[
-          thumbVisible ? (isDragging ? 'scale-125 opacity-100' : 'scale-100 opacity-100') : 'scale-[0.6] opacity-0',
+          thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
           cover ? 'bg-cover/100' : 'bg-primary',
         ]"
         :style="{
@@ -359,9 +359,9 @@ const onPointerUp = (): void => {
         "
       />
       <div
-        class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        class="s-slider-thumb absolute rounded-full shadow-sm transition-[transform,opacity] duration-150"
         :class="[
-          thumbVisible ? (isDragging ? 'scale-125 opacity-100' : 'scale-100 opacity-100') : 'scale-[0.6] opacity-0',
+          thumbVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
           cover ? 'bg-cover/100' : 'bg-primary',
         ]"
         :style="{

@@ -17,13 +17,13 @@ const playerCategory: SettingCategory = {
           key: "autoPlay",
           type: "switch",
           binding: { store: "settings", path: "system.player.autoPlay" },
-          defaultValue: true,
+          defaultValue: false,
         },
         {
           key: "rememberLastTrack",
           type: "switch",
           binding: { store: "settings", path: "system.player.rememberLastTrack" },
-          defaultValue: false,
+          defaultValue: true,
         },
         {
           key: "showLyricInBar",
@@ -66,6 +66,11 @@ const playerCategory: SettingCategory = {
           defaultValue: false,
           tag: { text: "Beta" },
         },
+      ],
+    },
+    {
+      id: "audioSource",
+      items: [
         {
           key: "songLevel",
           type: "select",
@@ -83,6 +88,12 @@ const playerCategory: SettingCategory = {
           key: "allowTrialPlay",
           type: "switch",
           binding: { store: "settings", path: "player.allowTrialPlay" },
+          defaultValue: false,
+        },
+        {
+          key: "preloadNextTrack",
+          type: "switch",
+          binding: { store: "settings", path: "player.preloadNextTrack" },
           defaultValue: false,
         },
       ],
@@ -123,7 +134,7 @@ const playerCategory: SettingCategory = {
             { value: "solid", labelKey: "settings.playerBgType.solid" },
             { value: "animation", labelKey: "settings.playerBgType.animation" },
           ],
-          defaultValue: "blur",
+          defaultValue: "animation",
           confirm: {
             when: (next) => next === "animation",
             titleKey: "settings.confirm.highResourceTitle",
@@ -140,7 +151,7 @@ const playerCategory: SettingCategory = {
               min: 0.1,
               max: 10,
               step: 0.1,
-              defaultValue: 4,
+              defaultValue: 2.3,
               marks: { 0.1: "0.1", 4: "4", 10: "10" },
             },
             {
@@ -150,7 +161,7 @@ const playerCategory: SettingCategory = {
               min: 0.5,
               max: 2,
               step: 0.1,
-              defaultValue: 0.5,
+              defaultValue: 0.6,
               marks: { 0.5: "0.5", 1: "1", 2: "2" },
             },
             {
@@ -167,7 +178,7 @@ const playerCategory: SettingCategory = {
               key: "playerBgFreezeOnPause",
               type: "switch",
               binding: { store: "settings", path: "player.playerBgFreezeOnPause" },
-              defaultValue: false,
+              defaultValue: true,
             },
             {
               key: "playerBgPauseOnBlur",
@@ -179,7 +190,7 @@ const playerCategory: SettingCategory = {
               key: "playerBgBeat",
               type: "switch",
               binding: { store: "settings", path: "player.playerBgBeat" },
-              defaultValue: false,
+              defaultValue: true,
               children: [
                 {
                   key: "playerBgBeatIntensity",
@@ -198,7 +209,7 @@ const playerCategory: SettingCategory = {
                   min: 0,
                   max: 1,
                   step: 0.05,
-                  defaultValue: 0.5,
+                  defaultValue: 0.95,
                   marks: { 0: "0", 0.5: "0.5", 1: "1" },
                 },
                 {
@@ -254,6 +265,12 @@ const playerCategory: SettingCategory = {
           defaultValue: true,
         },
         {
+          key: "showPlaybackSource",
+          type: "switch",
+          binding: { store: "settings", path: "player.showPlaybackSource" },
+          defaultValue: false,
+        },
+        {
           key: "followCoverColor",
           type: "switch",
           binding: { store: "settings", path: "player.followCoverColor" },
@@ -275,7 +292,7 @@ const playerCategory: SettingCategory = {
           key: "autoImmersive",
           type: "switch",
           binding: { store: "settings", path: "player.autoImmersive" },
-          defaultValue: false,
+          defaultValue: true,
         },
         {
           key: "showProgressTooltip",
@@ -287,7 +304,7 @@ const playerCategory: SettingCategory = {
               key: "showProgressLyric",
               type: "switch",
               binding: { store: "settings", path: "player.showProgressLyric" },
-              defaultValue: false,
+              defaultValue: true,
             },
           ],
         },
@@ -295,7 +312,7 @@ const playerCategory: SettingCategory = {
           key: "snapToLyric",
           type: "switch",
           binding: { store: "settings", path: "player.snapToLyric" },
-          defaultValue: false,
+          defaultValue: true,
         },
       ],
     },

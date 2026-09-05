@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import type { Track } from "@shared/types/player";
+import type { PlaybackContext, Track } from "@shared/types/player";
 import type { QualityLevel } from "@/utils/quality";
 import type { CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
@@ -34,8 +34,8 @@ export interface TrackMenuOptions {
   canRemove?: boolean;
   /** 隐藏播放相关菜单项 */
   hidePlayActions?: boolean;
-  /** 播放（列表场景可替换队列；缺省 playNow 插播） */
-  onPlay?: (track: Track) => void;
+  /** 播放来源上下文 */
+  playbackContext?: Ref<PlaybackContext | undefined>;
   /** 添加到歌单 */
   onAddToPlaylist?: (track: Track) => void;
   /** 从集合移除回调 */
@@ -225,11 +225,10 @@ export const useTrackMenu = (
     }
     switch (key) {
       case "play":
-        if (options.onPlay) options.onPlay(current);
-        else void player.playNow(current);
+        player.playNow(current, options.playbackContext?.value);
         break;
       case "playNext":
-        player.insertToQueue(current);
+        player.insertToQueue(current, undefined, options.playbackContext?.value);
         toast.success(t("songList.toast.addedToNext"));
         break;
       case "addToPlaylist":

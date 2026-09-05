@@ -25,7 +25,7 @@ export {
   getDesktopLyricWindow,
   applyDesktopLyricLock,
   applyDesktopLyricAlwaysOnTop,
-  applyDesktopLyricMouseIgnore,
+  applyDesktopLyricUnlockButtonBounds,
   applyDesktopLyricHeight,
   moveDesktopLyricWindow,
   saveDesktopLyricState,
@@ -57,8 +57,8 @@ export {
   toggleTaskbarLyricWindow,
   getTaskbarLyricWindow,
   applyTaskbarLyricLayout,
+  updateTaskbarLyricContentWidth,
 } from "./taskbarLyric";
-
 /** 恢复歌词相关窗口 */
 export const restoreLyricWindows = (): void => {
   if (store.get("windowStates.desktopLyric.visible")) createDesktopLyricWindow();

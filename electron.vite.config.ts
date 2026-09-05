@@ -28,8 +28,13 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "electron/main/index.ts"),
-          // 插件 host worker（utilityProcess 入口，托管所有插件 vm 上下文）
+          // 插件 host worker
           "host.worker": resolve(__dirname, "electron/main/plugins/host.worker.ts"),
+          // 听歌识曲指纹 worker
+          "fingerprint.worker": resolve(
+            __dirname,
+            "electron/main/services/recognition/fingerprint.worker.ts",
+          ),
         },
       },
     },
@@ -42,6 +47,7 @@ export default defineConfig({
         "@splayer/media-ctrl": resolve(__dirname, "native/media-ctrl"),
         "@splayer/taskbar-lyric": resolve(__dirname, "native/taskbar-lyric"),
         "@splayer/taskbar-thumbnail": resolve(__dirname, "native/taskbar-thumbnail"),
+        "@splayer/opencc": resolve(__dirname, "native/opencc"),
       },
     },
   },

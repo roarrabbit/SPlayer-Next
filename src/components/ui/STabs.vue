@@ -19,12 +19,7 @@ export interface STabsProps {
   size?: "small" | "medium" | "large";
   /** 主轴排列方式 */
   justifyContent?:
-    | "space-between"
-    | "space-around"
-    | "space-evenly"
-    | "flex-start"
-    | "center"
-    | "flex-end";
+    "space-between" | "space-around" | "space-evenly" | "flex-start" | "center" | "flex-end";
   /** 是否启用动画 */
   animated?: boolean;
   /** 圆角胶囊 */
@@ -186,7 +181,7 @@ const segmentTabClasses: Record<string, string> = {
 
 /** 根据切换方向生成过渡 class */
 const panelTransitionClasses = computed(() => {
-  const active = "transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]";
+  const active = "transition-[transform,opacity] duration-240 ease-[cubic-bezier(0.4,0,0.2,1)]";
   if (panelDirection.value === "next") {
     return {
       enterActive: active,
@@ -226,7 +221,7 @@ const panelTransitionClasses = computed(() => {
     <div
       v-if="indicatorStyle.width"
       :class="[
-        'absolute pointer-events-none transition-[left,width] duration-240 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'absolute pointer-events-none transition-[left,width] duration-320 ease-[cubic-bezier(0.4,0,0.2,1)]',
         type === 'segment'
           ? ['bg-primary/12', round ? 'rounded-full' : 'rounded-md']
           : 'bottom-0.5 h-[3px] bg-primary rounded-full',
@@ -270,7 +265,7 @@ const panelTransitionClasses = computed(() => {
       animated
         ? {
             height: panelHeight,
-            transition: 'height 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: 'height 240ms cubic-bezier(0.4, 0, 0.2, 1)',
           }
         : undefined
     "

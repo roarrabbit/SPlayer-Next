@@ -107,13 +107,6 @@ const buildMenu = (): Menu => {
           checked: repeatMode === "one",
           click: () => sendToMain("player:event", { type: "setRepeat", data: { mode: "one" } }),
         },
-        {
-          label: t("repeatOff"),
-          icon: menuIcon("repeat"),
-          type: "radio",
-          checked: repeatMode === "off",
-          click: () => sendToMain("player:event", { type: "setRepeat", data: { mode: "off" } }),
-        },
       ],
     },
     { type: "separator" },
@@ -209,6 +202,12 @@ export const setTrayPlayMode = (repeat: RepeatMode, shuffle: ShuffleMode): void 
   shuffleMode = shuffle;
   refreshTray();
 };
+
+/** 查询托盘当前播放模式（MCP 等外部读取用） */
+export const getTrayPlayMode = (): { repeat: RepeatMode; shuffle: ShuffleMode } => ({
+  repeat: repeatMode,
+  shuffle: shuffleMode,
+});
 
 /**
  * 同步当前歌曲喜欢状态到托盘（由渲染进程调用）

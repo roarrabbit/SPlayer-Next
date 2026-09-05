@@ -80,7 +80,7 @@ const hasTrack = computed(() => !!media.track);
       ripple
       :size="compact ? 34 : 38"
       :disabled="!hasTrack"
-      @click="player.nextTrack(true)"
+      @click="player.nextTrack()"
     >
       <template #icon><IconLucideSkipForward /></template>
     </SButton>
@@ -91,7 +91,7 @@ const hasTrack = computed(() => !!media.track);
       ripple
       :size="compact ? 32 : 38"
       :disabled="fmMode"
-      :class="fmMode || repeatMode === 'off' ? 'text-on-surface-variant' : 'text-primary'"
+      :class="fmMode ? 'text-on-surface-variant' : 'text-primary'"
       @click="player.cycleRepeatMode()"
     >
       <template #icon>

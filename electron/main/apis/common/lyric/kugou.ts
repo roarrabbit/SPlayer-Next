@@ -10,12 +10,28 @@
  */
 
 import { callKugou } from "@main/apis/kugou";
+import type { KGSong } from "@main/apis/kugou/core/types";
 import { getCachedLyric, setCachedLyric } from "@main/database/lyricCache";
 import { buildFingerprint, getMatchedId, setMatchedId } from "@main/database/lyricMatchCache";
 import { coreLog } from "@main/utils/logger";
 import type { LyricMatchResult } from "@shared/types/lyrics";
 import type { Track } from "@shared/types/player";
 import { buildLyricSearchKeyword, pickBestCandidate, type LyricCandidate } from "./utils";
+
+interface LyricResponse {
+  code: number;
+  lrc?: string;
+  krc?: string;
+  trans?: string;
+  roma?: string;
+  message?: string;
+}
+
+interface SearchResponse {
+  code: number;
+  total: number;
+  songs?: KGSong[];
+}
 
 /** krc 优先，其次 lrc */
 const pickFormatted = (
@@ -42,7 +58,7 @@ const fetchLyric = async (args: {
   const cached = getCachedLyric("kugou", args.hash);
   if (cached) return cached;
   try {
-    const body = await callKugou("lyric", {
+    const body = await callKugou<LyricResponse>("lyric", {
       hash: args.hash,
       name: args.name ?? "",
       duration: args.durationMs ? Math.round(args.durationMs / 1000) : 0,
@@ -97,7 +113,7 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
     if (!keyword) return null;
     const candidates: LyricCandidate<{ hash: string }>[] = [];
     try {
-      const body = await callKugou("search", { keywords: keyword, limit: 25 });
+      const body = await callKugou<SearchResponse>("search", { keywords: keyword, limit: 25 });
       if (body.code !== 200) return null;
       for (const song of body.songs ?? []) {
         candidates.push({
@@ -110,8 +126,7 @@ export const getByQuery = async (track: Track): Promise<LyricMatchResult | null>
       }
     } catch (err) {
       coreLog.warn(`[lyric:kugou] search("${keyword}") failed:`, err);
-      return null;
-    }
+      return null;    }
     const best = pickBestCandidate(candidates, track);
     coreLog.info(
       `[lyric:kugou] fuzzy "${keyword}" → ${candidates.length} hits, best=${best?.name ?? "none"}`,

@@ -1,5 +1,6 @@
 import type { SettingCategory, SettingSection } from "@/types/settings-schema";
 import { useSettingsStore } from "@/stores/settings";
+import { isMac } from "@/utils/config";
 import IconLucideMonitor from "~icons/lucide/monitor";
 
 const desktopLyricSection: SettingSection = {
@@ -16,7 +17,7 @@ const desktopLyricSection: SettingSection = {
       key: "desktopLyricFontSize",
       type: "select",
       binding: { store: "settings", path: "system.desktopLyric.fontSize" },
-      defaultValue: 24,
+      defaultValue: 25,
       options: Array.from({ length: 96 - 20 + 1 }, (_, i) => {
         const n = 20 + i;
         return { value: n, label: `${n} px` };
@@ -29,7 +30,7 @@ const desktopLyricSection: SettingSection = {
       min: 100,
       max: 900,
       step: 100,
-      defaultValue: 600,
+      defaultValue: 700,
       marks: { 100: "100", 400: "400", 700: "700", 900: "900" },
     },
     {
@@ -48,7 +49,7 @@ const desktopLyricSection: SettingSection = {
         { value: "right", labelKey: "settings.desktopLyricAlign.right" },
         { value: "justify", labelKey: "settings.desktopLyricAlign.justify" },
       ],
-      defaultValue: "center",
+      defaultValue: "left",
     },
     {
       key: "desktopLyricWordByWord",
@@ -72,14 +73,14 @@ const desktopLyricSection: SettingSection = {
       key: "desktopLyricPlayedColor",
       type: "color",
       binding: { store: "settings", path: "system.desktopLyric.playedColor" },
-      defaultValue: "#ffffff",
+      defaultValue: "rgb(255, 120, 112)",
       showAlpha: false,
     },
     {
       key: "desktopLyricUnplayedColor",
       type: "color",
       binding: { store: "settings", path: "system.desktopLyric.unplayedColor" },
-      defaultValue: "#7d7d7d",
+      defaultValue: "rgb(255, 255, 255)",
       showAlpha: false,
     },
     {
@@ -149,13 +150,13 @@ const dynamicIslandSection: SettingSection = {
       key: "dynamicIslandEnabled",
       type: "switch",
       binding: { store: "settings", path: "isDynamicIslandOpen" },
-      defaultValue: false,
+      defaultValue: true,
     },
     {
       key: "dynamicIslandShowLyric",
       type: "switch",
       binding: { store: "settings", path: "system.dynamicIsland.showLyric" },
-      defaultValue: true,
+      defaultValue: false,
     },
     {
       key: "dynamicIslandLyricFontSize",
@@ -176,7 +177,75 @@ const dynamicIslandSection: SettingSection = {
       key: "dynamicIslandNonOcclusive",
       type: "switch",
       binding: { store: "settings", path: "system.dynamicIsland.nonOcclusive" },
+      defaultValue: true,
+    },
+    {
+      key: "dynamicIslandScale",
+      type: "slider",
+      binding: { store: "settings", path: "system.dynamicIsland.scale" },
+      min: 0.5,
+      max: 2,
+      step: 0.05,
+      defaultValue: 1,
+      marks: { 0.5: "50%", 1: "100%", 2: "200%" },
+    },
+    {
+      key: "dynamicIslandFontWeight",
+      type: "slider",
+      binding: { store: "settings", path: "system.dynamicIsland.fontWeight" },
+      min: 100,
+      max: 900,
+      step: 100,
+      defaultValue: 500,
+      marks: { 100: "100", 500: "500", 900: "900" },
+    },
+    {
+      key: "dynamicIslandWordByWord",
+      type: "switch",
+      binding: { store: "settings", path: "system.dynamicIsland.wordByWord" },
+      defaultValue: true,
+    },
+    {
+      key: "dynamicIslandShowTranslation",
+      type: "switch",
+      binding: { store: "settings", path: "system.dynamicIsland.showTranslation" },
       defaultValue: false,
+    },
+    {
+      key: "dynamicIslandPlayedColor",
+      type: "color",
+      binding: { store: "settings", path: "system.dynamicIsland.playedColor" },
+      defaultValue: "rgba(255, 255, 255, 1)",
+      showAlpha: false,
+    },
+    {
+      key: "dynamicIslandBackgroundColor",
+      type: "color",
+      binding: { store: "settings", path: "system.dynamicIsland.backgroundColor" },
+      defaultValue: "rgba(0, 0, 0, 1)",
+    },
+    {
+      key: "dynamicIslandAlwaysOnTop",
+      type: "switch",
+      binding: { store: "settings", path: "system.dynamicIsland.alwaysOnTop" },
+      defaultValue: true,
+    },
+    ...(isMac
+      ? [
+          {
+            key: "dynamicIslandNotchFusion",
+            type: "switch" as const,
+            binding: { store: "settings" as const, path: "system.dynamicIsland.notchFusion" },
+            defaultValue: false,
+          },
+        ]
+      : []),
+    {
+      key: "dynamicIslandSnapCentered",
+      type: "switch",
+      binding: { store: "settings", path: "system.dynamicIsland.snapCentered" },
+      defaultValue: true,
+      disabled: () => useSettingsStore().system.dynamicIsland.notchFusion,
     },
     {
       key: "dynamicIslandWidthMode",
@@ -196,8 +265,14 @@ const dynamicIslandSection: SettingSection = {
       min: 160,
       max: 400,
       step: 1,
-      defaultValue: 240,
+      defaultValue: 242,
       visible: () => useSettingsStore().system.dynamicIsland.widthMode === "custom",
+    },
+    {
+      key: "dynamicIslandUseCSSDrag",
+      type: "switch",
+      binding: { store: "settings", path: "system.dynamicIsland.useCSSDrag" },
+      defaultValue: false,
     },
   ],
 };
@@ -229,12 +304,21 @@ const taskbarLyricSection: SettingSection = {
       type: "switch",
       binding: { store: "settings", path: "system.taskbarLyric.autoMaxWidth" },
       defaultValue: true,
-      childrenCondition: () => useSettingsStore().system.taskbarLyric.autoMaxWidth === false,
+      childrenCondition: () => true,
       children: [
+        {
+          key: "taskbarLyricAutoAdjustOccupiedSpace",
+          type: "switch",
+          binding: { store: "settings", path: "system.taskbarLyric.autoAdjustOccupiedSpace" },
+          defaultValue: false,
+          visible: () => useSettingsStore().system.taskbarLyric.autoMaxWidth === true,
+          tag: { text: "Beta" },
+        },
         {
           key: "taskbarLyricMaxWidth",
           type: "slider",
           binding: { store: "settings", path: "system.taskbarLyric.maxWidth" },
+          visible: () => useSettingsStore().system.taskbarLyric.autoMaxWidth === false,
           min: 200,
           max: 800,
           step: 20,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Artist, Track, TrackSource } from "@shared/types/player";
+import type { Artist, PlaybackContext, Track, TrackSource } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
+import type { SortField } from "@/types/list";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
@@ -9,7 +10,7 @@ import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useDownload } from "@/composables/useDownload";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
-import { PLAYER_BAR_GAP } from "@/composables/useFloatingPlayerBar";
+import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLabel } from "@/utils/quality";
@@ -52,6 +53,8 @@ const props = withDefaults(
     collectionType?: CollectionType;
     /** 集合 ID */
     collectionId?: string;
+    /** 播放来源上下文 */
+    playbackContext?: PlaybackContext;
     /** 是否有权从集合移除曲目 */
     canRemove?: boolean;
     /** 是否还能继续触底加载 */
@@ -69,6 +72,7 @@ const props = withDefaults(
     source: "local",
     collectionType: undefined,
     collectionId: undefined,
+    playbackContext: undefined,
     canRemove: true,
     hasMore: false,
     loadingMore: false,
@@ -81,10 +85,7 @@ const status = useStatusStore();
 const settings = useSettingsStore();
 const fav = useFavorite();
 
-/** 悬浮布局且播放栏可见时 */
-const isFloatingPlayerBar = computed(
-  () => settings.appearance.layoutMode === "floating" && !!media.track,
-);
+const { isFloatingBar: isFloatingPlayerBar, PLAYER_BAR_GAP } = useFloatingPlayerBar();
 
 /** 排序器 默认使用 base 敏感度，忽略大小写 */
 const textCollator = new Intl.Collator(undefined, {
@@ -121,24 +122,7 @@ const goAlbum = (item: Track): void => {
 };
 
 /** 排序字段 */
-type SortField =
-  | "none"
-  | "title"
-  | "artist"
-  | "album"
-  | "path"
-  | "duration"
-  | "size"
-  | "mtime"
-  | "ctime"
-  | "track";
-/** 排序方向 */
-type SortOrder = "asc" | "desc";
-
-/** 排序字段 */
-const sortField = ref<SortField>("none");
-/** 排序方向 */
-const sortOrder = ref<SortOrder>("asc");
+const { sortField, sortOrder } = storeToRefs(status);
 
 /** 字段文案 key 映射 */
 const sortFieldLabelKeyMap: Record<SortField, string> = {
@@ -239,6 +223,7 @@ const batch = useMultiSelect(sortedItems, {
   collectionType: computed(() => props.collectionType),
   collectionId: computed(() => props.collectionId),
   canRemove: computed(() => props.canRemove),
+  playbackContext: computed(() => props.playbackContext),
   onChanged: (removedIds) => emit("change", removedIds),
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
@@ -258,96 +243,12 @@ const tagEditorTrack = shallowRef<Track | null>(null);
 /** 下载 */
 const { enqueue: enqueueDownload } = useDownload();
 
-/**
- * 仅插播当前曲
- * @param track - 目标曲目
- */
-const playSingle = (track: Track): void => {
-  void player.playNow(track);
-};
-
-/**
- * 从当前列表位置起播：用整份列表替换队列，接续当前歌单
- * @param track - 目标曲目
- * @param index - 在 sortedItems 中的索引；缺省时按 id 查找
- */
-const playContinue = (track: Track, index?: number): void => {
-  const list = sortedItems.value;
-  const idx =
-    typeof index === "number" && index >= 0 && index < list.length
-      ? index
-      : list.findIndex((item) => item.id === track.id);
-  if (idx < 0) {
-    void player.playFrom([track], 0);
-    return;
-  }
-  void player.playFrom(list, idx);
-};
-
-/**
- * 按模式播放：continue 接续列表，single 仅当前曲
- * @param mode - 播放模式
- * @param track - 目标曲目
- * @param index - 列表索引
- */
-const playByMode = (
-  mode: "continue" | "single",
-  track: Track,
-  index?: number,
-): void => {
-  if (mode === "single") playSingle(track);
-  else playContinue(track, index);
-};
-
-/** 单击使用设置项，双击使用相反行为；延迟用于区分双击 */
-let rowClickTimer: ReturnType<typeof setTimeout> | null = null;
-
-const clearRowClickTimer = (): void => {
-  if (rowClickTimer == null) return;
-  clearTimeout(rowClickTimer);
-  rowClickTimer = null;
-};
-
-/**
- * 行单击：遵循「列表单击行为」设置
- * @param track - 目标曲目
- * @param index - 列表索引
- */
-const onRowClick = (track: Track, index: number): void => {
-  if (batch.active.value) {
-    batch.toggle(track.id);
-    return;
-  }
-  clearRowClickTimer();
-  rowClickTimer = setTimeout(() => {
-    rowClickTimer = null;
-    playByMode(settings.player.listClickPlayMode, track, index);
-  }, 250);
-};
-
-/**
- * 行双击：使用与单击相反的行为
- * @param track - 目标曲目
- * @param index - 列表索引
- */
-const onRowDblclick = (track: Track, index: number): void => {
-  if (batch.active.value) return;
-  clearRowClickTimer();
-  const opposite =
-    settings.player.listClickPlayMode === "continue" ? "single" : "continue";
-  playByMode(opposite, track, index);
-};
-
-onBeforeUnmount(() => {
-  clearRowClickTimer();
-});
-
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
 const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(contextTrack, {
   collectionType: props.collectionType,
   canRemove: props.canRemove,
-  onPlay: (track) => playByMode(settings.player.listClickPlayMode, track),
+  playbackContext: computed(() => props.playbackContext),
   onAddToPlaylist: (track) => openPicker([track]),
   onRemove: (track) => batch.requestDelete([track], "remove"),
   onDeleteFile: (track) => batch.requestDelete([track], "file"),
@@ -609,8 +510,12 @@ defineExpose({
                     ? 'bg-primary/16 border-primary/40'
                     : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
               "
-              @click="onRowClick(item, index)"
-              @dblclick="onRowDblclick(item, index)"
+              @click="batch.active.value ? batch.toggle(item.id) : undefined"
+              @dblclick="
+                batch.active.value
+                  ? undefined
+                  : player.playFrom(sortedItems, index, props.playbackContext)
+              "
               @contextmenu="contextTrack = item"
             >
               <!-- 序号 / 多选 -->
@@ -629,7 +534,7 @@ defineExpose({
                     ? batch.toggle(item.id)
                     : playingId === item.id
                       ? player.togglePlay()
-                      : playByMode(settings.player.listClickPlayMode, item, index)
+                      : player.playNow(item, props.playbackContext)
                 "
               >
                 <!-- 多选模式 -->
@@ -644,16 +549,16 @@ defineExpose({
                 <template v-else>
                   <span
                     v-if="playingId !== item.id"
-                    class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-300"
                   >
                     {{ index + 1 }}
                   </span>
                   <IconLucideMusic
                     v-else
-                    class="size-5 group-hover:opacity-0 transition-opacity duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    class="size-5 group-hover:opacity-0 transition-opacity duration-300"
                   />
                   <div
-                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-160 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-100 scale-90 cursor-pointer"
+                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-300 group-hover:scale-100 scale-80 cursor-pointer"
                   >
                     <IconLucidePause
                       v-if="playingId === item.id && status.isPlaying"

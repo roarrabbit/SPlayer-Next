@@ -45,7 +45,7 @@ const downloadCategory: SettingCategory = {
           key: "downloadUsePlayback",
           type: "switch",
           binding: { store: "settings", path: "system.download.usePlaybackForDownload" },
-          defaultValue: false,
+          defaultValue: true,
         },
         {
           key: "downloadFileTemplate",
@@ -117,7 +117,7 @@ const downloadCategory: SettingCategory = {
           key: "downloadWriteLrc",
           type: "switch",
           binding: { store: "settings", path: "system.download.writeLrc" },
-          defaultValue: false,
+          defaultValue: true,
         },
         {
           key: "downloadSaveTtml",

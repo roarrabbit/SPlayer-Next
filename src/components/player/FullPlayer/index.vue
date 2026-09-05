@@ -33,7 +33,7 @@ const {
   isLoading,
   position,
   duration,
-  isExpanded,
+  isPlayerExpanded,
   repeatMode,
   shuffleMode,
   heartMode,
@@ -128,7 +128,7 @@ const lyricFontSize = computed(() =>
 );
 
 const { immersive, onPlayerMouseEnter, onPlayerMouseLeave, onMainMove, onBarEnter, onBarLeave } =
-  useImmersiveMode(isExpanded);
+  useImmersiveMode(isPlayerExpanded);
 
 const { isFullscreen, toggleFullscreen } = useWindowControls();
 
@@ -153,7 +153,7 @@ const playerRootRef = ref<HTMLElement | null>(null);
  * - sheetOpen 等弹簧/CSS leave 结束后再 false → FullPlayer 离场不挡主界面
  */
 const sheetOpen = ref(false);
-/** 本轮关闭是否由手势/弹簧驱动（避免 isExpanded 回写时立刻卸掉面板） */
+/** 本轮关闭是否由手势/弹簧驱动（避免 isPlayerExpanded 回写时立刻卸掉面板） */
 let sheetClosing = false;
 
 const {
@@ -173,12 +173,12 @@ const {
   onDismissStart: () => {
     // 与原逻辑一致：主界面立刻可见，FullPlayer 继续弹簧离场
     sheetClosing = true;
-    isExpanded.value = false;
+    isPlayerExpanded.value = false;
   },
   onDismissEnd: () => {
     // 仅当关闭过程中面板被重新打开（isExpanded 又为 true）才复位回屏幕内；
     // 正常下滑关闭时 isExpanded 已是 false，应正常卸载面板（sheetOpen=false）。
-    if (sheetOpen.value && isExpanded.value) {
+    if (sheetOpen.value && isPlayerExpanded.value) {
       animateReopen();
       sheetClosing = false;
       return;
@@ -220,7 +220,7 @@ const animateReopen = (): void => {
 // 注意：此 watch 须在 useSheetDismiss 解构之后定义，否则 immediate 回调
 // 会访问尚未初始化的 resetForOpen（TDZ 错误）
 watch(
-  isExpanded,
+  isPlayerExpanded,
   (expanded) => {
     if (expanded) {
       sheetClosing = false;
@@ -676,7 +676,7 @@ const showComments = (): void => {
                 variant="ghost"
                 circle
                 :disabled="!hasTrack"
-                @click="player.nextTrack(true)"
+                @click="player.nextTrack()"
               >
                 <template #icon><IconLucideSkipForward /></template>
               </SButton>
@@ -685,7 +685,7 @@ const showComments = (): void => {
                 variant="ghost"
                 circle
                 :disabled="fmMode"
-                :class="fmMode || repeatMode === 'off' ? 'opacity-40' : 'opacity-100'"
+                :class="fmMode ? 'opacity-40' : 'opacity-100'"
                 @click="player.cycleRepeatMode()"
               >
                 <template #icon>

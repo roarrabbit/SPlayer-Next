@@ -2,6 +2,7 @@ import type { SettingCategory } from "@/types/settings-schema";
 import { useThemeStore } from "@/stores/theme";
 import FontConfig from "@/components/settings/custom/FontConfig.vue";
 import BackgroundImagePicker from "@/components/settings/custom/BackgroundImagePicker.vue";
+import SidebarCustomizeConfig from "@/components/settings/custom/SidebarCustomizeConfig.vue";
 import IconLucidePalette from "~icons/lucide/palette";
 
 const appearanceCategory: SettingCategory = {
@@ -20,7 +21,7 @@ const appearanceCategory: SettingCategory = {
             { value: "dark", labelKey: "settings.themeMode.dark" },
             { value: "system", labelKey: "settings.themeMode.system" },
           ],
-          defaultValue: "system",
+          defaultValue: "dark",
           // 图片背景下强制暗色，禁用此开关
           disabled: () => useThemeStore().appearanceStyle === "image",
         },
@@ -34,7 +35,7 @@ const appearanceCategory: SettingCategory = {
             { value: "cover", labelKey: "settings.themeSource.cover" },
             { value: "solid", labelKey: "settings.themeSource.solid" },
           ],
-          defaultValue: "default",
+          defaultValue: "cover",
           childrenCondition: () => useThemeStore().source === "custom",
           hideChildren: true,
           children: [
@@ -52,7 +53,7 @@ const appearanceCategory: SettingCategory = {
           key: "globalTint",
           type: "switch",
           binding: { store: "theme", path: "globalTint" },
-          defaultValue: false,
+          defaultValue: true,
           // 图片背景下强制开启全局着色，禁用切换
           disabled: () => useThemeStore().appearanceStyle === "image",
         },
@@ -134,7 +135,7 @@ const appearanceCategory: SettingCategory = {
             { value: "sidebar-full", labelKey: "settings.layoutMode.sidebarFull" },
             { value: "floating", labelKey: "settings.layoutMode.floating" },
           ],
-          defaultValue: "default",
+          defaultValue: "sidebar-full",
         },
         {
           key: "routeTransition",
@@ -146,7 +147,7 @@ const appearanceCategory: SettingCategory = {
             { value: "slide", labelKey: "settings.routeTransition.slide" },
             { value: "zoom", labelKey: "settings.routeTransition.zoom" },
           ],
-          defaultValue: "fade",
+          defaultValue: "slide",
         },
         {
           key: "sidebarCollapsed",
@@ -159,6 +160,11 @@ const appearanceCategory: SettingCategory = {
           type: "switch",
           binding: { store: "settings", path: "appearance.sidebarPlaylistCover" },
           defaultValue: false,
+        },
+        {
+          key: "sidebarCustomize",
+          type: "custom",
+          component: SidebarCustomizeConfig,
         },
         {
           key: "showStatsInSidebar",
